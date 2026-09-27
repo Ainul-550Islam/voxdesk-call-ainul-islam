@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.models import Appointment, Call, Lead
 from app.leads.models import LeadActivity, LeadTask
 from app.leads.repository import activities_for, history_for
+from app.tenancy.isolation import BoundaryDenied
 
 _SUMMARY_MAX = 180
 
@@ -31,7 +32,18 @@ async def record(
     call_id: uuid.UUID | None = None,
     appointment_id: uuid.UUID | None = None,
     task_id: uuid.UUID | None = None,
+    environment_id: uuid.UUID | None = None,
 ) -> LeadActivity:
+    """Append an activity stamped with the lead's own tenant/environment.
+
+    ``environment_id`` lets a caller that already holds an authorized
+    environment assert the lead belongs to it; a mismatch fails closed
+    instead of attaching an activity from another environment.
+    """
+    if lead.environment_id is None:
+        raise BoundaryDenied()
+    if environment_id is not None and lead.environment_id != environment_id:
+        raise BoundaryDenied()
     row = LeadActivity(
         lead_id=lead.id,
         tenant_id=lead.tenant_id,

@@ -81,6 +81,10 @@ async def _complete_openai(client, model, messages, tools, temperature, *, provi
     :class:`~app.agent.errors.ProviderError`, while reading the response stays
     unguarded on purpose — if our parsing breaks, that is our bug and must
     surface as itself, not be dressed up as a provider outage.
+
+    Returns ``(text, tool_calls, raw_message, tokens)``. ``tokens`` is the
+    provider-reported total for this completion, or ``None`` when the response
+    carries no usage block — an unknown count is never reported as zero.
     """
     try:
         resp = await client.chat.completions.create(
@@ -94,12 +98,19 @@ async def _complete_openai(client, model, messages, tools, temperature, *, provi
         {"id": c.id, "name": c.function.name, "args": json.loads(c.function.arguments or "{}")}
         for c in (msg.tool_calls or [])
     ]
-    return msg.content or "", calls, msg
+    usage = getattr(resp, "usage", None)
+    total = getattr(usage, "total_tokens", None)
+    return msg.content or "", calls, msg, total if isinstance(total, int) else None
 
 
 async def _complete_anthropic(api_key, model, system, messages, tools, temperature, *,
                               provider: str):
-    """One Anthropic completion, classified the same way as the OpenAI path."""
+    """One Anthropic completion, classified the same way as the OpenAI path.
+
+    Returns ``(text, tool_calls, raw_response, tokens)`` where ``tokens`` is
+    ``input_tokens + output_tokens`` from the usage block, or ``None`` when the
+    response reports no usage.
+    """
     from anthropic import AsyncAnthropic
     client = AsyncAnthropic(api_key=api_key)
     try:
@@ -122,7 +133,13 @@ async def _complete_anthropic(api_key, model, system, messages, tools, temperatu
         {"id": b.id, "name": b.name, "args": b.input}
         for b in resp.content if b.type == "tool_use"
     ]
-    return text, calls, resp
+    usage = getattr(resp, "usage", None)
+    input_tokens = getattr(usage, "input_tokens", None)
+    output_tokens = getattr(usage, "output_tokens", None)
+    tokens = None
+    if isinstance(input_tokens, int) or isinstance(output_tokens, int):
+        tokens = (input_tokens or 0) + (output_tokens or 0)
+    return text, calls, resp, tokens
 
 
 # ------------------------------------------------------------------- agent ---
@@ -184,13 +201,18 @@ class TextAgent:
         system = self.system_prompt()
         messages = list(history) + [{"role": "user", "content": user_text}]
         used_tools: list[str] = []
+        tokens_total = 0
+        tokens_seen = False
 
         for _ in range(MAX_TOOL_ROUNDS):
             if self.provider == "anthropic":
-                text, calls, _raw = await _complete_anthropic(
+                text, calls, _raw, turn_tokens = await _complete_anthropic(
                     self.api_key, self.model, system, messages,
                     FUNCTION_SCHEMAS, self.tenant.temperature, provider=self.provider,
                 )
+                if isinstance(turn_tokens, int):
+                    tokens_total += turn_tokens
+                    tokens_seen = True
                 if not calls:
                     break
                 messages.append({"role": "assistant", "content": [
@@ -209,10 +231,13 @@ class TextAgent:
             else:
                 client = _openai_style_client(self.provider, self.api_key)
                 convo = [{"role": "system", "content": system}] + messages
-                text, calls, raw = await _complete_openai(
+                text, calls, raw, turn_tokens = await _complete_openai(
                     client, self.model, convo, FUNCTION_SCHEMAS, self.tenant.temperature,
                     provider=self.provider,
                 )
+                if isinstance(turn_tokens, int):
+                    tokens_total += turn_tokens
+                    tokens_seen = True
                 if not calls:
                     break
                 messages.append(raw.model_dump(exclude_none=True))
@@ -241,4 +266,8 @@ class TextAgent:
             "tools_used": used_tools,
             "provider": self.provider,
             "model": self.model,
+            # Provider-measured tokens for the whole turn (every tool round
+            # included). ``None`` when no completion reported usage — the
+            # governed boundary records usage only from a measured count.
+            "tokens": tokens_total if tokens_seen else None,
         }

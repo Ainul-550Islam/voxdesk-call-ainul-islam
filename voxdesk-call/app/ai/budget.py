@@ -10,7 +10,7 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass
 
-from sqlalchemy import update
+from sqlalchemy import case, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -86,6 +86,63 @@ async def _reserve(session: AsyncSession, tenant_id: uuid.UUID, adding: int, lim
         .values(tokens_reserved=AIAdmissionCounter.tokens_reserved + adding)
     )
     return result.rowcount == 1
+
+
+async def release(session: AsyncSession, tenant_id: uuid.UUID, tokens: int) -> None:
+    """Give a failed call's reservation back. The counter never goes negative.
+
+    A call that never reached a provider must not consume the tenant's
+    admission ceiling forever, so every denial after ``admit`` reserved
+    tokens releases exactly what was reserved. Portable ``CASE`` keeps this
+    working on PostgreSQL and on the SQLite test session alike.
+    """
+    if tokens <= 0:
+        return
+    floored = case(
+        (
+            AIAdmissionCounter.tokens_reserved >= tokens,
+            AIAdmissionCounter.tokens_reserved - tokens,
+        ),
+        else_=0,
+    )
+    await session.execute(
+        update(AIAdmissionCounter)
+        .where(AIAdmissionCounter.tenant_id == tenant_id)
+        .values(tokens_reserved=floored)
+    )
+
+
+async def reconcile(
+    session: AsyncSession,
+    tenant_id: uuid.UUID,
+    *,
+    reserved: int,
+    actual: int,
+) -> None:
+    """Swap an estimate reservation for the measured tokens of a completed call.
+
+    The admission decision already ran against the estimate, so correcting the
+    counter afterwards is not gated by the ceiling — the spend happened. The
+    result is still floored at zero so a correction can never drive another
+    call's live reservation negative.
+    """
+    if reserved <= 0:
+        return
+    if actual < 0:
+        raise ValidationFailed("Actual token count cannot be negative")
+    delta = actual - reserved
+    adjusted = case(
+        (
+            AIAdmissionCounter.tokens_reserved + delta >= 0,
+            AIAdmissionCounter.tokens_reserved + delta,
+        ),
+        else_=0,
+    )
+    await session.execute(
+        update(AIAdmissionCounter)
+        .where(AIAdmissionCounter.tenant_id == tenant_id)
+        .values(tokens_reserved=adjusted)
+    )
 
 
 @dataclass(frozen=True)

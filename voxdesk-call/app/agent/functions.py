@@ -576,35 +576,64 @@ class FunctionHandlers:
 
     # -- do not call --------------------------------------------------------
     async def mark_do_not_call(self, reason: str = "") -> dict:
-        """TCPA: an opt-out must be honoured. Persist it, never call again."""
+        """TCPA: an opt-out must be honoured. Persist it, never call again.
+
+        Batch 06: the tool no longer writes ``lead.status`` directly. The
+        lookup is scoped to the call's tenant **and** environment (a lead in
+        another environment is a different lead and is never touched), a new
+        lead is created with that environment and canonical creation
+        history, and the DNC itself goes through the canonical consent
+        module, which transitions the status inside
+        ``app/leads/lifecycle.py`` (history + CRM update hook fire exactly
+        once, and DNC stays terminal). The tool contract — arguments, return
+        shape and the customer-facing message — is unchanged; runtime/tool
+        policy still governs whether the model may call this at all.
+        """
         from sqlalchemy import select as _select
 
-        from app.db.models import Lead, LeadStatus
+        from app.db.models import Lead
+        from app.leads import consent as lead_consent, lifecycle
 
         phone = self.call.from_number
+        environment_id = self.call.environment_id
         lead = (
             await self.session.execute(
                 _select(Lead).where(
-                    Lead.tenant_id == self.tenant.id, Lead.phone == phone
+                    Lead.tenant_id == self.tenant.id,
+                    Lead.environment_id == environment_id,
+                    Lead.phone == phone,
                 )
             )
         ).scalars().first()
 
+        was_new = lead is None
         if lead is None:
-            lead = Lead(tenant_id=self.tenant.id, phone=phone, name="")
+            lead = Lead(
+                tenant_id=self.tenant.id,
+                environment_id=environment_id,
+                phone=phone,
+                name="",
+            )
             self.session.add(lead)
+            await self.session.flush()
+            await lifecycle.record_created(self.session, lead, source="agent_tool")
 
-        was_new = lead.id is None
-        lead.status = LeadStatus.DNC
-        lead.notes = (lead.notes + f"\nDNC requested: {reason}").strip()
+        lead.notes = ((lead.notes or "") + f"\nDNC requested: {reason}").strip()
         self.call.intent = "do_not_call"
-        await self.session.flush()
+        # Canonical path: voice-consent denial → lifecycle transition → DNC.
+        # Idempotent when the lead is already DNC (consent row recorded, no
+        # transition, no second CRM event).
+        await lead_consent.record_consent(
+            self.session, lead, channel="voice", decision="denied",
+            source="agent:mark_do_not_call",
+        )
         # A do-not-call request is the one lead update a CRM must never miss:
         # the business is legally required to stop calling, and their dialler
-        # is usually driven by the CRM rather than by us.
+        # is usually driven by the CRM rather than by us. The *update* hook
+        # already fired from inside the lifecycle transition; only the
+        # creation event is emitted here, exactly once, for a brand-new lead.
         if was_new:
             await crm_hooks.on_lead_created(self.session, lead)
-        await crm_hooks.on_lead_updated(self.session, lead, reason="status:do_not_call")
         await self.session.commit()
         log.warning("lead.dnc", phone=phone, reason=reason)
         return {

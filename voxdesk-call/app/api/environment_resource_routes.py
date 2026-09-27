@@ -146,6 +146,14 @@ async def create_lead(
             session, tenant_id=tenant_id, environment=environment,
             name=body.name, phone=body.phone, email=body.email,
         )
+        # P0 master consolidation: every lead creation writes the canonical
+        # lifecycle history row, whichever API surface created it. The audit
+        # event below records the *authorization*; this records the *lead*.
+        from app.leads import lifecycle
+
+        await lifecycle.record_created(
+            session, lead, source="api", actor_id=ctx.user.id
+        )
         await emit(
             session, AuditAction.RESOURCE_BOUND,
             tenant_id=tenant_id, actor_user_id=ctx.user.id, actor_email=ctx.user.email,
@@ -196,8 +204,19 @@ async def archive_resource(
             raise BoundaryDenied()
         refuse_rebind(row, environment.id)
         if isinstance(row, Lead):
-            from app.db.models import LeadStatus
-            row.status = LeadStatus.DNC
+            # Batch 06: archiving a lead is a do-not-call, and a do-not-call
+            # is a canonical lifecycle event — never a direct status write.
+            # ``record_consent(voice, denied)`` transitions the lead inside
+            # ``app/leads/lifecycle.py`` (history + CRM hook fire exactly
+            # once) and is idempotent when the lead is already DNC. The row
+            # was loaded through the authorized environment context above,
+            # so the consent lands in the lead's own environment.
+            from app.leads import consent as lead_consent
+
+            await lead_consent.record_consent(
+                session, row, channel="voice", decision="denied",
+                source="environment_archive", actor_id=ctx.user.id,
+            )
         else:
             from app.db.models import DocumentStatus, KnowledgeDocument
             if not isinstance(row, KnowledgeDocument):

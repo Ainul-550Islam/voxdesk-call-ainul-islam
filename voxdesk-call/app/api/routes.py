@@ -564,9 +564,43 @@ async def stats(
 from app.core import compliance as _compliance          # noqa: E402
 from app.core.i18n import get_profile, supported_languages  # noqa: E402
 from app.db.models import Campaign, Lead, LeadStatus  # noqa: E402
+from app.environments.context_resolution import resolve_environment  # noqa: E402
+from app.environments.resource_binding import assert_environment_accepts_write  # noqa: E402
 from app.telephony import ivr as _ivr                   # noqa: E402
 from app.telephony import phone  # noqa: E402
-from app.telephony.outbound import run_campaign_tick    # noqa: E402
+from app.telephony.outbound import run_campaign_tick  # noqa: E402
+from app.tenancy.isolation import HierarchyError as _HierarchyError  # noqa: E402
+from app.tenancy.isolation import to_http as _hierarchy_http  # noqa: E402
+
+
+async def _legacy_environment(
+    session: AsyncSession,
+    ctx: TenantContext,
+    explicit: uuid.UUID | None,
+    *,
+    write: bool,
+):
+    """Effective environment for the legacy ``/tenants/{tenant_id}/...`` routes.
+
+    Batch 06 reuses the *existing* environment resolution stack — an explicit
+    authorized id, else the caller's server-side selection, else the tenant's
+    active default production environment — so legacy clients that never
+    mention environments keep the exact production behaviour they had before,
+    while a client-supplied environment from another tenant fails closed and
+    can never cross the authenticated tenant boundary. Write operations also
+    honour the suspended/archived gate.
+    """
+    try:
+        environment = await resolve_environment(
+            session, user=ctx.user, tenant=ctx.tenant, environment_id=explicit
+        )
+        if environment is None:
+            raise HTTPException(status_code=404, detail="Not found")
+        if write:
+            assert_environment_accepts_write(environment)
+    except _HierarchyError as exc:
+        raise _hierarchy_http(exc) from None
+    return environment
 
 
 # ------------------------------------------------------------- languages ----
@@ -590,6 +624,10 @@ class LeadIn(BaseModel):
 
 class LeadBulkIn(BaseModel):
     campaign_id: uuid.UUID | None = None
+    #: Optional since Batch 06. Omitted → server-side selection → the
+    #: tenant's active default production environment (the legacy behaviour).
+    #: An environment from another tenant is rejected, never substituted.
+    environment_id: uuid.UUID | None = None
     leads: list[LeadIn]
 
 
@@ -600,17 +638,38 @@ async def add_leads(
     ctx: TenantContext = Depends(scoped_permission(Permission.LEAD_CREATE)),
     session: AsyncSession = Depends(get_session),
 ):
-    """Bulk import (CSV upload in the dashboard posts here). Skips duplicates."""
+    """Bulk import (CSV upload in the dashboard posts here). Skips duplicates.
+
+    Environment-safe since Batch 06: every created row carries the resolved
+    ``environment_id`` (a schema-invalid lead with a missing environment can
+    no longer be created here), a supplied campaign must live in that same
+    environment, and the duplicate check is environment-scoped so the same
+    phone may exist in staging and production without either write touching
+    the other. Creation history is recorded through the canonical lead
+    lifecycle (``lifecycle.record_created``); the raw-phone leniency and the
+    ``{"created", "skipped"}`` response are preserved for legacy clients.
+    """
+    from app.leads import lifecycle
+
+    environment = await _legacy_environment(session, ctx, payload.environment_id, write=True)
+
     existing = set(
         (await session.execute(
-            select(Lead.phone).where(Lead.tenant_id == ctx.tenant_id)
+            select(Lead.phone).where(
+                Lead.tenant_id == ctx.tenant_id,
+                Lead.environment_id == environment.id,
+            )
         )).scalars().all()
     )
 
     # A campaign supplied in the body must belong to the caller's tenant,
     # otherwise leads could be injected into another tenant's dialer queue.
+    # Batch 06: and to the resolved environment, otherwise a production
+    # import could feed another environment's campaign queue.
     if payload.campaign_id is not None:
-        await get_owned(session, Campaign, payload.campaign_id, ctx)
+        campaign = await get_owned(session, Campaign, payload.campaign_id, ctx)
+        if campaign.environment_id != environment.id:
+            raise HTTPException(status_code=404, detail="Not found")
 
     created, skipped = 0, 0
     new_leads: list[Lead] = []
@@ -620,7 +679,8 @@ async def add_leads(
             skipped += 1
             continue
         lead = Lead(
-            tenant_id=ctx.tenant_id, campaign_id=payload.campaign_id,
+            tenant_id=ctx.tenant_id, environment_id=environment.id,
+            campaign_id=payload.campaign_id,
             name=item.name, phone=phone, email=item.email,
             company=item.company, notes=item.notes,
             custom_fields=item.custom_fields,
@@ -636,6 +696,9 @@ async def add_leads(
     if new_leads:
         await session.flush()
         for lead in new_leads:
+            await lifecycle.record_created(
+                session, lead, source="legacy_bulk_import", actor_id=ctx.user_id
+            )
             await crm_hooks.on_lead_created(session, lead)
 
     await session.commit()
@@ -647,10 +710,21 @@ async def list_leads(
     tenant_id: uuid.UUID,
     status: str | None = None,
     limit: int = 100,
+    environment_id: uuid.UUID | None = None,
     ctx: TenantContext = Depends(scoped_permission(Permission.LEAD_READ)),
     session: AsyncSession = Depends(get_session),
 ):
-    stmt = select(Lead).where(Lead.tenant_id == ctx.tenant_id)
+    """Environment-scoped since Batch 06 (default: selected → production).
+
+    Legacy response fields are unchanged; ``environment_id`` is added as a
+    backward-compatible field. Another environment's leads are not part of
+    this environment's list and never leak through it.
+    """
+    environment = await _legacy_environment(session, ctx, environment_id, write=False)
+    stmt = select(Lead).where(
+        Lead.tenant_id == ctx.tenant_id,
+        Lead.environment_id == environment.id,
+    )
     if status:
         stmt = stmt.where(Lead.status == status)
     rows = (await session.execute(
@@ -662,6 +736,7 @@ async def list_leads(
             "email": lead.email, "company": lead.company,
             "status": lead.status.value, "score": lead.score,
             "attempts": lead.attempts,
+            "environment_id": str(lead.environment_id),
             "next_attempt_at": (
                 lead.next_attempt_at.isoformat() if lead.next_attempt_at else None
             ),
@@ -673,11 +748,33 @@ async def list_leads(
 @router.post("/tenants/{tenant_id}/leads/{lead_id}/do-not-call")
 async def mark_lead_dnc(
     tenant_id: uuid.UUID, lead_id: uuid.UUID,
+    environment_id: uuid.UUID | None = None,
     ctx: TenantContext = Depends(scoped_permission(Permission.LEAD_UPDATE)),
     session: AsyncSession = Depends(get_session),
 ):
+    """Honour a do-not-call through the canonical consent/lifecycle path.
+
+    Batch 06: no direct ``lead.status`` write. ``record_consent(voice,
+    denied)`` moves the lead to DNC inside ``app/leads/lifecycle.py`` —
+    status history is written, the CRM hook fires exactly once from the
+    lifecycle (this route does not fire it a second time), and a lead already
+    on the list stays on it (DNC is terminal; nothing here reverses it). The
+    lead must sit in the resolved environment; a lead from another
+    environment is a plain 404.
+    """
+    from app.leads import consent as lead_consent
+
+    environment = await _legacy_environment(session, ctx, environment_id, write=True)
     lead = await get_owned(session, Lead, lead_id, ctx)
-    lead.status = LeadStatus.DNC
+    if lead.environment_id != environment.id:
+        raise HTTPException(status_code=404, detail="Not found")
+    try:
+        await lead_consent.record_consent(
+            session, lead, channel="voice", decision="denied",
+            source="api:legacy_do_not_call", actor_id=ctx.user_id,
+        )
+    except _HierarchyError as exc:
+        raise _hierarchy_http(exc) from None
     await session.commit()
     return {"ok": True, "phone": lead.phone, "status": "do_not_call"}
 
@@ -690,6 +787,9 @@ class CampaignIn(BaseModel):
     opening_line: str = "Hi, this is {agent} calling from {business}. Do you have a quick minute?"
     calls_per_minute: int = 2
     is_active: bool = False
+    #: Optional since Batch 06; omitted → selected → default production.
+    #: A client-supplied environment cannot cross the tenant boundary.
+    environment_id: uuid.UUID | None = None
 
 
 @router.post("/tenants/{tenant_id}/campaigns", status_code=201)
@@ -698,30 +798,58 @@ async def create_campaign(
     ctx: TenantContext = Depends(scoped_permission(Permission.CAMPAIGN_WRITE)),
     session: AsyncSession = Depends(get_session),
 ):
-    campaign = Campaign(tenant_id=ctx.tenant_id, **payload.model_dump())
+    """Legacy campaign create — now environment-bound (Batch 06).
+
+    The URL, request compatibility and the original response fields are
+    preserved; ``environment_id`` is added to both the body (optional) and
+    the response (backward-compatible field).
+    """
+    environment = await _legacy_environment(session, ctx, payload.environment_id, write=True)
+    campaign = Campaign(
+        tenant_id=ctx.tenant_id,
+        environment_id=environment.id,
+        **payload.model_dump(exclude={"environment_id"}),
+    )
     session.add(campaign)
     await session.commit()
     await session.refresh(campaign)
-    return {"id": str(campaign.id), "name": campaign.name, "is_active": campaign.is_active}
+    return {
+        "id": str(campaign.id), "name": campaign.name,
+        "is_active": campaign.is_active,
+        "environment_id": str(campaign.environment_id),
+    }
 
 
 @router.get("/tenants/{tenant_id}/campaigns")
 async def list_campaigns(
     tenant_id: uuid.UUID,
+    environment_id: uuid.UUID | None = None,
     ctx: TenantContext = Depends(scoped_permission(Permission.CAMPAIGN_READ)),
     session: AsyncSession = Depends(get_session),
 ):
+    """Environment-scoped campaign list; lead counters only count leads from
+    the campaign's own environment (a cross-environment association, e.g.
+    left over from pre-0026 data, can never inflate another environment's
+    numbers)."""
+    environment = await _legacy_environment(session, ctx, environment_id, write=False)
     rows = (await session.execute(
-        select(Campaign).where(Campaign.tenant_id == ctx.tenant_id)
+        select(Campaign).where(
+            Campaign.tenant_id == ctx.tenant_id,
+            Campaign.environment_id == environment.id,
+        )
     )).scalars().all()
     out = []
     for c in rows:
         total = (await session.execute(
-            select(func.count(Lead.id)).where(Lead.campaign_id == c.id)
+            select(func.count(Lead.id)).where(
+                Lead.campaign_id == c.id,
+                Lead.environment_id == c.environment_id,
+            )
         )).scalar_one()
         done = (await session.execute(
             select(func.count(Lead.id)).where(
                 Lead.campaign_id == c.id,
+                Lead.environment_id == c.environment_id,
                 Lead.status.in_([LeadStatus.CALLED, LeadStatus.QUALIFIED,
                                  LeadStatus.UNQUALIFIED]),
             )
@@ -729,6 +857,7 @@ async def list_campaigns(
         out.append({
             "id": str(c.id), "name": c.name, "goal": c.goal,
             "is_active": c.is_active, "calls_per_minute": c.calls_per_minute,
+            "environment_id": str(c.environment_id),
             "leads_total": total, "leads_done": done,
         })
     return out
@@ -737,14 +866,22 @@ async def list_campaigns(
 @router.post("/tenants/{tenant_id}/campaigns/{campaign_id}/run")
 async def run_campaign(
     tenant_id: uuid.UUID, campaign_id: uuid.UUID, dry_run: bool = True,
+    environment_id: uuid.UUID | None = None,
     ctx: TenantContext = Depends(scoped_permission(Permission.CAMPAIGN_RUN)),
     session: AsyncSession = Depends(get_session),
 ):
     """
     One batch. `dry_run=true` is the default so nobody dials by accident.
     This endpoint spends real money, hence its own CAMPAIGN_RUN permission.
+
+    Batch 06: a run claims leads (a write), so a suspended/archived
+    environment refuses it, and the campaign must live in the resolved
+    environment — the dialer itself re-verifies campaign/lead scope per call.
     """
+    environment = await _legacy_environment(session, ctx, environment_id, write=True)
     campaign = await get_owned(session, Campaign, campaign_id, ctx)
+    if campaign.environment_id != environment.id:
+        raise HTTPException(status_code=404, detail="Not found")
     return await run_campaign_tick(session, ctx.tenant, campaign, dry_run=dry_run)
 
 

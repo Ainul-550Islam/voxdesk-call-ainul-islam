@@ -22,6 +22,8 @@ from dataclasses import dataclass
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agent.llm_factory import LLMChoice
+from app.ai.budget import reconcile as reconcile_reservation
+from app.ai.budget import release as release_reservation
 from app.ai.context import RuntimeContext
 from app.ai.errors import RuntimeFailure
 from app.ai.gateway import GatewayResult, authorize_live, govern
@@ -41,6 +43,11 @@ class Prepared:
     approval_state: str
     trace_id: str
     environment_kind: str
+    #: True when admission reserved tokens against a configured ceiling. The
+    #: voice pipeline reconciles this reservation to the measured LLM tokens
+    #: when the call ends; a reservation that is never reconciled would
+    #: permanently shrink the tenant's admission ceiling.
+    budget_reserved: bool = False
 
 
 def guard_spoken_text(text: str, *, blocked_substrings: tuple[str, ...] = ()) -> str:
@@ -74,7 +81,7 @@ async def invoke(
     principal: str = "user",
 ) -> GatewayResult:
     """Application entry. Authorization runs first; ``govern`` calls the provider."""
-    await authorize_live(
+    live = await authorize_live(
         session,
         ctx.tenant,
         channel=channel,
@@ -90,23 +97,43 @@ async def invoke(
         request_id=request_id,
         call_id=call_id,
     )
-    return await govern(
-        session,
-        ctx,
-        text=text,
-        channel=channel,
-        environment_kind=environment_kind,
-        environment_id=environment_id,
-        claimed_tenant_id=claimed_tenant_id,
-        executor=executor,
-        tokens_estimate=tokens_estimate,
-        record_usage=record_usage,
-        request_id=request_id,
-        blocked_output=blocked_output,
-        requested_preset=requested_preset,
-        budget_checked=True,
-        circuit_checked=True,
-    )
+    # ``authorize_live`` admitted the budget, so ``govern`` runs with
+    # budget_checked=True and does not own the reservation. This entry owns it:
+    # a failed invocation releases the estimate, a completed one reconciles the
+    # estimate to the tokens the executor measured.
+    try:
+        result = await govern(
+            session,
+            ctx,
+            text=text,
+            channel=channel,
+            environment_kind=environment_kind,
+            environment_id=environment_id,
+            claimed_tenant_id=claimed_tenant_id,
+            executor=executor,
+            tokens_estimate=tokens_estimate,
+            record_usage=record_usage,
+            request_id=request_id,
+            blocked_output=blocked_output,
+            requested_preset=requested_preset,
+            budget_checked=True,
+            circuit_checked=True,
+        )
+    except BaseException:
+        if live.budget_reserved:
+            await release_reservation(session, ctx.tenant_id, tokens_estimate)
+        raise
+    if live.budget_reserved:
+        if result.executed:
+            await reconcile_reservation(
+                session,
+                ctx.tenant_id,
+                reserved=tokens_estimate,
+                actual=int(result.telemetry.get("tokens") or 0),
+            )
+        else:
+            await release_reservation(session, ctx.tenant_id, tokens_estimate)
+    return result
 
 
 async def voice_llm(
@@ -165,6 +192,7 @@ async def prepare_voice(
         approval_state=str(live.prompt.get("approval_state") or ""),
         trace_id=live.trace_id,
         environment_kind=kind,
+        budget_reserved=live.budget_reserved,
     )
 
 
@@ -215,7 +243,14 @@ async def govern_text_reply(agent, history, user_text: str) -> dict:
     )
     if live.prompt.get("body"):
         agent._runtime_prompt = live.prompt["body"]
-    result = await agent.complete_turn(history, user_text)
+    try:
+        result = await agent.complete_turn(history, user_text)
+    except BaseException:
+        # The provider turn failed after admission reserved a token. Release
+        # it — a failed reply must not permanently consume the ceiling.
+        if live.budget_reserved:
+            await release_reservation(session, agent.tenant.id, 1)
+        raise
     result["reply"] = guard_spoken_text(
         result["reply"], blocked_substrings=tuple(getattr(agent, "_blocked_output", ()) or ())
     )
@@ -239,6 +274,11 @@ async def govern_text_reply(agent, history, user_text: str) -> dict:
         usage_recorded = bool(recorded["recorded"])
         cost_known = bool(recorded["cost_known"])
         provider_cost = recorded["provider_cost_usd"]
+    if live.budget_reserved and isinstance(tokens, int):
+        # Success with a measured count: swap the 1-token admission estimate
+        # for what the provider actually used. An unmeasured turn keeps the
+        # admission footprint (same semantics as the voice path).
+        await reconcile_reservation(session, agent.tenant.id, reserved=1, actual=max(tokens, 0))
     trace_mod.finish(
         {
             "trace_id": live.trace_id,

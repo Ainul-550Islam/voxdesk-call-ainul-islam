@@ -51,7 +51,11 @@ from app.domain.workflow_models import (
 )
 
 #: tenant_id -> workflow_id -> current definition
-_REGISTRY: dict[str, dict[str, WorkflowDefinition]] = {}
+from app.builder.workflow_repository import WorkflowRepository
+from app.builder.workflow_state import can_transition, is_terminal
+
+# Durable source of truth — in-memory registry no longer production-authoritative
+_REGISTRY: dict[str, dict] = {}  # kept for backward-compat only; replaced by repo below
 #: tenant_id -> workflow_id -> version -> definition
 _VERSIONS: dict[str, dict[str, dict[int, WorkflowDefinition]]] = {}
 #: tenant_id -> execution_id -> execution
@@ -232,7 +236,20 @@ async def _handle_apply_dnc(
 async def _lead_status_change(
     session: AsyncSession, tenant_id: str, lead_id: str, target: str
 ) -> tuple[str, str]:
+    """Route a workflow-driven status change through the canonical lifecycle.
+
+    Batch 06: this used to assign ``lead.status`` directly, which bypassed
+    the transition rules, wrote no history and could silently reverse a
+    do-not-call. ``app.leads.lifecycle.transition`` is now the only path:
+    it validates the transition, compare-and-sets the row (a concurrent
+    change loses instead of being overwritten), appends status history and
+    fires the CRM hook exactly once. The workflow's own transaction stays
+    authoritative — nothing here commits.
+    """
     import uuid
+
+    from app.leads import lifecycle
+    from app.leads.exceptions import ClaimConflict, InvalidTransition
 
     try:
         parsed = uuid.UUID(str(lead_id))
@@ -242,12 +259,19 @@ async def _lead_status_change(
     if lead is None or str(lead.tenant_id) != str(tenant_id):
         return "failed", "lead not found in tenant"
     try:
-        new_status = LeadStatus(target) if target else LeadStatus.QUALIFIED
-    except ValueError:
-        return "failed", f"unknown lead status {target!r}"
-    lead.status = new_status
+        await lifecycle.transition(
+            session,
+            lead,
+            target or LeadStatus.QUALIFIED.value,
+            reason="workflow_action",
+            source="workflow",
+        )
+    except InvalidTransition as exc:
+        return "failed", str(exc)
+    except ClaimConflict as exc:
+        return "failed", str(exc)
     session.add(lead)
-    return "executed", f"lead {lead_id} -> {new_status.value}"
+    return "executed", f"lead {lead_id} -> {lifecycle.status_value(lead.status)}"
 
 
 async def _commit_if(session: AsyncSession | None) -> None:

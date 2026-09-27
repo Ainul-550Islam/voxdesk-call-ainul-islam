@@ -440,16 +440,56 @@ async def call_status(
 
     # Outbound: record how the attempt went so the dialer stops or retries.
     # Guarded by `result.applied` so a retried webhook cannot re-grade a lead.
+    #
+    # Batch 06: the grade goes through the canonical lead lifecycle — no
+    # direct ``lead.status`` write — and only when the call and the lead
+    # agree on tenant *and* environment. A lead whose environment does not
+    # match the call's is left untouched (logged, never silently updated),
+    # and a racing/repeated grade loses the lifecycle's compare-and-set
+    # instead of overwriting state. Existing call terminal-state handling,
+    # billing and CRM call events below are unchanged; the lifecycle fires
+    # the lead-update CRM hook exactly once per applied transition.
     if result.applied and call.lead_id:
         lead = await session.get(Lead, call.lead_id)
-        if lead and lead.status is not LeadStatus.DNC:
+        if lead is not None and (
+            lead.tenant_id != call.tenant_id
+            or lead.environment_id != call.environment_id
+        ):
+            log.warning(
+                "status.lead_scope_mismatch",
+                call_sid=CallSid, lead=str(lead.id),
+            )
+        elif lead and lead.status is not LeadStatus.DNC:
+            from app.leads import lifecycle
+            from app.leads.exceptions import ClaimConflict, InvalidTransition
+
+            target = None
             if call.status is CallStatus.COMPLETED and (call.duration_seconds or 0) > 10:
-                lead.status = (
+                target = (
                     LeadStatus.QUALIFIED if (call.lead_score or 0) >= 50 else LeadStatus.CALLED
                 )
                 lead.score = call.lead_score
             elif lead.attempts >= (tenant.max_call_attempts if tenant else 3):
-                lead.status = LeadStatus.FAILED
+                target = LeadStatus.FAILED
+            if target is not None:
+                try:
+                    await lifecycle.transition(
+                        session,
+                        lead,
+                        target.value,
+                        reason="twilio_status_callback",
+                        source="telephony",
+                        expected=lead.status,
+                        environment_id=call.environment_id,
+                    )
+                except (InvalidTransition, ClaimConflict):
+                    # Repeated or racing callback: `result.applied` already
+                    # gates duplicates, and the lifecycle's compare-and-set
+                    # arbitrates the rest. Never force a grade.
+                    log.info(
+                        "status.lead_grade_skipped",
+                        call_sid=CallSid, lead=str(lead.id),
+                    )
 
     # STEP 5: record the CRM event *inside this transaction*, before the
     # commit. The old code committed first, set `crm_synced = True`, committed

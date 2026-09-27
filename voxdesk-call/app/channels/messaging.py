@@ -168,16 +168,64 @@ async def save_turn(session: AsyncSession, thread: Call, speaker: Speaker, text:
     await session.commit()
 
 
+async def _webhook_environment_id(session: AsyncSession, tenant: Tenant):
+    """The environment a messaging webhook acts in.
+
+    A webhook has no authenticated user, so the existing headless resolution
+    rule applies: the tenant's active default production environment (the
+    same ``production_environment_id`` the lead repository already uses).
+    The phone-number lookups below are scoped to tenant + this environment,
+    so a STOP in production can never mutate a staging lead and vice versa.
+    If no active production environment exists the lookup raises and Twilio's
+    retry will find it once operations restore one — a compliance write is
+    never forced into an invented environment.
+    """
+    from app.leads.repository import production_environment_id
+
+    return await production_environment_id(session, tenant.id)
+
+
 async def set_opt_out(session: AsyncSession, tenant: Tenant, phone: str, out: bool) -> None:
-    lead = (
-        await session.execute(
-            select(Lead).where(Lead.tenant_id == tenant.id, Lead.phone == phone)
-        )
-    ).scalars().first()
+    """STOP/START through the canonical lead consent + lifecycle path.
+
+    Batch 06 rules, all enforced by ``app/leads`` rather than by direct
+    status writes here:
+
+    * STOP records a *voice consent denial*, which the canonical consent
+      module turns into ``LeadStatus.DNC`` through ``lifecycle.transition``
+      (history written, CRM hook fired once). DNC stays terminal — nothing
+      in this path can reverse it.
+    * START records an *SMS consent grant* only. The existing consent policy
+      explicitly forbids clearing a voice do-not-call by granting consent,
+      so a DNC lead keeps its DNC status (the reversal the old code did with
+      ``lead.status = LeadStatus.NEW`` was exactly the silent reversal the
+      policy forbids); a non-DNC lead keeps its current status — message
+      subscription is consent state, not lifecycle state.
+    * A lead created for an unknown number always carries the resolved
+      environment (the schema requires it) and gets canonical creation
+      history via ``lifecycle.record_created``.
+    * The customer-facing replies are unchanged.
+    """
+    from app.leads import consent as lead_consent, lifecycle
+    from app.leads.repository import find_lead_by_phone
+
+    environment_id = await _webhook_environment_id(session, tenant)
+    lead = await find_lead_by_phone(session, tenant.id, environment_id, phone)
     if lead is None:
-        lead = Lead(tenant_id=tenant.id, phone=phone, name="")
+        lead = Lead(
+            tenant_id=tenant.id, environment_id=environment_id, phone=phone, name=""
+        )
         session.add(lead)
-    lead.status = LeadStatus.DNC if out else LeadStatus.NEW
+        await session.flush()
+        await lifecycle.record_created(session, lead, source="messaging")
+    if out:
+        await lead_consent.record_consent(
+            session, lead, channel="voice", decision="denied", source="messaging:stop"
+        )
+    else:
+        await lead_consent.record_consent(
+            session, lead, channel="sms", decision="granted", source="messaging:start"
+        )
     await session.commit()
     log.info("channel.opt_change", phone=phoneutil.redact(phone), opted_out=out)
 
@@ -301,11 +349,22 @@ async def inbound_message(
         )
 
     # 2) Respect an existing opt-out even if they text something else.
-    existing = (
-        await session.execute(
-            select(Lead).where(Lead.tenant_id == tenant.id, Lead.phone == customer)
+    # Batch 06: the lookup is scoped to tenant + the webhook's resolved
+    # environment, so a DNC lead in one environment is never read (or
+    # honoured) as if it belonged to another.
+    from app.leads.repository import find_lead_by_phone
+    from app.tenancy.isolation import NotFound as _EnvNotFound
+
+    try:
+        webhook_environment = await _webhook_environment_id(session, tenant)
+        existing = await find_lead_by_phone(
+            session, tenant.id, webhook_environment, customer
         )
-    ).scalars().first()
+    except _EnvNotFound:
+        # No active production environment to resolve against: there is no
+        # lead row this webhook could legitimately read, so the opt-out
+        # check finds nothing (the conversation path below still answers).
+        existing = None
     if existing is not None and existing.status is LeadStatus.DNC:
         return PlainTextResponse(twiml_reply(None), media_type="application/xml")
 

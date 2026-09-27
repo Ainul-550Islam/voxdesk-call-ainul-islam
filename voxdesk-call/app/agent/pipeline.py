@@ -285,11 +285,13 @@ async def _run_voice_agent(
             transport.input(),
             stt,
             stt_usage,                       # measured transcription characters
+            GovernedHearing(),               # input guardrail: drop a refused transcript
             *humanizers,                     # "mm-hmm" মাঝপথে
             context_aggregator.user(),
             llm,
             FillerInjector(),                # tool চলাকালীন "let me check"
             TextNormalizer(),                # সংখ্যা/markdown ঠিক করা
+            GovernedSpeech(blocked_substrings=prepared.blocked_output),
             tts,
             voice_usage,                     # measured LLM tokens + TTS characters
             transport.output(),
@@ -354,6 +356,19 @@ async def _run_voice_agent(
             tts_chars=voice_usage.snapshot()["tts_chars"],
             llm_tokens=voice_usage.snapshot()["llm_tokens"],
         )
+        if prepared.budget_reserved:
+            # Admission reserved one token to open the call. The call is over
+            # and the measured LLM tokens are known, so swap the estimate for
+            # the measurement — on the same transaction as the turn flush, and
+            # never inside the live media loop.
+            from app.ai.budget import reconcile
+
+            await reconcile(
+                session,
+                tenant.id,
+                reserved=1,
+                actual=int(voice_usage.snapshot()["llm_tokens"] or 0),
+            )
         await session.commit()
 
     runner = PipelineRunner(handle_sigint=False)

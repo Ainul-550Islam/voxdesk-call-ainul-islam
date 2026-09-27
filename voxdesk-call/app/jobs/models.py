@@ -20,6 +20,10 @@ class JobState(str, enum.Enum):
     RETRY_SCHEDULED = "retry_scheduled"
     DEAD_LETTER = "dead_letter"
     CANCELLED = "cancelled"
+    #: Batch 07: operator-held DLQ state. A quarantined poison job stays out
+    #: of claiming and out of replay until an operator releases it back to
+    #: ``dead_letter`` (see ``app.jobs.dead_letter``).
+    QUARANTINED = "quarantined"
 
 
 class AttemptState(str, enum.Enum):

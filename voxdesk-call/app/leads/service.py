@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import Campaign, Lead, LeadStatus
+from app.db.models import Lead, LeadStatus
 from app.integrations.crm import hooks as crm_hooks
 from app.leads import (
     activities,
@@ -25,6 +25,7 @@ from app.leads import (
 from app.leads.exceptions import DuplicateLead, LeadError
 from app.leads.models import LeadIdentity, LeadSegment
 from app.leads.repository import (
+    campaign_in_scope,
     get_identity,
     get_lead,
     get_segment,
@@ -63,12 +64,23 @@ def _clean_custom(raw: dict | None) -> dict:
 
 
 async def _campaign(
-    session: AsyncSession, tenant_id: uuid.UUID, campaign_id: uuid.UUID | None
+    session: AsyncSession,
+    tenant_id: uuid.UUID,
+    campaign_id: uuid.UUID | None,
+    environment_id: uuid.UUID | None = None,
 ) -> uuid.UUID | None:
+    """Validate a campaign binding against tenant *and* environment.
+
+    A campaign can only ever own leads from its own environment: when the
+    caller supplies the lead's environment, a campaign bound elsewhere is
+    refused with the same not-found a foreign-tenant campaign gets, so no
+    boundary is revealed. Leads are never silently moved between
+    environments to make a binding fit.
+    """
     if campaign_id is None:
         return None
-    row = await session.get(Campaign, campaign_id)
-    if row is None or row.tenant_id != tenant_id:
+    row = await campaign_in_scope(session, tenant_id, environment_id, campaign_id)
+    if row is None:
         raise NotFound()
     return row.id
 
@@ -127,7 +139,7 @@ async def create_lead(
         email_key = dedup.normalize_email(email)
         if email_key is None:
             raise ValidationFailed("Email is not valid")
-    owned_campaign = await _campaign(session, tenant_id, campaign_id)
+    owned_campaign = await _campaign(session, tenant_id, campaign_id, environment)
     matches = await dedup.exact_matches(
         session, tenant_id, environment, phone=phone_key, email=email_key
     )
@@ -194,6 +206,11 @@ async def update_lead(
         raise BoundaryDenied()
     if "status" in fields:
         raise ValidationFailed("Status changes go through an explicit transition")
+    if "environment_id" in fields:
+        # A lead's environment is immutable after creation. The ORM-level
+        # freeze hook is the backstop; refusing here returns the honest
+        # error instead of a flush-time one. No transfer operation exists.
+        raise ValidationFailed("A lead's environment_id is immutable")
     environment = await require_environment(session, tenant_id, environment_id)
     lead = await get_lead(session, tenant_id, lead_id, environment)
     identity = await ensure_identity(session, lead)
@@ -243,7 +260,7 @@ async def update_lead(
     if "campaign_id" in fields:
         raw = fields["campaign_id"]
         lead.campaign_id = await _campaign(
-            session, tenant_id, uuid.UUID(str(raw)) if raw else None
+            session, tenant_id, uuid.UUID(str(raw)) if raw else None, lead.environment_id
         )
         changed.append("campaign_id")
     if "custom_fields" in fields:

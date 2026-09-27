@@ -22,6 +22,9 @@ from app.api.lead_routes import router as lead_router
 from app.api.lead_activity_routes import router as lead_activity_router
 from app.api.lead_import_routes import router as lead_import_router
 from app.api.lead_segment_routes import router as lead_segment_router
+# Batch 07: durable job platform + transactional outbox operator surfaces.
+from app.api.jobs_routes import router as jobs_router
+from app.api.outbox_routes import router as outbox_router
 from app.api.conversation_routes import router as conversation_router
 from app.api.notification_routes import router as notification_router
 from app.api.workflow_routes import router as workflow_router
@@ -264,6 +267,9 @@ app.include_router(lead_router)
 app.include_router(lead_activity_router)
 app.include_router(lead_import_router)
 app.include_router(lead_segment_router)
+# Batch 07: operator APIs over the one durable job table and the outbox.
+app.include_router(jobs_router)
+app.include_router(outbox_router)
 
 # Cross-cutting middleware and handlers. Order is deliberate: exception
 # handlers + request-id first, then security headers, then rate limiting, then

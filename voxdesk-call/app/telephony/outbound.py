@@ -79,10 +79,19 @@ def backoff_for(attempts: int) -> timedelta:
 async def next_callable_leads(
     session: AsyncSession, tenant: Tenant, campaign: Campaign, limit: int = 10
 ) -> list[Lead]:
-    """Leads that are due, under the attempt cap, and not on do-not-call."""
+    """Leads that are due, under the attempt cap, and not on do-not-call.
+
+    Batch 06: selection is restricted to the campaign's own environment —
+    ``Lead.environment_id == campaign.environment_id`` — so a campaign can
+    never pick up another environment's leads even if a legacy row points
+    ``campaign_id`` at it. A campaign without an environment (which the
+    schema no longer allows) selects nothing: fail closed.
+    """
     now = datetime.utcnow()
     from app.leads.models import LeadConsent, LeadIdentity
 
+    if campaign.environment_id is None:
+        return []
     merged = select(LeadIdentity.lead_id).where(
         LeadIdentity.tenant_id == tenant.id,
         LeadIdentity.merged_into_id.is_not(None),
@@ -96,6 +105,7 @@ async def next_callable_leads(
         select(Lead)
         .where(
             Lead.tenant_id == tenant.id,
+            Lead.environment_id == campaign.environment_id,
             Lead.campaign_id == campaign.id,
             Lead.status.in_([LeadStatus.NEW, LeadStatus.QUEUED]),
             Lead.attempts < tenant.max_call_attempts,
@@ -194,9 +204,21 @@ async def place_call(
     *,
     dry_run: bool = False,
 ) -> dict:
-    """Dial one lead. Records the attempt whether or not Twilio succeeds."""
+    """Dial one lead. Records the attempt whether or not Twilio succeeds.
+
+    Batch 06 scope gate: tenant, campaign and lead must all agree —
+    ``campaign.tenant_id == lead.tenant_id == tenant.id`` **and**
+    ``campaign.environment_id == lead.environment_id``. A lead from another
+    environment of the same tenant is refused exactly like a foreign-tenant
+    lead. DNC, call-window, attempt-cap, backoff and machine detection are
+    unchanged and cannot be weakened here.
+    """
     if lead.tenant_id != tenant.id:
         return {"ok": False, "reason": "tenant_mismatch"}
+    if campaign.tenant_id != tenant.id:
+        return {"ok": False, "reason": "tenant_mismatch"}
+    if campaign.environment_id is None or lead.environment_id != campaign.environment_id:
+        return {"ok": False, "reason": "environment_mismatch"}
     if not tenant.outbound_enabled:
         return {"ok": False, "reason": "outbound_disabled"}
     if lead.status is LeadStatus.DNC:
@@ -218,19 +240,21 @@ async def place_call(
     now = datetime.utcnow()
     if not await _claim_attempt(session, lead, tenant, now=now):
         # Another worker (or a concurrent tick) owns this lead, or it hit the
-        # attempt cap between our check and the claim. Do not dial.
+        # attempt cap between our check and the claim. Do not dial. The
+        # conditional UPDATE is the race arbitration: same campaign + same
+        # environment + same lead can only ever be claimed once.
         return {"ok": False, "reason": "claimed_by_another"}
 
     from app.leads.lifecycle import record_dial_claim
 
+    # Audit the claim while the in-memory status still holds the pre-claim
+    # value, so the history row records the true from-status (the database
+    # row is already QUEUED — the atomic claim set it).
     await record_dial_claim(session, lead, campaign_id=campaign.id)
-
-    # Mirror what the database now holds so the rest of this function reads
-    # consistent state without a round-trip.
-    lead.attempts += 1
-    lead.last_attempt_at = now
-    lead.status = LeadStatus.QUEUED
-    lead.next_attempt_at = now + backoff_for(lead.attempts)
+    # Reload what the atomic claim committed (attempts, QUEUED status,
+    # timestamps) instead of assigning any of it by hand: this function no
+    # longer contains a direct ``lead.status = ...`` write.
+    await session.refresh(lead)
 
     caller_id = tenant.outbound_caller_id or tenant.twilio_number
 
@@ -250,8 +274,24 @@ async def place_call(
             timeout=25,
         )
     except Exception as exc:
-        lead.status = LeadStatus.FAILED
+        from app.leads import lifecycle
+        from app.leads.exceptions import ClaimConflict, InvalidTransition
+
         lead.next_attempt_at = now + backoff_for(lead.attempts)
+        try:
+            # Canonical lifecycle: QUEUED -> FAILED with history. A racing
+            # callback that already graded this lead wins; the attempt and
+            # backoff stay recorded either way.
+            await lifecycle.transition(
+                session, lead, LeadStatus.FAILED.value,
+                reason="dial_failed", source="outbound",
+                expected=LeadStatus.QUEUED,
+            )
+        except (InvalidTransition, ClaimConflict) as conflict:
+            log.warning(
+                "outbound.dial_failed_grade_conflict",
+                lead=str(lead.id), error=type(conflict).__name__,
+            )
         await session.commit()
         # Provider detail stays out of the logs: the exception string can
         # quote a request body, and the number is redacted regardless. The

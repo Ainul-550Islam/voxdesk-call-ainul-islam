@@ -53,12 +53,19 @@ class CampaignGoal(str, enum.Enum):
 
 @dataclass(frozen=True)
 class Segment:
-    """A named audience segment expressed as filter rules (reused evaluator)."""
+    """A named audience segment expressed as filter rules (reused evaluator).
+
+    ``environment_id`` records the environment the segment was defined in.
+    An empty value means "legacy, tenant-wide"; the campaign service refuses
+    to target a segment whose environment is set and differs from the
+    campaign's own environment.
+    """
 
     id: str
     tenant_id: str
     name: str
     rules: tuple[FilterRule, ...] = ()
+    environment_id: str = ""
 
     def validate(self) -> list[str]:
         problems: list[str] = []
@@ -73,11 +80,17 @@ class Segment:
 
 @dataclass(frozen=True)
 class Audience:
-    """The population a campaign targets. Bounded, tenant-scoped."""
+    """The population a campaign targets. Bounded, tenant- and environment-scoped.
+
+    ``environment_id`` is stamped by the campaign service from the campaign's
+    own environment before persistence: leads and segments are only ever
+    resolved inside that one environment.
+    """
 
     tenant_id: str
     segment_ids: tuple[str, ...] = ()
     lead_ids: tuple[str, ...] = ()
+    environment_id: str = ""
 
     def validate(self) -> list[str]:
         problems: list[str] = []
@@ -151,11 +164,21 @@ class ComplianceGate:
 
 @dataclass(frozen=True)
 class CampaignDefinition:
-    """The full domain view of a campaign."""
+    """The full domain view of a campaign.
+
+    ``environment_id`` is part of the campaign's *identity*, not a cosmetic
+    response field: since migration ``0026_campaign_environment_scope`` the
+    persistence contract stores it NOT NULL beside ``tenant_id``, and the
+    service layer resolves and stamps it before any validation that leads to
+    a write. A campaign with an empty ``environment_id`` can still be built
+    and reasoned about in-memory (legacy callers), but it can never be
+    persisted — see :meth:`validate_binding`.
+    """
 
     id: str
     tenant_id: str
     name: str
+    environment_id: str = ""
     goal: CampaignGoal = CampaignGoal.QUALIFY
     channel: CampaignChannel = CampaignChannel.VOICE
     script_prompt: str = ""
@@ -178,12 +201,30 @@ class CampaignDefinition:
             problems.append("script_prompt must be at most 20000 characters")
         if len(self.opening_line) > 2_000:
             problems.append("opening_line must be at most 2000 characters")
+        if self.environment_id and self.audience.environment_id and (
+            self.environment_id != self.audience.environment_id
+        ):
+            problems.append("audience environment must match the campaign environment")
         problems += self.audience.validate()
         problems += self.schedule.validate()
         problems += self.throttle.validate()
         problems += self.compliance.validate()
         if self.channel is not CampaignChannel.VOICE and not self.compliance.require_a2p_registration:
             problems.append("non-voice campaigns must require A2P registration")
+        return problems
+
+    def validate_binding(self) -> list[str]:
+        """The persistence contract: identity is tenant + environment + campaign.
+
+        Called by the service at every write boundary. ``validate()`` stays
+        lenient about ``environment_id`` so in-memory/legacy domain use keeps
+        working; a *persisted* campaign must always carry all three.
+        """
+        problems = self.validate()
+        if not self.environment_id:
+            problems.append("campaign requires environment_id")
+        if self.audience.environment_id and self.audience.environment_id != self.environment_id:
+            problems.append("audience environment must match the campaign environment")
         return problems
 
     def is_valid(self) -> bool:
@@ -200,6 +241,13 @@ class CampaignExecutionIntent:
     Creating an intent is **not** dialing. It only records "this lead is
     eligible and due"; the existing outbound mechanisms decide when and how to
     act. ``idempotency_key`` stops the same lead being queued twice.
+
+    Intent identity is ``tenant + environment + campaign + lead``. The
+    ``campaign_id`` is a database primary key bound to exactly one
+    tenant/environment pair (migration 0026), so the deterministic
+    ``intent_idempotency_key(campaign_id, lead_id)`` already implies the
+    environment; ``environment_id`` is carried explicitly so consumers can
+    enforce the boundary without a database round-trip.
     """
 
     id: str
@@ -210,6 +258,7 @@ class CampaignExecutionIntent:
     window_at: str = ""
     idempotency_key: str = ""
     reason_skipped: str = ""
+    environment_id: str = ""
 
     @property
     def skipped(self) -> bool:
@@ -220,6 +269,8 @@ class CampaignExecutionIntent:
         for field_name in ("id", "campaign_id", "tenant_id", "lead_id"):
             if not getattr(self, field_name):
                 problems.append(f"execution intent requires {field_name}")
+        if not self.environment_id and not self.skipped:
+            problems.append("execution intent requires environment_id")
         return problems
 
 
@@ -247,7 +298,14 @@ class CampaignMetrics:
 
 
 def intent_idempotency_key(campaign_id: str, lead_id: str) -> str:
-    """One campaign + one lead ⇒ one key, so re-planning never double-queues."""
+    """One campaign + one lead ⇒ one key, so re-planning never double-queues.
+
+    The persisted identity contract binds ``campaign_id`` (a primary key) to
+    exactly one tenant + environment pair, so the pair ``(campaign_id,
+    lead_id)`` already implies the environment; folding the environment
+    string in as well would change every key for the same logical work unit
+    without making it more unique.
+    """
     return stable_id(campaign_id, lead_id)
 
 

@@ -20,7 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.agent.errors import ProviderError
 from app.agent.llm_factory import LLMChoice
 from app.ai import circuit_breaker, costs, fallback, timeouts
-from app.ai.budget import admit, attribute_usage
+from app.ai.budget import admit, attribute_usage, reconcile, release
 from app.ai.guardrails.input import check as check_input
 from app.ai.guardrails.output import check as check_output
 from app.ai.models import (
@@ -166,10 +166,12 @@ async def govern(
     if not circuit_checked and not await circuit_breaker.allow_shared(choice.provider):
         raise GovernanceError("Provider circuit is open", code="provider_unavailable")
     deadline = timeouts.deadline_for(channel)
+    reserved_here = False
     if not budget_checked:
         budget = await admit(session, ctx.tenant, policy, tokens=tokens_estimate)
         if not budget.allowed:
             raise GovernanceError("AI budget denied the request", code="budget_denied")
+        reserved_here = budget.reason == "reserved"
     started = time.perf_counter()
     attempts = 0
     fallback_used = False
@@ -178,41 +180,56 @@ async def govern(
     executed = False
     tokens = 0
     status = "planned"
-    while attempts < timeouts.max_attempts(channel):
-        timeouts.assert_open(deadline)
-        attempts += 1
-        timeout_ms = timeouts.provider_timeout_ms(deadline, 800 if channel == "voice" else 5000)
-        if executor is None:
-            status = "executor_not_attached"
-            break
-        try:
-            produced = await executor(current, text, timeout_ms)
-            output_text = str(produced.get("text") or "")
-            tokens = int(produced.get("tokens") or 0)
-            if tokens < 0:
-                raise ValidationFailed("Executor returned a negative token count")
-            executed = True
-            status = "completed"
-            await circuit_breaker.record_success_shared(current.provider)
-            break
-        except fallback.NON_RETRYABLE:
-            await circuit_breaker.record_failure_shared(current.provider)
-            raise
-        except ProviderError as exc:
-            await circuit_breaker.record_failure_shared(current.provider)
-            if (
-                not allow_fallback
-                or not fallback.is_retryable(exc)
-                or attempts >= timeouts.max_attempts(channel)
-            ):
+    try:
+        while attempts < timeouts.max_attempts(channel):
+            timeouts.assert_open(deadline)
+            attempts += 1
+            timeout_ms = timeouts.provider_timeout_ms(deadline, 800 if channel == "voice" else 5000)
+            if executor is None:
+                status = "executor_not_attached"
+                break
+            try:
+                produced = await executor(current, text, timeout_ms)
+                output_text = str(produced.get("text") or "")
+                tokens = int(produced.get("tokens") or 0)
+                if tokens < 0:
+                    raise ValidationFailed("Executor returned a negative token count")
+                executed = True
+                status = "completed"
+                await circuit_breaker.record_success_shared(current.provider)
+                break
+            except fallback.NON_RETRYABLE:
+                await circuit_breaker.record_failure_shared(current.provider)
                 raise
-            nxt = fallback.next_candidate(current, policy, environment_kind=environment_kind)
-            if nxt is None:
+            except ProviderError as exc:
+                await circuit_breaker.record_failure_shared(current.provider)
+                if (
+                    not allow_fallback
+                    or not fallback.is_retryable(exc)
+                    or attempts >= timeouts.max_attempts(channel)
+                ):
+                    raise
+                nxt = fallback.next_candidate(current, policy, environment_kind=environment_kind)
+                if nxt is None:
+                    raise
+                current = nxt
+                fallback_used = True
+            except DeadlineExceeded:
                 raise
-            current = nxt
-            fallback_used = True
-        except DeadlineExceeded:
-            raise
+    except BaseException:
+        # The provider never produced a completion for this reservation. Give
+        # the admitted tokens back so a failing provider cannot permanently
+        # consume the tenant's ceiling.
+        if reserved_here:
+            await release(session, ctx.tenant_id, tokens_estimate)
+        raise
+    if reserved_here:
+        if executed:
+            await reconcile(
+                session, ctx.tenant_id, reserved=tokens_estimate, actual=tokens
+            )
+        else:
+            await release(session, ctx.tenant_id, tokens_estimate)
     checked = check_output(output_text, blocked_substrings=blocked_output)
     if not checked.allowed:
         output_text = checked.text
@@ -337,6 +354,12 @@ class LiveAuthorization:
     trace_id: str
     guardrail: str
     pii_kinds: tuple[str, ...]
+    #: True when ``admit`` reserved tokens against a configured ceiling for
+    #: this authorization. The caller that owns the invocation lifecycle
+    #: (``app.ai.runtime``) uses it to release on failure or reconcile to the
+    #: measured token count on success — without it a release could subtract
+    #: another concurrent call's live reservation.
+    budget_reserved: bool = False
 
 
 async def authorize_live(
@@ -363,7 +386,7 @@ async def authorize_live(
     production prompts are refused. A client tenant id or model preset cannot
     replace the authenticated selection.
     """
-    from app.ai.budget import admit_for_runtime
+    from app.ai.budget import admit_for_runtime, release as release_reservation
     from app.ai.context import RuntimeContext
     from app.ai.guardrails.input import enforce as enforce_input
     from app.ai.guardrails.pii import enforce as enforce_pii
@@ -446,11 +469,20 @@ async def authorize_live(
     )
     if not admission.provider_may_run:
         raise GovernanceError("AI budget denied the request", code="budget_denied")
-    assert_allowed(choice, policy, environment_kind=environment_kind)
-    if not await circuit_breaker.consult(choice.provider):
-        raise GovernanceError("Provider circuit is open", code="provider_unavailable")
-    deadline = timeouts.deadline_for(channel)
-    timeouts.assert_open(deadline)
+    reserved = admission.reason == "reserved"
+    try:
+        assert_allowed(choice, policy, environment_kind=environment_kind)
+        if not await circuit_breaker.consult(choice.provider):
+            raise GovernanceError("Provider circuit is open", code="provider_unavailable")
+        deadline = timeouts.deadline_for(channel)
+        timeouts.assert_open(deadline)
+    except BaseException:
+        # Routing, circuit and deadline can all refuse *after* admission has
+        # reserved tokens. The provider never ran, so the reservation goes
+        # back instead of permanently shrinking the tenant's ceiling.
+        if reserved:
+            await release_reservation(session, tenant.id, tokens_estimate)
+        raise
     budget = timeouts.invocation_budget(channel)
     return LiveAuthorization(
         choice=choice,
@@ -460,4 +492,5 @@ async def authorize_live(
         trace_id=started["trace_id"],
         guardrail=guardrail,
         pii_kinds=pii_kinds,
+        budget_reserved=reserved,
     )

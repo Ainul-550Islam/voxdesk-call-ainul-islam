@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import Lead, LeadStatus
 from app.integrations.crm import hooks as crm_hooks
-from app.leads.exceptions import ClaimConflict, InvalidTransition
+from app.leads.exceptions import ClaimConflict, InvalidTransition, LeadError, LeadNotFound
 from app.leads.models import LeadActivity, LeadStatusHistory
 from app.leads.repository import get_identity, next_history_sequence, touch
 
@@ -101,7 +101,11 @@ async def append_history(
     source: str,
     actor_id: uuid.UUID | None = None,
 ) -> LeadStatusHistory:
-    sequence = await next_history_sequence(session, lead.tenant_id, lead.id)
+    if lead.environment_id is None:
+        raise LeadError("Lead has no environment", code="missing_environment")
+    sequence = await next_history_sequence(
+        session, lead.tenant_id, lead.id, lead.environment_id
+    )
     row = LeadStatusHistory(
         lead_id=lead.id,
         tenant_id=lead.tenant_id,
@@ -127,8 +131,21 @@ async def transition(
     source: str,
     actor_id: uuid.UUID | None = None,
     expected: LeadStatus | None = None,
+    environment_id: uuid.UUID | None = None,
 ) -> Lead:
-    """Compare-and-set the status. A stale reader loses instead of overwriting."""
+    """Compare-and-set the status. A stale reader loses instead of overwriting.
+
+    This is the only legitimate lead-status state machine. The lead is
+    mutated inside its own tenant/environment scope: the guarded UPDATE
+    matches on ``tenant_id`` and ``environment_id`` as well as the believed
+    current status, and callers that hold an explicit environment can pass
+    ``environment_id`` to assert the lead was loaded from that same
+    environment before anything is written.
+    """
+    if lead.environment_id is None:
+        raise LeadError("Lead has no environment", code="missing_environment")
+    if environment_id is not None and lead.environment_id != environment_id:
+        raise LeadNotFound()
     target, alias = resolve_status(target_raw)
     believed = expected if expected is not None else lead.status
     assert_allowed(believed, target)
@@ -158,7 +175,7 @@ async def transition(
         source=source,
         actor_id=actor_id,
     )
-    identity = await get_identity(session, lead.tenant_id, lead.id)
+    identity = await get_identity(session, lead.tenant_id, lead.id, lead.environment_id)
     if identity is not None:
         touch(identity)
     await crm_hooks.on_lead_updated(

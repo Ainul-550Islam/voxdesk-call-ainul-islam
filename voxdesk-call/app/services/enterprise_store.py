@@ -27,6 +27,29 @@ project ships (Caddy → one API container). Two API *processes* serving the sam
 tenant would need row-level locking (`SELECT … FOR UPDATE`) or a queue; that is
 a follow-up, not a claim made here.
 
+Batch 07 boundary (durable jobs + transactional outbox)
+-------------------------------------------------------
+This bridge is **not** the authoritative source for durable job or outbox
+event state, and it must never become one. That state lives in the ``jobs``
+and ``outbox_events`` tables and is read and written *directly* against the
+database by ``app.jobs.queue`` / ``app.outbox`` with guarded, multi-worker-
+safe conditional updates (leases, claims, idempotency keys) — precisely the
+machinery a hydrate-and-flush overlay cannot provide, because the overlay
+exists per request and per process while jobs are claimed across processes.
+
+So the division of labour is explicit:
+
+* automation / notification / inbox registries: unchanged compatibility
+  behaviour through this module (migrating them onto the durable platform is
+  deliberately *not* part of Batch 07);
+* durable jobs and outbox events: DB-authoritative, no overlay, no
+  ``_ROWS`` entry, no in-process lock as the correctness mechanism.
+
+``_reject_durable_state`` below enforces that boundary at flush time: a
+``DurableJob`` or ``OutboxEvent`` row appearing in the overlay raises
+instead of being written through this bridge, so a future change cannot
+quietly make process memory authoritative for durable execution again.
+
 Usage from a route (one line, see ``app/api/*_routes.py``)::
 
     async def endpoint(..., _durable: None = Depends(durable_state)):
@@ -52,10 +75,12 @@ from app.auth.dependencies import TenantContext, get_context
 from app.db.models import (
     Automation as AutomationRow,
     AutomationRun as AutomationRunRow,
+    DurableJob,
     InboxThreadState as InboxRow,
     NotificationRow,
     NotificationTemplateRow,
 )
+from app.outbox.models import OutboxEvent
 from app.db.session import get_session
 from app.domain.automation_models import (
     AutomationDefinition,
@@ -163,10 +188,30 @@ async def _load(session: AsyncSession, tenant_id: str) -> None:
         if state:
             inbox_service._OVERLAY.setdefault(tenant_id, {})[str(row.call_id)] = state
 
+    _reject_durable_state(rows)
     _ROWS[tenant_id] = rows
 
 
 # -------------------------------------------------------------------- flush ---
+
+
+def _reject_durable_state(rows: dict[str, dict]) -> None:
+    """Batch 07 boundary guard: durable job/outbox rows never ride this bridge.
+
+    The overlay is a per-request, per-process view; ``jobs``/``outbox_events``
+    are claimed and acknowledged across processes with guarded conditional
+    updates. Writing them through hydrate-and-flush would make process memory
+    authoritative for durable execution — the exact regression this batch
+    exists to prevent — so it raises instead.
+    """
+    for group in rows.values():
+        for row in group.values():
+            if isinstance(row, (DurableJob, OutboxEvent)):
+                raise RuntimeError(
+                    "durable job/outbox state must be written through "
+                    "app.jobs/app.outbox (DB-authoritative), not the "
+                    "enterprise_store overlay"
+                )
 
 
 async def _flush(session: AsyncSession, tenant_id: str) -> None:
@@ -175,6 +220,7 @@ async def _flush(session: AsyncSession, tenant_id: str) -> None:
         tenant_id,
         {"automations": {}, "runs": {}, "templates": {}, "notifications": {}, "inbox": {}},
     )
+    _reject_durable_state(rows)
 
     for definition in automation_service._REGISTRY.get(tenant_id, {}).values():
         row = rows["automations"].get(definition.id)

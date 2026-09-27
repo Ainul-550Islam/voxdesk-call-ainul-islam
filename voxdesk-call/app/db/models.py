@@ -812,12 +812,40 @@ class Appointment(Base):
 
 
 class Campaign(Base):
-    """A batch of outbound calls: cold-call list, follow-up sweep, reminder run."""
+    """A batch of outbound calls: cold-call list, follow-up sweep, reminder run.
+
+    Environment-scoped like ``Lead``, ``Call`` and ``Appointment`` (Batch 06):
+    a campaign belongs to exactly one tenant + environment pair, and the
+    composite foreign key below makes a campaign that points at another
+    tenant's environment impossible at the database level. A campaign may only
+    ever target leads and segments from its own environment — the dialer
+    (``app/telephony/outbound.py``) and the campaign service both filter on
+    ``environment_id``, and the ``before_insert`` hook at the bottom of this
+    module resolves the environment for legacy inserts through the *existing*
+    ``app.environments.resource_binding`` scope machinery (explicit id → the
+    tenant's active production environment; closed environments and
+    cross-tenant ids fail closed). ``environment_id`` is immutable after
+    insert, enforced by the matching ``before_update`` hook.
+    """
 
     __tablename__ = "campaigns"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["tenant_id", "environment_id"],
+            ["environments.tenant_id", "environments.id"],
+            name="fk_campaigns_tenant_environment",
+        ),
+        Index("ix_campaigns_tenant_environment", "tenant_id", "environment_id"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
     tenant_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tenants.id"), index=True)
+    environment_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("environments.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
     name: Mapped[str] = mapped_column(String(200))
     goal: Mapped[str] = mapped_column(
         String(32), default="qualify"
@@ -3009,13 +3037,43 @@ def _ensure_legacy_membership(mapper, connection, target) -> None:
 
 
 class DurableJob(Base):
-    """PostgreSQL-authoritative background job. Not a Python queue."""
+    """PostgreSQL-authoritative background job. Not a Python queue.
+
+    Batch 07 (durable async jobs) extends this row — the single job
+    source-of-truth — instead of adding a second job table:
+
+    * ``priority`` orders claiming (0=high, 1=normal, 2=low; see
+      ``app.jobs.types.JobPriority``). Claim ordering also ages low-priority
+      rows forward so they can never starve behind a stream of high-priority
+      work (``app.jobs.queue``).
+    * ``cancel_requested`` is the durable cancellation intent for a *running*
+      job. A queued job is cancelled by moving it straight to ``cancelled``;
+      a running job cannot be yanked mid-handler, so the flag is set and the
+      worker/reaper finalise the cancellation at the next safe point. The
+      winning acknowledgement checks the flag, so a cancel that lands while
+      the handler runs still beats a late success.
+
+    Lease semantics: ``worker_id`` + ``leased_until`` are the lease. Only the
+    holder inside the window may acknowledge (guarded updates in
+    ``app.jobs.queue``); an expired lease is reclaimed by
+    ``app.jobs.heartbeat.recover_abandoned``. ``status`` values live in
+    ``app.jobs.models.JobState`` (``quarantined`` joins ``dead_letter`` as an
+    operator-held DLQ state).
+    """
 
     __tablename__ = "jobs"
     __table_args__ = (
         UniqueConstraint("tenant_id", "idempotency_key", name="uq_jobs_tenant_idempotency"),
         Index("ix_jobs_claim", "status", "available_at"),
         Index("ix_jobs_tenant_environment", "tenant_id", "environment_id"),
+        # Batch 07 claim/lease/inspection indexes. ix_jobs_claim_priority
+        # serves the priority-aware claim order; ix_jobs_leased_until serves
+        # the abandoned-lease reaper; the tenant composites serve the
+        # operator APIs and per-tenant concurrency counts.
+        Index("ix_jobs_claim_priority", "status", "priority", "available_at"),
+        Index("ix_jobs_leased_until", "leased_until"),
+        Index("ix_jobs_tenant_status", "tenant_id", "status"),
+        Index("ix_jobs_tenant_environment_status", "tenant_id", "environment_id", "status"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
@@ -3031,6 +3089,12 @@ class DurableJob(Base):
     job_type: Mapped[str] = mapped_column(String(64), nullable=False)
     payload: Mapped[dict] = mapped_column(JSON, default=dict)
     status: Mapped[str] = mapped_column(String(32), default="queued", nullable=False)
+    #: Batch 07: claim ordering. 0=high, 1=normal, 2=low. Aged rows are
+    #: promoted ahead of newer high-priority work so ``low`` cannot starve.
+    priority: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    #: Batch 07: durable cancellation intent for a running job. Cleared only
+    #: by the transition that finalises the cancellation.
+    cancel_requested: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     attempt_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     max_attempts: Mapped[int] = mapped_column(Integer, default=5, nullable=False)
     replay_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
@@ -3247,6 +3311,46 @@ from app.telephony import qos as telephony_qos  # noqa: E402,F401
 from app.contact_center import models as contact_center_models  # noqa: E402,F401
 from app.qa import models as qa_models  # noqa: E402,F401
 from app.leads import models as lead_models  # noqa: E402,F401
+# Batch 07: the transactional outbox owns its ORM in ``app.outbox.models``
+# (same pattern as ``app.leads.models``). Imported last so ``Base.metadata``
+# carries ``outbox_events`` for create_all and Alembic autogenerate alike.
+from app.outbox import models as outbox_models  # noqa: E402,F401
 from app.environments.resource_binding import register as _register_resource_binding  # noqa: E402
 
 _register_resource_binding()
+
+
+@event.listens_for(Campaign, "before_insert")
+def _assign_campaign_scope(mapper, connection, target) -> None:
+    """Bind every Campaign insert to a tenant-owned, writable environment.
+
+    This is the *same* generic scope machinery ``app.environments.
+    resource_binding.register()`` attaches to leads, calls, appointments and
+    the other environment-scoped tables — reused, not reimplemented, so there
+    is exactly one resolution rule set in the codebase:
+
+    1. an explicit ``environment_id`` is validated (same tenant, not
+       suspended/archived — anything else fails closed);
+    2. otherwise the tenant's active production environment is used;
+    3. a tenant with no safe production environment is rejected rather than
+       having an environment invented for it.
+
+    Legacy callers that still construct ``Campaign(tenant_id=..., ...)`` keep
+    working exactly like legacy ``Lead(...)`` inserts do.
+    """
+    from app.environments.resource_binding import _assign_scope
+
+    _assign_scope(mapper, connection, target)
+
+
+@event.listens_for(Campaign, "before_update")
+def _freeze_campaign_scope(mapper, connection, target) -> None:
+    """A campaign can never move between environments after creation.
+
+    Reuses the same immutability check the other environment-scoped models
+    get from ``resource_binding``; only the wiring lives here because the
+    registry's model table is owned by that module.
+    """
+    from app.environments.resource_binding import _freeze_scope
+
+    _freeze_scope(mapper, connection, target)

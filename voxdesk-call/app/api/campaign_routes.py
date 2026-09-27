@@ -1,4 +1,4 @@
-"""Campaign API (Batch 01 enterprise expansion).
+"""Campaign API (Batch 01 enterprise expansion; Batch 06 environment scope).
 
 Tenant-scoped campaign management over ``app.services.campaign_service``.
 The cardinal rule, stated once: **no endpoint in this file places a call.**
@@ -11,11 +11,24 @@ The cardinal rule, stated once: **no endpoint in this file places a call.**
 * RBAC: ``CAMPAIGN_READ`` (viewer+) to read, ``CAMPAIGN_WRITE`` (manager+) to
   mutate, ``CAMPAIGN_RUN`` (manager+) to produce an execution plan.
 
+Batch 06: every endpoint resolves the *effective environment* through the
+existing resolution stack (``app.environments.context_resolution``): an
+explicit authorized ``environment_id`` → the caller's server-side selection →
+the tenant's active default production environment. A client-supplied
+environment belonging to another tenant fails closed (404); a client-supplied
+``tenant_id`` is never trusted — identity comes from ``TenantContext``.
+Suspended/archived environments refuse campaign writes. Campaign responses
+include ``environment_id`` as a backward-compatible added field; every URL
+that existed before this batch still exists and behaves the same for callers
+that never mention environments.
+
 Route registration (``app/main.py``) is outside the allowed file set for this
 batch and is reported as an integration dependency.
 """
 
 from __future__ import annotations
+
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
@@ -36,7 +49,10 @@ from app.domain.campaign_models import (
     Throttle,
 )
 from app.domain.agent_models import stable_id
+from app.environments.context_resolution import resolve_environment
+from app.environments.resource_binding import assert_environment_accepts_write
 from app.services import campaign_service
+from app.tenancy.isolation import HierarchyError, to_http
 
 router = APIRouter(prefix="/api/campaigns", tags=["campaigns"])
 
@@ -62,6 +78,10 @@ class CampaignCreateRequest(_Strict):
     calls_per_minute: int = 2
     daily_limit: int = 200
     max_attempts_per_lead: int = 3
+    #: Optional explicit environment. Omitting it keeps the pre-Batch-06
+    #: behaviour (selected environment, else the default production one).
+    #: An environment from another tenant is rejected, never substituted.
+    environment_id: uuid.UUID | None = None
 
 
 class CampaignUpdateRequest(CampaignCreateRequest):
@@ -71,6 +91,7 @@ class CampaignUpdateRequest(CampaignCreateRequest):
 class CampaignOut(_Strict):
     id: str
     tenant_id: str
+    environment_id: str
     name: str
     goal: str
     channel: str
@@ -117,19 +138,39 @@ def _enum_of(enum_cls, value: str, default):
         return default
 
 
-def _build_definition(tenant_id: str, campaign_id: str,
+async def _effective_environment(ctx: TenantContext, session: AsyncSession, explicit, *, write: bool):
+    """Existing resolution stack: explicit → server-side selection → default.
+
+    ``resolve_environment`` already fails closed on a cross-tenant explicit
+    id (``BoundaryDenied``) and returns ``None`` when the tenant somehow has
+    no environment at all, which is also refused here. Write operations
+    additionally honour the suspended/archived gate.
+    """
+    environment = await resolve_environment(
+        session, user=ctx.user, tenant=ctx.tenant, environment_id=explicit
+    )
+    if environment is None:
+        raise HTTPException(status_code=404, detail="environment not found")
+    if write:
+        assert_environment_accepts_write(environment)
+    return environment
+
+
+def _build_definition(tenant_id: str, campaign_id: str, environment_id: str,
                       payload: CampaignCreateRequest) -> CampaignDefinition:
     return CampaignDefinition(
         id=campaign_id,
         tenant_id=tenant_id,
         name=payload.name,
+        environment_id=environment_id,
         goal=_enum_of(CampaignGoal, payload.goal, CampaignGoal.QUALIFY),
         channel=_enum_of(CampaignChannel, payload.channel, CampaignChannel.VOICE),
         script_prompt=payload.script_prompt,
         opening_line=payload.opening_line,
         audience=Audience(tenant_id=tenant_id,
                           segment_ids=tuple(payload.segment_ids),
-                          lead_ids=tuple(payload.lead_ids)),
+                          lead_ids=tuple(payload.lead_ids),
+                          environment_id=environment_id),
         schedule=CampaignSchedule(
             daily_start=_parse_hhmm(payload.daily_start, 9, 0),
             daily_end=_parse_hhmm(payload.daily_end, 20, 0),
@@ -160,6 +201,7 @@ def _out(definition: CampaignDefinition) -> CampaignOut:
     return CampaignOut(
         id=definition.id,
         tenant_id=definition.tenant_id,
+        environment_id=definition.environment_id,
         name=definition.name,
         goal=definition.goal.value,
         channel=definition.channel.value,
@@ -197,34 +239,64 @@ async def create_campaign(
     ctx: TenantContext = Depends(require_permission(Permission.CAMPAIGN_WRITE)),
     session: AsyncSession = Depends(get_session),
 ):
-    provisional_id = stable_id(str(ctx.tenant_id), payload.name)
-    definition = _build_definition(str(ctx.tenant_id), provisional_id, payload)
     try:
-        row = await campaign_service.create_campaign(session, ctx.tenant, definition)
+        environment = await _effective_environment(
+            ctx, session, payload.environment_id, write=True
+        )
+    except HierarchyError as exc:
+        raise to_http(exc) from None
+    provisional_id = stable_id(str(ctx.tenant_id), payload.name)
+    definition = _build_definition(
+        str(ctx.tenant_id), provisional_id, str(environment.id), payload
+    )
+    try:
+        row = await campaign_service.create_campaign(
+            session, ctx.tenant, definition, environment_id=environment.id
+        )
     except BadRequestError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from None
-    saved = await campaign_service.get_campaign(session, ctx.tenant, str(row.id))
+    except HierarchyError as exc:
+        raise to_http(exc) from None
+    saved = await campaign_service.get_campaign(
+        session, ctx.tenant, str(row.id), environment_id=environment.id
+    )
     return _out(saved)
 
 
 @router.get("", response_model=list[CampaignOut])
 async def list_campaigns(
+    environment_id: uuid.UUID | None = Query(default=None),
     ctx: TenantContext = Depends(require_permission(Permission.CAMPAIGN_READ)),
     session: AsyncSession = Depends(get_session),
 ):
-    return [_out(d) for d in await campaign_service.list_campaigns(session, ctx.tenant)]
+    try:
+        environment = await _effective_environment(ctx, session, environment_id, write=False)
+        definitions = await campaign_service.list_campaigns(
+            session, ctx.tenant, environment_id=environment.id
+        )
+    except NotFoundError:
+        raise HTTPException(status_code=404, detail="campaign not found") from None
+    except HierarchyError as exc:
+        raise to_http(exc) from None
+    return [_out(d) for d in definitions]
 
 
 @router.get("/{campaign_id}", response_model=CampaignOut)
 async def get_campaign(
     campaign_id: str,
+    environment_id: uuid.UUID | None = Query(default=None),
     ctx: TenantContext = Depends(require_permission(Permission.CAMPAIGN_READ)),
     session: AsyncSession = Depends(get_session),
 ):
     try:
-        return _out(await campaign_service.get_campaign(session, ctx.tenant, campaign_id))
+        environment = await _effective_environment(ctx, session, environment_id, write=False)
+        return _out(await campaign_service.get_campaign(
+            session, ctx.tenant, campaign_id, environment_id=environment.id
+        ))
     except NotFoundError:
         raise HTTPException(status_code=404, detail="campaign not found") from None
+    except HierarchyError as exc:
+        raise to_http(exc) from None
 
 
 @router.patch("/{campaign_id}", response_model=CampaignOut)
@@ -234,96 +306,145 @@ async def update_campaign(
     ctx: TenantContext = Depends(require_permission(Permission.CAMPAIGN_WRITE)),
     session: AsyncSession = Depends(get_session),
 ):
-    definition = _build_definition(str(ctx.tenant_id), campaign_id, payload)
     try:
-        updated = await campaign_service.update_campaign(session, ctx.tenant, campaign_id, definition)
+        environment = await _effective_environment(
+            ctx, session, payload.environment_id, write=True
+        )
+        definition = _build_definition(
+            str(ctx.tenant_id), campaign_id, str(environment.id), payload
+        )
+        updated = await campaign_service.update_campaign(
+            session, ctx.tenant, campaign_id, definition, environment_id=environment.id
+        )
     except NotFoundError:
         raise HTTPException(status_code=404, detail="campaign not found") from None
     except BadRequestError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from None
+    except HierarchyError as exc:
+        raise to_http(exc) from None
     return _out(updated)
 
 
 @router.post("/{campaign_id}/schedule", response_model=CampaignOut)
 async def schedule_campaign(
     campaign_id: str,
+    environment_id: uuid.UUID | None = Query(default=None),
     ctx: TenantContext = Depends(require_permission(Permission.CAMPAIGN_WRITE)),
     session: AsyncSession = Depends(get_session),
 ):
     try:
-        return _out(await campaign_service.schedule_campaign(session, ctx.tenant, campaign_id))
+        environment = await _effective_environment(ctx, session, environment_id, write=True)
+        return _out(await campaign_service.schedule_campaign(
+            session, ctx.tenant, campaign_id, environment_id=environment.id
+        ))
     except NotFoundError:
         raise HTTPException(status_code=404, detail="campaign not found") from None
     except BadRequestError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from None
+    except HierarchyError as exc:
+        raise to_http(exc) from None
 
 
 @router.post("/{campaign_id}/pause", response_model=CampaignOut)
 async def pause_campaign(
     campaign_id: str,
+    environment_id: uuid.UUID | None = Query(default=None),
     ctx: TenantContext = Depends(require_permission(Permission.CAMPAIGN_WRITE)),
     session: AsyncSession = Depends(get_session),
 ):
     try:
-        return _out(await campaign_service.pause_campaign(session, ctx.tenant, campaign_id))
+        environment = await _effective_environment(ctx, session, environment_id, write=True)
+        return _out(await campaign_service.pause_campaign(
+            session, ctx.tenant, campaign_id, environment_id=environment.id
+        ))
     except NotFoundError:
         raise HTTPException(status_code=404, detail="campaign not found") from None
     except BadRequestError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from None
+    except HierarchyError as exc:
+        raise to_http(exc) from None
 
 
 @router.post("/{campaign_id}/resume", response_model=CampaignOut)
 async def resume_campaign(
     campaign_id: str,
+    environment_id: uuid.UUID | None = Query(default=None),
     ctx: TenantContext = Depends(require_permission(Permission.CAMPAIGN_WRITE)),
     session: AsyncSession = Depends(get_session),
 ):
     try:
-        return _out(await campaign_service.resume_campaign(session, ctx.tenant, campaign_id))
+        environment = await _effective_environment(ctx, session, environment_id, write=True)
+        return _out(await campaign_service.resume_campaign(
+            session, ctx.tenant, campaign_id, environment_id=environment.id
+        ))
     except NotFoundError:
         raise HTTPException(status_code=404, detail="campaign not found") from None
     except BadRequestError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from None
+    except HierarchyError as exc:
+        raise to_http(exc) from None
 
 
 @router.post("/{campaign_id}/cancel", response_model=CampaignOut)
 async def cancel_campaign(
     campaign_id: str,
+    environment_id: uuid.UUID | None = Query(default=None),
     ctx: TenantContext = Depends(require_permission(Permission.CAMPAIGN_WRITE)),
     session: AsyncSession = Depends(get_session),
 ):
     try:
-        return _out(await campaign_service.cancel_campaign(session, ctx.tenant, campaign_id))
+        environment = await _effective_environment(ctx, session, environment_id, write=True)
+        return _out(await campaign_service.cancel_campaign(
+            session, ctx.tenant, campaign_id, environment_id=environment.id
+        ))
     except NotFoundError:
         raise HTTPException(status_code=404, detail="campaign not found") from None
     except BadRequestError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from None
+    except HierarchyError as exc:
+        raise to_http(exc) from None
 
 
 @router.get("/{campaign_id}/audience", response_model=dict)
 async def audience_preview(
     campaign_id: str,
+    environment_id: uuid.UUID | None = Query(default=None),
     ctx: TenantContext = Depends(require_permission(Permission.CAMPAIGN_READ)),
     session: AsyncSession = Depends(get_session),
 ):
     try:
-        definition = await campaign_service.get_campaign(session, ctx.tenant, campaign_id)
+        environment = await _effective_environment(ctx, session, environment_id, write=False)
+        definition = await campaign_service.get_campaign(
+            session, ctx.tenant, campaign_id, environment_id=environment.id
+        )
+        return await campaign_service.validate_audience(
+            session, ctx.tenant, definition, environment_id=environment.id
+        )
     except NotFoundError:
         raise HTTPException(status_code=404, detail="campaign not found") from None
-    return await campaign_service.validate_audience(session, ctx.tenant, definition)
+    except HierarchyError as exc:
+        raise to_http(exc) from None
 
 
 @router.get("/{campaign_id}/eligibility", response_model=EligibilityOut)
 async def eligibility_preview(
     campaign_id: str,
+    environment_id: uuid.UUID | None = Query(default=None),
     ctx: TenantContext = Depends(require_permission(Permission.CAMPAIGN_READ)),
     session: AsyncSession = Depends(get_session),
 ):
     try:
-        definition = await campaign_service.get_campaign(session, ctx.tenant, campaign_id)
+        environment = await _effective_environment(ctx, session, environment_id, write=False)
+        definition = await campaign_service.get_campaign(
+            session, ctx.tenant, campaign_id, environment_id=environment.id
+        )
+        intents = await campaign_service.execution_plan(
+            session, ctx.tenant, definition, limit=500
+        )
     except NotFoundError:
         raise HTTPException(status_code=404, detail="campaign not found") from None
-    intents = await campaign_service.execution_plan(session, ctx.tenant, definition, limit=500)
+    except HierarchyError as exc:
+        raise to_http(exc) from None
     skipped = {}
     eligible = 0
     for intent in intents:
@@ -338,55 +459,81 @@ async def eligibility_preview(
 @router.get("/{campaign_id}/execution-status", response_model=CampaignOut)
 async def execution_status(
     campaign_id: str,
+    environment_id: uuid.UUID | None = Query(default=None),
     ctx: TenantContext = Depends(require_permission(Permission.CAMPAIGN_READ)),
     session: AsyncSession = Depends(get_session),
 ):
     try:
-        return _out(await campaign_service.get_campaign(session, ctx.tenant, campaign_id))
+        environment = await _effective_environment(ctx, session, environment_id, write=False)
+        return _out(await campaign_service.get_campaign(
+            session, ctx.tenant, campaign_id, environment_id=environment.id
+        ))
     except NotFoundError:
         raise HTTPException(status_code=404, detail="campaign not found") from None
+    except HierarchyError as exc:
+        raise to_http(exc) from None
 
 
 @router.post("/{campaign_id}/plan", response_model=list[ExecutionIntentOut])
 async def execution_plan(
     campaign_id: str,
     limit: int = Query(default=100, ge=1, le=1000),
+    environment_id: uuid.UUID | None = Query(default=None),
     ctx: TenantContext = Depends(require_permission(Permission.CAMPAIGN_RUN)),
     session: AsyncSession = Depends(get_session),
 ):
     try:
-        definition = await campaign_service.get_campaign(session, ctx.tenant, campaign_id)
+        environment = await _effective_environment(ctx, session, environment_id, write=False)
+        definition = await campaign_service.get_campaign(
+            session, ctx.tenant, campaign_id, environment_id=environment.id
+        )
+        intents = await campaign_service.execution_plan(
+            session, ctx.tenant, definition, limit=limit
+        )
     except NotFoundError:
         raise HTTPException(status_code=404, detail="campaign not found") from None
-    intents = await campaign_service.execution_plan(session, ctx.tenant, definition, limit=limit)
+    except HierarchyError as exc:
+        raise to_http(exc) from None
     return [_intent_out(i) for i in intents]
 
 
 @router.get("/{campaign_id}/results", response_model=ResultsOut)
 async def campaign_results(
     campaign_id: str,
+    environment_id: uuid.UUID | None = Query(default=None),
     ctx: TenantContext = Depends(require_permission(Permission.CAMPAIGN_READ)),
     session: AsyncSession = Depends(get_session),
 ):
     try:
-        definition = await campaign_service.get_campaign(session, ctx.tenant, campaign_id)
+        environment = await _effective_environment(ctx, session, environment_id, write=False)
+        definition = await campaign_service.get_campaign(
+            session, ctx.tenant, campaign_id, environment_id=environment.id
+        )
+        results = await campaign_service.aggregate_results(session, ctx.tenant, definition)
     except NotFoundError:
         raise HTTPException(status_code=404, detail="campaign not found") from None
-    results = await campaign_service.aggregate_results(session, ctx.tenant, definition)
+    except HierarchyError as exc:
+        raise to_http(exc) from None
     return ResultsOut(metrics=results["metrics"], eligibility=results["eligibility"])
 
 
 @router.get("/{campaign_id}/kpis", response_model=dict)
 async def campaign_kpis(
     campaign_id: str,
+    environment_id: uuid.UUID | None = Query(default=None),
     ctx: TenantContext = Depends(require_permission(Permission.CAMPAIGN_READ)),
     session: AsyncSession = Depends(get_session),
 ):
     try:
-        definition = await campaign_service.get_campaign(session, ctx.tenant, campaign_id)
+        environment = await _effective_environment(ctx, session, environment_id, write=False)
+        definition = await campaign_service.get_campaign(
+            session, ctx.tenant, campaign_id, environment_id=environment.id
+        )
+        metrics = await campaign_service.progress(session, ctx.tenant, definition)
     except NotFoundError:
         raise HTTPException(status_code=404, detail="campaign not found") from None
-    metrics = await campaign_service.progress(session, ctx.tenant, definition)
+    except HierarchyError as exc:
+        raise to_http(exc) from None
     return {"total_leads": metrics.total_leads, "attempted": metrics.attempted,
             "conversions": metrics.conversions, "dnc_skipped": metrics.dnc_skipped,
             "failed": metrics.failed}

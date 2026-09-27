@@ -126,6 +126,17 @@ class Schedule:
 
 @dataclass(frozen=True)
 class Campaign:
+    """The dispatch-engine view of a campaign.
+
+    ``environment_id`` (Batch 06) carries the environment the persisted
+    campaign row is bound to. The engine stays pure: when it is set, every
+    lead handed to :func:`dispatch` must carry the same environment or it is
+    skipped with :data:`REASON_ENVIRONMENT` — the planner can never produce
+    an intent for a lead from another environment. An empty value means the
+    caller is using the engine standalone (no persisted identity yet), which
+    keeps the pre-Batch-06 behaviour for pure-domain use.
+    """
+
     id: str
     tenant_id: str
     name: str
@@ -134,6 +145,7 @@ class Campaign:
     throttle: Throttle = field(default_factory=Throttle)
     compliance: ComplianceGate = field(default_factory=ComplianceGate)
     state: str = DRAFT
+    environment_id: str = ""
 
     def validate(self) -> list[str]:
         problems: list[str] = []
@@ -181,17 +193,29 @@ REASON_DNC = "dnc"
 REASON_WINDOW = "outside_call_window"
 REASON_ATTEMPT_LIMIT = "attempt_limit"
 REASON_DAILY_LIMIT = "daily_limit"
+REASON_ENVIRONMENT = "environment_mismatch"
 
 
 def intent_key(campaign_id: str, lead_id: str) -> str:
-    """One campaign + one lead ⇒ one key, so re-planning never double-queues."""
+    """One campaign + one lead ⇒ one key, so re-planning never double-queues.
+
+    The persisted identity contract binds a campaign id to exactly one
+    tenant + environment pair (migration 0026), so ``(campaign_id, lead_id)``
+    already implies the environment; the intent itself carries
+    ``environment_id`` explicitly for consumers that enforce the boundary.
+    """
     return _stable_id(campaign_id, lead_id)
 
 
 @dataclass(frozen=True)
 class Intent:
     """A single, safe unit of work the outbound layer MAY pick up later.
-    Creating one is not dialing — it only records eligibility."""
+    Creating one is not dialing — it only records eligibility.
+
+    Intent identity is ``tenant + environment + campaign + lead``; the
+    environment rides along explicitly (Batch 06) so no consumer has to
+    trust that the campaign id was resolved in the right scope.
+    """
 
     campaign_id: str
     tenant_id: str
@@ -199,6 +223,7 @@ class Intent:
     channel: str
     idempotency_key: str = ""
     reason_skipped: str = ""
+    environment_id: str = ""
 
     @property
     def skipped(self) -> bool:
@@ -232,6 +257,7 @@ class CampaignMetrics:
     window_skipped: int = 0
     attempt_limit_skipped: int = 0
     daily_limit_skipped: int = 0
+    environment_skipped: int = 0
 
 
 def dispatch(
@@ -242,10 +268,17 @@ def dispatch(
 ) -> tuple[tuple[Intent, ...], CampaignMetrics]:
     """Decide, per lead, whether it is due for a call — and why not.
 
-    Checks run in a fixed order (DNC, window, attempt limit, daily limit) so
-    the reason recorded is the *first* thing that blocked the lead, and the
-    counters always add up to ``total_leads``. Each decision is deterministic
-    in ``(campaign, leads, state, now)``.
+    Checks run in a fixed order (environment, DNC, window, attempt limit,
+    daily limit) so the reason recorded is the *first* thing that blocked
+    the lead, and the counters always add up to ``total_leads``. Each
+    decision is deterministic in ``(campaign, leads, state, now)``.
+
+    The environment gate (Batch 06) is fail-closed: when the campaign carries
+    an environment identity, a lead whose ``environment_id`` is missing or
+    different can never produce an actionable intent — cross-environment
+    dialing is impossible from the planner, before any compliance check even
+    runs. The existing DNC/window/attempt/daily-limit ordering is preserved
+    exactly for leads that pass the scope gate.
     """
     problems = campaign.validate()
     if problems:
@@ -258,35 +291,49 @@ def dispatch(
         lead_id = str(lead["id"])
         key = intent_key(campaign.id, lead_id)
 
+        if campaign.environment_id and str(
+            lead.get("environment_id") or ""
+        ) != campaign.environment_id:
+            metrics = replace(metrics, environment_skipped=metrics.environment_skipped + 1)
+            intents.append(Intent(campaign.id, campaign.tenant_id, lead_id,
+                                  campaign.channel, key, REASON_ENVIRONMENT,
+                                  campaign.environment_id))
+            continue
+
         if campaign.compliance.require_dnc_check and lead.get("dnc"):
             metrics = replace(metrics, dnc_skipped=metrics.dnc_skipped + 1)
             intents.append(Intent(campaign.id, campaign.tenant_id, lead_id,
-                                  campaign.channel, key, REASON_DNC))
+                                  campaign.channel, key, REASON_DNC,
+                                  campaign.environment_id))
             continue
 
         if campaign.compliance.require_call_window and not is_within_window(now, campaign.schedule):
             metrics = replace(metrics, window_skipped=metrics.window_skipped + 1)
             intents.append(Intent(campaign.id, campaign.tenant_id, lead_id,
-                                  campaign.channel, key, REASON_WINDOW))
+                                  campaign.channel, key, REASON_WINDOW,
+                                  campaign.environment_id))
             continue
 
         if (campaign.compliance.require_attempt_limit
                 and state.attempts_for(lead_id) >= campaign.throttle.max_attempts_per_lead):
             metrics = replace(metrics, attempt_limit_skipped=metrics.attempt_limit_skipped + 1)
             intents.append(Intent(campaign.id, campaign.tenant_id, lead_id,
-                                  campaign.channel, key, REASON_ATTEMPT_LIMIT))
+                                  campaign.channel, key, REASON_ATTEMPT_LIMIT,
+                                  campaign.environment_id))
             continue
 
         if (campaign.compliance.require_daily_limit
                 and state.daily_calls_today >= campaign.throttle.daily_limit):
             metrics = replace(metrics, daily_limit_skipped=metrics.daily_limit_skipped + 1)
             intents.append(Intent(campaign.id, campaign.tenant_id, lead_id,
-                                  campaign.channel, key, REASON_DAILY_LIMIT))
+                                  campaign.channel, key, REASON_DAILY_LIMIT,
+                                  campaign.environment_id))
             continue
 
         state.consume(lead_id)
         metrics = replace(metrics, attempted=metrics.attempted + 1)
         intents.append(Intent(campaign.id, campaign.tenant_id, lead_id,
-                              campaign.channel, key, ""))
+                              campaign.channel, key, "",
+                              campaign.environment_id))
 
     return tuple(intents), metrics

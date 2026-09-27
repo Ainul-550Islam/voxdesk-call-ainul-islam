@@ -60,6 +60,16 @@ RETENTION_INTERVAL_SECONDS = 86400
 #: Read-only counts, so a minute is cheap and keeps the dashboard/alert current.
 STUCK_SWEEP_INTERVAL_SECONDS = 60
 
+#: Batch 07 durable job platform. The worker cycle is cheap when the queue is
+#: empty (one claim query) and drains back-to-back while work exists, so the
+#: interval only bounds the idle poll.
+JOBS_INTERVAL_SECONDS = 10
+
+#: Batch 07 outbox dispatch: turning due ``outbox_events`` rows into durable
+#: delivery jobs. Delivery itself runs on the worker cycle above; this loop
+#: only admits rounds, which is why a slightly slower cadence is fine.
+OUTBOX_INTERVAL_SECONDS = 15
+
 
 async def billing_reconciliation_loop() -> None:
     """
@@ -235,6 +245,74 @@ async def stuck_sweep_loop() -> None:
         await _sleep(STUCK_SWEEP_INTERVAL_SECONDS)
 
 
+async def durable_jobs_loop() -> None:
+    """Batch 07: execute registered durable jobs (leases, heartbeats, DLQ).
+
+    One ``JobWorker`` per process, cycling: reap abandoned leases → claim
+    under database-counted concurrency limits → commit the lease → run the
+    registered handler with a heartbeat → guarded ack/retry/DLQ. Every step
+    is a conditional database operation, so running several schedulers (or
+    restarting one mid-cycle) is safe: claims have exactly one winner, an
+    interrupted cycle leaves a lease that expires, and expired leases are
+    reclaimed by whichever instance reaps next. Nothing about the schedule
+    or the queue lives in this process's memory.
+
+    Only *registered* job types are claimed (``app.jobs.types`` registry —
+    today ``outbox.delivery``; domains adopt the platform by registering
+    handlers, not by being migrated here), so legacy receipt rows of
+    unadopted types are never dragged into execution.
+    """
+    from app.jobs.worker import JobWorker
+    from app.outbox import dispatcher as _outbox_dispatcher  # noqa: F401 (registers handler)
+
+    worker = JobWorker(get_sessionmaker())
+    while not _stop.is_set():
+        job = None
+        try:
+            job = await worker.run_once()
+            if job is not None:
+                logger.info(
+                    "scheduler.durable_job",
+                    job_type=job.job_type,
+                    status=job.status,
+                    job_id=str(job.id),
+                )
+            observability.record_job_run("durable_jobs", ok=True)
+        except Exception as exc:
+            # The loop must survive anything: a poisoned cycle is a DLQ row,
+            # not a dead scheduler.
+            observability.record_job_run("durable_jobs", ok=False)
+            logger.error("scheduler.durable_jobs_failed", error=str(exc)[:300])
+        # Drain while work exists; idle polls wait the interval.
+        await _sleep(1 if job is not None else JOBS_INTERVAL_SECONDS)
+
+
+async def outbox_dispatch_loop() -> None:
+    """Batch 07: admit due outbox events into the durable job system.
+
+    Each pass CAS-claims one delivery round per due event and enqueues its
+    ``outbox.delivery`` job in the same transaction — idempotent under
+    repeated ticks and multiple instances (round ownership is a guarded
+    update; the job key dedupes). Actual delivery, retries and dead-lettering
+    belong to the worker cycle; this loop never sends HTTP itself.
+    """
+    from app.outbox.dispatcher import dispatch_due
+
+    maker = get_sessionmaker()
+    while not _stop.is_set():
+        try:
+            async with maker() as session:
+                result = await dispatch_due(session)
+                await session.commit()
+            if result.get("scheduled") or result.get("exhausted"):
+                logger.info("scheduler.outbox_dispatch", **result)
+            observability.record_job_run("outbox_dispatch", ok=True)
+        except Exception as exc:
+            observability.record_job_run("outbox_dispatch", ok=False)
+            logger.error("scheduler.outbox_dispatch_failed", error=str(exc)[:300])
+        await _sleep(OUTBOX_INTERVAL_SECONDS)
+
+
 def _start_metrics_server() -> None:
     """Serve /metrics for the scheduler's own Prometheus registry.
 
@@ -264,6 +342,8 @@ async def main() -> None:
         reminder_loop(), campaign_loop(), knowledge_ingestion_loop(),
         crm_sync_loop(), billing_reconciliation_loop(), retention_loop(),
         stuck_sweep_loop(),
+        # Batch 07: the durable job platform and the outbox admission cycle.
+        durable_jobs_loop(), outbox_dispatch_loop(),
     )
     logger.info("scheduler.stopped")
 
