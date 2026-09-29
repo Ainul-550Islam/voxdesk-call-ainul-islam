@@ -14,24 +14,9 @@ from app.auth.rbac import has_permission
 from app.db.models import UserRole
 from app.ai.guardrails.safety import enforce as evaluate_safety
 
-# Kept in step with ``app.agent.functions.DISPATCHABLE_TOOLS``. Imported lazily
-# inside the runtime helper so this module can load before the agent package
-# finishes importing us.
-_RUNTIME_TOOLS = frozenset(
-    {
-        "check_availability",
-        "book_appointment",
-        "reschedule_appointment",
-        "cancel_appointment",
-        "confirm_appointment",
-        "take_message",
-        "escalate_to_human",
-        "answer_question",
-        "qualify_lead",
-        "mark_do_not_call",
-    }
-)
-
+# Runtime tools are read lazily from the canonical dispatcher contract in
+# ``app.agent.functions``. Keeping a second allowlist here caused drift between
+# policy, the advertised schemas, and the only executor.
 _TOOL_PERMISSION = {
     "check_availability": Permission.APPOINTMENT_READ,
     "answer_question": Permission.KNOWLEDGE_READ,
@@ -89,7 +74,13 @@ def authorize(
     if principal == "model":
         return ToolDecision(name, False, "model_cannot_self_authorize")
     if principal == "agent_runtime":
-        if name in _RUNTIME_TOOLS:
+        # Import at the boundary to avoid an import cycle while the agent
+        # package loads. The model can only name tools the canonical dispatcher
+        # will actually execute.
+        from app.agent.functions import DISPATCHABLE_TOOLS, tool_contract
+
+        contract = tool_contract(name)
+        if name in DISPATCHABLE_TOOLS and contract.get("agent_runtime") is True:
             return ToolDecision(name, True, "existing_agent_tool")
         return ToolDecision(name, False, "not_an_agent_tool")
     permission = _TOOL_PERMISSION.get(name)

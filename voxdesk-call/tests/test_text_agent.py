@@ -265,7 +265,7 @@ async def test_successful_reply_keeps_the_documented_shape(monkeypatch):
     _patch_anthropic_transport(monkeypatch, [("Your appointment is at 3pm.", [])])
     agent = TextAgent(_tenant(), FakeHandlers())
 
-    result = await agent.reply([], "hi")
+    result = await agent.complete_turn([], "hi")
 
     assert result["reply"] == "Your appointment is at 3pm."
     assert result["provider"] == "anthropic"
@@ -279,7 +279,7 @@ async def test_openai_path_is_used_for_openai_and_google(monkeypatch):
     agent = TextAgent(_tenant(llm_provider="google", llm_model="gemini-2.0-flash"),
                       FakeHandlers())
 
-    await agent.reply([{"role": "user", "content": "earlier"}], "now")
+    await agent.complete_turn([{"role": "user", "content": "earlier"}], "now")
 
     assert calls[0]["model"] == "gemini-2.0-flash"
     # The system prompt goes first, and the history is preserved in order.
@@ -298,7 +298,7 @@ async def test_tool_calls_are_dispatched_and_reported(monkeypatch):
     ])
     agent = TextAgent(_tenant(), handlers)
 
-    result = await agent.reply([], "is Tuesday free?")
+    result = await agent.complete_turn([], "is Tuesday free?")
 
     assert handlers.calls == [("check_availability", {"day": "Tue"})]
     assert result["tools_used"] == ["check_availability"]
@@ -317,7 +317,7 @@ async def test_openai_tool_round_trip(monkeypatch):
     ])
     agent = TextAgent(_tenant(llm_preset="fast"), handlers)
 
-    result = await agent.reply([], "is Tuesday free?")
+    result = await agent.complete_turn([], "is Tuesday free?")
 
     assert handlers.calls == [("check_availability", {"day": "Tue"})]
     assert result["reply"] == "Tuesday at 3pm works."
@@ -331,7 +331,7 @@ async def test_a_runaway_tool_loop_is_capped(monkeypatch):
     ])
     agent = TextAgent(_tenant(), FakeHandlers())
 
-    result = await agent.reply([], "loop please")
+    result = await agent.complete_turn([], "loop please")
 
     # The loop stops at the cap and hands off rather than calling the provider forever.
     assert result["reply"] == "Let me have someone get back to you on that."
@@ -343,7 +343,7 @@ async def test_sms_reply_is_shaped_for_the_channel(monkeypatch):
     _patch_anthropic_transport(monkeypatch, [("First sentence. " * 40, [])])
     agent = TextAgent(_tenant(), FakeHandlers(), channel="sms")
 
-    result = await agent.reply([], "hi")
+    result = await agent.complete_turn([], "hi")
 
     assert len(result["reply"]) <= SMS_SAFE_LENGTH
 
@@ -365,7 +365,7 @@ async def test_provider_failures_are_typed(monkeypatch, raised, expected):
     agent = TextAgent(_tenant(), FakeHandlers())
 
     with pytest.raises(expected) as caught:
-        await agent.reply([], "hi")
+        await agent.complete_turn([], "hi")
 
     assert caught.value.provider == "anthropic"
     assert caught.value.category in CATEGORIES
@@ -377,7 +377,7 @@ async def test_provider_failures_are_typed_on_the_openai_path_too(monkeypatch):
     agent = TextAgent(_tenant(llm_preset="fast"), FakeHandlers())
 
     with pytest.raises(ProviderRateLimitedError) as caught:
-        await agent.reply([], "hi")
+        await agent.complete_turn([], "hi")
     assert caught.value.provider == "openai"
     assert caught.value.retryable is True
 
@@ -386,12 +386,12 @@ async def test_timeout_is_retryable_and_auth_failure_is_not(monkeypatch):
     monkeypatch.setattr(settings, "anthropic_api_key", SENTINEL_KEY)
     _patch_anthropic_transport(monkeypatch, [TimeoutError("slow")])
     with pytest.raises(ProviderTimeoutError) as timed_out:
-        await TextAgent(_tenant(), FakeHandlers()).reply([], "hi")
+        await TextAgent(_tenant(), FakeHandlers()).complete_turn([], "hi")
     assert timed_out.value.retryable is True
 
     _patch_anthropic_transport(monkeypatch, [_SdkError("bad key", status_code=401)])
     with pytest.raises(ProviderAuthenticationError) as rejected:
-        await TextAgent(_tenant(), FakeHandlers()).reply([], "hi")
+        await TextAgent(_tenant(), FakeHandlers()).complete_turn([], "hi")
     assert rejected.value.retryable is False
 
 
@@ -401,7 +401,7 @@ async def test_the_original_exception_stays_in_the_chain(monkeypatch):
     _patch_anthropic_transport(monkeypatch, [original])
 
     with pytest.raises(ProviderError) as caught:
-        await TextAgent(_tenant(), FakeHandlers()).reply([], "hi")
+        await TextAgent(_tenant(), FakeHandlers()).complete_turn([], "hi")
 
     assert caught.value.__cause__ is original
 
@@ -415,7 +415,7 @@ async def test_a_provider_error_never_carries_the_sdk_message_or_a_key(monkeypat
     _patch_anthropic_transport(monkeypatch, [leaky])
 
     with pytest.raises(ProviderError) as caught:
-        await TextAgent(_tenant(), FakeHandlers()).reply([], "hi")
+        await TextAgent(_tenant(), FakeHandlers()).complete_turn([], "hi")
 
     rendered = f"{caught.value} {caught.value.safe_message} {caught.value.detail}"
     assert SENTINEL_KEY not in rendered
@@ -443,7 +443,7 @@ async def test_a_malformed_provider_response_is_not_converted_into_a_provider_er
     agent = TextAgent(_tenant(), FakeHandlers())
 
     with pytest.raises(AttributeError) as caught:
-        await agent.reply([], "hi")
+        await agent.complete_turn([], "hi")
     assert not isinstance(caught.value, ProviderError)
 
 
@@ -479,7 +479,7 @@ async def test_invalid_tool_arguments_json_is_our_json_error(monkeypatch):
     agent = TextAgent(_tenant(llm_preset="fast"), FakeHandlers())
 
     with pytest.raises(json.JSONDecodeError) as caught:
-        await agent.reply([], "hi")
+        await agent.complete_turn([], "hi")
     assert not isinstance(caught.value, ProviderError)
 
 

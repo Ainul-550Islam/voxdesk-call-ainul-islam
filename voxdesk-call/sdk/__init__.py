@@ -1,8 +1,33 @@
-"""Batch-07 Extension — external SDK package (Python). Not full implementation."""
-from __future__ import annotations
+"""First-party VoxDesk SDK.
 
-class VoiceClient:
-    def __init__(self, api_key: str, endpoint: str = "https://api.lumay.ai") -> None:
-        pass
-    async def synthesize(self, text: str, voice_id: str) -> bytes:
-        pass
+Only VoxDesk endpoints are supported; provider APIs are intentionally not
+exposed through this package.
+"""
+
+from .client import (
+    ApiToolModel,
+    ApiToolResult,
+    ConnectorModel,
+    KnowledgeSearchModel,
+    McpToolModel,
+    SearchHitModel,
+    UrlIngestModel,
+    VoxDeskClient,
+    VoxDeskError,
+    VoiceAgentClient,
+)
+
+VoiceClient = VoxDeskClient
+__all__ = [
+    "ApiToolModel",
+    "ApiToolResult",
+    "ConnectorModel",
+    "KnowledgeSearchModel",
+    "McpToolModel",
+    "SearchHitModel",
+    "UrlIngestModel",
+    "VoxDeskClient",
+    "VoxDeskError",
+    "VoiceAgentClient",
+    "VoiceClient",
+]

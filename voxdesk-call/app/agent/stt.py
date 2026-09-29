@@ -35,12 +35,23 @@ setting, so an unsupported setting is never passed and silently dropped.
 """
 from __future__ import annotations
 
-from deepgram import LiveOptions
-from pipecat.services.deepgram.stt import DeepgramSTTService
+try:
+    from deepgram import LiveOptions
+    from pipecat.services.deepgram.stt import DeepgramSTTService
+except ImportError as exc:
+    # Developer/test environments may omit provider extras. The capability
+    # detector preserves the failure and build_stt raises a typed error; this
+    # fallback does not advertise or construct a working provider.
+    LiveOptions = None
+    DeepgramSTTService = None
+    _DEEPGRAM_IMPORT_ERROR = type(exc).__name__
+else:
+    _DEEPGRAM_IMPORT_ERROR = None
 
 from app.agent.errors import ProviderConfigurationError
 from app.core.config import settings
 from app.core.i18n import deepgram_options
+from app.providers.compatibility import require_deepgram
 
 #: What this Deepgram integration can and cannot map from tenant settings.
 DEEPGRAM_CAPABILITIES = {
@@ -78,13 +89,16 @@ def build_stt(tenant) -> DeepgramSTTService:
     constructing a service that can never connect.
     """
     validate_stt_config()
+    # Check the actual installed SDK surfaces before constructing a service;
+    # configured credentials alone are not proof that this runtime can stream.
+    service_class, live_options_class = require_deepgram()
 
     # ভাষা অনুযায়ী STT সেটিং। nova-3 সব ভাষা কভার করে না -> nova-2 fallback।
     stt_opts = deepgram_options(tenant.language, settings.deepgram_model)
-    return DeepgramSTTService(
+    return service_class(
         api_key=settings.deepgram_api_key,
         sample_rate=8000,
-        live_options=LiveOptions(
+        live_options=live_options_class(
             encoding="mulaw",
             sample_rate=8000,
             punctuate=stt_opts["punctuate"],
@@ -97,3 +111,27 @@ def build_stt(tenant) -> DeepgramSTTService:
             model=stt_opts["model"],
         ),
     )
+
+
+# Public contract exports. The existing Pipecat builder above remains the
+# authoritative live-call integration; direct streaming consumers use the
+# same typed provider contract without rewriting the current pipeline.
+from app.agent.stt_stream import (  # noqa: E402
+    DeepgramStreamingProvider,
+    STTEvent,
+    STTProvider,
+    STTProviderCapabilities,
+    STTStreamRequest,
+)
+
+__all__ = [
+    "DEEPGRAM_CAPABILITIES",
+    "DeepgramSTTService",
+    "DeepgramStreamingProvider",
+    "STTEvent",
+    "STTProvider",
+    "STTProviderCapabilities",
+    "STTStreamRequest",
+    "build_stt",
+    "validate_stt_config",
+]

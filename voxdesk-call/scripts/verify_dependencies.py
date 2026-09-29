@@ -65,6 +65,7 @@ DIST_IMPORT_OVERRIDES: dict[str, str] = {
     "google-api-python-client": "googleapiclient",
     "google-auth-oauthlib": "google_auth_oauthlib",
     "pipecat-ai": "pipecat",
+    "pynacl": "nacl",
 }
 
 # Top-level modules imported by the project that are provided transitively by a

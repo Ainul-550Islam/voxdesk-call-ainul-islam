@@ -27,15 +27,24 @@ async def record(
     environment_id: uuid.UUID | None = None,
     call_id: uuid.UUID | None = None,
 ) -> dict:
+    if isinstance(tokens, bool):
+        raise ValueError("token count must be an integer count, not bool")
     if tokens is not None and tokens < 0:
         raise ValueError("token count cannot be negative")
-    priced = for_runtime(provider=provider, tokens=tokens if tokens else None)
-    if not tokens:
+    priced = for_runtime(provider=provider, tokens=tokens)
+    if tokens is None:
         return {
             "recorded": False,
             "cost_known": False,
             "reason": "tokens_unknown",
             "provider_cost_usd": None,
+        }
+    if tokens == 0:
+        return {
+            "recorded": False,
+            "cost_known": bool(priced.get("known")),
+            "reason": "measured_zero_usage",
+            "provider_cost_usd": priced.get("provider_cost_usd"),
         }
     await attribute_usage(
         session,

@@ -320,7 +320,9 @@ async def test_text_reply_blocks_a_tool_the_model_named(monkeypatch):
         channel="sms",
     )
     agent._blocked_output = ("sk-live",)
-    result = await agent.reply([], "hi")
+    # Exercise the provider-loop primitive directly. Public ``reply`` now
+    # requires a real governed tenant session before it can reach this loop.
+    result = await agent.complete_turn([], "hi")
     assert handlers.calls == []
     assert result["tools_used"] == ["refund_payment"]
     assert result["reply"] == SAFE_FAILURE

@@ -100,7 +100,12 @@ async def _complete_openai(client, model, messages, tools, temperature, *, provi
     ]
     usage = getattr(resp, "usage", None)
     total = getattr(usage, "total_tokens", None)
-    return msg.content or "", calls, msg, total if isinstance(total, int) else None
+    measured = (
+        total
+        if isinstance(total, int) and not isinstance(total, bool) and total >= 0
+        else None
+    )
+    return msg.content or "", calls, msg, measured
 
 
 async def _complete_anthropic(api_key, model, system, messages, tools, temperature, *,
@@ -137,8 +142,18 @@ async def _complete_anthropic(api_key, model, system, messages, tools, temperatu
     input_tokens = getattr(usage, "input_tokens", None)
     output_tokens = getattr(usage, "output_tokens", None)
     tokens = None
-    if isinstance(input_tokens, int) or isinstance(output_tokens, int):
-        tokens = (input_tokens or 0) + (output_tokens or 0)
+    input_measured = (
+        input_tokens
+        if isinstance(input_tokens, int) and not isinstance(input_tokens, bool) and input_tokens >= 0
+        else None
+    )
+    output_measured = (
+        output_tokens
+        if isinstance(output_tokens, int) and not isinstance(output_tokens, bool) and output_tokens >= 0
+        else None
+    )
+    if input_measured is not None and output_measured is not None:
+        tokens = input_measured + output_measured
     return text, calls, resp, tokens
 
 
@@ -203,6 +218,7 @@ class TextAgent:
         used_tools: list[str] = []
         tokens_total = 0
         tokens_seen = False
+        tokens_complete = True
 
         for _ in range(MAX_TOOL_ROUNDS):
             if self.provider == "anthropic":
@@ -210,9 +226,11 @@ class TextAgent:
                     self.api_key, self.model, system, messages,
                     FUNCTION_SCHEMAS, self.tenant.temperature, provider=self.provider,
                 )
-                if isinstance(turn_tokens, int):
+                if isinstance(turn_tokens, int) and not isinstance(turn_tokens, bool):
                     tokens_total += turn_tokens
                     tokens_seen = True
+                else:
+                    tokens_complete = False
                 if not calls:
                     break
                 messages.append({"role": "assistant", "content": [
@@ -235,9 +253,11 @@ class TextAgent:
                     client, self.model, convo, FUNCTION_SCHEMAS, self.tenant.temperature,
                     provider=self.provider,
                 )
-                if isinstance(turn_tokens, int):
+                if isinstance(turn_tokens, int) and not isinstance(turn_tokens, bool):
                     tokens_total += turn_tokens
                     tokens_seen = True
+                else:
+                    tokens_complete = False
                 if not calls:
                     break
                 messages.append(raw.model_dump(exclude_none=True))
@@ -269,5 +289,5 @@ class TextAgent:
             # Provider-measured tokens for the whole turn (every tool round
             # included). ``None`` when no completion reported usage — the
             # governed boundary records usage only from a measured count.
-            "tokens": tokens_total if tokens_seen else None,
+            "tokens": tokens_total if tokens_seen and tokens_complete else None,
         }

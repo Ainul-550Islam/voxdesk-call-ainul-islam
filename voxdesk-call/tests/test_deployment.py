@@ -8,6 +8,7 @@ the Redis tests exercise the degradation path directly. Where a real runtime
 check is possible (a live Postgres, a running stack) it is a separate,
 opt-in validation — never assumed here.
 """
+
 from __future__ import annotations
 
 import base64
@@ -73,9 +74,11 @@ def _staging(**overrides) -> Settings:
 
 # ----------------------------------------------------------- (1)(2)(3) config ---
 
+
 def test_production_rejects_e2e_mode():
-    s = _valid_prod(e2e_enabled=True, e2e_test_number="+15550001111",
-                    e2e_allowed_callers="+15550001111")
+    s = _valid_prod(
+        e2e_enabled=True, e2e_test_number="+15550001111", e2e_allowed_callers="+15550001111"
+    )
     problems = s.validate_security()
     assert any("E2E_ENABLED" in p for p in problems)
 
@@ -141,11 +144,15 @@ def test_secure_cookie_is_scheme_driven():
 
 # ------------------------------------------------------- (4)(5) health endpoints ---
 
+
 def test_main_defines_liveness_and_readiness():
     src = (REPO / "app" / "main.py").read_text()
-    assert '@app.get("/health")' in src
-    assert '@app.get("/health/ready")' in src
-    assert "health_check.readiness" in src
+    routes = (REPO / "app" / "api" / "health_routes.py").read_text()
+    assert "from app.api.health_routes import router as health_router" in src
+    assert "app.include_router(health_router)" in src
+    assert '@router.get("/health")' in routes
+    assert '@router.get("/health/ready")' in routes
+    assert "health_check.readiness" in routes
 
 
 def test_staging_does_not_run_create_all():
@@ -155,6 +162,7 @@ def test_staging_does_not_run_create_all():
 
 
 # ---------------------------------------------- (6) websocket / proxy assumptions ---
+
 
 def test_caddy_preserves_websocket_and_adds_security():
     text = (REPO / "Caddyfile").read_text()
@@ -174,20 +182,19 @@ def test_entrypoint_trusts_proxy_headers():
 
 # ------------------------------------------------------------ (7) migrations ---
 
+
 def test_migration_chain_is_linear_with_no_gaps():
-    versions = sorted(
-        p for p in (REPO / "alembic" / "versions").iterdir() if p.suffix == ".py"
-    )
+    versions = sorted(p for p in (REPO / "alembic" / "versions").iterdir() if p.suffix == ".py")
     ids: dict[str, str | None] = {}
     for path in versions:
         text = path.read_text()
         rev = re.search(r'^revision = "(.+)"', text, re.M).group(1)
-        down = re.search(r'^down_revision = (.+)$', text, re.M).group(1).strip()
+        down = re.search(r"^down_revision = (.+)$", text, re.M).group(1).strip()
         ids[rev] = None if down == "None" else down.strip('"')
     assert ids, "no migrations found"
     # Exactly one head: the revision nobody points down_revision at.
     heads = [r for r in ids if r not in {d for d in ids.values() if d}]
-    assert heads == ["0024_qa_conversation_intelligence"]
+    assert heads == ["0036_runtime_deployment_observability"]
     # Exactly one base (down_revision None), and a single linear walk.
     bases = [r for r, d in ids.items() if d is None]
     assert bases == ["0001_baseline"]
@@ -201,6 +208,7 @@ def test_migration_chain_is_linear_with_no_gaps():
 
 # --------------------------------------------- (8)(9) backup/restore safety ---
 
+
 def test_backup_scripts_use_environment_not_hardcoded_secrets():
     for name in ("backup.sh", "restore.sh", "backup_verify.sh"):
         text = (REPO / "scripts" / name).read_text()
@@ -213,12 +221,13 @@ def test_backup_scripts_use_environment_not_hardcoded_secrets():
 
 def test_restore_refuses_overwrite_and_supports_drill():
     text = (REPO / "scripts" / "restore.sh").read_text()
-    assert "RESTORE_TARGET_DB" in text      # drill restores into a scratch DB
+    assert "RESTORE_TARGET_DB" in text  # drill restores into a scratch DB
     assert "RESTORE_ALLOW_OVERWRITE" in text  # never silently clobber a live DB
-    assert "pg_restore --list" in text      # verify before writing
+    assert "pg_restore --list" in text  # verify before writing
 
 
 # ------------------------------------------------------ (10) secret exposure ---
+
 
 def test_gitignore_covers_secrets_and_dumps():
     text = (REPO / ".gitignore").read_text()
@@ -243,6 +252,7 @@ def test_env_examples_contain_only_placeholder_credentials():
 
 
 # ---------------------------------------------- (11)(12) docker/compose invariants ---
+
 
 def test_dockerfile_runs_non_root_and_healthchecks():
     text = (REPO / "Dockerfile").read_text()
@@ -277,6 +287,7 @@ def test_staging_compose_is_isolated_from_production():
 
 # ----------------------------------------------------- (13) CI workflow invariants ---
 
+
 def test_ci_workflow_gates_and_separates_real_providers():
     ci = (REPO / ".github" / "workflows" / "ci.yml").read_text()
     assert "alembic upgrade head" in ci
@@ -292,6 +303,7 @@ def test_ci_workflow_gates_and_separates_real_providers():
 
 # ------------------------------------------- (14) monitoring endpoint protection ---
 
+
 def test_metrics_endpoint_is_token_gated_when_configured():
     src = (REPO / "app" / "core" / "metrics.py").read_text()
     assert "_scrape_authorized" in src
@@ -304,6 +316,7 @@ def test_caddy_does_not_expose_metrics_as_a_separate_route():
 
 
 # ---------------------------------------------- (15) redis restart behaviour ---
+
 
 @pytest.mark.asyncio
 async def test_redis_cache_degrades_gracefully_when_down(monkeypatch):
@@ -326,8 +339,8 @@ async def test_redis_cache_degrades_gracefully_when_down(monkeypatch):
     monkeypatch.setattr(rc, "_get", lambda: _Down())
     assert await rc.ping() is False
     assert await rc.get("k") is None
-    await rc.set("k", "v", 60)   # must not raise
-    await rc.delete("k")          # must not raise
+    await rc.set("k", "v", 60)  # must not raise
+    await rc.delete("k")  # must not raise
 
 
 @pytest.mark.asyncio
@@ -338,6 +351,7 @@ async def test_memory_cache_ping_reports_reachable():
 
 
 # ----------------------------------------------------- (16) rollback guard ---
+
 
 def test_rollback_checks_out_and_redeploys_without_pull():
     text = (REPO / "scripts" / "rollback.sh").read_text()
@@ -359,6 +373,6 @@ def test_rollback_never_executes_alembic_downgrade():
 def test_deploy_script_backs_up_before_migrating():
     text = (REPO / "scripts" / "deploy.sh").read_text()
     assert "pg_dump" in text
-    assert "pg_restore --list" in text          # integrity check
-    assert "scripts/migrate.py" in text          # advisory-locked migration
-    assert "/health/ready" in text               # readiness wait
+    assert "pg_restore --list" in text  # integrity check
+    assert "scripts/migrate.py" in text  # advisory-locked migration
+    assert "/health/ready" in text  # readiness wait

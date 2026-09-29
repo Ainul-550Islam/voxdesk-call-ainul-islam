@@ -427,6 +427,7 @@ def test_migration_chain_is_linear_and_unbroken():
 # ---------------------------------------------------------------------------
 
 MIGRATION_0005 = "alembic/versions/0005_knowledge_rag.py"
+MIGRATION_0019 = "alembic/versions/0019_environment_scope_business_resources.py"
 
 
 def _declared_enum(path: str, type_name: str) -> set[str]:
@@ -488,15 +489,26 @@ def test_only_ready_is_searchable():
     assert SEARCHABLE_DOCUMENT_STATUSES == frozenset({DocumentStatus.READY})
 
 
-def test_migration_0005_creates_every_model_column():
-    """A model column with no migration is a production-only crash."""
+def test_migration_0005_creates_every_base_model_column():
+    """Every base-schema model column must have a migration at its creation point.
+
+    ``environment_id`` is intentionally added later by migration 0019 when
+    environment scoping is introduced for existing business resources; it is
+    not part of the original RAG migration.
+    """
     import pathlib
 
     from app.db.models import KnowledgeChunk, KnowledgeDocument
 
     source = pathlib.Path(MIGRATION_0005).read_text()
+    environment_source = pathlib.Path(MIGRATION_0019).read_text()
     for model in (KnowledgeDocument, KnowledgeChunk):
         for column in model.__table__.columns:
+            if column.name == "environment_id":
+                assert '"environment_id"' in environment_source, (
+                    f"{model.__tablename__}.environment_id is missing from migration 0019"
+                )
+                continue
             assert f'"{column.name}"' in source, (
                 f"{model.__tablename__}.{column.name} is missing from migration 0005"
             )
@@ -827,6 +839,7 @@ def test_migration_0007_creates_every_new_model_column():
     )
 
     source = pathlib.Path(MIGRATION_0007).read_text()
+    environment_source = pathlib.Path(MIGRATION_0019).read_text()
 
     # Columns that existed before STEP 6 live in migration 0001.
     pre_existing = {
@@ -835,6 +848,11 @@ def test_migration_0007_creates_every_new_model_column():
     }
     for column in Appointment.__table__.columns:
         if column.name in pre_existing:
+            continue
+        if column.name == "environment_id":
+            assert '"environment_id"' in environment_source, (
+                "appointments.environment_id is missing from migration 0019"
+            )
             continue
         assert f'"{column.name}"' in source, (
             f"appointments.{column.name} is missing from migration 0007"
@@ -1068,11 +1086,17 @@ def test_migration_0008_creates_every_billing_column():
     )
 
     source = pathlib.Path(MIGRATION_0008).read_text()
+    environment_source = pathlib.Path(MIGRATION_0019).read_text()
     for model in (
         BillingPlan, Subscription, UsageEvent, UsageSummary, BillingInvoice,
         BillingWebhookReceipt,
     ):
         for column in model.__table__.columns:
+            if column.name == "environment_id":
+                assert '"environment_id"' in environment_source, (
+                    f"{model.__tablename__}.environment_id is missing from migration 0019"
+                )
+                continue
             assert f'"{column.name}"' in source, (
                 f"{model.__tablename__}.{column.name} is missing from 0008"
             )

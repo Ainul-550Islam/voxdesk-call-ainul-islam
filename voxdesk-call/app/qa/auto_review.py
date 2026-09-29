@@ -231,7 +231,12 @@ async def process_run(
     run.model = result.model
     run.prompt_version = PROMPT_VERSION
     run.latency_ms = int(result.telemetry.get("latency_ms") or 0)
-    run.token_count = int(result.telemetry.get("tokens") or 0)
+    measured_tokens = result.telemetry.get("tokens")
+    run.token_count = (
+        measured_tokens
+        if isinstance(measured_tokens, int) and not isinstance(measured_tokens, bool)
+        else None
+    )
     run.suggestion = suggestion
     run.error_class = ""
     from datetime import datetime, timezone

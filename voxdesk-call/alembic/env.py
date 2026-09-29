@@ -8,6 +8,9 @@ from sqlalchemy import pool
 
 from app.core.config import settings
 from app.db.models import Base
+import app.governance  # noqa: F401 - registers additive governance models
+import app.qa.outcomes  # noqa: F401 - registers durable call-outcome metadata
+import app.deployment.models  # noqa: F401 - registers runtime deployment observation metadata
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.database_url)

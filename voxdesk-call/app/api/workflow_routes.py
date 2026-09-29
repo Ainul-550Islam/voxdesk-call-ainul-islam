@@ -3,8 +3,9 @@
 Tenant-scoped CRUD plus deterministic execution endpoints over
 ``app.services.workflow_service``. Security model:
 
-* **Tenant isolation.** The tenant is never a parameter; every registry access
-  is keyed by ``ctx.tenant_id``, and DB-backed actions re-verify ownership.
+* **Tenant isolation.** The tenant is never a client-controlled parameter;
+  every database query is keyed by ``ctx.tenant_id``, and DB-backed actions
+  re-verify ownership.
 * **RBAC.** CRUD/publish requires ``TENANT_UPDATE`` (admin+); execution,
   retry and cancel require ``CAMPAIGN_RUN`` (manager+), because execution may
   enqueue outbound-shaped intents even though it never dials.
@@ -22,13 +23,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import TenantContext, require_permission
 from app.auth.permissions import Permission
-from app.core.errors import BadRequestError, NotFoundError
+from app.core.errors import BadRequestError, ConflictError, NotFoundError
 from app.db.session import get_session
 from app.domain.workflow_models import (
     Condition,
@@ -44,6 +45,7 @@ router = APIRouter(prefix="/api/workflows", tags=["workflows"])
 
 
 # ----------------------------------------------------------------- schemas ---
+
 
 class _Strict(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -82,7 +84,7 @@ class WorkflowCreateRequest(_Strict):
 
 
 class WorkflowUpdateRequest(WorkflowCreateRequest):
-    pass
+    """Full replacement payload used to create an immutable new version."""
 
 
 class WorkflowExecuteRequest(_Strict):
@@ -136,34 +138,49 @@ class WorkflowExecutionOut(_Strict):
 
 # ---------------------------------------------------------------- helpers ---
 
+
 def _build_nodes(items: list[WorkflowNodeIn]) -> tuple[WorkflowNode, ...]:
     nodes: list[WorkflowNode] = []
     for item in items:
         try:
             node_type = NodeType(item.type)
         except ValueError:
-            raise HTTPException(status_code=422, detail=f"unknown node type {item.type!r}") from None
+            raise HTTPException(
+                status_code=422, detail=f"unknown node type {item.type!r}"
+            ) from None
         action = None
         if item.action_name:
             action = WorkflowAction(name=item.action_name, params=item.action_params or {})
         condition = None
         if item.field:
-            condition = Condition(field=item.field, operator=item.operator or "eq", value=item.value)
+            condition = Condition(
+                field=item.field, operator=item.operator or "eq", value=item.value
+            )
         branches = tuple(
             (Condition(field=b.field, operator=b.operator, value=b.value), b.target)
             for b in item.branches
         )
-        nodes.append(WorkflowNode(
-            id=item.id, type=node_type, action=action, condition=condition,
-            branches=branches, default_next=item.default_next, next=item.next,
-            delay_seconds=item.delay_seconds, timeout_seconds=item.timeout_seconds,
-            retry_limit=item.retry_limit, approver_role=item.approver_role,
-        ))
+        nodes.append(
+            WorkflowNode(
+                id=item.id,
+                type=node_type,
+                action=action,
+                condition=condition,
+                branches=branches,
+                default_next=item.default_next,
+                next=item.next,
+                delay_seconds=item.delay_seconds,
+                timeout_seconds=item.timeout_seconds,
+                retry_limit=item.retry_limit,
+                approver_role=item.approver_role,
+            )
+        )
     return tuple(nodes)
 
 
-def _build_definition(tenant_id: str, workflow_id: str, payload: WorkflowCreateRequest,
-                      version: int = 1) -> WorkflowDefinition:
+def _build_definition(
+    tenant_id: str, workflow_id: str, payload: WorkflowCreateRequest, version: int = 1
+) -> WorkflowDefinition:
     return WorkflowDefinition(
         id=workflow_id,
         tenant_id=tenant_id,
@@ -187,9 +204,16 @@ def _out(definition: WorkflowDefinition) -> WorkflowOut:
         trigger=definition.trigger,
         entry_node=definition.entry_node,
         description=definition.description,
-        nodes=[WorkflowNodeOut(id=n.id, type=n.type.value, next=n.next,
-                               delay_seconds=n.delay_seconds, retry_limit=n.retry_limit)
-               for n in definition.nodes],
+        nodes=[
+            WorkflowNodeOut(
+                id=n.id,
+                type=n.type.value,
+                next=n.next,
+                delay_seconds=n.delay_seconds,
+                retry_limit=n.retry_limit,
+            )
+            for n in definition.nodes
+        ],
     )
 
 
@@ -201,27 +225,52 @@ def _execution_out(execution) -> WorkflowExecutionOut:
         idempotency_key=execution.idempotency_key,
         status=execution.status.value,
         current_node=execution.current_node,
-        steps=[WorkflowStepOut(node_id=s.node_id, status=s.status, detail=s.detail,
-                               attempt=s.attempt, at=s.at) for s in execution.steps],
+        steps=[
+            WorkflowStepOut(
+                node_id=s.node_id, status=s.status, detail=s.detail, attempt=s.attempt, at=s.at
+            )
+            for s in execution.steps
+        ],
         started_at=execution.started_at,
         finished_at=execution.finished_at,
         error=execution.error,
     )
 
 
+async def _assert_execution_path(
+    workflow_id: str,
+    execution_id: str,
+    ctx: TenantContext,
+    session: AsyncSession,
+):
+    try:
+        execution = await workflow_service.inspect_execution(
+            str(ctx.tenant_id), execution_id, session=session
+        )
+    except NotFoundError:
+        raise HTTPException(status_code=404, detail="execution not found") from None
+    if execution.workflow_id != workflow_id:
+        raise HTTPException(status_code=404, detail="execution not found")
+    return execution
+
+
 # ------------------------------------------------------------------- routes ---
+
 
 @router.post("", response_model=WorkflowOut, status_code=201)
 async def create_workflow(
     payload: WorkflowCreateRequest,
     ctx: TenantContext = Depends(require_permission(Permission.TENANT_UPDATE)),
+    session: AsyncSession = Depends(get_session),
 ):
     from app.domain.agent_models import stable_id
 
     workflow_id = stable_id(str(ctx.tenant_id), payload.name)
     definition = _build_definition(str(ctx.tenant_id), workflow_id, payload)
     try:
-        saved = workflow_service.create_workflow(str(ctx.tenant_id), definition)
+        saved = await workflow_service.create_workflow(
+            str(ctx.tenant_id), definition, session=session, created_by=ctx.user_id
+        )
     except BadRequestError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from None
     return _out(saved)
@@ -230,17 +279,22 @@ async def create_workflow(
 @router.get("", response_model=list[WorkflowOut])
 async def list_workflows(
     ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)),
+    session: AsyncSession = Depends(get_session),
 ):
-    return [_out(w) for w in workflow_service.list_workflows(str(ctx.tenant_id))]
+    workflows = await workflow_service.list_workflows(str(ctx.tenant_id), session=session)
+    return [_out(w) for w in workflows]
 
 
 @router.get("/{workflow_id}", response_model=WorkflowOut)
 async def get_workflow(
     workflow_id: str,
     ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)),
+    session: AsyncSession = Depends(get_session),
 ):
     try:
-        return _out(workflow_service.get_workflow(str(ctx.tenant_id), workflow_id))
+        return _out(
+            await workflow_service.get_workflow(str(ctx.tenant_id), workflow_id, session=session)
+        )
     except NotFoundError:
         raise HTTPException(status_code=404, detail="workflow not found") from None
 
@@ -250,10 +304,13 @@ async def update_workflow(
     workflow_id: str,
     payload: WorkflowUpdateRequest,
     ctx: TenantContext = Depends(require_permission(Permission.TENANT_UPDATE)),
+    session: AsyncSession = Depends(get_session),
 ):
     definition = _build_definition(str(ctx.tenant_id), workflow_id, payload)
     try:
-        saved = workflow_service.version_workflow(str(ctx.tenant_id), workflow_id, definition)
+        saved = await workflow_service.version_workflow(
+            str(ctx.tenant_id), workflow_id, definition, session=session, created_by=ctx.user_id
+        )
     except NotFoundError:
         raise HTTPException(status_code=404, detail="workflow not found") from None
     except BadRequestError as exc:
@@ -265,11 +322,22 @@ async def update_workflow(
 async def publish_workflow(
     workflow_id: str,
     ctx: TenantContext = Depends(require_permission(Permission.TENANT_UPDATE)),
+    session: AsyncSession = Depends(get_session),
 ):
     try:
-        return _out(workflow_service.publish_workflow(str(ctx.tenant_id), workflow_id))
-    except (NotFoundError, BadRequestError) as exc:
-        status = 404 if isinstance(exc, NotFoundError) else 422
+        return _out(
+            await workflow_service.publish_workflow(
+                str(ctx.tenant_id), workflow_id, session=session
+            )
+        )
+    except (NotFoundError, BadRequestError, ConflictError) as exc:
+        status = (
+            404
+            if isinstance(exc, NotFoundError)
+            else 409
+            if isinstance(exc, ConflictError)
+            else 422
+        )
         raise HTTPException(status_code=status, detail=str(exc)) from None
 
 
@@ -277,11 +345,20 @@ async def publish_workflow(
 async def pause_workflow(
     workflow_id: str,
     ctx: TenantContext = Depends(require_permission(Permission.TENANT_UPDATE)),
+    session: AsyncSession = Depends(get_session),
 ):
     try:
-        return _out(workflow_service.pause_workflow(str(ctx.tenant_id), workflow_id))
-    except (NotFoundError, BadRequestError) as exc:
-        status = 404 if isinstance(exc, NotFoundError) else 422
+        return _out(
+            await workflow_service.pause_workflow(str(ctx.tenant_id), workflow_id, session=session)
+        )
+    except (NotFoundError, BadRequestError, ConflictError) as exc:
+        status = (
+            404
+            if isinstance(exc, NotFoundError)
+            else 409
+            if isinstance(exc, ConflictError)
+            else 422
+        )
         raise HTTPException(status_code=status, detail=str(exc)) from None
 
 
@@ -289,11 +366,43 @@ async def pause_workflow(
 async def resume_workflow(
     workflow_id: str,
     ctx: TenantContext = Depends(require_permission(Permission.TENANT_UPDATE)),
+    session: AsyncSession = Depends(get_session),
 ):
     try:
-        return _out(workflow_service.resume_workflow(str(ctx.tenant_id), workflow_id))
-    except (NotFoundError, BadRequestError) as exc:
-        status = 404 if isinstance(exc, NotFoundError) else 422
+        return _out(
+            await workflow_service.resume_workflow(str(ctx.tenant_id), workflow_id, session=session)
+        )
+    except (NotFoundError, BadRequestError, ConflictError) as exc:
+        status = (
+            404
+            if isinstance(exc, NotFoundError)
+            else 409
+            if isinstance(exc, ConflictError)
+            else 422
+        )
+        raise HTTPException(status_code=status, detail=str(exc)) from None
+
+
+@router.post("/{workflow_id}/archive", response_model=WorkflowOut)
+async def archive_workflow(
+    workflow_id: str,
+    ctx: TenantContext = Depends(require_permission(Permission.TENANT_UPDATE)),
+    session: AsyncSession = Depends(get_session),
+):
+    try:
+        return _out(
+            await workflow_service.archive_workflow(
+                str(ctx.tenant_id), workflow_id, session=session
+            )
+        )
+    except (NotFoundError, BadRequestError, ConflictError) as exc:
+        status = (
+            404
+            if isinstance(exc, NotFoundError)
+            else 409
+            if isinstance(exc, ConflictError)
+            else 422
+        )
         raise HTTPException(status_code=status, detail=str(exc)) from None
 
 
@@ -302,12 +411,26 @@ async def clone_workflow(
     workflow_id: str,
     payload: CloneRequest,
     ctx: TenantContext = Depends(require_permission(Permission.TENANT_UPDATE)),
+    session: AsyncSession = Depends(get_session),
 ):
     try:
-        return _out(workflow_service.clone_workflow(str(ctx.tenant_id), workflow_id,
-                                                    new_name=payload.new_name))
-    except (NotFoundError, BadRequestError) as exc:
-        status = 404 if isinstance(exc, NotFoundError) else 422
+        return _out(
+            await workflow_service.clone_workflow(
+                str(ctx.tenant_id),
+                workflow_id,
+                new_name=payload.new_name,
+                session=session,
+                created_by=ctx.user_id,
+            )
+        )
+    except (NotFoundError, BadRequestError, ConflictError) as exc:
+        status = (
+            404
+            if isinstance(exc, NotFoundError)
+            else 409
+            if isinstance(exc, ConflictError)
+            else 422
+        )
         raise HTTPException(status_code=status, detail=str(exc)) from None
 
 
@@ -315,9 +438,13 @@ async def clone_workflow(
 async def workflow_versions(
     workflow_id: str,
     ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)),
+    session: AsyncSession = Depends(get_session),
 ):
     try:
-        return [_out(v) for v in workflow_service.version_history(str(ctx.tenant_id), workflow_id)]
+        versions = await workflow_service.version_history(
+            str(ctx.tenant_id), workflow_id, session=session
+        )
+        return [_out(v) for v in versions]
     except NotFoundError:
         raise HTTPException(status_code=404, detail="workflow not found") from None
 
@@ -328,13 +455,24 @@ async def execute_workflow(
     payload: WorkflowExecuteRequest,
     ctx: TenantContext = Depends(require_permission(Permission.CAMPAIGN_RUN)),
     session: AsyncSession = Depends(get_session),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ):
     try:
         execution = await workflow_service.execute_workflow(
-            str(ctx.tenant_id), workflow_id, payload.payload, session=session
+            str(ctx.tenant_id),
+            workflow_id,
+            payload.payload,
+            session=session,
+            idempotency_key=idempotency_key,
         )
-    except (NotFoundError, BadRequestError) as exc:
-        status = 404 if isinstance(exc, NotFoundError) else 422
+    except (NotFoundError, BadRequestError, ConflictError) as exc:
+        status = (
+            404
+            if isinstance(exc, NotFoundError)
+            else 409
+            if isinstance(exc, ConflictError)
+            else 422
+        )
         raise HTTPException(status_code=status, detail=str(exc)) from None
     return _execution_out(execution)
 
@@ -343,9 +481,15 @@ async def execute_workflow(
 async def execution_history(
     workflow_id: str,
     ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)),
+    session: AsyncSession = Depends(get_session),
 ):
-    return [_execution_out(e) for e in workflow_service.execution_history(
-        str(ctx.tenant_id), workflow_id)]
+    try:
+        executions = await workflow_service.execution_history(
+            str(ctx.tenant_id), workflow_id, session=session
+        )
+    except NotFoundError:
+        raise HTTPException(status_code=404, detail="workflow not found") from None
+    return [_execution_out(e) for e in executions]
 
 
 @router.get("/{workflow_id}/executions/{execution_id}", response_model=WorkflowExecutionOut)
@@ -353,11 +497,42 @@ async def execution_detail(
     workflow_id: str,
     execution_id: str,
     ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)),
+    session: AsyncSession = Depends(get_session),
 ):
     try:
-        execution = workflow_service.inspect_execution(str(ctx.tenant_id), execution_id)
+        execution = await workflow_service.inspect_execution(
+            str(ctx.tenant_id), execution_id, session=session
+        )
     except NotFoundError:
         raise HTTPException(status_code=404, detail="execution not found") from None
+    if execution.workflow_id != workflow_id:
+        raise HTTPException(status_code=404, detail="execution not found")
+    return _execution_out(execution)
+
+
+@router.post(
+    "/{workflow_id}/executions/{execution_id}/approve", response_model=WorkflowExecutionOut
+)
+async def approve_execution(
+    workflow_id: str,
+    execution_id: str,
+    ctx: TenantContext = Depends(require_permission(Permission.CAMPAIGN_RUN)),
+    session: AsyncSession = Depends(get_session),
+):
+    await _assert_execution_path(workflow_id, execution_id, ctx, session)
+    try:
+        execution = await workflow_service.approve_execution(
+            str(ctx.tenant_id), execution_id, session=session
+        )
+    except (NotFoundError, BadRequestError, ConflictError) as exc:
+        status = (
+            404
+            if isinstance(exc, NotFoundError)
+            else 409
+            if isinstance(exc, ConflictError)
+            else 422
+        )
+        raise HTTPException(status_code=status, detail=str(exc)) from None
     if execution.workflow_id != workflow_id:
         raise HTTPException(status_code=404, detail="execution not found")
     return _execution_out(execution)
@@ -368,11 +543,24 @@ async def cancel_execution(
     workflow_id: str,
     execution_id: str,
     ctx: TenantContext = Depends(require_permission(Permission.CAMPAIGN_RUN)),
+    session: AsyncSession = Depends(get_session),
 ):
+    await _assert_execution_path(workflow_id, execution_id, ctx, session)
     try:
-        execution = workflow_service.cancel_execution(str(ctx.tenant_id), execution_id)
-    except NotFoundError:
-        raise HTTPException(status_code=404, detail="execution not found") from None
+        execution = await workflow_service.cancel_execution(
+            str(ctx.tenant_id), execution_id, session=session
+        )
+    except (NotFoundError, BadRequestError, ConflictError) as exc:
+        status = (
+            404
+            if isinstance(exc, NotFoundError)
+            else 409
+            if isinstance(exc, ConflictError)
+            else 422
+        )
+        raise HTTPException(status_code=status, detail=str(exc)) from None
+    if execution.workflow_id != workflow_id:
+        raise HTTPException(status_code=404, detail="execution not found")
     return _execution_out(execution)
 
 
@@ -384,11 +572,20 @@ async def retry_execution(
     ctx: TenantContext = Depends(require_permission(Permission.CAMPAIGN_RUN)),
     session: AsyncSession = Depends(get_session),
 ):
+    await _assert_execution_path(workflow_id, execution_id, ctx, session)
     try:
         execution = await workflow_service.retry_execution(
             str(ctx.tenant_id), execution_id, payload.payload, session=session
         )
-    except (NotFoundError, BadRequestError) as exc:
-        status = 404 if isinstance(exc, NotFoundError) else 422
+    except (NotFoundError, BadRequestError, ConflictError) as exc:
+        status = (
+            404
+            if isinstance(exc, NotFoundError)
+            else 409
+            if isinstance(exc, ConflictError)
+            else 422
+        )
         raise HTTPException(status_code=status, detail=str(exc)) from None
+    if execution.workflow_id != workflow_id:
+        raise HTTPException(status_code=404, detail="execution not found")
     return _execution_out(execution)

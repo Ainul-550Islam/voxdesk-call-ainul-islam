@@ -41,7 +41,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
 class Base(DeclarativeBase):
-    pass
+    """Shared SQLAlchemy declarative base for the application schema."""
 
 
 def _uuid() -> uuid.UUID:
@@ -161,6 +161,9 @@ class AuditAction(str, enum.Enum):
     ROLE_CHANGED = "role_changed"
     PASSWORD_CHANGED = "password_changed"
     AUTHZ_DENIED = "authz_denied"
+    # Governance details continue through the existing AuditLog table; the
+    # detailed immutable event lives in governance_evidence_events.
+    GOVERNANCE_EVENT = "governance_event"
     # STEP 5. `detail` on these carries provider and outcome only -- never a
     # token, never a config value that could hold one.
     INTEGRATION_CONNECTED = "integration_connected"
@@ -3281,7 +3284,16 @@ class WebhookDelivery(Base):
 
 class EmailDelivery(Base):
     __tablename__ = "email_deliveries"
-    __table_args__ = (Index("ix_email_deliveries_tenant", "tenant_id", "status"),)
+    __table_args__ = (
+        Index("ix_email_deliveries_tenant", "tenant_id", "status"),
+        Index(
+            "uq_email_delivery_idempotency",
+            "tenant_id",
+            "idempotency_key",
+            unique=True,
+            postgresql_where=text("idempotency_key <> ''"),
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
     tenant_id: Mapped[uuid.UUID] = mapped_column(
@@ -3290,6 +3302,11 @@ class EmailDelivery(Base):
     environment_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     recipient_hash: Mapped[str] = mapped_column(String(64), nullable=False)
     template_name: Mapped[str] = mapped_column(String(120), default="", nullable=False)
+    subject: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    provider: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(
+        String(180), default="", nullable=False, index=True
+    )
     status: Mapped[str] = mapped_column(String(32), default="queued", nullable=False)
     attempt_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     error_category: Mapped[str] = mapped_column(String(64), default="", nullable=False)
@@ -3298,8 +3315,514 @@ class EmailDelivery(Base):
     )
 
 
+# ===========================================================================
+# Voice runtime -- provider-backed profiles and clone jobs. These records keep
+# provider identifiers and opaque object references only; no audio bytes or
+# provider credentials are stored in JSON columns.
+
+
+class VoiceProfile(Base):
+    __tablename__ = "voice_profiles"
+    __table_args__ = (
+        UniqueConstraint(
+            "tenant_id", "provider", "provider_voice_id", name="uq_voice_profile_provider_voice"
+        ),
+        Index("ix_voice_profiles_tenant_status", "tenant_id", "status"),
+        Index("ix_voice_profiles_tenant_name", "tenant_id", "name"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    environment_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    provider: Mapped[str] = mapped_column(String(64), nullable=False)
+    provider_voice_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    language: Mapped[str] = mapped_column(String(32), nullable=False, default="en-US")
+    locale: Mapped[str] = mapped_column(String(32), nullable=False, default="en-US")
+    voice_type: Mapped[str] = mapped_column(String(24), nullable=False, default="provider")
+    status: Mapped[str] = mapped_column(String(24), nullable=False, default="pending")
+    capabilities: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    profile_metadata: Mapped[dict] = mapped_column("metadata", JSON, nullable=False, default=dict)
+    created_by: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+    deactivated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class VoiceCloneJob(Base):
+    __tablename__ = "voice_clone_jobs"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "request_fingerprint", name="uq_voice_clone_job_idempotency"),
+        Index("ix_voice_clone_jobs_tenant_status", "tenant_id", "status"),
+        Index("ix_voice_clone_jobs_provider_job", "provider", "provider_job_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    environment_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    voice_profile_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("voice_profiles.id", ondelete="SET NULL"), nullable=True
+    )
+    provider: Mapped[str] = mapped_column(String(64), nullable=False)
+    provider_job_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="requested")
+    input_object_reference: Mapped[str] = mapped_column(String(1000), nullable=False)
+    request_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    progress: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    error_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    error_message_redacted: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    attempt_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    last_heartbeat_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    requested_by: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+# ===========================================================================
+# Durable workflow persistence. The public workflow domain objects remain
+# immutable dataclasses; these rows are the single authoritative state store.
+
+
+class Workflow(Base):
+    __tablename__ = "workflows"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "slug", name="uq_workflows_tenant_slug"),
+        Index("ix_workflows_tenant", "tenant_id"),
+        Index("ix_workflows_status", "status"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    slug: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="draft")
+    # SQLAlchemy reserves the Python attribute ``metadata``; the database
+    # column remains the migration's existing ``metadata`` column.
+    workflow_metadata: Mapped[dict] = mapped_column("metadata", JSON, nullable=False, default=dict)
+    current_version_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("workflow_versions.id", ondelete="SET NULL"), nullable=True
+    )
+    published_version_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("workflow_versions.id", ondelete="SET NULL"), nullable=True
+    )
+    created_by: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+
+class WorkflowVersion(Base):
+    __tablename__ = "workflow_versions"
+    __table_args__ = (
+        UniqueConstraint("workflow_id", "version_number", name="uq_workflow_versions"),
+        Index("ix_workflow_versions_workflow", "workflow_id"),
+        Index("ix_workflow_versions_tenant", "tenant_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    workflow_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workflows.id", ondelete="CASCADE"), nullable=False
+    )
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+    )
+    version_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    graph_config: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    checksum: Mapped[str] = mapped_column(String(64), nullable=False, default="")
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="draft")
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_by: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+
+
+class WorkflowExecution(Base):
+    __tablename__ = "workflow_executions"
+    __table_args__ = (
+        Index("ix_workflow_executions_tenant_status", "tenant_id", "status"),
+        Index("ix_workflow_executions_workflow", "workflow_id"),
+        Index(
+            "ix_workflow_executions_recovery",
+            "tenant_id",
+            "status",
+            "last_heartbeat_at",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    workflow_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workflows.id", ondelete="RESTRICT"), nullable=False
+    )
+    workflow_version_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workflow_versions.id", ondelete="RESTRICT"), nullable=False
+    )
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+    )
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="created")
+    current_node_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    input_payload: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    output_metadata: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    error_metadata: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    attempt_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    checkpoint_data: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_heartbeat_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    recovery_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    concurrency_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+
+class ExecutionCheckpoint(Base):
+    __tablename__ = "execution_checkpoints"
+    __table_args__ = (Index("ix_checkpoints_execution", "execution_id"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    execution_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workflow_executions.id", ondelete="CASCADE"), nullable=False
+    )
+    node_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    checkpoint_data: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+
+
+class WorkflowIdempotency(Base):
+    __tablename__ = "workflow_idempotency"
+    __table_args__ = (
+        UniqueConstraint(
+            "tenant_id", "operation", "idempotency_key", name="uq_workflow_idempotency"
+        ),
+        Index("ix_workflow_idempotency_key", "tenant_id", "idempotency_key"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+    )
+    operation: Mapped[str] = mapped_column(String(64), nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(128), nullable=False)
+    request_fingerprint: Mapped[str] = mapped_column(String(256), nullable=False, default="")
+    result_ref: Mapped[str] = mapped_column(String(128), nullable=False, default="")
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="in_progress")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+# ===========================================================================
+# Prompt 3 -- tenant-scoped connector, tool, MCP, privacy and webhook records.
+# Secret-bearing values are references to the configured secret store only;
+# these tables deliberately have no plaintext credential columns.
+
+
+class Connector(Base):
+    __tablename__ = "connectors"
+    __table_args__ = (
+        UniqueConstraint(
+            "tenant_id", "environment_id", "provider", name="uq_connector_scope_provider"
+        ),
+        Index("ix_connectors_tenant_status", "tenant_id", "status"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    environment_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True, index=True
+    )
+    provider: Mapped[str] = mapped_column(String(80), nullable=False)
+    kind: Mapped[str] = mapped_column(String(40), nullable=False, default="generic")
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="configured")
+    capabilities: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    config: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    credential_ref: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    health_message: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    last_health_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+
+class ConnectorOAuth(Base):
+    __tablename__ = "connector_oauth"
+    __table_args__ = (UniqueConstraint("connector_id", name="uq_connector_oauth_connector"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    connector_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("connectors.id", ondelete="CASCADE"), nullable=False
+    )
+    state: Mapped[str] = mapped_column(String(24), nullable=False, default="disconnected")
+    oauth_state_nonce: Mapped[str | None] = mapped_column(String(96), nullable=True)
+    oauth_state_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    scopes: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    access_token_ref: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    refresh_token_ref: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    provider_account_ref: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+
+class ApiTool(Base):
+    __tablename__ = "api_tools"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "environment_id", "name", name="uq_api_tools_scope_name"),
+        Index("ix_api_tools_tenant_enabled", "tenant_id", "enabled"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    environment_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True, index=True
+    )
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    description: Mapped[str] = mapped_column(String(500), nullable=False, default="")
+    method: Mapped[str] = mapped_column(String(8), nullable=False)
+    url_template: Mapped[str] = mapped_column(String(1000), nullable=False)
+    parameter_schema: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    body_schema: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    result_schema: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    auth_ref: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    timeout_seconds: Mapped[float] = mapped_column(Float, nullable=False, default=10.0)
+    retry_max_attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=3)
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+
+class ToolExecution(Base):
+    __tablename__ = "tool_executions"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "idempotency_key", name="uq_tool_execution_idempotency"),
+        Index("ix_tool_executions_tenant_created", "tenant_id", "created_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    environment_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    tool_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    tool_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(180), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="started")
+    result_metadata: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    error_category: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class McpServer(Base):
+    __tablename__ = "mcp_servers"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "environment_id", "name", name="uq_mcp_server_scope_name"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    environment_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    endpoint: Mapped[str] = mapped_column(String(1000), nullable=False)
+    transport: Mapped[str] = mapped_column(String(32), nullable=False, default="streamable_http")
+    auth_ref: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="configured")
+    server_info: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    last_health_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+
+class McpTool(Base):
+    __tablename__ = "mcp_tools"
+    __table_args__ = (UniqueConstraint("server_id", "name", name="uq_mcp_tool_server_name"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    server_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("mcp_servers.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    description: Mapped[str] = mapped_column(String(1000), nullable=False, default="")
+    input_schema: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    annotations: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    discovered_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+
+
+class KnowledgeSource(Base):
+    __tablename__ = "knowledge_sources"
+    __table_args__ = (
+        UniqueConstraint(
+            "tenant_id", "environment_id", "canonical_url", name="uq_knowledge_source_url"
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    environment_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    canonical_url: Mapped[str] = mapped_column(String(2000), nullable=False)
+    max_depth: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="queued")
+    last_error: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+
+class PrivacyPolicy(Base):
+    __tablename__ = "privacy_policies"
+    __table_args__ = (UniqueConstraint("tenant_id", name="uq_privacy_policy_tenant"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+    )
+    mode: Mapped[str] = mapped_column(String(16), nullable=False, default="mask")
+    rules: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+
+class HumanApproval(Base):
+    __tablename__ = "human_approvals"
+    __table_args__ = (Index("ix_human_approvals_tenant_status", "tenant_id", "status"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    environment_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    action: Mapped[str] = mapped_column(String(120), nullable=False)
+    subject_ref: Mapped[str] = mapped_column(String(255), nullable=False)
+    payload_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(String(24), nullable=False, default="pending")
+    requested_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    decided_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+
+
+class PublicWebhookEndpoint(Base):
+    __tablename__ = "public_webhook_endpoints"
+    __table_args__ = (UniqueConstraint("tenant_id", "name", name="uq_public_webhook_tenant_name"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    secret_ref: Mapped[str] = mapped_column(String(255), nullable=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+
+
+class PublicWebhookReceipt(Base):
+    __tablename__ = "public_webhook_receipts"
+    __table_args__ = (
+        UniqueConstraint("endpoint_id", "event_id", name="uq_public_webhook_receipt_event"),
+        Index("ix_public_webhook_receipts_received", "received_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    endpoint_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("public_webhook_endpoints.id", ondelete="CASCADE"), nullable=False
+    )
+    event_id: Mapped[str] = mapped_column(String(180), nullable=False)
+    payload_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    received_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+
+
 from app.auth.identity import models as identity_models  # noqa: E402,F401  (metadata side effect)
 from app.ai import models as ai_governance_models  # noqa: E402,F401  (metadata side effect)
+from app.governance import models as enterprise_governance_models  # noqa: E402,F401
 from app.telephony.providers import factory as telephony_provider_factory  # noqa: E402,F401
 from app.telephony import number_provisioning as telephony_numbers  # noqa: E402,F401
 from app.telephony import recording as telephony_recordings  # noqa: E402,F401
@@ -3311,6 +3834,7 @@ from app.telephony import qos as telephony_qos  # noqa: E402,F401
 from app.contact_center import models as contact_center_models  # noqa: E402,F401
 from app.qa import models as qa_models  # noqa: E402,F401
 from app.leads import models as lead_models  # noqa: E402,F401
+
 # Batch 07: the transactional outbox owns its ORM in ``app.outbox.models``
 # (same pattern as ``app.leads.models``). Imported last so ``Base.metadata``
 # carries ``outbox_events`` for create_all and Alembic autogenerate alike.

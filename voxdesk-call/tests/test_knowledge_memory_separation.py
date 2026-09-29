@@ -196,7 +196,7 @@ def test_the_chunk_table_has_no_link_to_conversations():
         fk.column.table.name
         for fk in KnowledgeChunk.__table__.foreign_keys
     }
-    assert referenced == {"knowledge_documents", "tenants"}
+    assert referenced == {"knowledge_documents", "tenants", "environments"}
 
 
 def test_no_ingestion_path_accepts_a_transcript():

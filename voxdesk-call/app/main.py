@@ -33,6 +33,11 @@ from app.api.calendar_webhook_routes import router as calendar_webhook_router
 from app.api.crm_webhook_routes import router as crm_webhook_router
 from app.api.integration_routes import router as integration_router
 from app.api.knowledge_routes import router as knowledge_router
+from app.api_tools.routes import router as api_tools_router
+from app.mcp.routes import router as mcp_router
+from app.api.public_webhook_routes import router as public_webhook_router
+from app.api.connector_routes import router as connector_p3_router
+from app.api.security_routes import router as security_p3_router
 from app.api.routes import router as api_router
 from app.api.organization_routes import router as organization_router
 from app.api.tenant_admin_routes import router as tenant_admin_router
@@ -40,6 +45,26 @@ from app.api.environment_routes import router as environment_router
 from app.api.tenant_security_routes import router as tenant_security_router
 from app.api.tenant_usage_routes import router as tenant_usage_router
 from app.api.ai_routes import router as ai_router
+from app.api.governance_routes import router as governance_router
+from app.api.governance_admin_routes import router as governance_admin_router
+from app.api.model_registry_routes import router as model_registry_router
+from app.api.model_registry_admin_routes import router as model_registry_admin_router
+from app.api.evidence_routes import router as evidence_router
+from app.api.evidence_admin_routes import router as evidence_admin_router
+from app.api.risk_routes import router as risk_router
+from app.api.risk_admin_routes import router as risk_admin_router
+from app.api.specialized_agent_routes import router as specialized_agent_router
+from app.api.legal_routes import router as legal_router
+from app.api.translation_routes import router as translation_router
+from app.api.anomaly_routes import router as anomaly_router
+from app.review.routes import router as review_router
+from app.api.insight_routes import router as insight_router
+from app.api.forecast_routes import router as forecast_router
+from app.api.compliance_routes import router as compliance_router
+from app.api.roi_routes import router as roi_router
+from app.api.deployment_routes import router as deployment_control_router
+from app.api.deployment_runtime_routes import router as deployment_runtime_router
+from app.api.health_routes import router as health_router
 from app.api.prompt_routes import router as prompt_router
 from app.api.eval_routes import router as eval_router
 from app.api.phone_numbers_routes import router as phone_numbers_router
@@ -68,7 +93,6 @@ from app.api.security_session_routes import security_router
 from app.api.session_routes import router as session_router
 from app.api.sso_routes import admin_router as sso_admin_router
 from app.api.sso_routes import public_router as sso_public_router
-from app.core import health as health_check
 from app.core.chaos import add_chaos_middleware
 from app.core.config import settings
 from app.core.errors import install_error_handling
@@ -78,6 +102,9 @@ from app.core.rate_limit import add_rate_limit_middleware
 from app.core.security_headers import add_security_headers
 from app.core.security_txt import add_security_txt
 from app.db.models import Base
+# Register additive enterprise governance models on the shared metadata before
+# development/test create_all and before Alembic imports its target metadata.
+import app.governance  # noqa: F401
 from app.db.session import get_engine
 from app.channels.messaging import router as channels_router
 from app.telephony.twilio_handler import router as telephony_router
@@ -98,6 +125,8 @@ if settings.sentry_dsn:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from app.core.config_validation import require_valid_runtime_config
+    require_valid_runtime_config(strict=settings.is_production)
     # Refuse to serve traffic with an insecure configuration. In development
     # the same problems are logged as warnings so the app stays runnable.
     problems = settings.validate_security()
@@ -194,6 +223,11 @@ app.include_router(channels_router)
 app.include_router(auth_router)
 app.include_router(team_router)
 app.include_router(knowledge_router)
+app.include_router(api_tools_router)
+app.include_router(mcp_router)
+app.include_router(public_webhook_router)
+app.include_router(connector_p3_router)
+app.include_router(security_p3_router)
 app.include_router(integration_router)
 app.include_router(crm_webhook_router)
 app.include_router(appointment_router)
@@ -241,6 +275,26 @@ app.include_router(environment_router)
 app.include_router(tenant_security_router)
 app.include_router(tenant_usage_router)
 app.include_router(ai_router)
+app.include_router(governance_router)
+app.include_router(governance_admin_router)
+app.include_router(model_registry_router)
+app.include_router(model_registry_admin_router)
+app.include_router(evidence_router)
+app.include_router(evidence_admin_router)
+app.include_router(risk_router)
+app.include_router(risk_admin_router)
+app.include_router(specialized_agent_router)
+app.include_router(legal_router)
+app.include_router(translation_router)
+app.include_router(anomaly_router)
+app.include_router(review_router)
+app.include_router(insight_router)
+app.include_router(forecast_router)
+app.include_router(compliance_router)
+app.include_router(roi_router)
+app.include_router(deployment_control_router)
+app.include_router(deployment_runtime_router)
+app.include_router(health_router)
 app.include_router(prompt_router)
 app.include_router(eval_router)
 app.include_router(phone_numbers_router)
@@ -283,28 +337,6 @@ add_metrics_middleware(app)
 add_metrics_endpoint(app)
 add_security_txt(app)
 
-
-@app.get("/health")
-async def health():
-    return {"status": "ok"}
-
-
-@app.get("/health/ready")
-async def readiness():
-    """Readiness probe: the process is up AND it can serve traffic.
-
-    Distinct from /health (liveness): a load balancer routes traffic only to
-    nodes whose /health/ready returns 200, so a node that lost its database —
-    or its Redis, or (in production) its voice providers — stops receiving
-    work instead of failing every request. The checks never call a provider:
-    they verify configuration presence and dependency reachability only. See
-    app/core/health.py for the semantics.
-    """
-    result = await health_check.readiness()
-    status_code = 200 if result["ready"] else 503
-    if not result["ready"]:
-        log.error("readiness.unavailable", checks=result["body"]["checks"])
-    return JSONResponse(status_code=status_code, content=result["body"])
 
 
 def _mount_dashboard_if_built(app: FastAPI, dist_dir: str | None = None) -> None:

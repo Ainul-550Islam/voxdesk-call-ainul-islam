@@ -63,6 +63,7 @@ class UsageTracker(FrameProcessor):
         self._stt_chars = 0
         self._tts_chars = 0
         self._llm_tokens = 0
+        self._llm_usage_seen = False
 
     # ------------------------------------------------------------- counting ---
 
@@ -71,7 +72,12 @@ class UsageTracker(FrameProcessor):
             return
         for item in frame.data or []:
             if isinstance(item, LLMUsageMetricsData):
-                tokens = int((item.value and item.value.total_tokens) or 0)
+                raw_tokens = getattr(item.value, "total_tokens", None)
+                if isinstance(raw_tokens, int) and not isinstance(raw_tokens, bool) and raw_tokens >= 0:
+                    tokens = raw_tokens
+                    self._llm_usage_seen = True
+                else:
+                    continue
                 if tokens > 0:
                     self._llm_tokens += tokens
                     observability.record_llm_tokens(self._provider, tokens)
@@ -121,6 +127,6 @@ class UsageTracker(FrameProcessor):
         return {
             "stt_chars": self._stt_chars,
             "tts_chars": self._tts_chars,
-            "llm_tokens": self._llm_tokens,
+            "llm_tokens": self._llm_tokens if self._llm_usage_seen else None,
             "llm_provider": self._provider,
         }

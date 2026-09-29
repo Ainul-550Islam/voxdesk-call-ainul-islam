@@ -1,0 +1,39 @@
+{{- if .Values.scheduler.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "voxdesk.fullname" . }}-scheduler
+  labels:
+    {{- include "voxdesk.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "voxdesk.name" . }}-scheduler
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "voxdesk.name" . }}-scheduler
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: scheduler
+          image: "{{ required \"image.repository is required\" .Values.image.repository }}:{{ required \"image.tag is required\" .Values.image.tag }}"
+          command: ["python", "-m", "scripts.scheduler"]
+          env:
+            - name: APP_ENV
+              value: {{ .Values.config.appEnv | quote }}
+            - name: DATABASE_URL
+              value: {{ required "config.databaseUrl is required" .Values.config.databaseUrl | quote }}
+            - name: REDIS_URL
+              value: {{ required "config.redisUrl is required" .Values.config.redisUrl | quote }}
+          envFrom:
+            - secretRef:
+                name: {{ required "secrets.existingSecret is required" .Values.secrets.existingSecret }}
+          resources:
+            {{- toYaml .Values.scheduler.resources | nindent 12 }}
+{{- end }}

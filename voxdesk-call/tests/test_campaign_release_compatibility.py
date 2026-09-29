@@ -1,12 +1,11 @@
-"""Campaign environment migration ↔ release gate compatibility (Batch 06).
+"""Migration-chain ↔ release gate compatibility for the current head.
 
-The release machinery (P0-1, closed) must see the Batch 06 migration as the
-current chain head: ``facts.migration_heads`` reports exactly
-``0026_campaign_environment_scope``, the frozen-vs-live comparison the gate
-performs shows no drift when both sides carry that head, the migration file
-itself declares the correct revision chain, and no stale head expectation
-(0011/0019/0024/0025 as *head*) remains in the active campaign release
-assertions.
+The release machinery (P0-1, closed) must see the current migration as a
+single linear chain: ``facts.migration_heads`` reports exactly the current
+workflow-persistence head, the frozen-vs-live comparison the gate performs
+shows no drift when both sides carry that head, the latest migration file
+declares the correct revision chain, and no stale head expectation remains in
+the active campaign release assertions.
 """
 
 from __future__ import annotations
@@ -23,22 +22,23 @@ from tests.test_release_gate import CHECKLIST, FROZEN, LIVE, TODAY
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 VERSIONS_DIR = REPO_ROOT / "alembic" / "versions"
-HEAD = "0026_campaign_environment_scope"
-PREVIOUS_HEAD = "0025_enterprise_leads"
+HEAD = "0036_runtime_deployment_observability"
+PREVIOUS_HEAD = "0036_durable_call_outcomes"
 
 
 # ------------------------------------------------------------------ facts ---
 
-def test_migration_heads_reports_exactly_the_batch_06_head():
+
+def test_migration_heads_reports_exactly_the_current_head():
     heads = facts.migration_heads(VERSIONS_DIR)
-    assert heads == (HEAD,)  # single head, and it is 0026
+    assert heads == (HEAD,)
 
 
 def test_migration_file_declares_the_correct_chain():
     path = VERSIONS_DIR / f"{HEAD}.py"
-    assert path.is_file(), "0026 migration file must exist"
+    assert path.is_file(), "current migration file must exist"
 
-    spec = importlib.util.spec_from_file_location("_migration_0026", path)
+    spec = importlib.util.spec_from_file_location("_migration_0028", path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
 
@@ -51,8 +51,8 @@ def test_migration_file_declares_the_correct_chain():
 
 
 def test_previous_head_file_exists_and_is_revised_exactly_once():
-    """The chain stays linear: 0025 exists, and exactly one migration
-    (0026) revises it — no branch, no duplicate head."""
+    """The chain stays linear: the previous head exists, and exactly one
+    migration revises it — no branch, no duplicate head."""
     assert (VERSIONS_DIR / f"{PREVIOUS_HEAD}.py").is_file()
     revisers = []
     for path in sorted(VERSIONS_DIR.glob("*.py")):
@@ -68,11 +68,12 @@ def test_previous_head_file_exists_and_is_revised_exactly_once():
 
 # ------------------------------------------------------------- gate drift ---
 
+
 def test_release_facts_report_the_current_head_without_drift():
     """The gate's frozen-vs-live comparison (the check that blocks a release
     on migration drift) passes when both sides carry the real current head —
-    i.e. the release facts report 0026 as the head and the campaign
-    environment migration is visible to the release check."""
+    i.e. the release facts report the current head and the durable workflow
+    migrations are visible to the release check."""
     real_heads = facts.migration_heads(VERSIONS_DIR)
     artifact = dataclasses.replace(FROZEN, migration_heads=real_heads)
     live = dataclasses.replace(LIVE, migration_heads=real_heads)
@@ -83,7 +84,7 @@ def test_release_facts_report_the_current_head_without_drift():
 
 
 def test_a_stale_recorded_head_is_still_detected_as_drift():
-    """Negative control: if a frozen artifact still recorded the pre-Batch-06
+    """Negative control: if a frozen artifact still recorded the previous
     head, the gate must flag migration drift — proving the comparison really
     looks at heads rather than passing unconditionally."""
     real_heads = facts.migration_heads(VERSIONS_DIR)

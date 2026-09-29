@@ -36,6 +36,7 @@ Endpoints::
     POST   /auth/sso/{slug}/acs                            SAML assertion consumer
     POST   /auth/sso/{slug}/slo                            single logout
 """
+
 from __future__ import annotations
 
 import base64
@@ -47,6 +48,7 @@ import structlog
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request, Response
 from fastapi.responses import JSONResponse, PlainTextResponse
 from pydantic import BaseModel, Field
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.auth_routes import _set_refresh_cookie
@@ -849,7 +851,9 @@ async def test_connection(
 
     return TestOut(
         ok=ok,
-        detail="Connection configuration is complete." if ok else "Connection configuration is incomplete.",
+        detail="Connection configuration is complete."
+        if ok
+        else "Connection configuration is incomplete.",
         discovered=False,
         issuer=row.issuer or "",
         jwks_keys=0,
@@ -947,7 +951,15 @@ async def start_login(
     The state is single-use and expires; it is what ties the callback back to
     this attempt.
     """
-    connection = await sso_service.get_connection_by_slug(session, slug=slug)
+    try:
+        connection = await sso_service.get_connection_by_slug(session, slug=slug)
+    except (OSError, SQLAlchemyError):
+        # The public login surface must return a structured transient failure
+        # when the database is unavailable, not expose a framework 500.
+        await session.rollback()
+        return _public_error(
+            503, "service_unavailable", "Single sign-on is temporarily unavailable."
+        )
     if connection is None or connection.status != SSOStatus.ACTIVE.value:
         return _public_error(
             404, "sso_unavailable", "Single sign-on is not available for that workspace."

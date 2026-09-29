@@ -18,7 +18,10 @@ from app.agent.functions import FunctionHandlers
 from app.channels.messaging import set_opt_out
 from app.db.models import LeadStatus
 from app.domain.workflow_models import (
-    NodeType, WorkflowAction, WorkflowDefinition, WorkflowNode,
+    NodeType,
+    WorkflowAction,
+    WorkflowDefinition,
+    WorkflowNode,
 )
 from app.leads import lifecycle
 from app.leads.activities import history_for
@@ -59,9 +62,7 @@ async def _lead_at(db, tenant, status: LeadStatus):
         LeadStatus.DNC: ["do_not_call"],
     }[status]
     for step in walk:
-        await lifecycle.transition(
-            db, lead, step, reason="walk", source="test"
-        )
+        await lifecycle.transition(db, lead, step, reason="walk", source="test")
     await db.commit()
     return lead
 
@@ -95,9 +96,7 @@ async def test_do_not_call_is_terminal(db, tenant_a):
     lead = await _lead_at(db, tenant_a, LeadStatus.DNC)
     for target in LeadStatus:
         with pytest.raises(InvalidTransition):
-            await lifecycle.transition(
-                db, lead, target.value, reason="revive", source="test"
-            )
+            await lifecycle.transition(db, lead, target.value, reason="revive", source="test")
         await db.rollback()
     assert lead.status is LeadStatus.DNC
 
@@ -127,13 +126,18 @@ async def test_compare_and_set_rejects_a_stale_belief(db, tenant_a):
 
 # ------------------------------------------------------ mutation paths use it ---
 
+
 async def test_api_status_change_writes_history(db, tenant_a):
     from app.leads import service
 
     lead = await make_lead(db, tenant_a, phone="+15550400001")
     await service.change_status(
-        db, tenant_id=tenant_a.id, lead_id=lead.id, target="qualified",
-        reason="api test", actor_id=None,
+        db,
+        tenant_id=tenant_a.id,
+        lead_id=lead.id,
+        target="qualified",
+        reason="api test",
+        actor_id=None,
     )
     history = await history_for(db, lead.tenant_id, lead.environment_id, lead.id)
     assert lead.status is LeadStatus.QUALIFIED
@@ -143,7 +147,10 @@ async def test_api_status_change_writes_history(db, tenant_a):
 
 def _workflow(tenant_id: str, action: WorkflowAction, workflow_id: str) -> WorkflowDefinition:
     return WorkflowDefinition(
-        id=workflow_id, tenant_id=tenant_id, name=workflow_id, entry_node="act",
+        id=workflow_id,
+        tenant_id=tenant_id,
+        name=workflow_id,
+        entry_node="act",
         nodes=(
             WorkflowNode(id="act", type=NodeType.ACTION, action=action, next="end"),
             WorkflowNode(id="end", type=NodeType.TERMINAL),
@@ -154,11 +161,12 @@ def _workflow(tenant_id: str, action: WorkflowAction, workflow_id: str) -> Workf
 async def test_workflow_status_action_writes_history(db, tenant_a):
     lead = await make_lead(db, tenant_a, phone="+15550400002")
     definition = _workflow(
-        str(tenant_a.id), WorkflowAction("update_lead_status", {"status": "qualified"}),
+        str(tenant_a.id),
+        WorkflowAction("update_lead_status", {"status": "qualified"}),
         "wf-lifecycle-qualified",
     )
-    workflow_service.create_workflow(str(tenant_a.id), definition)
-    workflow_service.publish_workflow(str(tenant_a.id), definition.id)
+    await workflow_service.create_workflow(str(tenant_a.id), definition, session=db)
+    await workflow_service.publish_workflow(str(tenant_a.id), definition.id, session=db)
     await workflow_service.execute_workflow(
         str(tenant_a.id), definition.id, {"lead_id": str(lead.id)}, session=db
     )
@@ -174,11 +182,12 @@ async def test_workflow_status_action_writes_history(db, tenant_a):
 async def test_workflow_cannot_reverse_do_not_call(db, tenant_a):
     lead = await _lead_at(db, tenant_a, LeadStatus.DNC)
     definition = _workflow(
-        str(tenant_a.id), WorkflowAction("update_lead_status", {"status": "qualified"}),
+        str(tenant_a.id),
+        WorkflowAction("update_lead_status", {"status": "qualified"}),
         "wf-lifecycle-dnc",
     )
-    workflow_service.create_workflow(str(tenant_a.id), definition)
-    workflow_service.publish_workflow(str(tenant_a.id), definition.id)
+    await workflow_service.create_workflow(str(tenant_a.id), definition, session=db)
+    await workflow_service.publish_workflow(str(tenant_a.id), definition.id, session=db)
     execution = await workflow_service.execute_workflow(
         str(tenant_a.id), definition.id, {"lead_id": str(lead.id)}, session=db
     )
@@ -205,16 +214,15 @@ async def test_ai_tool_dnc_goes_through_consent_and_history(db, tenant_a):
 
     lead = (
         await db.execute(
-            select(Lead).where(
-                Lead.tenant_id == tenant_a.id, Lead.phone == call.from_number
-            )
+            select(Lead).where(Lead.tenant_id == tenant_a.id, Lead.phone == call.from_number)
         )
     ).scalar_one()
     assert lead.status is LeadStatus.DNC
     history = await history_for(db, lead.tenant_id, lead.environment_id, lead.id)
     # canonical creation history + the consent-driven DNC transition
     assert [(h.from_status, h.to_status) for h in history] == [
-        (None, "new"), ("new", "do_not_call"),
+        (None, "new"),
+        ("new", "do_not_call"),
     ]
     assert history[0].source == "agent_tool"
     assert history[-1].source == "consent"
@@ -231,9 +239,7 @@ async def test_messaging_stop_sets_dnc_and_start_never_reverses(db, tenant_a):
     from app.db.models import Lead
 
     lead = (
-        await db.execute(
-            select(Lead).where(Lead.tenant_id == tenant_a.id, Lead.phone == phone)
-        )
+        await db.execute(select(Lead).where(Lead.tenant_id == tenant_a.id, Lead.phone == phone))
     ).scalar_one()
     assert lead.status is LeadStatus.DNC
     history = await history_for(db, lead.tenant_id, lead.environment_id, lead.id)
@@ -250,6 +256,7 @@ async def test_messaging_stop_sets_dnc_and_start_never_reverses(db, tenant_a):
 
 
 # ------------------------------------------------------- direct-write audit ---
+
 
 def test_no_direct_lead_status_assignments_outside_the_lifecycle():
     """Requirement: the product code contains no ``lead.status = LeadStatus.X``

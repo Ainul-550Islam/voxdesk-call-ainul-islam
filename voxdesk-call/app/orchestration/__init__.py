@@ -1,11 +1,12 @@
-"""Orchestration engine (Phase 4 slice 3): workflow + campaign execution.
+"""Compatibility exports for orchestration helpers.
 
-Pure, deterministic, stdlib-only. The domain layer (``app/domain``) defines
-the *shapes* — workflows, campaigns, compliance gates — and this package adds
-the *engines* that run them: a graph executor for workflows and a
-compliance-gated dispatch engine for campaigns. Both mirror the domain
-vocabulary exactly (controlled-action allowlist, condition operators, campaign
-states) without importing the database or async stack.
+The durable workflow domain, repository, and service are the sole production
+workflow architecture. In particular, ``WorkflowEngine`` below is retained
+only for older pure/in-process callers and tests; it is not used by the API
+and does not provide durable persistence or cross-process idempotency. New
+workflow code must use ``app.services.workflow_service`` and its repository.
+
+Campaign helpers remain pure, database-independent utilities.
 """
 
 from app.orchestration.campaign import (

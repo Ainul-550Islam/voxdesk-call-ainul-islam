@@ -16,6 +16,7 @@ client model override never reaches the provider.
 
 from __future__ import annotations
 
+import asyncio
 import uuid
 from dataclasses import dataclass
 
@@ -25,8 +26,8 @@ from app.agent.llm_factory import LLMChoice
 from app.ai.budget import reconcile as reconcile_reservation
 from app.ai.budget import release as release_reservation
 from app.ai.context import RuntimeContext
-from app.ai.errors import RuntimeFailure
 from app.ai.gateway import GatewayResult, authorize_live, govern
+from app.ai.models import DeadlineExceeded
 from app.ai.guardrails.output import enforce as enforce_output
 from app.ai.guardrails.input import enforce as enforce_input
 from app.ai import trace as trace_mod
@@ -113,7 +114,9 @@ async def invoke(
             executor=executor,
             tokens_estimate=tokens_estimate,
             record_usage=record_usage,
-            request_id=request_id,
+            request_id=live.request_id,
+            trace_id=live.trace_id,
+            call_id=call_id,
             blocked_output=blocked_output,
             requested_preset=requested_preset,
             budget_checked=True,
@@ -124,15 +127,17 @@ async def invoke(
             await release_reservation(session, ctx.tenant_id, tokens_estimate)
         raise
     if live.budget_reserved:
-        if result.executed:
+        measured = result.telemetry.get("tokens")
+        if result.executed and isinstance(measured, int) and not isinstance(measured, bool):
             await reconcile_reservation(
                 session,
                 ctx.tenant_id,
                 reserved=tokens_estimate,
-                actual=int(result.telemetry.get("tokens") or 0),
+                actual=measured,
             )
-        else:
+        elif not result.executed:
             await release_reservation(session, ctx.tenant_id, tokens_estimate)
+        # Unknown usage keeps the estimate reserved; it is not zero.
     return result
 
 
@@ -197,35 +202,26 @@ async def prepare_voice(
 
 
 async def govern_text_reply(agent, history, user_text: str) -> dict:
-    """Text boundary. Session-less unit tests still run guardrails and the loop.
+    """Governed text boundary; missing tenant session fails before any SDK call.
 
-    A live channel handler always has a session. That path loads policy, admits
-    budget, and refuses an unpublished production prompt before any SDK call.
-    The completion itself stays ``_complete_openai`` / ``_complete_anthropic``.
+    A live channel handler loads policy, prompt approval, budget and deadline
+    before the existing provider loop. Provider completions remain in the
+    canonical agent adapters ``_complete_openai`` / ``_complete_anthropic``.
     """
     session = getattr(agent.handlers, "session", None)
     channel = agent.channel or "text"
     if session is None:
-        heard = enforce_input(user_text, channel="text" if channel != "voice" else "voice")
-        if not heard.allowed:
-            raise RuntimeFailure("input_rejected")
-        result = await agent.complete_turn(history, user_text)
-        result["reply"] = guard_spoken_text(
-            result["reply"], blocked_substrings=tuple(getattr(agent, "_blocked_output", ()) or ())
+        # A production reply must not fall through to the provider loop when
+        # tenant/environment policy, prompt approval, budget, trace, and usage
+        # cannot be established. ``complete_turn`` remains an internal
+        # provider-loop primitive for deterministic unit tests only.
+        from app.ai.models import GovernanceError
+
+        raise GovernanceError(
+            "Authenticated runtime context is required",
+            code="runtime_context_missing",
+            status_code=403,
         )
-        trace_mod.finish(
-            trace_mod.start(tenant_id=agent.tenant.id, channel=channel),
-            provider=agent.provider,
-            model=agent.model,
-            status="completed",
-            outcome="completed",
-            executed=True,
-            cost_known=False,
-            usage_recorded=False,
-            guardrail="signal" if heard.injection_signal else "none",
-            principal="agent_runtime",
-        )
-        return result
 
     call = getattr(agent.handlers, "call", None)
     environment_id = getattr(call, "environment_id", None)
@@ -244,21 +240,40 @@ async def govern_text_reply(agent, history, user_text: str) -> dict:
     if live.prompt.get("body"):
         agent._runtime_prompt = live.prompt["body"]
     try:
-        result = await agent.complete_turn(history, user_text)
-    except BaseException:
-        # The provider turn failed after admission reserved a token. Release
-        # it — a failed reply must not permanently consume the ceiling.
+        try:
+            async with asyncio.timeout(max(live.deadline_ms, 1) / 1000):
+                result = await agent.complete_turn(history, user_text)
+        except TimeoutError as exc:
+            raise DeadlineExceeded("Text AI invocation exceeded its governed deadline") from exc
+    except BaseException as exc:
+        # Provider failures feed the shared breaker; local/tool failures do not
+        # masquerade as a provider outage. Release the admission reservation.
+        from app.agent.errors import ProviderError
+        from app.ai import circuit_breaker
+
+        if isinstance(exc, ProviderError):
+            await circuit_breaker.record_failure_shared(agent.provider)
         if live.budget_reserved:
             await release_reservation(session, agent.tenant.id, 1)
         raise
+    else:
+        from app.ai import circuit_breaker
+
+        await circuit_breaker.record_success_shared(agent.provider)
     result["reply"] = guard_spoken_text(
         result["reply"], blocked_substrings=tuple(getattr(agent, "_blocked_output", ()) or ())
     )
     tokens = result.get("tokens")
+    if live.budget_reserved and isinstance(tokens, int) and not isinstance(tokens, bool):
+        # Reconcile the admitted estimate independently of telemetry/billing.
+        # A ledger outage must not strand an already-consumed reservation.
+        await reconcile_reservation(
+            session, agent.tenant.id, reserved=1, actual=max(tokens, 0)
+        )
     usage_recorded = False
     cost_known = False
     provider_cost = None
-    if isinstance(tokens, int) and tokens > 0:
+    if isinstance(tokens, int) and not isinstance(tokens, bool):
         from app.ai.usage import record
 
         recorded = await record(
@@ -274,15 +289,10 @@ async def govern_text_reply(agent, history, user_text: str) -> dict:
         usage_recorded = bool(recorded["recorded"])
         cost_known = bool(recorded["cost_known"])
         provider_cost = recorded["provider_cost_usd"]
-    if live.budget_reserved and isinstance(tokens, int):
-        # Success with a measured count: swap the 1-token admission estimate
-        # for what the provider actually used. An unmeasured turn keeps the
-        # admission footprint (same semantics as the voice path).
-        await reconcile_reservation(session, agent.tenant.id, reserved=1, actual=max(tokens, 0))
     trace_mod.finish(
         {
             "trace_id": live.trace_id,
-            "request_id": live.trace_id,
+            "request_id": live.request_id,
             "tenant_id": str(agent.tenant.id),
             "channel": channel,
             "call_id": "" if call is None else str(getattr(call, "id", "")),
@@ -301,7 +311,7 @@ async def govern_text_reply(agent, history, user_text: str) -> dict:
         guardrail=live.guardrail,
         principal="agent_runtime",
         environment_id="" if environment_id is None else str(environment_id),
-        tokens=tokens or 0,
+        tokens=(tokens if isinstance(tokens, int) and not isinstance(tokens, bool) else None),
     )
     return result
 

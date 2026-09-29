@@ -51,6 +51,14 @@ PROVIDER_ERRORS = Counter(
 )
 DB_UP = Gauge("voxdesk_db_up", "Database reachability (1/0)")
 
+# Runtime lifecycle signals share this Prometheus registry and bounded labels.
+RUNTIME_COMPONENTS = frozenset({"api", "ai", "workflow", "review", "specialized_job", "provider", "deployment", "queue"})
+RUNTIME_EVENTS = frozenset({"execution", "preflight", "apply", "observation", "verification", "cost", "backlog", "dependency"})
+RUNTIME_OUTCOMES = frozenset({"started", "success", "failure", "retrying", "unavailable", "not_verified", "observed", "other"})
+RUNTIME_EVENT_COUNT = Counter("voxdesk_runtime_events_total", "Bounded runtime lifecycle events", ["component", "event", "outcome"])
+RUNTIME_EVENT_DURATION = Histogram("voxdesk_runtime_event_duration_seconds", "Runtime execution duration", ["component", "event"], buckets=(0.01, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30, 120, 900))
+REVIEW_BACKLOG = Gauge("voxdesk_review_backlog", "Current count of open review cases")
+
 #: External side-effect lifecycle (Step 6, scale-compliance). Both labels are
 #: bounded closed sets -- `kind` is a fixed vocabulary and `outcome` is a fixed
 #: vocabulary -- so this can never mint unbounded Prometheus series the way a
@@ -135,6 +143,19 @@ def add_metrics_endpoint(app: FastAPI) -> None:
         if not _scrape_authorized(request):
             return Response(status_code=401, content="unauthorized")
         return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
+
+
+def record_runtime_event(component: str, event: str, outcome: str = "other", *, duration_seconds: float | None = None) -> None:
+    component = component if component in RUNTIME_COMPONENTS else "api"
+    event = event if event in RUNTIME_EVENTS else "execution"
+    outcome = outcome if outcome in RUNTIME_OUTCOMES else "other"
+    RUNTIME_EVENT_COUNT.labels(component, event, outcome).inc()
+    if duration_seconds is not None and duration_seconds >= 0:
+        RUNTIME_EVENT_DURATION.labels(component, event).observe(duration_seconds)
+
+
+def set_review_backlog(value: int) -> None:
+    REVIEW_BACKLOG.set(max(0, int(value)))
 
 
 def set_db_up(value: bool) -> None:

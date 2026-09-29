@@ -13,13 +13,13 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-voxdesk}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-voxdesk}
-      POSTGRES_DB: ${POSTGRES_DB:-voxdesk}
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-voxdesk}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:?set POSTGRES_USER}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -43,7 +43,7 @@ services:
     stop_grace_period: 30s    # let in-flight requests drain on SIGTERM
     env_file: .env
     environment:
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-voxdesk}:${POSTGRES_PASSWORD:-voxdesk}@db:5432/${POSTGRES_DB:-voxdesk}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:?set POSTGRES_USER}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:?set POSTGRES_DB}
       REDIS_URL: redis://redis:6379/0
       # Realtime publishing: the API announces durable call facts to the
       # gateway over the internal network. The environment: block overrides
@@ -142,7 +142,7 @@ services:
     stop_grace_period: 30s
     env_file: .env
     environment:
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-voxdesk}:${POSTGRES_PASSWORD:-voxdesk}@db:5432/${POSTGRES_DB:-voxdesk}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:?set POSTGRES_USER}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:?set POSTGRES_DB}
       REDIS_URL: redis://redis:6379/0
     # Same image as the API, but run the background worker instead of the
     # entrypoint (no uvicorn, no migrations -- the API already migrated).
@@ -159,9 +159,9 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      PGPASSWORD: ${POSTGRES_PASSWORD:-voxdesk}
-      POSTGRES_USER: ${POSTGRES_USER:-voxdesk}
-      POSTGRES_DB: ${POSTGRES_DB:-voxdesk}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB}
     volumes:
       - ./backups:/backups
     entrypoint: ["/bin/sh", "-c"]
@@ -208,7 +208,7 @@ services:
     image: grafana/grafana:11.1.0
     restart: unless-stopped
     environment:
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-voxdesk}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD}
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
       GF_AUTH_ANONYMOUS_ENABLED: "false"
       GF_USERS_ALLOW_SIGN_UP: "false"

@@ -1,8 +1,11 @@
 """Residency policy. A label is not a physical guarantee.
 
-Nothing in this module writes a region onto a tenant, an environment, or an
-object store. ``applied`` is always false. ``physical_residency_proven`` is
-always false.
+This evaluator remains deliberately non-persistent: it validates a label and
+reports the deployment's configured semantics. The additive enterprise
+``app.governance.residency`` service stores a tenant-scoped intent and requires
+an authoritative external verification before marking physical residency
+proven. ``applied`` is always false here, and a label alone never proves
+physical residency.
 """
 
 from __future__ import annotations
@@ -85,6 +88,18 @@ def require_applicable(decision: ResidencyDecision) -> ResidencyDecision:
     """Refuse a label that must not be treated as a placement."""
     if decision.restricted or not decision.supported:
         raise ResidencyDenied("Region is not supported")
+    return decision
+
+
+def require_physical_proof(decision: ResidencyDecision) -> ResidencyDecision:
+    """Fail closed unless an authoritative verifier has changed the decision.
+
+    The ordinary evaluator can never satisfy this function. It exists as a
+    named guard so a future provider-backed verifier cannot accidentally reuse
+    ``supported`` as proof of physical placement.
+    """
+    if not decision.physical_residency_proven:
+        raise ResidencyDenied("Authoritative physical residency verification is required")
     return decision
 
 

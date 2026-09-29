@@ -44,7 +44,7 @@ def finish(trace: dict, **fields) -> dict:
         "outcome": fields.get("outcome", ""),
         "code": fields.get("code", ""),
         "latency_ms": fields.get("latency_ms", 0),
-        "tokens": fields.get("tokens", 0),
+        "tokens": fields.get("tokens"),
         "retry_count": fields.get("retry_count", 0),
         "fallback_used": fields.get("fallback_used", False),
         "guardrail": fields.get("guardrail", "none"),

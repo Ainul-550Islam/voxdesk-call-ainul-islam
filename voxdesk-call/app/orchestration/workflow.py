@@ -1,24 +1,18 @@
-"""Deterministic workflow execution engine (Phase 4, orchestration slice).
+"""Legacy pure workflow executor retained as a compatibility surface.
 
-Mirrors the vocabulary of ``app/domain/workflow_models.py`` — the same
-controlled-action allowlist, the same node vocabulary, the same validation
-rules — and adds the one thing that layer deliberately does not do: a pure
-**executor** that walks the graph from the entry node to a terminal node and
-records every step.
+The durable workflow domain, repository, and service are the only production
+workflow architecture and database-backed source of truth. This module is not
+imported by the API or service path; it remains available for older callers
+and its focused compatibility tests without becoming a second persistence
+engine.
 
-Two guarantees from the domain layer are re-encoded here verbatim:
-
-* **No arbitrary code.** An action is a name from ``CONTROLLED_ACTIONS`` plus
-  validated parameters; there is no ``exec``/``eval``/``import``/``shell`` and
-  no user code path. Anything code-shaped is rejected by ``validate``.
-* **Deterministic identity + exactly-once runs.** ``Workflow.identity`` is a
-  content hash, and ``WorkflowEngine.run`` memoises completed runs by
-  ``(tenant_id, idempotency_key)`` so a replayed trigger can never run a
-  workflow twice.
-
-The engine never sleeps, never dials and never touches the database: ``DELAY``
-and ``TIMEOUT`` nodes are recorded as scheduled steps, and action handlers are
-injected callables, so the whole run is pure and replayable.
+It mirrors the canonical vocabulary from ``app/domain/workflow_models.py``
+and adds a pure **executor** that walks a graph from its entry node to a
+terminal node. The engine never sleeps, never dials, and never touches the
+database: ``DELAY`` and ``TIMEOUT`` nodes are recorded as scheduled steps, and
+injected action handlers are called in-process. Its idempotency cache is
+necessarily process-local and must not be used for durable execution
+semantics; durable triggers belong to ``app.services.workflow_service``.
 """
 
 from __future__ import annotations
@@ -28,24 +22,11 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
-from app.orchestration.conditions import CONDITION_OPERATORS as _OPERATORS, evaluate
-
-# ------------------------------------------------------- action vocabulary ---
-
-CONTROLLED_ACTIONS = frozenset({
-    "update_lead_status",
-    "add_conversation_tag",
-    "enqueue_notification",
-    "record_escalation_intent",
-    "create_followup_intent",
-    "mark_resolved",
-    "apply_dnc",
-})
-
-FORBIDDEN_ACTION_MARKERS = (
-    "__", "exec", "eval", "import", "system", "shell", "subprocess",
-    "lambda", "compile", "globals", "locals",
+from app.domain.workflow_models import (
+    CONTROLLED_ACTIONS,
+    FORBIDDEN_ACTION_MARKERS,
 )
+from app.orchestration.conditions import CONDITION_OPERATORS as _OPERATORS, evaluate
 
 # ----------------------------------------------------------- node types -----
 
@@ -59,7 +40,9 @@ APPROVAL = "approval"
 HANDOFF = "handoff"
 TERMINAL = "terminal"
 
-NODE_TYPES = frozenset({TRIGGER, CONDITION, ACTION, DELAY, RETRY, TIMEOUT, APPROVAL, HANDOFF, TERMINAL})
+NODE_TYPES = frozenset(
+    {TRIGGER, CONDITION, ACTION, DELAY, RETRY, TIMEOUT, APPROVAL, HANDOFF, TERMINAL}
+)
 
 # ------------------------------------------------------ execution statuses ---
 
@@ -215,9 +198,19 @@ class Workflow:
             self.name,
             self.entry_node,
             tuple(
-                (n.id, n.type, n.action, n.condition, n.branches,
-                 n.default_next, n.next, n.delay_seconds, n.timeout_seconds,
-                 n.retry_limit, n.approver_role)
+                (
+                    n.id,
+                    n.type,
+                    n.action,
+                    n.condition,
+                    n.branches,
+                    n.default_next,
+                    n.next,
+                    n.delay_seconds,
+                    n.timeout_seconds,
+                    n.retry_limit,
+                    n.approver_role,
+                )
                 for n in self.nodes
             ),
         )
@@ -246,12 +239,14 @@ class RunResult:
 
 
 class WorkflowEngine:
-    """Deterministic executor over :class:`Workflow` graphs.
+    """Deprecated pure compatibility executor over :class:`Workflow` graphs.
 
     Action handlers are injected callables ``(name, params) -> None``; the
     engine isolates their failures (retrying up to the node's limit) so a bad
     handler can never take down a run or leak state. Runs are memoised by
-    ``(tenant_id, idempotency_key)`` for exactly-once semantics.
+    ``(tenant_id, idempotency_key)`` only within this process. This cache is
+    not durable exactly-once semantics; use ``workflow_service`` for all
+    production workflow execution.
     """
 
     def __init__(self, handlers: Mapping[str, Callable[[str, dict[str, Any]], None]] | None = None):
@@ -263,7 +258,9 @@ class WorkflowEngine:
             raise WorkflowError(f"cannot register handler for uncontrolled action {action!r}")
         self._handlers[action] = handler
 
-    def run(self, workflow: Workflow, payload: dict[str, Any], *, idempotency_key: str = "") -> RunResult:
+    def run(
+        self, workflow: Workflow, payload: dict[str, Any], *, idempotency_key: str = ""
+    ) -> RunResult:
         """Run a workflow once. With an idempotency key, a replay returns the
         memoised result and never re-executes handlers."""
         problems = workflow.validate()
@@ -290,8 +287,11 @@ class WorkflowEngine:
             visits += 1
             if visits > MAX_VISITS:
                 return RunResult(
-                    workflow.id, workflow.tenant_id, TIMED_OUT,
-                    tuple(steps), current_node=current,
+                    workflow.id,
+                    workflow.tenant_id,
+                    TIMED_OUT,
+                    tuple(steps),
+                    current_node=current,
                     error="step limit exceeded (possible cycle)",
                 )
             node = node_map[current]
@@ -305,8 +305,11 @@ class WorkflowEngine:
                 target = self._resolve_condition(node, payload)
                 if target is None:
                     return RunResult(
-                        workflow.id, workflow.tenant_id, FAILED,
-                        tuple(steps), current_node=current,
+                        workflow.id,
+                        workflow.tenant_id,
+                        FAILED,
+                        tuple(steps),
+                        current_node=current,
                         error=f"condition node {current!r} matched no branch",
                     )
                 steps.append(Step(current, "executed", f"branch -> {target}"))
@@ -318,8 +321,12 @@ class WorkflowEngine:
                 if not ok:
                     steps.append(Step(current, "failed", detail, attempt))
                     return RunResult(
-                        workflow.id, workflow.tenant_id, FAILED,
-                        tuple(steps), current_node=current, error=detail,
+                        workflow.id,
+                        workflow.tenant_id,
+                        FAILED,
+                        tuple(steps),
+                        current_node=current,
+                        error=detail,
                     )
                 steps.append(Step(current, "executed", detail, attempt))
                 current = node.next or ""
@@ -328,8 +335,11 @@ class WorkflowEngine:
             if node.type is APPROVAL:
                 steps.append(Step(current, "scheduled", f"waiting for {node.approver_role}"))
                 return RunResult(
-                    workflow.id, workflow.tenant_id, WAITING_APPROVAL,
-                    tuple(steps), current_node=current,
+                    workflow.id,
+                    workflow.tenant_id,
+                    WAITING_APPROVAL,
+                    tuple(steps),
+                    current_node=current,
                 )
 
             if node.type is DELAY:
@@ -357,15 +367,21 @@ class WorkflowEngine:
                 continue
 
             return RunResult(
-                workflow.id, workflow.tenant_id, FAILED,
-                tuple(steps), current_node=current,
+                workflow.id,
+                workflow.tenant_id,
+                FAILED,
+                tuple(steps),
+                current_node=current,
                 error=f"unknown node type {node.type!r}",
             )
 
         if not terminal_reached:
             return RunResult(
-                workflow.id, workflow.tenant_id, FAILED,
-                tuple(steps), current_node=current,
+                workflow.id,
+                workflow.tenant_id,
+                FAILED,
+                tuple(steps),
+                current_node=current,
                 error="workflow ended without reaching a terminal node",
             )
         return RunResult(workflow.id, workflow.tenant_id, COMPLETED, tuple(steps))
@@ -395,5 +411,9 @@ class WorkflowEngine:
                 return True, f"action {action.name} executed", attempt
             except Exception as exc:  # handler isolation: never propagate
                 if attempt >= node.retry_limit:
-                    return False, f"action {action.name} failed after {attempt} attempt(s): {exc}", attempt
+                    return (
+                        False,
+                        f"action {action.name} failed after {attempt} attempt(s): {exc}",
+                        attempt,
+                    )
                 attempt += 1

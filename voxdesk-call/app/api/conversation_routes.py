@@ -212,3 +212,8 @@ async def get_summary(
         "coaching": [row.as_dict() for row in signals],
         "evidence": [row.as_dict() for row in evidence_rows],
     }
+
+
+from app.api.call_outcome_routes import router as call_outcome_router
+
+router.include_router(call_outcome_router)

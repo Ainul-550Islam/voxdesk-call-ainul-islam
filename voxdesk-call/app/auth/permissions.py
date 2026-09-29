@@ -105,6 +105,37 @@ class Permission(str, enum.Enum):
     QA_REVIEW = "qa:review"
     QA_FINALIZE = "qa:finalize"
 
+    # Prompt 3 controlled extension surfaces. These remain part of the existing
+    # role/scope policy; they do not introduce a second authorization model.
+    CONNECTOR_READ = "connector:read"
+    CONNECTOR_WRITE = "connector:write"
+    CONNECTOR_EXECUTE = "connector:execute"
+    MCP_READ = "mcp:read"
+    MCP_WRITE = "mcp:write"
+    MCP_EXECUTE = "mcp:execute"
+    API_TOOL_READ = "api_tool:read"
+    API_TOOL_WRITE = "api_tool:write"
+    API_TOOL_EXECUTE = "api_tool:execute"
+    EMAIL_SEND = "email:send"
+    APPROVAL_READ = "approval:read"
+    APPROVAL_WRITE = "approval:write"
+    SECRET_MANAGE = "secret:manage"
+
+    # Enterprise AI governance. These extend the existing permission vocabulary;
+    # routes continue to use the shared dependency and role tables.
+    GOVERNANCE_READ = "governance:read"
+    GOVERNANCE_WRITE = "governance:write"
+    GOVERNANCE_APPROVE = "governance:approve"
+    GOVERNANCE_MODEL_MANAGE = "governance:model_manage"
+    GOVERNANCE_EVIDENCE_EXPORT = "governance:evidence_export"
+
+    # Voice runtime resources. These extend the existing RBAC vocabulary and
+    # govern provider-backed profiles and clone jobs without exposing secrets.
+    VOICE_PROFILE_READ = "voice_profile:read"
+    VOICE_PROFILE_WRITE = "voice_profile:write"
+    VOICE_CLONE_READ = "voice_clone:read"
+    VOICE_CLONE_WRITE = "voice_clone:write"
+
 
 # Convenience bundles used when composing roles. Kept here so `rbac.py` reads
 # as a policy document rather than a wall of enum members.

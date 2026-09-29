@@ -109,6 +109,16 @@ class Settings(BaseSettings):
     # and a socket open forever (a stuck call). 0 disables the bound.
     stream_handshake_timeout_seconds: float = 15.0
 
+    # Runtime adapter targets are server-owned. A tenant's cluster_reference
+    # must exactly match the configured Kubernetes API endpoint before any
+    # adapter call is allowed; an empty value disables managed access.
+    kubernetes_cluster_reference: str = ""
+    container_runtime_enabled: bool = False
+    airgap_manifest_directory: str = ""
+    airgap_public_key_base64: str = ""
+    artifact_registry_url: str = ""
+    artifact_registry_bearer_token: str = ""
+
     # Deepgram (STT)
     deepgram_api_key: str = ""
     deepgram_model: str = "nova-3"
@@ -123,6 +133,22 @@ class Settings(BaseSettings):
     elevenlabs_api_key: str = ""
     elevenlabs_voice_id: str = "21m00Tcm4TlvDq8ikWAM"
     elevenlabs_model: str = "eleven_flash_v2_5"
+    # Provider-neutral voice runtime policy. Provider credentials remain in
+    # environment/configuration and are never stored on tenant rows.
+    tts_provider: str = "elevenlabs"
+    tts_fallback_provider: str = ""
+    tts_failover_enabled: bool = False
+    voice_provider_max_retries: int = 1
+    voice_provider_retry_backoff_seconds: float = 0.15
+    voice_provider_timeout_seconds: float = 10.0
+    stt_provider: str = "deepgram"
+    stt_fallback_provider: str = ""
+    stt_failover_enabled: bool = False
+    voice_clone_provider: str = "elevenlabs"
+    voice_clone_max_audio_bytes: int = 25 * 1024 * 1024
+    voice_clone_max_duration_seconds: int = 300
+    voice_clone_job_timeout_seconds: int = 900
+    voice_clone_max_retries: int = 2
 
     # Channels
     whatsapp_enabled: bool = False

@@ -21,6 +21,7 @@ Wire it up from ``app/main.py``::
 
 Nothing else is required; the module owns its middleware and its handlers.
 """
+
 from __future__ import annotations
 
 import uuid
@@ -31,6 +32,7 @@ from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, Response
+from sqlalchemy.exc import SQLAlchemyError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.core.config import settings
@@ -56,6 +58,7 @@ _BODYLESS_STATUSES = {204, 304}
 
 
 # ------------------------------------------------------------------ errors ---
+
 
 class AppError(Exception):
     """Base class for domain errors raised by application code.
@@ -120,9 +123,7 @@ class RateLimitedError(AppError):
         merged = dict(headers) if headers else {}
         if retry_after is not None:
             merged["Retry-After"] = str(retry_after)
-        super().__init__(
-            message, code=code, detail=detail, headers=merged or None
-        )
+        super().__init__(message, code=code, detail=detail, headers=merged or None)
 
 
 class ServiceUnavailableError(AppError):
@@ -131,6 +132,7 @@ class ServiceUnavailableError(AppError):
 
 
 # ------------------------------------------------------------ request id ---
+
 
 def new_request_id() -> str:
     """A fresh correlation id."""
@@ -160,9 +162,8 @@ def request_id_from(request: Request) -> str:
 
 # -------------------------------------------------------------- responses ---
 
-def _headers_with_request_id(
-    extra: dict[str, str] | None, rid: str
-) -> dict[str, str]:
+
+def _headers_with_request_id(extra: dict[str, str] | None, rid: str) -> dict[str, str]:
     merged = {REQUEST_ID_HEADER: rid}
     if extra:
         merged.update(extra)
@@ -178,9 +179,7 @@ def _error_response(
     detail: Any = None,
     headers: dict[str, str] | None = None,
 ) -> JSONResponse:
-    body: dict[str, Any] = {
-        "error": {"code": code, "message": message, "request_id": request_id}
-    }
+    body: dict[str, Any] = {"error": {"code": code, "message": message, "request_id": request_id}}
     if detail is not None:
         body["error"]["detail"] = detail
     return JSONResponse(
@@ -191,6 +190,7 @@ def _error_response(
 
 
 # ----------------------------------------------------------------- handlers ---
+
 
 async def _app_error_handler(request: Request, exc: AppError) -> JSONResponse:
     rid = request_id_from(request)
@@ -211,27 +211,19 @@ async def _app_error_handler(request: Request, exc: AppError) -> JSONResponse:
     )
 
 
-async def _http_exception_handler(
-    request: Request, exc: StarletteHTTPException
-) -> Response:
+async def _http_exception_handler(request: Request, exc: StarletteHTTPException) -> Response:
     rid = request_id_from(request)
     status = exc.status_code
 
     if status >= 500:
         # A framework-level 500 must not leak its detail to the caller.
-        log.exception(
-            "http_exception_500", status=status, request_id=rid, detail=str(exc.detail)
-        )
+        log.exception("http_exception_500", status=status, request_id=rid, detail=str(exc.detail))
         return _error_response(status, "internal_error", "Internal server error", rid)
 
     if status in _BODYLESS_STATUSES or 100 <= status < 200:
-        return Response(
-            status_code=status, headers=_headers_with_request_id(exc.headers, rid)
-        )
+        return Response(status_code=status, headers=_headers_with_request_id(exc.headers, rid))
 
-    log.warning(
-        "http_exception", status=status, request_id=rid, detail=exc.detail
-    )
+    log.warning("http_exception", status=status, request_id=rid, detail=exc.detail)
     # Preserve FastAPI's default JSON shape for client compatibility.
     return JSONResponse(
         status_code=status,
@@ -240,9 +232,7 @@ async def _http_exception_handler(
     )
 
 
-async def _validation_handler(
-    request: Request, exc: RequestValidationError
-) -> JSONResponse:
+async def _validation_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
     rid = request_id_from(request)
     log.warning("request_validation_error", request_id=rid, errors=exc.errors())
     return JSONResponse(
@@ -252,9 +242,19 @@ async def _validation_handler(
     )
 
 
-async def _unhandled_exception_handler(
-    request: Request, exc: Exception
-) -> JSONResponse:
+async def _dependency_unavailable_handler(request: Request, exc: Exception) -> JSONResponse:
+    """Turn infrastructure outages into a retryable structured response."""
+    rid = request_id_from(request)
+    log.warning("dependency_unavailable", request_id=rid, error=type(exc).__name__)
+    return _error_response(
+        503,
+        "service_unavailable",
+        "A required service is temporarily unavailable",
+        rid,
+    )
+
+
+async def _unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     rid = request_id_from(request)
     # Full trace server-side; the client never sees the exception itself in
     # production. Development gets the repr to speed up debugging.
@@ -264,6 +264,7 @@ async def _unhandled_exception_handler(
 
 
 # ------------------------------------------------------------------- wiring ---
+
 
 def add_request_id_middleware(app: FastAPI) -> None:
     """Attach the request-id middleware to ``app``."""
@@ -287,5 +288,7 @@ def install_error_handling(app: FastAPI) -> None:
     app.add_exception_handler(AppError, _app_error_handler)
     app.add_exception_handler(StarletteHTTPException, _http_exception_handler)
     app.add_exception_handler(RequestValidationError, _validation_handler)
+    app.add_exception_handler(OSError, _dependency_unavailable_handler)
+    app.add_exception_handler(SQLAlchemyError, _dependency_unavailable_handler)
     app.add_exception_handler(Exception, _unhandled_exception_handler)
     add_request_id_middleware(app)

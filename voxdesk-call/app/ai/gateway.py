@@ -139,6 +139,8 @@ async def govern(
     tokens_estimate: int = 1,
     record_usage: bool = False,
     request_id: str = "",
+    trace_id: str = "",
+    call_id: uuid.UUID | None = None,
     blocked_output: tuple[str, ...] = (),
     requested_preset: str | None = None,
     allow_fallback: bool = True,
@@ -146,6 +148,17 @@ async def govern(
     circuit_checked: bool = False,
 ) -> GatewayResult:
     bind_tenant(ctx, ctx.tenant_id, claimed_tenant_id)
+    if not request_id or not trace_id:
+        from app.ai.trace import start as start_trace
+
+        correlation = start_trace(
+            tenant_id=ctx.tenant_id,
+            channel=channel,
+            request_id=request_id,
+            call_id=call_id,
+        )
+        request_id = request_id or correlation["request_id"]
+        trace_id = trace_id or correlation["trace_id"]
     incoming = check_input(text, channel=channel)
     if not incoming.allowed:
         raise GovernanceError(
@@ -178,7 +191,9 @@ async def govern(
     current = choice
     output_text = ""
     executed = False
-    tokens = 0
+    # Unknown provider usage stays unknown; zero is a valid measured count but
+    # is never substituted for a missing usage block.
+    tokens: int | None = None
     status = "planned"
     try:
         while attempts < timeouts.max_attempts(channel):
@@ -191,9 +206,15 @@ async def govern(
             try:
                 produced = await executor(current, text, timeout_ms)
                 output_text = str(produced.get("text") or "")
-                tokens = int(produced.get("tokens") or 0)
-                if tokens < 0:
+                raw_tokens = produced.get("tokens")
+                if raw_tokens is None:
+                    tokens = None
+                elif isinstance(raw_tokens, bool) or not isinstance(raw_tokens, int):
+                    raise ValidationFailed("Executor token count must be an integer or unknown")
+                elif raw_tokens < 0:
                     raise ValidationFailed("Executor returned a negative token count")
+                else:
+                    tokens = raw_tokens
                 executed = True
                 status = "completed"
                 await circuit_breaker.record_success_shared(current.provider)
@@ -224,18 +245,20 @@ async def govern(
             await release(session, ctx.tenant_id, tokens_estimate)
         raise
     if reserved_here:
-        if executed:
+        if executed and tokens is not None:
             await reconcile(
                 session, ctx.tenant_id, reserved=tokens_estimate, actual=tokens
             )
-        else:
+        elif not executed:
             await release(session, ctx.tenant_id, tokens_estimate)
+        # If provider usage is unknown, retain the conservative admission
+        # reservation rather than reconciling it to a fabricated zero.
     checked = check_output(output_text, blocked_substrings=blocked_output)
     if not checked.allowed:
         output_text = checked.text
         status = checked.reason
     cost = costs.estimate(provider=current.provider, tokens=tokens if executed else None)
-    if record_usage and executed and tokens > 0:
+    if record_usage and executed and tokens is not None and tokens > 0:
         await attribute_usage(
             session,
             tenant_id=ctx.tenant_id,
@@ -251,12 +274,14 @@ async def govern(
     telemetry = emit(
         {
             "request_id": request_id,
+            "trace_id": trace_id,
+            "call_id": "" if call_id is None else str(call_id),
             "tenant_id": str(ctx.tenant_id),
             "environment_id": str(environment_id) if environment_id else "",
             "provider": current.provider,
             "model": current.model,
             "latency_ms": latency_ms,
-            "tokens": tokens if executed else 0,
+            "tokens": tokens if executed else None,
             "status": status,
             "retry_count": max(0, attempts - 1),
             "fallback_used": fallback_used,
@@ -265,9 +290,6 @@ async def govern(
             "provider_cost_usd": cost["provider_cost_usd"],
             "channel": channel,
             "executed": executed,
-            "prompt": text,
-            "response": output_text,
-            "api_key": "sk-should-not-log",
         }
     )
     return GatewayResult(
@@ -360,6 +382,7 @@ class LiveAuthorization:
     #: measured token count on success — without it a release could subtract
     #: another concurrent call's live reservation.
     budget_reserved: bool = False
+    request_id: str = ""
 
 
 async def authorize_live(
@@ -493,4 +516,5 @@ async def authorize_live(
         guardrail=guardrail,
         pii_kinds=pii_kinds,
         budget_reserved=reserved,
+        request_id=started["request_id"],
     )

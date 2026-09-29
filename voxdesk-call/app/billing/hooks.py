@@ -52,6 +52,12 @@ async def _safe(coro, *, what: str) -> bool:
         return False
 
 
+def _roi_cost_metadata(resource: str, units: float, component: str, *, provider: str | None = None) -> dict:
+    """Persist only operator-priced measured usage; absent price remains unknown."""
+    line = cost_tracking.cost_line(resource, units, provider=provider)
+    return {component: {"amount": line.cost_usd, "currency": "USD", "resource": resource, "units": float(units), "provider": provider, "status": "recorded_cost" if line.known else "NOT_AVAILABLE"}}
+
+
 async def _subscription_for(session: AsyncSession, tenant_id: uuid.UUID):
     from sqlalchemy import select
 
@@ -121,6 +127,7 @@ async def on_call_finalized(session: AsyncSession, tenant, call) -> bool:
                 # Recorded so the single-charge-per-call policy is auditable:
                 # a transferred call is visibly one event, not two.
                 "transferred": bool(getattr(call, "escalated", False)),
+                "recorded_costs": {"telephony_cost": _roi_cost_metadata("voice_minute", seconds / 60.0, "telephony_cost")["telephony_cost"]},
             },
         )
 
@@ -180,6 +187,7 @@ async def on_sms_sent(
             ),
             period=period,
             source_reference=str(message_id),
+            metadata={"recorded_costs": _roi_cost_metadata("sms_segment", float(segments), "telephony_cost")},
         ),
         what="sms_segments",
     )
@@ -198,7 +206,7 @@ async def on_sms_sent(
 # ------------------------------------------------------------- LLM / TTS ---
 
 async def on_llm_tokens(
-    session: AsyncSession, tenant, *, call_id: uuid.UUID, tokens: int, turn: int
+    session: AsyncSession, tenant, *, call_id: uuid.UUID, tokens: int, turn: int, provider: str | None = None
 ) -> bool:
     """
     LLM tokens for one turn of one call.
@@ -225,14 +233,14 @@ async def on_llm_tokens(
             ),
             period=period,
             source_entity_id=call_id,
-            metadata={"turn": turn},
+            metadata={"turn": turn, "provider": provider or getattr(tenant, "llm_provider", None), "recorded_costs": _roi_cost_metadata("llm_token", float(tokens), "llm_cost", provider=provider or getattr(tenant, "llm_provider", None))},
         ),
         what="llm_tokens",
     )
 
 
 async def on_tts_characters(
-    session: AsyncSession, tenant, *, call_id: uuid.UUID, characters: int, turn: int
+    session: AsyncSession, tenant, *, call_id: uuid.UUID, characters: int, turn: int, provider: str | None = None
 ) -> bool:
     if characters <= 0:
         return False
@@ -251,7 +259,7 @@ async def on_tts_characters(
             ),
             period=period,
             source_entity_id=call_id,
-            metadata={"turn": turn},
+            metadata={"turn": turn, "provider": provider, "recorded_costs": _roi_cost_metadata("tts_character", float(characters), "tts_cost", provider=provider)},
         ),
         what="tts_characters",
     )

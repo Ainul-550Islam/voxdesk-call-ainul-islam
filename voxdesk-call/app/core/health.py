@@ -28,6 +28,7 @@ Prometheus side of the same signal stays current between scrapes.
 """
 from __future__ import annotations
 
+import asyncio
 from sqlalchemy import text
 
 from app.core import observability
@@ -65,8 +66,10 @@ def provider_config_ok() -> dict:
 async def check_database() -> bool:
     """A real ``SELECT 1`` against the configured engine. Returns a bool."""
     try:
-        async with get_engine().connect() as conn:
-            await conn.execute(text("SELECT 1"))
+        async def _probe() -> None:
+            async with get_engine().connect() as conn:
+                await conn.execute(text("SELECT 1"))
+        await asyncio.wait_for(_probe(), timeout=3.0)
         return True
     except Exception as exc:  # noqa: BLE001 - the probe answers, it never raises
         # The contract is a bool, but "database: down" with no evidence is
@@ -82,7 +85,11 @@ async def check_redis() -> bool | None:
     """Redis reachability, or None when Redis is not configured."""
     if not settings.redis_url:
         return None
-    return await get_cache().ping()
+    try:
+        return bool(await asyncio.wait_for(get_cache().ping(), timeout=2.0))
+    except Exception as exc:  # probe contract is a safe bool, never provider/client text
+        log.warning("health.redis_check_failed", error_type=type(exc).__name__)
+        return False
 
 
 async def readiness() -> dict:

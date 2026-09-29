@@ -18,6 +18,7 @@ They also pin the two properties that make the swap safe:
 * the database is authoritative — a failed request writes nothing, and
 * hydration is tenant-scoped — one tenant's rows never appear in another's view.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -93,8 +94,9 @@ def _notification_body(template_id: str, business_key: str = "appt-42") -> dict:
     }
 
 
-async def _open_thread(client, headers, *, channel: str = "web",
-                       customer: str = "+15550001111") -> dict:
+async def _open_thread(
+    client, headers, *, channel: str = "web", customer: str = "+15550001111"
+) -> dict:
     response = await client.post(
         "/api/inbox/threads",
         json={"channel": channel, "customer": customer, "initial_message": "hello"},
@@ -106,12 +108,18 @@ async def _open_thread(client, headers, *, channel: str = "web",
 
 # =================================================== the migration is present ===
 
+
 class TestSchema:
     async def test_the_five_batch02_tables_exist_in_the_metadata(self):
         from app.db.models import Base
 
-        for table in ("automations", "automation_runs", "notification_templates",
-                      "notifications", "inbox_thread_states"):
+        for table in (
+            "automations",
+            "automation_runs",
+            "notification_templates",
+            "notifications",
+            "inbox_thread_states",
+        ):
             assert table in Base.metadata.tables, f"{table} has no model"
 
     async def test_the_revision_chains_off_the_previous_head(self):
@@ -119,14 +127,38 @@ class TestSchema:
         from alembic.script import ScriptDirectory
 
         script = ScriptDirectory.from_config(Config("alembic.ini"))
-        # The chain is linear by design: one head, and each revision names its
-        # predecessor. 0018 (memberships and quotas) is the current head; the
-        # assertion is about the *shape* of the chain, so the names here move
-        # together whenever a migration is added.
+        # The chain is linear by design; the current head includes deployment
+        # runtime observations, call outcomes, and enterprise governance.
         heads = script.get_heads()
-        assert heads == ["0024_qa_conversation_intelligence"]
-        head = script.get_revision("0024_qa_conversation_intelligence")
-        assert head.down_revision == "0023_contact_center_acd"
+        assert heads == ["0036_runtime_deployment_observability"]
+        head = script.get_revision("0036_runtime_deployment_observability")
+        assert head.down_revision == "0036_durable_call_outcomes"
+        outcomes = script.get_revision("0036_durable_call_outcomes")
+        assert outcomes.down_revision == "0035_enterprise_compliance_roi_deployment"
+        compliance = script.get_revision("0035_enterprise_compliance_roi_deployment")
+        assert compliance.down_revision == "0034_review_and_specialized_persistence"
+        review = script.get_revision("0034_review_and_specialized_persistence")
+        assert review.down_revision == "0033_specialized_agent_execution"
+        specialized = script.get_revision("0033_specialized_agent_execution")
+        assert specialized.down_revision == "0032_enterprise_governance_foundation"
+        governance = script.get_revision("0032_enterprise_governance_foundation")
+        assert governance.down_revision == "0031_workflow_persistence_hardening"
+        head = script.get_revision("0031_workflow_persistence_hardening")
+        assert head.down_revision == "0030_voice_runtime"
+        voice = script.get_revision("0030_voice_runtime")
+        assert voice.down_revision == "0029_prompt3_surfaces"
+        prompt3 = script.get_revision("0029_prompt3_surfaces")
+        assert prompt3.down_revision == "0028_durable_workflow"
+        durable = script.get_revision("0028_durable_workflow")
+        assert durable.down_revision == "0027_durable_jobs_outbox"
+        jobs = script.get_revision("0027_durable_jobs_outbox")
+        assert jobs.down_revision == "0026_campaign_environment_scope"
+        campaign = script.get_revision("0026_campaign_environment_scope")
+        assert campaign.down_revision == "0025_enterprise_leads"
+        leads = script.get_revision("0025_enterprise_leads")
+        assert leads.down_revision == "0024_qa_conversation_intelligence"
+        qa = script.get_revision("0024_qa_conversation_intelligence")
+        assert qa.down_revision == "0023_contact_center_acd"
         acd = script.get_revision("0023_contact_center_acd")
         assert acd.down_revision == "0022_telephony_media_platform"
         media = script.get_revision("0022_telephony_media_platform")
@@ -153,15 +185,16 @@ class TestSchema:
 
 # ======================================================== automations, durable ===
 
+
 class TestAutomationsSurviveRestart:
     async def test_definition_and_run_history_outlive_the_process(self, client, manager_a):
         headers = await auth_headers(client, manager_a)
         created = await client.post("/api/automations", json=_automation_body(), headers=headers)
         assert created.status_code == 201, created.text
         automation_id = created.json()["id"]
-        assert (await client.post(
-            f"/api/automations/{automation_id}/enable", headers=headers
-        )).json()["status"] == "enabled"
+        assert (
+            await client.post(f"/api/automations/{automation_id}/enable", headers=headers)
+        ).json()["status"] == "enabled"
         run = await client.post(
             f"/api/automations/{automation_id}/run",
             json={"business_event_id": "call-1", "payload": {"sentiment": "negative"}},
@@ -176,10 +209,8 @@ class TestAutomationsSurviveRestart:
         assert fetched.status_code == 200, fetched.text
         body = fetched.json()
         assert body["name"] == "Negative sentiment alert"
-        assert body["status"] == "enabled"                    # not silently disabled
-        assert body["filters"] == [
-            {"field": "sentiment", "operator": "eq", "value": "negative"}
-        ]
+        assert body["status"] == "enabled"  # not silently disabled
+        assert body["filters"] == [{"field": "sentiment", "operator": "eq", "value": "negative"}]
         assert body["actions"][0]["name"] == "record_escalation_intent"
 
         runs = await client.get(f"/api/automations/{automation_id}/runs", headers=headers)
@@ -223,11 +254,12 @@ class TestAutomationsSurviveRestart:
         bad = {**_automation_body(), "event": "teleport_completed"}
         assert (await client.post("/api/automations", json=bad, headers=headers)).status_code == 422
 
-        _forget_everything()                                    # nothing to recover from...
+        _forget_everything()  # nothing to recover from...
         assert (await client.get("/api/automations", headers=headers)).json() == []
 
 
 # ====================================================== notifications, durable ===
+
 
 class TestNotificationsSurviveRestart:
     async def test_template_and_notification_outlive_the_process(self, client, manager_a):
@@ -250,13 +282,15 @@ class TestNotificationsSurviveRestart:
         assert reopened.status_code == 200, reopened.text
         assert reopened.json()["template_id"] == template_id
         assert reopened.json()["recipient"]["target_masked"] == "***4567"
-        assert "+15551234567" not in reopened.text        # PII stays masked after a reload
+        assert "+15551234567" not in reopened.text  # PII stays masked after a reload
 
     async def test_dedupe_and_read_state_survive_a_restart(self, client, manager_a):
         headers = await auth_headers(client, manager_a)
-        template_id = (await client.post(
-            "/api/notifications/templates", json=_template_body(), headers=headers
-        )).json()["id"]
+        template_id = (
+            await client.post(
+                "/api/notifications/templates", json=_template_body(), headers=headers
+            )
+        ).json()["id"]
         body = _notification_body(template_id)
         first = await client.post("/api/notifications", json=body, headers=headers)
         notification_id = first.json()["id"]
@@ -274,19 +308,21 @@ class TestNotificationsSurviveRestart:
         unread = await client.get(
             "/api/notifications", params={"unread_only": True}, headers=headers
         )
-        assert unread.json() == []                        # the read flag was persisted
+        assert unread.json() == []  # the read flag was persisted
 
         summary = await client.get("/api/notifications/states/summary", headers=headers)
         assert summary.status_code == 200
-        assert summary.json()["pending"] == 1      # still awaiting delivery, counted once
+        assert summary.json()["pending"] == 1  # still awaiting delivery, counted once
 
     async def test_render_still_uses_the_single_brace_syntax_after_a_restart(
         self, client, manager_a
     ):
         headers = await auth_headers(client, manager_a)
-        template_id = (await client.post(
-            "/api/notifications/templates", json=_template_body(), headers=headers
-        )).json()["id"]
+        template_id = (
+            await client.post(
+                "/api/notifications/templates", json=_template_body(), headers=headers
+            )
+        ).json()["id"]
 
         _forget_everything()
 
@@ -301,6 +337,7 @@ class TestNotificationsSurviveRestart:
 
 # ============================================================= inbox, durable ===
 
+
 class TestInboxSurvivesRestart:
     async def test_overlay_state_outlives_the_process(self, client, manager_a, agent_a):
         headers = await auth_headers(client, manager_a)
@@ -308,19 +345,21 @@ class TestInboxSurvivesRestart:
         thread_id = thread["id"]
         await client.post(
             f"/api/inbox/threads/{thread_id}/assign",
-            json={"assignee_id": "agent-7"}, headers=headers)
+            json={"assignee_id": "agent-7"},
+            headers=headers,
+        )
         await client.post(
-            f"/api/inbox/threads/{thread_id}/priority",
-            json={"priority": "high"}, headers=headers)
+            f"/api/inbox/threads/{thread_id}/priority", json={"priority": "high"}, headers=headers
+        )
         await client.post(
-            f"/api/inbox/threads/{thread_id}/tags",
-            json={"tag": "billing"}, headers=headers)
+            f"/api/inbox/threads/{thread_id}/tags", json={"tag": "billing"}, headers=headers
+        )
         await client.post(
-            f"/api/inbox/threads/{thread_id}/tags",
-            json={"tag": "urgent"}, headers=headers)
+            f"/api/inbox/threads/{thread_id}/tags", json={"tag": "urgent"}, headers=headers
+        )
         await client.post(
-            f"/api/inbox/threads/{thread_id}/notes",
-            json={"body": "internal hint"}, headers=headers)
+            f"/api/inbox/threads/{thread_id}/notes", json={"body": "internal hint"}, headers=headers
+        )
         await client.post(f"/api/inbox/threads/{thread_id}/unread", headers=headers)
 
         _forget_everything()
@@ -328,7 +367,7 @@ class TestInboxSurvivesRestart:
         fetched = await client.get(f"/api/inbox/threads/{thread_id}", headers=headers)
         assert fetched.status_code == 200, fetched.text
         body = fetched.json()
-        assert body["status"] == "assigned"               # derived from the assignee
+        assert body["status"] == "assigned"  # derived from the assignee
         assert body["assignee_id"] == "agent-7"
         assert body["priority"] == "high"
         assert set(body["tags"]) == {"billing", "urgent"}
@@ -342,32 +381,29 @@ class TestInboxSurvivesRestart:
         # assertion is on the badge set rather than on a guessable key.
         assert list(counts.json().values()) == [1]
 
-    async def test_messages_are_still_ordered_and_notes_still_internal(
-        self, client, manager_a
-    ):
+    async def test_messages_are_still_ordered_and_notes_still_internal(self, client, manager_a):
         headers = await auth_headers(client, manager_a)
         thread_id = (await _open_thread(client, headers))["id"]
         await client.post(
-            f"/api/inbox/threads/{thread_id}/notes",
-            json={"body": "internal hint"}, headers=headers)
+            f"/api/inbox/threads/{thread_id}/notes", json={"body": "internal hint"}, headers=headers
+        )
 
         _forget_everything()
 
-        messages = await client.get(
-            f"/api/inbox/threads/{thread_id}/messages", headers=headers
-        )
+        messages = await client.get(f"/api/inbox/threads/{thread_id}/messages", headers=headers)
         assert messages.status_code == 200, messages.text
         assert [m["direction"] for m in messages.json()] == ["inbound", "internal_note"]
 
-    async def test_escalation_and_reopen_still_follow_the_transition_table(
-        self, client, manager_a
-    ):
+    async def test_escalation_and_reopen_still_follow_the_transition_table(self, client, manager_a):
         headers = await auth_headers(client, manager_a)
         thread_id = (await _open_thread(client, headers))["id"]
-        assert (await client.post(
-            f"/api/inbox/threads/{thread_id}/escalate",
-            json={"reason": "customer asked for a supervisor"}, headers=headers,
-        )).json()["status"] == "escalated"
+        assert (
+            await client.post(
+                f"/api/inbox/threads/{thread_id}/escalate",
+                json={"reason": "customer asked for a supervisor"},
+                headers=headers,
+            )
+        ).json()["status"] == "escalated"
 
         _forget_everything()
 
@@ -382,18 +418,19 @@ class TestInboxSurvivesRestart:
 
 # ============================================================ tenant isolation ===
 
+
 class TestHydrationIsTenantScoped:
-    async def test_one_tenants_rows_never_appear_in_anothers_view(
-        self, client, manager_a, owner_b
-    ):
+    async def test_one_tenants_rows_never_appear_in_anothers_view(self, client, manager_a, owner_b):
         headers_a = await auth_headers(client, manager_a)
         headers_b = await auth_headers(client, owner_b)
 
         created = await client.post("/api/automations", json=_automation_body(), headers=headers_a)
         automation_id = created.json()["id"]
-        template_id = (await client.post(
-            "/api/notifications/templates", json=_template_body(), headers=headers_a
-        )).json()["id"]
+        template_id = (
+            await client.post(
+                "/api/notifications/templates", json=_template_body(), headers=headers_a
+            )
+        ).json()["id"]
         await client.post(
             "/api/notifications", json=_notification_body(template_id), headers=headers_a
         )
@@ -407,19 +444,22 @@ class TestHydrationIsTenantScoped:
         assert (await client.get("/api/inbox/threads", headers=headers_b)).json() == []
 
         # A genuinely correct id from tenant A is still not found by tenant B.
-        for path in (f"/api/automations/{automation_id}",
-                     f"/api/notifications/{template_id}",
-                     f"/api/inbox/threads/{thread_id}"):
+        for path in (
+            f"/api/automations/{automation_id}",
+            f"/api/notifications/{template_id}",
+            f"/api/inbox/threads/{thread_id}",
+        ):
             response = await client.get(path, headers=headers_b)
             assert response.status_code in (403, 404), (path, response.status_code)
 
         # Tenant A's own view is intact after B's reads.
-        assert [a["id"] for a in (
-            await client.get("/api/automations", headers=headers_a)
-        ).json()] == [automation_id]
+        assert [
+            a["id"] for a in (await client.get("/api/automations", headers=headers_a)).json()
+        ] == [automation_id]
 
 
 # ======================================================= the scope's own rules ===
+
 
 class TestTenantScope:
     async def test_the_scope_clears_the_registry_when_the_handler_raises(self, db):

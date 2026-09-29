@@ -46,6 +46,11 @@ websockets==13.1
 
 # ---- Telephony ----
 twilio==9.4.1
+# Telnyx Ed25519 webhook verification imports PyNaCl directly. Keep it
+# explicit rather than relying on a transitive install: the verifier must
+# fail closed when this dependency is absent, and a clean deployment must
+# still be able to verify Telnyx signatures.
+PyNaCl==1.5.0
 # STEP 9 (security audit): 0.0.20 has CVE-2026-24486 (multipart DoS); 0.0.22 is
 # the first patched release on the same minor line and changes no parsing
 # behaviour the Twilio form webhooks rely on.
@@ -76,6 +81,16 @@ asyncpg==0.30.0
 alembic==1.14.0
 
 # ---- Integrations ----
+# Imported directly by provider/configuration validation and SAML parsing; pin
+# these instead of relying on incidental transitive availability.
+jsonschema==4.26.0
+lxml==6.1.1
+# Optional runtime adapters are version-pinned so configured Kubernetes/container
+# deployments can instantiate the supported clients reproducibly. Adapters report
+# unavailable if credentials/endpoints are not configured; package presence alone
+# never counts as deployment readiness.
+kubernetes==32.0.1
+docker==7.1.0
 google-api-python-client==2.157.0
 google-auth-oauthlib==1.2.1
 #

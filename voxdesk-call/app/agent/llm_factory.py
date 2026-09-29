@@ -50,6 +50,7 @@ from app.agent.errors import (
 )
 from app.core.config import settings
 from app.core.logging import log
+from app.providers.contracts import CAPABILITIES as _PROVIDER_CAPABILITIES
 
 
 @dataclass(frozen=True)
@@ -78,21 +79,8 @@ SUPPORTED_PROVIDERS = ("openai", "anthropic", "google")
 #: and interruptions are declared here for the same reason — an "unsupported"
 #: entry means the pipeline must not silently promise barge-in it cannot give.
 LLM_CAPABILITIES: dict[str, dict[str, bool]] = {
-    "openai": {
-        "supports_tool_calling": True,
-        "supports_streaming": True,
-        "supports_interruptions": True,
-    },
-    "anthropic": {
-        "supports_tool_calling": True,
-        "supports_streaming": True,
-        "supports_interruptions": True,
-    },
-    "google": {
-        "supports_tool_calling": True,
-        "supports_streaming": True,
-        "supports_interruptions": True,
-    },
+    provider: _PROVIDER_CAPABILITIES[provider]
+    for provider in ("openai", "anthropic", "google")
 }
 
 # provider ডাউন হলে এই ক্রমে চেষ্টা হবে
@@ -203,7 +191,7 @@ def build_llm(
         from pipecat.services.openai.llm import OpenAILLMService
 
         return OpenAILLMService(
-            api_key=settings.openai_api_key,
+            api_key=_api_key("openai"),
             model=model,
             params=OpenAILLMService.InputParams(
                 temperature=temperature,
@@ -219,7 +207,7 @@ def build_llm(
         from pipecat.services.anthropic.llm import AnthropicLLMService
 
         return AnthropicLLMService(
-            api_key=settings.anthropic_api_key,
+            api_key=_api_key("anthropic"),
             model=model,
             params=AnthropicLLMService.InputParams(
                 temperature=temperature,
@@ -232,7 +220,7 @@ def build_llm(
         from pipecat.services.google.llm import GoogleLLMService
 
         return GoogleLLMService(
-            api_key=settings.google_api_key,
+            api_key=_api_key("google"),
             model=model,
             params=GoogleLLMService.InputParams(
                 temperature=temperature,

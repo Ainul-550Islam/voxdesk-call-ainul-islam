@@ -356,18 +356,30 @@ async def _run_voice_agent(
             tts_chars=voice_usage.snapshot()["tts_chars"],
             llm_tokens=voice_usage.snapshot()["llm_tokens"],
         )
-        if prepared.budget_reserved:
-            # Admission reserved one token to open the call. The call is over
-            # and the measured LLM tokens are known, so swap the estimate for
-            # the measurement — on the same transaction as the turn flush, and
-            # never inside the live media loop.
+        # Persist measured LLM/TTS usage in the same existing immutable
+        # UsageEvent ledger consumed by ROI. The hooks are idempotent and
+        # preserve UNKNOWN cost when operator pricing is not configured.
+        from app.billing.hooks import on_llm_tokens, on_tts_characters
+        usage = voice_usage.snapshot()
+        try:
+            async with session.begin_nested():
+                measured_llm_tokens = usage["llm_tokens"]
+                if isinstance(measured_llm_tokens, int) and not isinstance(measured_llm_tokens, bool):
+                    await on_llm_tokens(session, tenant, call_id=call.id, tokens=measured_llm_tokens, turn=0, provider=choice.provider)
+                await on_tts_characters(session, tenant, call_id=call.id, characters=int(usage["tts_chars"] or 0), turn=0, provider=settings.tts_provider)
+        except Exception as exc:
+            log.warning("billing.measured_usage_persist_failed", error_type=type(exc).__name__)
+        measured_tokens = usage["llm_tokens"]
+        if prepared.budget_reserved and isinstance(measured_tokens, int) and not isinstance(measured_tokens, bool):
+            # Reconcile only when the provider supplied measured usage. An
+            # absent Pipecat metrics frame is unknown, not a zero-token call.
             from app.ai.budget import reconcile
 
             await reconcile(
                 session,
                 tenant.id,
                 reserved=1,
-                actual=int(voice_usage.snapshot()["llm_tokens"] or 0),
+                actual=measured_tokens,
             )
         await session.commit()
 

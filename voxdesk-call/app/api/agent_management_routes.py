@@ -19,13 +19,18 @@ batch and is reported as an integration dependency.
 from __future__ import annotations
 
 from datetime import time as _time
+import uuid
 
-from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import TenantContext, require_permission
 from app.auth.permissions import Permission
+from app.agent.errors import ProviderError
+from app.core.config import settings
 from app.db.session import get_session
 from app.domain.agent_models import (
     AgentConfig,
@@ -43,6 +48,24 @@ from app.domain.agent_models import (
     VoiceConfig,
 )
 from app.services import agent_service
+from app.db.models import VoiceCloneJob
+from app.knowledge.storage import get_storage, safe_filename
+from app.jobs.queue import enqueue as enqueue_durable_job
+from app.jobs.types import JobType, JobPriority
+from app.voice.voice_clone_service import (
+    cancel_clone_job,
+    public_job,
+    request_clone,
+)
+from app.voice.voice_profile_service import (
+    activate_profile,
+    attach_to_tenant,
+    create_profile,
+    deactivate_profile,
+    get_profile,
+    list_profiles,
+    public_profile,
+)
 
 router = APIRouter(prefix="/api/agents", tags=["agents"])
 
@@ -168,6 +191,64 @@ class PreviewOut(_Strict):
     config_hash: str = ""
 
 
+class VoiceProfileCreateRequest(_Strict):
+    name: str = Field(min_length=1, max_length=120)
+    provider: str = Field(min_length=1, max_length=64)
+    provider_voice_id: str = Field(min_length=1, max_length=255)
+    language: str = Field(default="en-US", max_length=32)
+    locale: str = Field(default="en-US", max_length=32)
+    voice_type: str = "provider"
+    capabilities: dict = Field(default_factory=dict)
+    metadata: dict = Field(default_factory=dict)
+
+
+class VoiceProfileOut(_Strict):
+    id: str
+    name: str
+    provider: str
+    provider_voice_id: str
+    language: str
+    locale: str
+    voice_type: str
+    status: str
+    capabilities: dict
+    metadata: dict
+    created_at: str | None = None
+    updated_at: str | None = None
+
+
+class VoiceCloneRequest(_Strict):
+    name: str = Field(min_length=1, max_length=120)
+    input_object_reference: str = Field(min_length=1, max_length=1000)
+    provider: str | None = Field(default=None, max_length=64)
+    idempotency_key: str | None = Field(default=None, min_length=8, max_length=128)
+
+
+class VoiceCloneJobOut(_Strict):
+    id: str
+    provider: str
+    provider_job_id: str | None = None
+    status: str
+    progress: int
+    voice_profile_id: str | None = None
+    error_code: str | None = None
+    error_message: str | None = None
+    attempt_count: int
+    created_at: str | None = None
+    completed_at: str | None = None
+
+
+class VoiceInputOut(_Strict):
+    object_reference: str
+    size_bytes: int
+
+
+class VoiceProvidersOut(_Strict):
+    stt: list[str]
+    tts: list[str]
+    clone: list[str]
+
+
 # ---------------------------------------------------------------- helpers ---
 
 def _parse_time(value: str, default: _time) -> _time:
@@ -291,6 +372,252 @@ def _status_of(ctx: TenantContext, config: AgentConfig) -> str:
 
 
 # ------------------------------------------------------------------- routes ---
+
+@router.get("/voices", response_model=VoiceProvidersOut)
+async def list_voice_providers(
+    ctx: TenantContext = Depends(require_permission(Permission.VOICE_PROFILE_READ)),
+):
+    from app.voice.provider_registry import build_voice_provider_registry
+
+    registry = build_voice_provider_registry()
+    return VoiceProvidersOut(
+        stt=list(registry.providers("stt")),
+        tts=list(registry.providers("tts")),
+        clone=list(registry.providers("clone")),
+    )
+
+
+@router.post("/voice-input", response_model=VoiceInputOut, status_code=201)
+async def upload_voice_input(
+    file: UploadFile = File(...),
+    ctx: TenantContext = Depends(require_permission(Permission.VOICE_CLONE_WRITE)),
+):
+    data = await file.read()
+    if len(data) > settings.voice_clone_max_audio_bytes:
+        raise HTTPException(status_code=413, detail="voice sample is too large")
+    suffix = safe_filename(file.filename or "sample.wav")
+    object_reference = f"tenant/{ctx.tenant_id}/voice-clones/{uuid.uuid4()}-{suffix}"
+    try:
+        await get_storage().put(object_reference, data, content_type=file.content_type)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="voice sample storage is unavailable") from exc
+    return VoiceInputOut(object_reference=object_reference, size_bytes=len(data))
+
+
+@router.get("/voice-profiles", response_model=list[VoiceProfileOut])
+async def list_voice_profiles(
+    ctx: TenantContext = Depends(require_permission(Permission.VOICE_PROFILE_READ)),
+    session: AsyncSession = Depends(get_session),
+):
+    return [public_profile(profile) for profile in await list_profiles(session, ctx.tenant_id)]
+
+
+@router.post("/voice-profiles", response_model=VoiceProfileOut, status_code=201)
+async def create_voice_profile(
+    payload: VoiceProfileCreateRequest,
+    ctx: TenantContext = Depends(require_permission(Permission.VOICE_PROFILE_WRITE)),
+    session: AsyncSession = Depends(get_session),
+):
+    try:
+        from app.voice.provider_registry import build_voice_provider_registry
+
+        registry = build_voice_provider_registry()
+        registry.capabilities("tts", payload.provider)
+        provider_adapter = registry.resolve_tts(payload.provider)
+        profile = await create_profile(
+            session,
+            tenant_id=ctx.tenant_id,
+            name=payload.name,
+            provider=payload.provider,
+            provider_voice_id=payload.provider_voice_id,
+            language=payload.language,
+            locale=payload.locale,
+            voice_type=payload.voice_type,
+            capabilities=payload.capabilities,
+            metadata=payload.metadata,
+            created_by=ctx.user_id,
+            status="pending",
+        )
+        await activate_profile(session, profile, provider_adapter=provider_adapter)
+        await session.commit()
+        return public_profile(profile)
+    except (ValueError, ProviderError) as exc:
+        await session.rollback()
+        raise HTTPException(status_code=422, detail=str(exc)) from None
+
+
+@router.get("/voice-profiles/{profile_id}", response_model=VoiceProfileOut)
+async def get_voice_profile(
+    profile_id: uuid.UUID,
+    ctx: TenantContext = Depends(require_permission(Permission.VOICE_PROFILE_READ)),
+    session: AsyncSession = Depends(get_session),
+):
+    profile = await get_profile(session, tenant_id=ctx.tenant_id, profile_id=profile_id)
+    if profile is None:
+        raise HTTPException(status_code=404, detail="voice profile not found")
+    return public_profile(profile)
+
+
+@router.post("/voice-profiles/{profile_id}/validate", response_model=VoiceProfileOut)
+async def validate_voice_profile_route(
+    profile_id: uuid.UUID,
+    ctx: TenantContext = Depends(require_permission(Permission.VOICE_PROFILE_WRITE)),
+    session: AsyncSession = Depends(get_session),
+):
+    profile = await get_profile(session, tenant_id=ctx.tenant_id, profile_id=profile_id)
+    if profile is None:
+        raise HTTPException(status_code=404, detail="voice profile not found")
+    try:
+        from app.voice.provider_registry import build_voice_provider_registry
+
+        registry = build_voice_provider_registry()
+        registry.capabilities("tts", profile.provider)
+        profile = await activate_profile(
+            session, profile, provider_adapter=registry.resolve_tts(profile.provider)
+        )
+        await session.commit()
+    except (ValueError, ProviderError) as exc:
+        await session.rollback()
+        raise HTTPException(status_code=422, detail=str(exc)) from None
+    return public_profile(profile)
+
+
+@router.post("/voice-profiles/{profile_id}/attach", response_model=VoiceProfileOut)
+async def attach_voice_profile(
+    profile_id: uuid.UUID,
+    ctx: TenantContext = Depends(require_permission(Permission.VOICE_PROFILE_WRITE)),
+    session: AsyncSession = Depends(get_session),
+):
+    profile = await get_profile(session, tenant_id=ctx.tenant_id, profile_id=profile_id)
+    if profile is None:
+        raise HTTPException(status_code=404, detail="voice profile not found")
+    try:
+        from app.voice.provider_registry import build_voice_provider_registry
+
+        registry = build_voice_provider_registry()
+        registry.capabilities("tts", profile.provider)
+        await attach_to_tenant(
+            session,
+            tenant=ctx.tenant,
+            profile=profile,
+            provider_adapter=registry.resolve_tts(profile.provider),
+        )
+        await session.commit()
+    except ValueError as exc:
+        await session.rollback()
+        raise HTTPException(status_code=422, detail=str(exc)) from None
+    return public_profile(profile)
+
+
+@router.post("/voice-profiles/{profile_id}/deactivate", response_model=VoiceProfileOut)
+async def deactivate_voice_profile(
+    profile_id: uuid.UUID,
+    ctx: TenantContext = Depends(require_permission(Permission.VOICE_PROFILE_WRITE)),
+    session: AsyncSession = Depends(get_session),
+):
+    profile = await get_profile(session, tenant_id=ctx.tenant_id, profile_id=profile_id)
+    if profile is None:
+        raise HTTPException(status_code=404, detail="voice profile not found")
+    profile = await deactivate_profile(session, profile)
+    await session.commit()
+    return public_profile(profile)
+
+
+@router.get("/voice-clone-jobs", response_model=list[VoiceCloneJobOut])
+async def list_voice_clone_jobs(
+    ctx: TenantContext = Depends(require_permission(Permission.VOICE_CLONE_READ)),
+    session: AsyncSession = Depends(get_session),
+):
+    rows = (
+        await session.execute(
+            select(VoiceCloneJob)
+            .where(VoiceCloneJob.tenant_id == ctx.tenant_id)
+            .order_by(VoiceCloneJob.created_at.desc())
+        )
+    ).scalars().all()
+    return [public_job(job) for job in rows]
+
+
+@router.post("/voice-clone-jobs", response_model=VoiceCloneJobOut, status_code=202)
+async def create_voice_clone_job(
+    payload: VoiceCloneRequest,
+    ctx: TenantContext = Depends(require_permission(Permission.VOICE_CLONE_WRITE)),
+    session: AsyncSession = Depends(get_session),
+):
+    try:
+        from app.voice.provider_registry import build_voice_provider_registry
+
+        registry = build_voice_provider_registry()
+        registry.capabilities("clone", payload.provider or settings.voice_clone_provider)
+        job = await request_clone(
+            session,
+            tenant_id=ctx.tenant_id,
+            requested_by=ctx.user_id,
+            name=payload.name,
+            input_object_reference=payload.input_object_reference,
+            provider=payload.provider,
+            idempotency_key=payload.idempotency_key,
+        )
+        if job.status == "requested":
+            await enqueue_durable_job(
+                session,
+                tenant_id=ctx.tenant_id,
+                job_type=JobType.VOICE_CLONE,
+                idempotency_key=f"voice-clone:{job.id}",
+                payload={
+                    "voice_clone_job_id": str(job.id),
+                    "target_tenant_id": str(ctx.tenant_id),
+                },
+                priority=JobPriority.NORMAL,
+            )
+        await session.commit()
+        return public_job(job)
+    except ValueError as exc:
+        await session.rollback()
+        raise HTTPException(status_code=422, detail=str(exc)) from None
+
+
+@router.get("/voice-clone-jobs/{job_id}", response_model=VoiceCloneJobOut)
+async def get_voice_clone_job(
+    job_id: uuid.UUID,
+    ctx: TenantContext = Depends(require_permission(Permission.VOICE_CLONE_READ)),
+    session: AsyncSession = Depends(get_session),
+):
+    job = (
+        await session.execute(
+            select(VoiceCloneJob).where(
+                VoiceCloneJob.id == job_id, VoiceCloneJob.tenant_id == ctx.tenant_id
+            )
+        )
+    ).scalar_one_or_none()
+    if job is None:
+        raise HTTPException(status_code=404, detail="voice clone job not found")
+    return public_job(job)
+
+
+@router.post("/voice-clone-jobs/{job_id}/cancel", response_model=VoiceCloneJobOut)
+async def cancel_voice_clone_job_route(
+    job_id: uuid.UUID,
+    ctx: TenantContext = Depends(require_permission(Permission.VOICE_CLONE_WRITE)),
+    session: AsyncSession = Depends(get_session),
+):
+    job = (
+        await session.execute(
+            select(VoiceCloneJob).where(
+                VoiceCloneJob.id == job_id, VoiceCloneJob.tenant_id == ctx.tenant_id
+            )
+        )
+    ).scalar_one_or_none()
+    if job is None:
+        raise HTTPException(status_code=404, detail="voice clone job not found")
+    try:
+        job = await cancel_clone_job(session, job)
+        await session.commit()
+    except ValueError as exc:
+        await session.rollback()
+        raise HTTPException(status_code=409, detail=str(exc)) from None
+    return public_job(job)
+
 
 @router.get("", response_model=list[AgentOut])
 async def list_agents(

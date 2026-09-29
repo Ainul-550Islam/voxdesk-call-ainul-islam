@@ -7,6 +7,7 @@ workflows, versions, executions, checkpoints, and idempotency.
 Revision: 0028
 Down from: 0027_durable_jobs_outbox
 """
+
 from __future__ import annotations
 
 import sqlalchemy as sa
@@ -19,9 +20,6 @@ depends_on = None
 
 
 def upgrade() -> None:
-    bind = op.get_bind()
-    inspector = sa.inspect(bind)
-
     # --- workflows ---
     op.create_table(
         "workflows",
@@ -33,8 +31,18 @@ def upgrade() -> None:
         sa.Column("status", sa.String(32), nullable=False, server_default="draft"),
         sa.Column("metadata", sa.JSON(), nullable=False, server_default="{}"),
         sa.Column("created_by", sa.Uuid(), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
-        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.text("now()"),
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.text("now()"),
+        ),
         sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], ondelete="CASCADE"),
         sa.UniqueConstraint("tenant_id", "slug", name="uq_workflows_tenant_slug"),
     )
@@ -53,7 +61,12 @@ def upgrade() -> None:
         sa.Column("status", sa.String(32), nullable=False, server_default="draft"),
         sa.Column("published_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("created_by", sa.Uuid(), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.text("now()"),
+        ),
         sa.ForeignKeyConstraint(["workflow_id"], ["workflows.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], ondelete="CASCADE"),
         sa.UniqueConstraint("workflow_id", "version_number", name="uq_workflow_versions"),
@@ -79,10 +92,22 @@ def upgrade() -> None:
         sa.Column("finished_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("last_heartbeat_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("recovery_count", sa.Integer(), nullable=False, server_default="0"),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
-        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.text("now()"),
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.text("now()"),
+        ),
         sa.ForeignKeyConstraint(["workflow_id"], ["workflows.id"], ondelete="RESTRICT"),
-        sa.ForeignKeyConstraint(["workflow_version_id"], ["workflow_versions.id"], ondelete="RESTRICT"),
+        sa.ForeignKeyConstraint(
+            ["workflow_version_id"], ["workflow_versions.id"], ondelete="RESTRICT"
+        ),
         sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], ondelete="CASCADE"),
         sa.Index("ix_workflow_executions_tenant_status", "tenant_id", "status"),
         sa.Index("ix_workflow_executions_workflow", "workflow_id"),
@@ -95,7 +120,12 @@ def upgrade() -> None:
         sa.Column("execution_id", sa.Uuid(), nullable=False),
         sa.Column("node_id", sa.String(128), nullable=False),
         sa.Column("checkpoint_data", sa.JSON(), nullable=False, server_default="{}"),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.text("now()"),
+        ),
         sa.ForeignKeyConstraint(["execution_id"], ["workflow_executions.id"], ondelete="CASCADE"),
         sa.Index("ix_checkpoints_execution", "execution_id"),
     )
@@ -111,9 +141,16 @@ def upgrade() -> None:
         sa.Column("result_ref", sa.String(128), nullable=False, server_default=""),
         sa.Column("status", sa.String(32), nullable=False, server_default="in_progress"),
         sa.Column("expires_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.text("now()"),
+        ),
         sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], ondelete="CASCADE"),
-        sa.UniqueConstraint("tenant_id", "operation", "idempotency_key", name="uq_workflow_idempotency"),
+        sa.UniqueConstraint(
+            "tenant_id", "operation", "idempotency_key", name="uq_workflow_idempotency"
+        ),
         sa.Index("ix_workflow_idempotency_key", "tenant_id", "idempotency_key"),
     )
 
@@ -121,6 +158,12 @@ def upgrade() -> None:
 def downgrade() -> None:
     bind = op.get_bind()
     inspector = sa.inspect(bind)
-    for tbl in ("workflow_idempotency", "execution_checkpoints", "workflow_executions", "workflow_versions", "workflows"):
+    for tbl in (
+        "workflow_idempotency",
+        "execution_checkpoints",
+        "workflow_executions",
+        "workflow_versions",
+        "workflows",
+    ):
         if tbl in inspector.get_table_names():
             op.drop_table(tbl)

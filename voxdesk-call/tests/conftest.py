@@ -21,6 +21,11 @@ from app.core.config import settings
 from app.db.models import Base, Tenant, User, UserRole
 from app.db.session import get_session
 
+# Register shared metadata tables for standalone test modules that exercise
+# executor paths which may create durable review cases.
+import app.review  # noqa: F401
+import app.specialized_agents.executor  # noqa: F401
+
 # bcrypt at 12 rounds costs ~250ms per hash. The suite creates dozens of
 # users, so drop the cost for tests only -- the algorithm under test is
 # unchanged, only the work factor.

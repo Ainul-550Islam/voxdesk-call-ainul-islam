@@ -288,3 +288,9 @@ Real gaps reported honestly; nothing fabricated as "complete".
 - No production-ready claim made for voice-agent synthesis; Batch 07 is durable execution backend.
 --- BATCH 07 GAP DOCUMENTATION (part 1/3 — documented, not hidden) ---
 Compared against https://www.lumay.ai/ai-products/voice-agent (fetched). Real gaps: TTS engine/app/tts/ missing; voice clone missing; visual flow builder missing; external SDK missing; real-time synthesis loop missing; escalation module missing; no-code builder missing. Found not skipped: app/agent/tts.py, app/knowledge/, dashboard/, docs/COMPLIANCE.md/SOC2.md/DPA.md. All 30 targets present; 0027 verified; no fabrication; SQLite caveats reported.
+
+## Current-status clarification (2026-09-28)
+
+The repeated “BATCH 07 GAP DOCUMENTATION” block above is a historical snapshot, not a current repository inventory. Later changes added backend modules under `app/tts/`, `app/voice/` (including clone/profile and live-loop modules), `app/escalation/`, plus `sdk/` and the existing workflow builder. Their presence does not establish end-to-end parity with Lumay, a live provider connection, production deployment, or working voice cloning. The follow-up backend review also replaced the unconditional-success `app/escalation/transfer.py` stub with a delegation to the existing scoped `app.telephony.transfer_service.request_transfer` path. The current Prompt 7 target status and modules still unreviewed against the vendor-published baseline are tracked in `docs/PROMPT7_BACKEND_REVIEW_INVENTORY.md`.
+
+Baseline source used for follow-up scope: https://www.lumay.ai/ai-products/voice-agent (fetched 2026-09-28; vendor-published claims, not independently verified).

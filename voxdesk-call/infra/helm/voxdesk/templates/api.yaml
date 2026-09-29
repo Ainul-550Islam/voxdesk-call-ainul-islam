@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "voxdesk.fullname" . }}
+  labels:
+    {{- include "voxdesk.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "voxdesk.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        {{- include "voxdesk.labels" . | nindent 8 }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: api
+          image: "{{ required \"image.repository is required\" .Values.image.repository }}:{{ required \"image.tag is required\" .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            - name: APP_ENV
+              value: {{ .Values.config.appEnv | quote }}
+            - name: DATABASE_URL
+              value: {{ required "config.databaseUrl is required" .Values.config.databaseUrl | quote }}
+            - name: REDIS_URL
+              value: {{ required "config.redisUrl is required" .Values.config.redisUrl | quote }}
+            - name: TRUSTED_HOSTS
+              value: {{ .Values.config.trustedHosts | quote }}
+          envFrom:
+            - secretRef:
+                name: {{ required "secrets.existingSecret is required" .Values.secrets.existingSecret }}
+          readinessProbe:
+            httpGet: {path: {{ .Values.probes.readiness }}, port: http}
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet: {path: {{ .Values.probes.liveness }}, port: http}
+            periodSeconds: 20
+            timeoutSeconds: 3
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "voxdesk.fullname" . }}
+  labels:
+    {{- include "voxdesk.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    app.kubernetes.io/name: {{ include "voxdesk.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    - name: http
+      port: {{ .Values.service.port }}
+      targetPort: http
+{{- if .Values.ingress.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "voxdesk.fullname" . }}
+spec:
+  ingressClassName: {{ .Values.ingress.className | quote }}
+  rules:
+    - host: {{ required "ingress.host is required when ingress is enabled" .Values.ingress.host }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "voxdesk.fullname" . }}
+                port: {name: http}
+  {{- with .Values.ingress.tls }}
+  tls: {{ toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}

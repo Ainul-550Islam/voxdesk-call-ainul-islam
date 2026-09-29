@@ -49,13 +49,18 @@ def sha256_hex(text: str) -> str:
 
 def _resolve_git_dir(repo_root: Path) -> Path | None:
     """Locate the git metadata directory (handles linked worktrees)."""
-    git_dir = repo_root / ".git"
-    if git_dir.is_dir():
-        return git_dir
-    if git_dir.is_file():
-        content = git_dir.read_text(encoding="utf-8", errors="replace").strip()
-        if content.startswith("gitdir:"):
-            return Path(content.split(":", 1)[1].strip())
+    # The evaluation workspace may place a checked-out project below the
+    # repository root (``repo/voxdesk-call``). Walk upward so release facts do
+    # not silently lose the commit identity in that valid layout.
+    for candidate in (repo_root, *repo_root.parents):
+        git_dir = candidate / ".git"
+        if git_dir.is_dir():
+            return git_dir
+        if git_dir.is_file():
+            content = git_dir.read_text(encoding="utf-8", errors="replace").strip()
+            if content.startswith("gitdir:"):
+                resolved = Path(content.split(":", 1)[1].strip())
+                return resolved if resolved.is_absolute() else candidate / resolved
     return None
 
 

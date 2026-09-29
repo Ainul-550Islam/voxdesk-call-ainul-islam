@@ -86,6 +86,9 @@ def _patch_lifespan_dependencies(monkeypatch, engine, app_env):
         "app.billing.plans.configuration_problems", _fake_configuration_problems
     )
     monkeypatch.setattr(settings, "app_env", app_env)
+    # This test isolates the create_all gate. Provider readiness has its own
+    # strict-mode tests and may fail when no production credentials are present.
+    monkeypatch.setattr("app.core.config_validation.require_valid_runtime_config", lambda **_kwargs: None)
     monkeypatch.setattr(Settings, "validate_security", lambda self: [])
 
 

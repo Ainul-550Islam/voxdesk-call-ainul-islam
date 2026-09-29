@@ -27,14 +27,15 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from app.auth.identity.events import event_names
-from app.core.config import settings
 from app.db.models import AuditAction, AuditLog
 
 pytestmark = pytest.mark.asyncio
 
 
 def _database_url() -> str:
-    return os.environ.get("DATABASE_URL") or str(settings.database_url)
+    # This is an opt-in live PostgreSQL probe. Do not silently fall back to a
+    # local default URL and turn a missing service into a failed DB test.
+    return os.environ.get("DATABASE_URL", "")
 
 
 @pytest.fixture

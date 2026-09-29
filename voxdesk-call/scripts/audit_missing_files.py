@@ -55,9 +55,11 @@ def audit_makefile() -> None:
         ref = m.group(1)
         if not exists(ref):
             note("makefile", "Makefile", f"recipe references missing file: {ref}")
-    for m in re.finditer(r"-f\s+([\w./-]+)", text):
+    # Only a compose-file flag is a local file reference. `docker compose
+    # logs -f api` uses `-f` as follow mode, not as a filename flag.
+    for m in re.finditer(r"(?:docker\s+compose|docker-compose)\s+-f\s+([\w./-]+)", text):
         if not exists(m.group(1)):
-            note("makefile", "Makefile", f"-f target missing: {m.group(1)}")
+            note("makefile", "Makefile", f"compose file missing: {m.group(1)}")
 
 
 # ------------------------------------------------------- Docker / compose ---
@@ -67,13 +69,21 @@ def audit_docker() -> None:
         text = df.read_text()
         for m in re.finditer(r"^\s*(?:COPY|ADD)\s+(.+)$", text, re.M | re.I):
             args = m.group(1).split()
+            # A source copied from another build stage is an image-internal
+            # artifact, not a file expected in the repository build context.
+            if any(arg.startswith("--from=") for arg in args):
+                continue
             for src in args[:-1]:
-                if src.startswith(("--from=", "$")):
+                if src.startswith("$"):
                     continue
                 rel = src.lstrip("./")
                 if rel in ("", "."):
                     continue
-                if not exists(rel.rstrip("/")):
+                # Docker builds each Dockerfile with its build context as the
+                # base. All repository Dockerfiles in this tree use their own
+                # directory as that context.
+                local = df.parent / rel.rstrip("/")
+                if not local.exists() and not exists(rel.rstrip("/")):
                     note("dockerfile", str(df.relative_to(ROOT)), f"COPY source missing: {src}")
 
     for comp in list(_walk("docker-compose*.yml")):

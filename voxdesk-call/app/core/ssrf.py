@@ -30,18 +30,14 @@ literal components and never resolves DNS:
   (mDNS) / ``.internal`` / ``.localhost``, or the well-known cloud metadata
   names, is rejected.
 
-What it deliberately does **not** do:
-
-* **No DNS resolution.** A hostname that resolves to a private address
-  (DNS rebinding, split-horizon DNS) is invisible to a static check. The
-  complementary control is egress network policy (the API container must not
-  be able to reach link-local/metadata/private ranges at the network layer);
-  that is an operational requirement documented in ``docs/SECURITY.md``, not
-  something a string check can promise.
-* **No redirect following.** Each HTTP client here is configured with a
-  timeout and the adapters treat a redirect as a response to validate, not a
-  destination to chase with credentials replayed. A future client that
-  auto-follows redirects must re-validate every hop.
+The synchronous ``validate_outbound_url`` function is deliberately static so
+configuration validation stays deterministic. Network callers should use the
+async ``validate_resolved_outbound_url`` companion, which resolves every
+current DNS answer and rejects any private, reserved, or link-local result.
+That lookup still has a DNS-rebinding window, so egress policy must also keep
+the API container away from link-local/metadata/private ranges. Redirects are
+not followed: each HTTP client uses ``follow_redirects=False`` so credentials
+are never replayed to an unvalidated hop.
 
 Failure raises :class:`OutboundUrlError` with a message safe to show an
 operator (it never echoes the rejected URL's credentials).
@@ -49,8 +45,10 @@ operator (it never echoes the rejected URL's credentials).
 
 from __future__ import annotations
 
+import asyncio
 import ipaddress
 import re
+import socket
 from urllib.parse import urlsplit
 
 _ALLOWED_SCHEMES = ("http", "https")
@@ -152,6 +150,40 @@ def validate_outbound_url(url: str, *, require_https: bool = False) -> None:
         raise OutboundUrlError(
             f"destination URL resolves to a non-public or reserved target ({reason})"
         )
+
+
+async def validate_resolved_outbound_url(url: str, *, require_https: bool = False) -> None:
+    """Validate the URL and every current DNS answer before a network call.
+
+    Static validation remains useful for deterministic configuration checks;
+    callers that are about to connect should use this async form. Any DNS
+    failure or mixed public/private answer fails closed. Network egress policy
+    is still required to address DNS rebinding between this lookup and socket
+    connect.
+    """
+    validate_outbound_url(url, require_https=require_https)
+    parts = urlsplit(url.strip())
+    host = parts.hostname
+    if host is None:
+        raise OutboundUrlError("destination URL has no host")
+    port = parts.port or (443 if parts.scheme.lower() == "https" else 80)
+    loop = asyncio.get_running_loop()
+    try:
+        answers = await loop.run_in_executor(
+            None,
+            lambda: socket.getaddrinfo(host, port, type=socket.SOCK_STREAM),
+        )
+    except (OSError, UnicodeError) as exc:
+        raise OutboundUrlError("destination hostname could not be resolved") from exc
+    addresses = {str(answer[4][0]) for answer in answers if answer[4]}
+    if not addresses:
+        raise OutboundUrlError("destination hostname returned no addresses")
+    for address in addresses:
+        reason = _ip_classification(address)
+        if reason:
+            raise OutboundUrlError(
+                f"destination DNS answer is a non-public or reserved target ({reason})"
+            )
 
 
 def is_safe_outbound_url(url: str, *, require_https: bool = False) -> bool:

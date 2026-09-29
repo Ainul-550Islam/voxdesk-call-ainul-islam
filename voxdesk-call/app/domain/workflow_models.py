@@ -12,9 +12,9 @@ actions*. Two hard guarantees are encoded here and nowhere else:
    identical definitions always compare equal and versioning can detect "no
    actual change" instead of bumping a version for a rename of the metadata.
 
-Workflows are tenant-owned: ``tenant_id`` is required on every object and the
-service layer keys its registry by it. Executions are also tenant-scoped and
-carry an idempotency key so a replayed trigger cannot run a workflow twice.
+Workflows are tenant-owned: ``tenant_id`` is required on every object and
+all persistence queries are scoped by it. Executions are also tenant-scoped
+and carry an idempotency key so a replayed trigger cannot run a workflow twice.
 """
 
 from __future__ import annotations
@@ -29,30 +29,53 @@ from app.domain.agent_models import stable_id
 
 #: The only action names a workflow may reference. Each maps to a handler in
 #: ``app/services/workflow_service.py``; anything else is rejected.
-CONTROLLED_ACTIONS = frozenset({
-    "update_lead_status",        # tenant-local, read-only re: providers
-    "add_conversation_tag",      # tenant-local
-    "enqueue_notification",      # routed through notification_service
-    "record_escalation_intent",  # records that a human should be offered; never dials
-    "create_followup_intent",    # records a follow-up task; never dials
-    "mark_resolved",             # tenant-local resolution flag
-    "apply_dnc",                 # tenant-local do-not-call flag on a lead
-})
+CONTROLLED_ACTIONS = frozenset(
+    {
+        "update_lead_status",  # tenant-local, read-only re: providers
+        "add_conversation_tag",  # tenant-local
+        "enqueue_notification",  # routed through notification_service
+        "record_escalation_intent",  # records that a human should be offered; never dials
+        "create_followup_intent",  # records a follow-up task; never dials
+        "mark_resolved",  # tenant-local resolution flag
+        "apply_dnc",  # tenant-local do-not-call flag on a lead
+    }
+)
 
 #: Markers that can never appear in an action name. A belt-and-braces guard on
 #: top of the allowlist: even a future bug that widened the allowlist cannot
 #: admit a code-shaped name through these.
 FORBIDDEN_ACTION_MARKERS = (
-    "__", "exec", "eval", "import", "system", "shell", "subprocess",
-    "lambda", "compile", "globals", "locals",
+    "__",
+    "exec",
+    "eval",
+    "import",
+    "system",
+    "shell",
+    "subprocess",
+    "lambda",
+    "compile",
+    "globals",
+    "locals",
 )
 
 #: Condition operators, each implemented by ``evaluate_condition``.
-CONDITION_OPERATORS = frozenset({
-    "eq", "ne", "gt", "gte", "lt", "lte",
-    "in", "not_in", "contains", "starts_with", "ends_with",
-    "exists", "not_exists",
-})
+CONDITION_OPERATORS = frozenset(
+    {
+        "eq",
+        "ne",
+        "gt",
+        "gte",
+        "lt",
+        "lte",
+        "in",
+        "not_in",
+        "contains",
+        "starts_with",
+        "ends_with",
+        "exists",
+        "not_exists",
+    }
+)
 
 
 def evaluate_condition(field_value: Any, operator: str, expected: Any) -> bool:
@@ -103,6 +126,7 @@ def _cmp(a: Any, b: Any) -> int:
 
 # ------------------------------------------------------------------ enums ---
 
+
 class WorkflowStatus(str, enum.Enum):
     DRAFT = "draft"
     ACTIVE = "active"
@@ -133,6 +157,7 @@ class ExecutionStatus(str, enum.Enum):
 
 
 # ------------------------------------------------------------------- nodes ---
+
 
 @dataclass(frozen=True)
 class Condition:
@@ -198,8 +223,8 @@ class WorkflowNode:
     type: NodeType
     action: WorkflowAction | None = None
     condition: Condition | None = None
-    branches: tuple[tuple[Condition, str], ...] = ()   # (when, target-node-id)
-    default_next: str = ""                              # fallback for branches
+    branches: tuple[tuple[Condition, str], ...] = ()  # (when, target-node-id)
+    default_next: str = ""  # fallback for branches
     next: str = ""
     delay_seconds: int = 0
     timeout_seconds: int = 30
@@ -289,9 +314,19 @@ class WorkflowDefinition:
             self.trigger,
             self.entry_node,
             tuple(
-                (n.id, n.type.value, n.action, n.condition, n.branches,
-                 n.default_next, n.next, n.delay_seconds, n.timeout_seconds,
-                 n.retry_limit, n.approver_role)
+                (
+                    n.id,
+                    n.type.value,
+                    n.action,
+                    n.condition,
+                    n.branches,
+                    n.default_next,
+                    n.next,
+                    n.delay_seconds,
+                    n.timeout_seconds,
+                    n.retry_limit,
+                    n.approver_role,
+                )
                 for n in self.nodes
             ),
         )
@@ -305,7 +340,7 @@ class WorkflowStep:
     """One executed (or skipped) node within an execution."""
 
     node_id: str
-    status: str            # executed | skipped | scheduled | failed | unsupported
+    status: str  # executed | skipped | scheduled | failed | unsupported
     detail: str = ""
     attempt: int = 1
     at: str = ""
@@ -352,10 +387,14 @@ def can_transition(current: WorkflowStatus, target: WorkflowStatus) -> bool:
     return target in _WORKFLOW_TRANSITIONS.get(current, frozenset())
 
 
-_TERMINAL_EXECUTION = frozenset({
-    ExecutionStatus.COMPLETED, ExecutionStatus.FAILED,
-    ExecutionStatus.CANCELLED, ExecutionStatus.TIMED_OUT,
-})
+_TERMINAL_EXECUTION = frozenset(
+    {
+        ExecutionStatus.COMPLETED,
+        ExecutionStatus.FAILED,
+        ExecutionStatus.CANCELLED,
+        ExecutionStatus.TIMED_OUT,
+    }
+)
 
 
 def execution_is_terminal(status: ExecutionStatus) -> bool:

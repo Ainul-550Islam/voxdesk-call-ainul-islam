@@ -39,6 +39,7 @@ from app.db.models import DocumentStatus, KnowledgeChunk, KnowledgeDocument
 from app.db.session import get_session
 from app.knowledge import ingest
 from app.knowledge.jobs import enqueue_ingestion
+from app.knowledge.url_ingest import CrawlError, crawl
 
 router = APIRouter(prefix="/api/knowledge", tags=["knowledge"])
 
@@ -418,6 +419,30 @@ async def search_knowledge(
         ],
         count=len(chunks),
     )
+
+
+class UrlIngestRequest(BaseModel):
+    url: str
+    max_depth: int = Field(default=0, ge=0, le=3)
+    max_pages: int = Field(default=20, ge=1, le=100)
+    environment_id: uuid.UUID | None = None
+
+
+@router.post("/urls", status_code=202)
+async def ingest_url(
+    payload: UrlIngestRequest,
+    background: BackgroundTasks,
+    ctx: TenantContext = Depends(require_permission(Permission.KNOWLEDGE_WRITE)),
+    session: AsyncSession = Depends(get_session),
+):
+    try:
+        result = await crawl(session, tenant_id=ctx.tenant_id, url=payload.url, max_depth=payload.max_depth, max_pages=payload.max_pages, environment_id=payload.environment_id)
+    except CrawlError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    for item in result.documents:
+        if item.document.status == DocumentStatus.UPLOADED:
+            enqueue_ingestion(background, item.document.id)
+    return {"source_id": str(result.source.id), "visited": list(result.visited), "documents": [str(item.document.id) for item in result.documents]}
 
 
 @router.get("/stats")

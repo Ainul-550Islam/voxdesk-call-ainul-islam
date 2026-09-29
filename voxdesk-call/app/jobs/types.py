@@ -81,6 +81,12 @@ class JobType:
     LEAD_IMPORT = "lead_import"
     QA_AUTO_REVIEW = "qa_auto_review"
     OUTBOX_DELIVERY = "outbox.delivery"
+    VOICE_CLONE = "voice.clone"
+    SPECIALIZED_TRANSLATION = "specialized.translation"
+    SPECIALIZED_INSIGHT = "specialized.insight"
+    SPECIALIZED_FORECAST = "specialized.forecast"
+    SPECIALIZED_ANOMALY = "specialized.anomaly"
+    DEPLOYMENT = "deployment"
 
     #: Every type this codebase knows. Not the registry: a type can be known
     #: (validated at enqueue) before a domain wires its execution handler.
@@ -92,6 +98,12 @@ class JobType:
             LEAD_IMPORT,
             QA_AUTO_REVIEW,
             OUTBOX_DELIVERY,
+            VOICE_CLONE,
+            SPECIALIZED_TRANSLATION,
+            SPECIALIZED_INSIGHT,
+            SPECIALIZED_FORECAST,
+            SPECIALIZED_ANOMALY,
+            DEPLOYMENT,
         }
     )
 

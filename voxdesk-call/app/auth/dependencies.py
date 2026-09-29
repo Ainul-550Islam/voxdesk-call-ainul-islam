@@ -277,7 +277,12 @@ async def get_context(
     request: Request,
     user: User = Depends(get_current_user),
     tenant: Tenant = Depends(get_current_tenant),
+    session: AsyncSession = Depends(get_session),
 ) -> TenantContext:
+    # Prompt 3 RLS is transaction-scoped and fail-closed. The authenticated
+    # tenant is installed before a protected handler can touch tenant tables.
+    from app.db.rls import set_tenant_context
+    await set_tenant_context(session, tenant.id)
     membership_status = getattr(request.state, "membership_status", "active")
     principal: AuthenticatedPrincipal | None = getattr(request.state, "principal", None)
     if principal is not None:

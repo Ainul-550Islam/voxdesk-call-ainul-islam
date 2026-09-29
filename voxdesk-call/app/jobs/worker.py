@@ -46,7 +46,7 @@ from app.jobs.heartbeat import (
 from app.jobs.models import PermanentJobError, RetryableJobError
 from app.jobs.repository import claim_next_job, recover_expired_jobs, renew_lease
 from app.jobs.retry import backoff_seconds, classify_exception
-from app.jobs.types import ExecutionResult, FailureClass, handler_for, registered_job_types
+from app.jobs.types import ExecutionResult, FailureClass, registered_job_types
 
 Handler = Callable[[DurableJob], Awaitable[None]]
 
@@ -128,8 +128,9 @@ async def run_once(
             now=now,
         )
         return job
+    from app.jobs.runtime import run_job_handler
     try:
-        await handler(job)
+        await run_job_handler(job, handler)
     except PermanentJobError as exc:
         await queue.fail(
             session,
@@ -152,7 +153,7 @@ async def run_once(
             now=now,
         )
         return job
-    except Exception:
+    except Exception as exc:
         log.info("jobs.handler_failed", job_id=str(job.id), job_type=job.job_type)
         failure_class, category = classify_exception(exc)
         await queue.fail(
@@ -191,11 +192,11 @@ def build_handlers(extra: dict[str, Handler] | None = None) -> dict[str, Handler
     legacy receipt rows of unadopted types stay untouched rather than being
     dragged into execution and dead-lettered.
     """
-    handlers: dict[str, Handler] = {}
-    for job_type in registered_job_types():
-        found = handler_for(job_type)
-        if found is not None:
-            handlers[job_type] = found
+    # One bootstrap owns imports for the existing persisted-type registry;
+    # no second handler map, queue, or worker loop is introduced.
+    from app.jobs.registry import bootstrap
+
+    handlers = dict(bootstrap())
     handlers.update(extra or {})
     return handlers
 
@@ -267,8 +268,9 @@ async def execute_claimed(
             category="unknown_job_type",
             failure_class=FailureClass.PERMANENT,
         )
+    from app.jobs.runtime import run_job_handler
     try:
-        result = await handler(job)
+        result = await run_job_handler(job, handler)
     except PermanentJobError as exc:
         return await queue.fail(
             session,
@@ -399,7 +401,7 @@ class JobWorker:
             try:
                 await asyncio.wait_for(stop.wait(), timeout=poll_seconds)
             except (asyncio.TimeoutError, TimeoutError):
-                pass
+                continue
 
 
 __all__ = [

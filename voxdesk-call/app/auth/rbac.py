@@ -60,9 +60,17 @@ _MANAGER: frozenset[Permission] = _VIEWER | OPERATIONAL_WRITE | {
     Permission.AGENT_STATE_READ,
     Permission.QA_WRITE,
     Permission.QA_REVIEW,
+    Permission.VOICE_PROFILE_READ,
+    Permission.VOICE_CLONE_READ,
+    Permission.GOVERNANCE_READ,
 }
 
 _ADMIN: frozenset[Permission] = _MANAGER | TEAM_MANAGEMENT | {
+    Permission.GOVERNANCE_READ,
+    Permission.GOVERNANCE_WRITE,
+    Permission.GOVERNANCE_APPROVE,
+    Permission.GOVERNANCE_MODEL_MANAGE,
+    Permission.GOVERNANCE_EVIDENCE_EXPORT,
     Permission.TENANT_UPDATE,
     Permission.INTEGRATION_READ,
     Permission.INTEGRATION_WRITE,
@@ -88,6 +96,23 @@ _ADMIN: frozenset[Permission] = _MANAGER | TEAM_MANAGEMENT | {
     Permission.SKILL_WRITE,
     Permission.SUPERVISOR_WRITE,
     Permission.QA_FINALIZE,
+    Permission.CONNECTOR_READ,
+    Permission.CONNECTOR_WRITE,
+    Permission.CONNECTOR_EXECUTE,
+    Permission.MCP_READ,
+    Permission.MCP_WRITE,
+    Permission.MCP_EXECUTE,
+    Permission.API_TOOL_READ,
+    Permission.API_TOOL_WRITE,
+    Permission.API_TOOL_EXECUTE,
+    Permission.EMAIL_SEND,
+    Permission.APPROVAL_READ,
+    Permission.APPROVAL_WRITE,
+    Permission.SECRET_MANAGE,
+    Permission.VOICE_PROFILE_READ,
+    Permission.VOICE_PROFILE_WRITE,
+    Permission.VOICE_CLONE_READ,
+    Permission.VOICE_CLONE_WRITE,
 }
 
 # Owner gets everything defined, including future permissions, except the
