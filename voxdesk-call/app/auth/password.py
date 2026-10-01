@@ -4,13 +4,26 @@ Password hashing and policy.
 bcrypt only -- no custom cryptography. `bcrypt.checkpw` is constant-time, and
 `hashpw` generates a per-password salt, so identical passwords do not produce
 identical hashes.
+
+BUG-02 Fix: Provide explicit error message when bcrypt is missing in audit env.
+The dependency is declared in requirements.txt as bcrypt==4.2.1 and installed
+via `pip install -r requirements.txt`. Audit environment that fails with
+ModuleNotFoundError: bcrypt must install pinned dependencies first.
 """
+
 from __future__ import annotations
 
 import re
 import unicodedata
 
-import bcrypt
+try:
+    import bcrypt
+except ModuleNotFoundError as exc:
+    raise ModuleNotFoundError(
+        "bcrypt is required but not installed. Install project-pinned dependencies: "
+        "pip install -r requirements.txt (contains bcrypt==4.2.1). "
+        "Original error: " + str(exc)
+    ) from exc
 
 # 12 rounds is the common 2026 default: ~250ms on commodity hardware, which is
 # slow enough to matter for offline cracking and fast enough for a login form.
@@ -83,7 +96,7 @@ def validate_policy(password: str, *, email: str = "") -> None:
 
     classes = sum(bool(rx.search(password)) for rx in (
         re.compile(r"[a-z]"), re.compile(r"[A-Z]"),
-        re.compile(r"\d"), re.compile(r"[^\w\s]"),
+        re.compile(r"\d"), re.compile(r"[^\\w\\s]"),
     ))
     if classes < 3:
         raise PasswordPolicyError(

@@ -1,0 +1,10 @@
+.gradient-blue-violet { background:linear-gradient(135deg,#3b82f6 0%,#8b5cf6 100%); }
+.gradient-mesh { background:radial-gradient(at 40% 20%,rgba(59,130,246,0.15) 0px,transparent 50%), radial-gradient(at 80% 0%,rgba(139,92,246,0.15) 0px,transparent 50%), radial-gradient(at 0% 50%,rgba(6,182,214,0.1) 0px,transparent 50%); }
+.glass { background:rgba(255,255,255,0.05); backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,0.1); }
+.glow-blue { box-shadow:0 0 40px rgba(59,130,246,0.2); }
+.glow-violet { box-shadow:0 0 40px rgba(139,92,246,0.2); }
+.grid-pattern { background-image:linear-gradient(to right,rgba(255,255,255,0.03) 1px,transparent 1px), linear-gradient(to bottom,rgba(255,255,255,0.03) 1px,transparent 1px); background-size:4rem 4rem; }
+@keyframes float { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-10px);} }
+@keyframes pulse-glow { 0%,100%{opacity:0.5;} 50%{opacity:1;} }
+.animate-float { animation:float 6s ease-in-out infinite; }
+.animate-pulse-glow { animation:pulse-glow 2s ease-in-out infinite; }

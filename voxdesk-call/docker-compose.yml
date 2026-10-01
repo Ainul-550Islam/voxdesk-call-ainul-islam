@@ -1,14 +1,20 @@
+# Dev compose — local development only, NOT production
+# RISK-02 Fix: static DB password voxdesk is dev-only, clearly non-reusable, injected from env
+# Production compose (docker-compose.prod.yml) uses environment-required secrets
+# Dev password is overridable via POSTGRES_PASSWORD env var, defaults to dev-only value
+# Never reuse this password in production — prod requires POSTGRES_PASSWORD from .env
+
 services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: voxdesk
-      POSTGRES_PASSWORD: voxdesk
-      POSTGRES_DB: voxdesk
+      POSTGRES_USER: ${POSTGRES_USER:-voxdesk}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-voxdesk-dev-only-do-not-use-in-prod}
+      POSTGRES_DB: ${POSTGRES_DB:-voxdesk}
     ports: ["5432:5432"]
     volumes: ["pgdata:/var/lib/postgresql/data"]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U voxdesk"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-voxdesk}"]
       interval: 5s
       retries: 10
 
@@ -42,6 +48,8 @@ services:
     ports: ["5173:5173"]
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
     depends_on: [api]
+    environment:
+      VOXDESK_ALLOW_ALL_HOSTS: "true"
 
 volumes:
   pgdata:

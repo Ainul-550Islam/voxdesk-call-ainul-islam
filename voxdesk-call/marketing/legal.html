@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>VoxDesk Legal — Clause Library, Playbook, Redline</title>
+<style>body{font-family:-apple-system,sans-serif;line-height:1.6;max-width:900px;margin:0 auto;padding:24px}header{background:#000;color:#fff;padding:12px 20px;display:flex;justify-content:space-between;border-radius:8px}header a{color:#fff;text-decoration:none;margin-left:16px;font-size:13px}h1{font-size:32px;margin:24px 0 12px}.card{border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:12px 0}.badge{font-size:10px;padding:2px 8px;border-radius:12px;background:#f5f3ff;color:#8b5cf6}</style>
+</head><body>
+<header><div><strong>VoxDesk</strong> Legal</div><nav><a href="index.html">Platform</a><a href="voice.html">Voice</a><a href="translation.html">Translation</a><a href="qms.html">QMS</a><a href="legal.html">Legal</a><a href="/dashboard/legal">Dashboard →</a></nav></header>
+<h1>Legal Agent — Clause Library, Playbook, Redline Artifacts, Versioning, Audit Chain <span class="badge">P1-04 Fixed</span></h1>
+<p>Backend: app/legal/clause_engine.py PATTERNS 5, review_engine.py, playbook.py, redline.py, clause_library.py, 10 routes (2 existing +8 new)</p>
+<p>LuMay: Legal playbook, clause management, redline artifacts, versioning, audit chain — demo</p>
+
+<div class="card"><h2>Clause Library — 5 Default Clauses Mapping to PATTERNS</h2>
+<ul>
+<li>ClauseLibraryEntry: key, title, category, risk_tier, version, pattern, suggested_text, fallback_text, source, review_required, fingerprint via sha256_hex</li>
+<li>5 entries: termination (PATTERN termination), limitation_of_liability (limitation_of_liability), indemnification (indemnification), confidentiality (confidentiality), data_protection (data_protection) — mapping to clause_engine.py PATTERNS</li>
+<li>Versioning: version int, fingerprint sha256_hex, created_at/updated_at</li>
+<li>Endpoints: GET /api/legal/clause-library?category=&q=, GET /api/legal/clause-library/{key}</li>
+<li>Repository: ClauseLibraryRepository list_entries, get_by_key, get_by_id, search(category, query)</li>
+</ul></div>
+
+<div class="card"><h2>Playbook — Rules, Scope, Evaluation</h2>
+<ul>
+<li>Playbook: id, tenant_id, organization_id, environment_id, name, version, status draft/active/archived, clauses[], rules[], created_at, updated_at</li>
+<li>PlaybookRule: id, clause_key, operator contains/equals/gte/lte, value, severity, action, fingerprint sha256_hex</li>
+<li>3 default rules: termination_missing (finding contains termination, severity critical, action suggest_standard_termination), liability_cap_missing (limitation_of_liability, high, suggest_liability_cap), confidentiality_duration (confidentiality, medium, suggest_confidentiality_duration)</li>
+<li>Service: PlaybookService.create_playbook(tenant_id, org_id, env_id, name, clause_keys) + evaluate_against_playbook(findings, playbook) → matched evaluations with review_required</li>
+<li>Endpoints: GET/POST /api/legal/playbooks?environment_id=, GET /api/legal/playbooks/{id}, POST /api/legal/playbooks/{id}/evaluate with findings[]</li>
+<li>Repository: PlaybookRepository uses governance policies table type=legal_playbook — existing architecture reuse</li>
+</ul></div>
+
+<div class="card"><h2>Redline Artifacts — difflib, Fingerprint, Disclaimer, Reviewer Workflow</h2>
+<ul>
+<li>RedlineChange: change_type insertion/deletion/replacement, original_text, suggested_text, rationale, clause_key, source_reference, evidence_reference, fingerprint via sha256_hex of original+suggested+clause</li>
+<li>RedlineArtifact: id, document_id, playbook_id, changes[], diff_html via difflib.HtmlDiff, fingerprint sha256_hex, disclaimer "AI-generated redline suggestion only; not legal advice. Qualified human must review.", review_state pending/approved/rejected, evidence_references[], created_at</li>
+<li>Engine: RedlineEngine.generate_redline(document_id, findings[], playbook, evidence_refs) uses SequenceMatcher, _wrap_html(), _clause_to_original(), _clause_to_suggested(), generate_for_document() groups by finding</li>
+<li>Endpoints: POST /api/legal/redlines with document_id, playbook_id, findings[], evidence_references[], GET /api/legal/redlines/{id}?environment_id=, POST /api/legal/redlines/export with audit package fingerprint</li>
+<li>Persistence: RedlineRepository save_artifact, get_artifact, list_for_document, export_audit_package with fingerprint, exported_at, disclaimer, artifact_count</li>
+</ul></div>
+
+<div class="card"><h2>Versioning & Audit Chain — Evidence</h2>
+<ul>
+<li>ClauseLibrary versioning via version field, fingerprint</li>
+<li>Playbook versioning: version int, created_at/updated_at, status draft/active/archived</li>
+<li>Redline audit package: export_audit_package() with fingerprint, exported_at, disclaimer, artifact_count, artifacts[] as_dict()</li>
+<li>Evidence chain: evidence_references passed to redline artifacts, linked to review cases, evidence chain payload_hash/previous_hash</li>
+<li>No legal-certainty claims — all suggestions require human review, disclaimer on every artifact, review_state required</li>
+</ul></div>
+
+<div class="card"><h2>API Examples</h2>
+<pre style="font-size:11px;background:#f9fafb;padding:12px;border-radius:6px;overflow-x:auto">
+GET /api/legal/clause-library
+GET /api/legal/clause-library/termination
+GET /api/legal/playbooks?environment_id=uuid
+POST /api/legal/playbooks {"environment_id": "uuid", "name": "My Playbook", "clause_keys": ["termination","liability_cap"]}
+POST /api/legal/playbooks/{id}/evaluate {"environment_id": "uuid", "findings": [{"clause_key": "termination", "title": "Missing termination"}]}
+POST /api/legal/redlines {"environment_id": "uuid", "document_id": "doc-123", "playbook_id": "pb-123", "findings": [...], "evidence_references": ["ev-1"]}
+GET /api/legal/redlines/{artifact_id}?environment_id=uuid
+POST /api/legal/redlines/export {"environment_id": "uuid", "document_id": "doc-123"}
+</pre></div>
+
+<p><a href="/dashboard/legal">Open Legal Workspace → clause library 5 entries, playbook rules 3 default, redline artifacts with diff HTML, fingerprint, disclaimer, reviewer workflow</a> | <a href="/dashboard/compliance">Compliance → clause library + playbook + redline + QMS</a></p>
+</body></html>

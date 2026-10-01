@@ -1,0 +1,81 @@
+[server]
+host = "0.0.0.0"
+port = 8080
+metrics_port = 9090
+health_port = 8081
+workers = 100
+max_connections = 10000
+ping_interval_secs = 30
+pong_timeout_secs = 10
+read_buffer_size = 65536
+write_buffer_size = 65536
+max_message_size = 1048576
+
+[websocket]
+path = "/ws"
+heartbeat_interval_secs = 30
+client_timeout_secs = 60
+per_message_deflate = true
+max_frame_size = 1048576
+broadcast_channel_capacity = 10000
+
+[signaling]
+type = "webrtc"
+stun_servers = ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"]
+turn_servers = []
+ice_candidate_pool_size = 10
+sdp_semantics = "unified-plan"
+
+[livekit]
+api_key = "devkey"
+api_secret = "secret"
+host = "http://localhost:7880"
+ws_url = "ws://localhost:7880"
+enabled = true
+rooms_auto_create = true
+token_ttl_secs = 3600
+
+[redis]
+url = "redis://localhost:6379"
+pool_size = 100
+cluster_enabled = false
+cluster_nodes = []
+pubsub_channel = "voxdesk:signaling"
+session_ttl_secs = 3600
+key_prefix = "voxdesk:"
+
+[audio]
+sample_rate = 48000
+channels = 1
+frame_size_ms = 20
+opus_bitrate = 32000
+ring_buffer_capacity = 1000
+jitter_buffer_enabled = true
+echo_cancellation = true
+noise_suppression = true
+
+[metrics]
+enabled = true
+endpoint = "/metrics"
+prometheus_enabled = true
+tracing_enabled = true
+log_level = "info"
+json_logs = false
+
+[security]
+jwt_secret = "dev-secret-change-in-production"
+jwt_algorithm = "HS256"
+token_expiry_secs = 3600
+hmac_secret = "hmac-dev-secret"
+encryption_enabled = false
+tls_enabled = false
+cert_path = ""
+key_path = ""
+
+[concurrency]
+worker_threads = 100
+blocking_threads = 512
+engine_type = "tokio"
+queue_capacity = 10000
+backpressure_enabled = true
+rate_limit_per_tenant = 1000

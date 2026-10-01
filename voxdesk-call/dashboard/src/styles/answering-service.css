@@ -1,0 +1,1026 @@
+/**
+ * dashboard/src/styles/answering-service.css
+ * AI Answering Service — 24/7 answering, booking, routing, custom voice, CRM integration
+ * Deep black/navy, electric blue/violet/cyan, glassmorphism, premium cards 20-32px
+ * Full file, no shortening, 1000+ lines
+ */
+
+.as-root { background: #050507; color: #fff; min-height: 100vh; }
+.as-section { max-width: 1280px; margin: 0 auto; padding: 64px 24px; }
+.as-omni-gradient { background: linear-gradient(135deg, rgba(59,130,246,0.15) 0%, rgba(139,92,246,0.12) 50%, rgba(6,182,212,0.10) 100%); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; }
+.as-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+.as-glass:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); transform: translateY(-2px); }
+.as-answering-orb { width: 64px; height: 64px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #3b82f6, #1d4ed8); box-shadow: 0 0 40px rgba(59,130,246,0.4), inset 0 0 20px rgba(255,255,255,0.2); animation: as-pulse 2s infinite; }
+@keyframes as-pulse { 0%,100% { transform: scale(1); box-shadow: 0 0 40px rgba(59,130,246,0.4); } 50% { transform: scale(1.05); box-shadow: 0 0 60px rgba(59,130,246,0.6); } }
+.as-booking-slot { border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 12px; }
+.as-booking-slot-available { border-color: rgba(16,185,129,0.2); background: rgba(16,185,129,0.05); }
+.as-booking-slot-unavailable { opacity: 0.5; border-color: rgba(255,255,255,0.05); }
+.as-routing-rule { border-radius: 14px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02); padding: 14px; }
+.as-voice-card { border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%); padding: 16px; }
+.as-crm-card { border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 16px; }
+.as-flow-line { height: 2px; background: linear-gradient(90deg, rgba(59,130,246,0.6) 0%, rgba(139,92,246,0.4) 100%); }
+.as-flow-dot { width: 8px; height: 8px; border-radius: 50%; background: #3b82f6; box-shadow: 0 0 10px rgba(59,130,246,0.6); }
+.as-metric-card { border-radius: 20px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 16px; }
+.as-booking-0 { border-radius: 12px; background: rgba(255,255,255,0.00); border: 1px solid rgba(255,255,255,0.00); padding: 8px; }
+.as-routing-0 { display: flex; gap: 4px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-0 { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-0 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-1 { border-radius: 13px; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.01); padding: 9px; }
+.as-routing-1 { display: flex; gap: 5px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-1 { width: 41px; height: 41px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-1 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-2 { border-radius: 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.02); padding: 10px; }
+.as-routing-2 { display: flex; gap: 6px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-2 { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-2 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-3 { border-radius: 15px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.03); padding: 11px; }
+.as-routing-3 { display: flex; gap: 7px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-3 { width: 43px; height: 43px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-3 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-4 { border-radius: 16px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.04); padding: 12px; }
+.as-routing-4 { display: flex; gap: 8px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-4 { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-4 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-5 { border-radius: 17px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); padding: 13px; }
+.as-routing-5 { display: flex; gap: 9px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-5 { width: 45px; height: 45px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-5 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-6 { border-radius: 18px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); padding: 14px; }
+.as-routing-6 { display: flex; gap: 10px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-6 { width: 46px; height: 46px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-6 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-7 { border-radius: 19px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.07); padding: 15px; }
+.as-routing-7 { display: flex; gap: 11px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-7 { width: 47px; height: 47px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-7 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-8 { border-radius: 20px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.08); padding: 8px; }
+.as-routing-8 { display: flex; gap: 4px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-8 { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-8 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-9 { border-radius: 21px; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.09); padding: 9px; }
+.as-routing-9 { display: flex; gap: 5px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-9 { width: 49px; height: 49px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-9 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-10 { border-radius: 22px; background: rgba(255,255,255,0.00); border: 1px solid rgba(255,255,255,0.00); padding: 10px; }
+.as-routing-10 { display: flex; gap: 6px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-10 { width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-10 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-11 { border-radius: 23px; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.01); padding: 11px; }
+.as-routing-11 { display: flex; gap: 7px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-11 { width: 51px; height: 51px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-11 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-12 { border-radius: 24px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.02); padding: 12px; }
+.as-routing-12 { display: flex; gap: 8px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-12 { width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-12 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-13 { border-radius: 25px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.03); padding: 13px; }
+.as-routing-13 { display: flex; gap: 9px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-13 { width: 53px; height: 53px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-13 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-14 { border-radius: 26px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.04); padding: 14px; }
+.as-routing-14 { display: flex; gap: 10px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-14 { width: 54px; height: 54px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-14 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-15 { border-radius: 27px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); padding: 15px; }
+.as-routing-15 { display: flex; gap: 11px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-15 { width: 55px; height: 55px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-15 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-16 { border-radius: 28px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); padding: 8px; }
+.as-routing-16 { display: flex; gap: 4px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-16 { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-16 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-17 { border-radius: 29px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.07); padding: 9px; }
+.as-routing-17 { display: flex; gap: 5px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-17 { width: 57px; height: 57px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-17 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-18 { border-radius: 30px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.08); padding: 10px; }
+.as-routing-18 { display: flex; gap: 6px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-18 { width: 58px; height: 58px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-18 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-19 { border-radius: 31px; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.09); padding: 11px; }
+.as-routing-19 { display: flex; gap: 7px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-19 { width: 59px; height: 59px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-19 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-20 { border-radius: 12px; background: rgba(255,255,255,0.00); border: 1px solid rgba(255,255,255,0.00); padding: 12px; }
+.as-routing-20 { display: flex; gap: 8px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-20 { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-20 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-21 { border-radius: 13px; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.01); padding: 13px; }
+.as-routing-21 { display: flex; gap: 9px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-21 { width: 61px; height: 61px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-21 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-22 { border-radius: 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.02); padding: 14px; }
+.as-routing-22 { display: flex; gap: 10px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-22 { width: 62px; height: 62px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-22 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-23 { border-radius: 15px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.03); padding: 15px; }
+.as-routing-23 { display: flex; gap: 11px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-23 { width: 63px; height: 63px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-23 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-24 { border-radius: 16px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.04); padding: 8px; }
+.as-routing-24 { display: flex; gap: 4px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-24 { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-24 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-25 { border-radius: 17px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); padding: 9px; }
+.as-routing-25 { display: flex; gap: 5px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-25 { width: 65px; height: 65px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-25 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-26 { border-radius: 18px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); padding: 10px; }
+.as-routing-26 { display: flex; gap: 6px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-26 { width: 66px; height: 66px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-26 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-27 { border-radius: 19px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.07); padding: 11px; }
+.as-routing-27 { display: flex; gap: 7px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-27 { width: 67px; height: 67px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-27 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-28 { border-radius: 20px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.08); padding: 12px; }
+.as-routing-28 { display: flex; gap: 8px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-28 { width: 68px; height: 68px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-28 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-29 { border-radius: 21px; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.09); padding: 13px; }
+.as-routing-29 { display: flex; gap: 9px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-29 { width: 69px; height: 69px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-29 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-30 { border-radius: 22px; background: rgba(255,255,255,0.00); border: 1px solid rgba(255,255,255,0.00); padding: 14px; }
+.as-routing-30 { display: flex; gap: 10px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-30 { width: 70px; height: 70px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-30 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-31 { border-radius: 23px; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.01); padding: 15px; }
+.as-routing-31 { display: flex; gap: 11px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-31 { width: 71px; height: 71px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-31 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-32 { border-radius: 24px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.02); padding: 8px; }
+.as-routing-32 { display: flex; gap: 4px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-32 { width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-32 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-33 { border-radius: 25px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.03); padding: 9px; }
+.as-routing-33 { display: flex; gap: 5px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-33 { width: 73px; height: 73px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-33 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-34 { border-radius: 26px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.04); padding: 10px; }
+.as-routing-34 { display: flex; gap: 6px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-34 { width: 74px; height: 74px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-34 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-35 { border-radius: 27px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); padding: 11px; }
+.as-routing-35 { display: flex; gap: 7px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-35 { width: 75px; height: 75px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-35 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-36 { border-radius: 28px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); padding: 12px; }
+.as-routing-36 { display: flex; gap: 8px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-36 { width: 76px; height: 76px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-36 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-37 { border-radius: 29px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.07); padding: 13px; }
+.as-routing-37 { display: flex; gap: 9px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-37 { width: 77px; height: 77px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-37 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-38 { border-radius: 30px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.08); padding: 14px; }
+.as-routing-38 { display: flex; gap: 10px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-38 { width: 78px; height: 78px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-38 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-39 { border-radius: 31px; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.09); padding: 15px; }
+.as-routing-39 { display: flex; gap: 11px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-39 { width: 79px; height: 79px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-39 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-40 { border-radius: 12px; background: rgba(255,255,255,0.00); border: 1px solid rgba(255,255,255,0.00); padding: 8px; }
+.as-routing-40 { display: flex; gap: 4px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-40 { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-40 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-41 { border-radius: 13px; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.01); padding: 9px; }
+.as-routing-41 { display: flex; gap: 5px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-41 { width: 41px; height: 41px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-41 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-42 { border-radius: 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.02); padding: 10px; }
+.as-routing-42 { display: flex; gap: 6px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-42 { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-42 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-43 { border-radius: 15px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.03); padding: 11px; }
+.as-routing-43 { display: flex; gap: 7px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-43 { width: 43px; height: 43px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-43 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-44 { border-radius: 16px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.04); padding: 12px; }
+.as-routing-44 { display: flex; gap: 8px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-44 { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-44 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-45 { border-radius: 17px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); padding: 13px; }
+.as-routing-45 { display: flex; gap: 9px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-45 { width: 45px; height: 45px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-45 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-46 { border-radius: 18px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); padding: 14px; }
+.as-routing-46 { display: flex; gap: 10px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-46 { width: 46px; height: 46px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-46 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-47 { border-radius: 19px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.07); padding: 15px; }
+.as-routing-47 { display: flex; gap: 11px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-47 { width: 47px; height: 47px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-47 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-48 { border-radius: 20px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.08); padding: 8px; }
+.as-routing-48 { display: flex; gap: 4px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-48 { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-48 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-49 { border-radius: 21px; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.09); padding: 9px; }
+.as-routing-49 { display: flex; gap: 5px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-49 { width: 49px; height: 49px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-49 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-50 { border-radius: 22px; background: rgba(255,255,255,0.00); border: 1px solid rgba(255,255,255,0.00); padding: 10px; }
+.as-routing-50 { display: flex; gap: 6px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-50 { width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-50 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-51 { border-radius: 23px; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.01); padding: 11px; }
+.as-routing-51 { display: flex; gap: 7px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-51 { width: 51px; height: 51px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-51 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-52 { border-radius: 24px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.02); padding: 12px; }
+.as-routing-52 { display: flex; gap: 8px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-52 { width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-52 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-53 { border-radius: 25px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.03); padding: 13px; }
+.as-routing-53 { display: flex; gap: 9px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-53 { width: 53px; height: 53px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-53 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-54 { border-radius: 26px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.04); padding: 14px; }
+.as-routing-54 { display: flex; gap: 10px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-54 { width: 54px; height: 54px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-54 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-55 { border-radius: 27px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); padding: 15px; }
+.as-routing-55 { display: flex; gap: 11px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-55 { width: 55px; height: 55px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-55 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-56 { border-radius: 28px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); padding: 8px; }
+.as-routing-56 { display: flex; gap: 4px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-56 { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-56 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-57 { border-radius: 29px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.07); padding: 9px; }
+.as-routing-57 { display: flex; gap: 5px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-57 { width: 57px; height: 57px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-57 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-58 { border-radius: 30px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.08); padding: 10px; }
+.as-routing-58 { display: flex; gap: 6px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-58 { width: 58px; height: 58px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-58 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-59 { border-radius: 31px; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.09); padding: 11px; }
+.as-routing-59 { display: flex; gap: 7px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-59 { width: 59px; height: 59px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-59 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-60 { border-radius: 12px; background: rgba(255,255,255,0.00); border: 1px solid rgba(255,255,255,0.00); padding: 12px; }
+.as-routing-60 { display: flex; gap: 8px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-60 { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-60 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-61 { border-radius: 13px; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.01); padding: 13px; }
+.as-routing-61 { display: flex; gap: 9px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-61 { width: 61px; height: 61px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-61 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-62 { border-radius: 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.02); padding: 14px; }
+.as-routing-62 { display: flex; gap: 10px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-62 { width: 62px; height: 62px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-62 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-63 { border-radius: 15px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.03); padding: 15px; }
+.as-routing-63 { display: flex; gap: 11px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-63 { width: 63px; height: 63px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-63 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-64 { border-radius: 16px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.04); padding: 8px; }
+.as-routing-64 { display: flex; gap: 4px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-64 { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-64 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-65 { border-radius: 17px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); padding: 9px; }
+.as-routing-65 { display: flex; gap: 5px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-65 { width: 65px; height: 65px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-65 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-66 { border-radius: 18px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); padding: 10px; }
+.as-routing-66 { display: flex; gap: 6px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-66 { width: 66px; height: 66px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-66 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-67 { border-radius: 19px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.07); padding: 11px; }
+.as-routing-67 { display: flex; gap: 7px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-67 { width: 67px; height: 67px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-67 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-68 { border-radius: 20px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.08); padding: 12px; }
+.as-routing-68 { display: flex; gap: 8px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-68 { width: 68px; height: 68px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-68 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-69 { border-radius: 21px; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.09); padding: 13px; }
+.as-routing-69 { display: flex; gap: 9px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-69 { width: 69px; height: 69px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-69 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-70 { border-radius: 22px; background: rgba(255,255,255,0.00); border: 1px solid rgba(255,255,255,0.00); padding: 14px; }
+.as-routing-70 { display: flex; gap: 10px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-70 { width: 70px; height: 70px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-70 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-71 { border-radius: 23px; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.01); padding: 15px; }
+.as-routing-71 { display: flex; gap: 11px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-71 { width: 71px; height: 71px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-71 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-72 { border-radius: 24px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.02); padding: 8px; }
+.as-routing-72 { display: flex; gap: 4px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-72 { width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-72 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-73 { border-radius: 25px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.03); padding: 9px; }
+.as-routing-73 { display: flex; gap: 5px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-73 { width: 73px; height: 73px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-73 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-74 { border-radius: 26px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.04); padding: 10px; }
+.as-routing-74 { display: flex; gap: 6px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-74 { width: 74px; height: 74px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-74 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-75 { border-radius: 27px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); padding: 11px; }
+.as-routing-75 { display: flex; gap: 7px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-75 { width: 75px; height: 75px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-75 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-76 { border-radius: 28px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); padding: 12px; }
+.as-routing-76 { display: flex; gap: 8px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-76 { width: 76px; height: 76px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-76 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-77 { border-radius: 29px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.07); padding: 13px; }
+.as-routing-77 { display: flex; gap: 9px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-77 { width: 77px; height: 77px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-77 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-78 { border-radius: 30px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.08); padding: 14px; }
+.as-routing-78 { display: flex; gap: 10px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-78 { width: 78px; height: 78px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-78 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-79 { border-radius: 31px; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.09); padding: 15px; }
+.as-routing-79 { display: flex; gap: 11px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-79 { width: 79px; height: 79px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-79 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-80 { border-radius: 12px; background: rgba(255,255,255,0.00); border: 1px solid rgba(255,255,255,0.00); padding: 8px; }
+.as-routing-80 { display: flex; gap: 4px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-80 { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-80 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-81 { border-radius: 13px; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.01); padding: 9px; }
+.as-routing-81 { display: flex; gap: 5px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-81 { width: 41px; height: 41px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-81 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-82 { border-radius: 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.02); padding: 10px; }
+.as-routing-82 { display: flex; gap: 6px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-82 { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-82 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-83 { border-radius: 15px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.03); padding: 11px; }
+.as-routing-83 { display: flex; gap: 7px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-83 { width: 43px; height: 43px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-83 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-84 { border-radius: 16px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.04); padding: 12px; }
+.as-routing-84 { display: flex; gap: 8px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-84 { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-84 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-85 { border-radius: 17px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); padding: 13px; }
+.as-routing-85 { display: flex; gap: 9px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-85 { width: 45px; height: 45px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-85 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-86 { border-radius: 18px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); padding: 14px; }
+.as-routing-86 { display: flex; gap: 10px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-86 { width: 46px; height: 46px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-86 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-87 { border-radius: 19px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.07); padding: 15px; }
+.as-routing-87 { display: flex; gap: 11px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-87 { width: 47px; height: 47px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-87 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-88 { border-radius: 20px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.08); padding: 8px; }
+.as-routing-88 { display: flex; gap: 4px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-88 { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-88 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-89 { border-radius: 21px; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.09); padding: 9px; }
+.as-routing-89 { display: flex; gap: 5px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-89 { width: 49px; height: 49px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-89 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-90 { border-radius: 22px; background: rgba(255,255,255,0.00); border: 1px solid rgba(255,255,255,0.00); padding: 10px; }
+.as-routing-90 { display: flex; gap: 6px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-90 { width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-90 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-91 { border-radius: 23px; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.01); padding: 11px; }
+.as-routing-91 { display: flex; gap: 7px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-91 { width: 51px; height: 51px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-91 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-92 { border-radius: 24px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.02); padding: 12px; }
+.as-routing-92 { display: flex; gap: 8px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-92 { width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-92 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-93 { border-radius: 25px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.03); padding: 13px; }
+.as-routing-93 { display: flex; gap: 9px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-93 { width: 53px; height: 53px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-93 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-94 { border-radius: 26px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.04); padding: 14px; }
+.as-routing-94 { display: flex; gap: 10px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-94 { width: 54px; height: 54px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-94 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-95 { border-radius: 27px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); padding: 15px; }
+.as-routing-95 { display: flex; gap: 11px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-95 { width: 55px; height: 55px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-95 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-96 { border-radius: 28px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); padding: 8px; }
+.as-routing-96 { display: flex; gap: 4px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-96 { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-96 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-97 { border-radius: 29px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.07); padding: 9px; }
+.as-routing-97 { display: flex; gap: 5px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-97 { width: 57px; height: 57px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-97 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-98 { border-radius: 30px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.08); padding: 10px; }
+.as-routing-98 { display: flex; gap: 6px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-98 { width: 58px; height: 58px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-98 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-99 { border-radius: 31px; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.09); padding: 11px; }
+.as-routing-99 { display: flex; gap: 7px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-99 { width: 59px; height: 59px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-99 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-100 { border-radius: 12px; background: rgba(255,255,255,0.00); border: 1px solid rgba(255,255,255,0.00); padding: 12px; }
+.as-routing-100 { display: flex; gap: 8px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-100 { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-100 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-101 { border-radius: 13px; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.01); padding: 13px; }
+.as-routing-101 { display: flex; gap: 9px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-101 { width: 61px; height: 61px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-101 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-102 { border-radius: 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.02); padding: 14px; }
+.as-routing-102 { display: flex; gap: 10px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-102 { width: 62px; height: 62px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-102 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-103 { border-radius: 15px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.03); padding: 15px; }
+.as-routing-103 { display: flex; gap: 11px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-103 { width: 63px; height: 63px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-103 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-104 { border-radius: 16px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.04); padding: 8px; }
+.as-routing-104 { display: flex; gap: 4px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-104 { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-104 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-105 { border-radius: 17px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); padding: 9px; }
+.as-routing-105 { display: flex; gap: 5px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-105 { width: 65px; height: 65px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-105 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-106 { border-radius: 18px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); padding: 10px; }
+.as-routing-106 { display: flex; gap: 6px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-106 { width: 66px; height: 66px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-106 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-107 { border-radius: 19px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.07); padding: 11px; }
+.as-routing-107 { display: flex; gap: 7px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-107 { width: 67px; height: 67px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-107 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-108 { border-radius: 20px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.08); padding: 12px; }
+.as-routing-108 { display: flex; gap: 8px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-108 { width: 68px; height: 68px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-108 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-109 { border-radius: 21px; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.09); padding: 13px; }
+.as-routing-109 { display: flex; gap: 9px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-109 { width: 69px; height: 69px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-109 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-110 { border-radius: 22px; background: rgba(255,255,255,0.00); border: 1px solid rgba(255,255,255,0.00); padding: 14px; }
+.as-routing-110 { display: flex; gap: 10px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-110 { width: 70px; height: 70px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-110 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-111 { border-radius: 23px; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.01); padding: 15px; }
+.as-routing-111 { display: flex; gap: 11px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-111 { width: 71px; height: 71px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-111 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-112 { border-radius: 24px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.02); padding: 8px; }
+.as-routing-112 { display: flex; gap: 4px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-112 { width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-112 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-113 { border-radius: 25px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.03); padding: 9px; }
+.as-routing-113 { display: flex; gap: 5px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-113 { width: 73px; height: 73px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-113 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-114 { border-radius: 26px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.04); padding: 10px; }
+.as-routing-114 { display: flex; gap: 6px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-114 { width: 74px; height: 74px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-114 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-115 { border-radius: 27px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); padding: 11px; }
+.as-routing-115 { display: flex; gap: 7px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-115 { width: 75px; height: 75px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-115 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-116 { border-radius: 28px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); padding: 12px; }
+.as-routing-116 { display: flex; gap: 8px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-116 { width: 76px; height: 76px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-116 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-117 { border-radius: 29px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.07); padding: 13px; }
+.as-routing-117 { display: flex; gap: 9px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-117 { width: 77px; height: 77px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-117 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-118 { border-radius: 30px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.08); padding: 14px; }
+.as-routing-118 { display: flex; gap: 10px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-118 { width: 78px; height: 78px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-118 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-119 { border-radius: 31px; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.09); padding: 15px; }
+.as-routing-119 { display: flex; gap: 11px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-119 { width: 79px; height: 79px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-119 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-120 { border-radius: 12px; background: rgba(255,255,255,0.00); border: 1px solid rgba(255,255,255,0.00); padding: 8px; }
+.as-routing-120 { display: flex; gap: 4px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-120 { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-120 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-121 { border-radius: 13px; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.01); padding: 9px; }
+.as-routing-121 { display: flex; gap: 5px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-121 { width: 41px; height: 41px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-121 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-122 { border-radius: 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.02); padding: 10px; }
+.as-routing-122 { display: flex; gap: 6px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-122 { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-122 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-123 { border-radius: 15px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.03); padding: 11px; }
+.as-routing-123 { display: flex; gap: 7px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-123 { width: 43px; height: 43px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-123 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-124 { border-radius: 16px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.04); padding: 12px; }
+.as-routing-124 { display: flex; gap: 8px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-124 { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-124 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-125 { border-radius: 17px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); padding: 13px; }
+.as-routing-125 { display: flex; gap: 9px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-125 { width: 45px; height: 45px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-125 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-126 { border-radius: 18px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); padding: 14px; }
+.as-routing-126 { display: flex; gap: 10px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-126 { width: 46px; height: 46px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-126 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-127 { border-radius: 19px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.07); padding: 15px; }
+.as-routing-127 { display: flex; gap: 11px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-127 { width: 47px; height: 47px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-127 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-128 { border-radius: 20px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.08); padding: 8px; }
+.as-routing-128 { display: flex; gap: 4px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-128 { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-128 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-129 { border-radius: 21px; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.09); padding: 9px; }
+.as-routing-129 { display: flex; gap: 5px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-129 { width: 49px; height: 49px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-129 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-130 { border-radius: 22px; background: rgba(255,255,255,0.00); border: 1px solid rgba(255,255,255,0.00); padding: 10px; }
+.as-routing-130 { display: flex; gap: 6px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-130 { width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-130 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-131 { border-radius: 23px; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.01); padding: 11px; }
+.as-routing-131 { display: flex; gap: 7px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-131 { width: 51px; height: 51px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-131 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-132 { border-radius: 24px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.02); padding: 12px; }
+.as-routing-132 { display: flex; gap: 8px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-132 { width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-132 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-133 { border-radius: 25px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.03); padding: 13px; }
+.as-routing-133 { display: flex; gap: 9px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-133 { width: 53px; height: 53px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-133 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-134 { border-radius: 26px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.04); padding: 14px; }
+.as-routing-134 { display: flex; gap: 10px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-134 { width: 54px; height: 54px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-134 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-135 { border-radius: 27px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); padding: 15px; }
+.as-routing-135 { display: flex; gap: 11px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-135 { width: 55px; height: 55px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-135 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-136 { border-radius: 28px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); padding: 8px; }
+.as-routing-136 { display: flex; gap: 4px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-136 { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-136 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-137 { border-radius: 29px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.07); padding: 9px; }
+.as-routing-137 { display: flex; gap: 5px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-137 { width: 57px; height: 57px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-137 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-138 { border-radius: 30px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.08); padding: 10px; }
+.as-routing-138 { display: flex; gap: 6px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-138 { width: 58px; height: 58px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-138 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-139 { border-radius: 31px; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.09); padding: 11px; }
+.as-routing-139 { display: flex; gap: 7px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-139 { width: 59px; height: 59px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-139 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-140 { border-radius: 12px; background: rgba(255,255,255,0.00); border: 1px solid rgba(255,255,255,0.00); padding: 12px; }
+.as-routing-140 { display: flex; gap: 8px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-140 { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-140 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-141 { border-radius: 13px; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.01); padding: 13px; }
+.as-routing-141 { display: flex; gap: 9px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-141 { width: 61px; height: 61px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-141 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-142 { border-radius: 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.02); padding: 14px; }
+.as-routing-142 { display: flex; gap: 10px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-142 { width: 62px; height: 62px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-142 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-143 { border-radius: 15px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.03); padding: 15px; }
+.as-routing-143 { display: flex; gap: 11px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-143 { width: 63px; height: 63px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-143 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-144 { border-radius: 16px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.04); padding: 8px; }
+.as-routing-144 { display: flex; gap: 4px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-144 { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-144 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-145 { border-radius: 17px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); padding: 9px; }
+.as-routing-145 { display: flex; gap: 5px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-145 { width: 65px; height: 65px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-145 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-146 { border-radius: 18px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); padding: 10px; }
+.as-routing-146 { display: flex; gap: 6px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-146 { width: 66px; height: 66px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-146 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-147 { border-radius: 19px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.07); padding: 11px; }
+.as-routing-147 { display: flex; gap: 7px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-147 { width: 67px; height: 67px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-147 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-148 { border-radius: 20px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.08); padding: 12px; }
+.as-routing-148 { display: flex; gap: 8px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-148 { width: 68px; height: 68px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-148 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-149 { border-radius: 21px; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.09); padding: 13px; }
+.as-routing-149 { display: flex; gap: 9px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-149 { width: 69px; height: 69px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-149 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-150 { border-radius: 22px; background: rgba(255,255,255,0.00); border: 1px solid rgba(255,255,255,0.00); padding: 14px; }
+.as-routing-150 { display: flex; gap: 10px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-150 { width: 70px; height: 70px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-150 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-151 { border-radius: 23px; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.01); padding: 15px; }
+.as-routing-151 { display: flex; gap: 11px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-151 { width: 71px; height: 71px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-151 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-152 { border-radius: 24px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.02); padding: 8px; }
+.as-routing-152 { display: flex; gap: 4px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-152 { width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-152 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-153 { border-radius: 25px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.03); padding: 9px; }
+.as-routing-153 { display: flex; gap: 5px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-153 { width: 73px; height: 73px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-153 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-154 { border-radius: 26px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.04); padding: 10px; }
+.as-routing-154 { display: flex; gap: 6px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-154 { width: 74px; height: 74px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-154 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-155 { border-radius: 27px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); padding: 11px; }
+.as-routing-155 { display: flex; gap: 7px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-155 { width: 75px; height: 75px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-155 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-156 { border-radius: 28px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); padding: 12px; }
+.as-routing-156 { display: flex; gap: 8px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-156 { width: 76px; height: 76px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-156 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-157 { border-radius: 29px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.07); padding: 13px; }
+.as-routing-157 { display: flex; gap: 9px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-157 { width: 77px; height: 77px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-157 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-158 { border-radius: 30px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.08); padding: 14px; }
+.as-routing-158 { display: flex; gap: 10px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-158 { width: 78px; height: 78px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-158 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-159 { border-radius: 31px; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.09); padding: 15px; }
+.as-routing-159 { display: flex; gap: 11px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-159 { width: 79px; height: 79px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-159 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-160 { border-radius: 12px; background: rgba(255,255,255,0.00); border: 1px solid rgba(255,255,255,0.00); padding: 8px; }
+.as-routing-160 { display: flex; gap: 4px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-160 { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-160 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-161 { border-radius: 13px; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.01); padding: 9px; }
+.as-routing-161 { display: flex; gap: 5px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-161 { width: 41px; height: 41px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-161 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-162 { border-radius: 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.02); padding: 10px; }
+.as-routing-162 { display: flex; gap: 6px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-162 { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-162 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-163 { border-radius: 15px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.03); padding: 11px; }
+.as-routing-163 { display: flex; gap: 7px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-163 { width: 43px; height: 43px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-163 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-164 { border-radius: 16px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.04); padding: 12px; }
+.as-routing-164 { display: flex; gap: 8px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-164 { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-164 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-165 { border-radius: 17px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); padding: 13px; }
+.as-routing-165 { display: flex; gap: 9px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-165 { width: 45px; height: 45px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-165 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-166 { border-radius: 18px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); padding: 14px; }
+.as-routing-166 { display: flex; gap: 10px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-166 { width: 46px; height: 46px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-166 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-167 { border-radius: 19px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.07); padding: 15px; }
+.as-routing-167 { display: flex; gap: 11px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-167 { width: 47px; height: 47px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-167 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-168 { border-radius: 20px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.08); padding: 8px; }
+.as-routing-168 { display: flex; gap: 4px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-168 { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-168 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-169 { border-radius: 21px; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.09); padding: 9px; }
+.as-routing-169 { display: flex; gap: 5px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-169 { width: 49px; height: 49px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-169 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-170 { border-radius: 22px; background: rgba(255,255,255,0.00); border: 1px solid rgba(255,255,255,0.00); padding: 10px; }
+.as-routing-170 { display: flex; gap: 6px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-170 { width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-170 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-171 { border-radius: 23px; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.01); padding: 11px; }
+.as-routing-171 { display: flex; gap: 7px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-171 { width: 51px; height: 51px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-171 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-172 { border-radius: 24px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.02); padding: 12px; }
+.as-routing-172 { display: flex; gap: 8px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-172 { width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-172 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-173 { border-radius: 25px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.03); padding: 13px; }
+.as-routing-173 { display: flex; gap: 9px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-173 { width: 53px; height: 53px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-173 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-174 { border-radius: 26px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.04); padding: 14px; }
+.as-routing-174 { display: flex; gap: 10px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-174 { width: 54px; height: 54px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-174 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-175 { border-radius: 27px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); padding: 15px; }
+.as-routing-175 { display: flex; gap: 11px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-175 { width: 55px; height: 55px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-175 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-176 { border-radius: 28px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); padding: 8px; }
+.as-routing-176 { display: flex; gap: 4px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-176 { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-176 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-177 { border-radius: 29px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.07); padding: 9px; }
+.as-routing-177 { display: flex; gap: 5px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-177 { width: 57px; height: 57px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-177 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-178 { border-radius: 30px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.08); padding: 10px; }
+.as-routing-178 { display: flex; gap: 6px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-178 { width: 58px; height: 58px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-178 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-179 { border-radius: 31px; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.09); padding: 11px; }
+.as-routing-179 { display: flex; gap: 7px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-179 { width: 59px; height: 59px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-179 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-180 { border-radius: 12px; background: rgba(255,255,255,0.00); border: 1px solid rgba(255,255,255,0.00); padding: 12px; }
+.as-routing-180 { display: flex; gap: 8px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-180 { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-180 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-181 { border-radius: 13px; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.01); padding: 13px; }
+.as-routing-181 { display: flex; gap: 9px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-181 { width: 61px; height: 61px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-181 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-182 { border-radius: 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.02); padding: 14px; }
+.as-routing-182 { display: flex; gap: 10px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-182 { width: 62px; height: 62px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-182 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-183 { border-radius: 15px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.03); padding: 15px; }
+.as-routing-183 { display: flex; gap: 11px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-183 { width: 63px; height: 63px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-183 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-184 { border-radius: 16px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.04); padding: 8px; }
+.as-routing-184 { display: flex; gap: 4px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-184 { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-184 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-185 { border-radius: 17px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); padding: 9px; }
+.as-routing-185 { display: flex; gap: 5px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-185 { width: 65px; height: 65px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-185 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-186 { border-radius: 18px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); padding: 10px; }
+.as-routing-186 { display: flex; gap: 6px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-186 { width: 66px; height: 66px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-186 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-187 { border-radius: 19px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.07); padding: 11px; }
+.as-routing-187 { display: flex; gap: 7px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-187 { width: 67px; height: 67px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-187 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-188 { border-radius: 20px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.08); padding: 12px; }
+.as-routing-188 { display: flex; gap: 8px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-188 { width: 68px; height: 68px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-188 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-189 { border-radius: 21px; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.09); padding: 13px; }
+.as-routing-189 { display: flex; gap: 9px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-189 { width: 69px; height: 69px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-189 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-190 { border-radius: 22px; background: rgba(255,255,255,0.00); border: 1px solid rgba(255,255,255,0.00); padding: 14px; }
+.as-routing-190 { display: flex; gap: 10px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-190 { width: 70px; height: 70px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-190 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-191 { border-radius: 23px; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.01); padding: 15px; }
+.as-routing-191 { display: flex; gap: 11px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-191 { width: 71px; height: 71px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-191 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-192 { border-radius: 24px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.02); padding: 8px; }
+.as-routing-192 { display: flex; gap: 4px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-192 { width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-192 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-193 { border-radius: 25px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.03); padding: 9px; }
+.as-routing-193 { display: flex; gap: 5px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-193 { width: 73px; height: 73px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-193 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-194 { border-radius: 26px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.04); padding: 10px; }
+.as-routing-194 { display: flex; gap: 6px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-194 { width: 74px; height: 74px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-194 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-195 { border-radius: 27px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); padding: 11px; }
+.as-routing-195 { display: flex; gap: 7px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-195 { width: 75px; height: 75px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-195 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-196 { border-radius: 28px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); padding: 12px; }
+.as-routing-196 { display: flex; gap: 8px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-196 { width: 76px; height: 76px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-196 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-197 { border-radius: 29px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.07); padding: 13px; }
+.as-routing-197 { display: flex; gap: 9px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-197 { width: 77px; height: 77px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-197 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-198 { border-radius: 30px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.08); padding: 14px; }
+.as-routing-198 { display: flex; gap: 10px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-198 { width: 78px; height: 78px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-198 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-199 { border-radius: 31px; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.09); padding: 15px; }
+.as-routing-199 { display: flex; gap: 11px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-199 { width: 79px; height: 79px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-199 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-200 { border-radius: 12px; background: rgba(255,255,255,0.00); border: 1px solid rgba(255,255,255,0.00); padding: 8px; }
+.as-routing-200 { display: flex; gap: 4px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-200 { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-200 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-201 { border-radius: 13px; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.01); padding: 9px; }
+.as-routing-201 { display: flex; gap: 5px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-201 { width: 41px; height: 41px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-201 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-202 { border-radius: 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.02); padding: 10px; }
+.as-routing-202 { display: flex; gap: 6px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-202 { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-202 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-203 { border-radius: 15px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.03); padding: 11px; }
+.as-routing-203 { display: flex; gap: 7px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-203 { width: 43px; height: 43px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-203 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-204 { border-radius: 16px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.04); padding: 12px; }
+.as-routing-204 { display: flex; gap: 8px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-204 { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-204 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-205 { border-radius: 17px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); padding: 13px; }
+.as-routing-205 { display: flex; gap: 9px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-205 { width: 45px; height: 45px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-205 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-206 { border-radius: 18px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); padding: 14px; }
+.as-routing-206 { display: flex; gap: 10px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-206 { width: 46px; height: 46px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-206 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-207 { border-radius: 19px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.07); padding: 15px; }
+.as-routing-207 { display: flex; gap: 11px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-207 { width: 47px; height: 47px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-207 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-208 { border-radius: 20px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.08); padding: 8px; }
+.as-routing-208 { display: flex; gap: 4px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-208 { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-208 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-209 { border-radius: 21px; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.09); padding: 9px; }
+.as-routing-209 { display: flex; gap: 5px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-209 { width: 49px; height: 49px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-209 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-210 { border-radius: 22px; background: rgba(255,255,255,0.00); border: 1px solid rgba(255,255,255,0.00); padding: 10px; }
+.as-routing-210 { display: flex; gap: 6px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-210 { width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-210 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-211 { border-radius: 23px; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.01); padding: 11px; }
+.as-routing-211 { display: flex; gap: 7px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-211 { width: 51px; height: 51px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-211 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-212 { border-radius: 24px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.02); padding: 12px; }
+.as-routing-212 { display: flex; gap: 8px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-212 { width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-212 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-213 { border-radius: 25px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.03); padding: 13px; }
+.as-routing-213 { display: flex; gap: 9px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-213 { width: 53px; height: 53px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-213 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-214 { border-radius: 26px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.04); padding: 14px; }
+.as-routing-214 { display: flex; gap: 10px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-214 { width: 54px; height: 54px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-214 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-215 { border-radius: 27px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); padding: 15px; }
+.as-routing-215 { display: flex; gap: 11px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-215 { width: 55px; height: 55px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-215 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-216 { border-radius: 28px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); padding: 8px; }
+.as-routing-216 { display: flex; gap: 4px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-216 { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-216 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-217 { border-radius: 29px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.07); padding: 9px; }
+.as-routing-217 { display: flex; gap: 5px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-217 { width: 57px; height: 57px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-217 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-218 { border-radius: 30px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.08); padding: 10px; }
+.as-routing-218 { display: flex; gap: 6px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-218 { width: 58px; height: 58px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-218 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-219 { border-radius: 31px; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.09); padding: 11px; }
+.as-routing-219 { display: flex; gap: 7px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-219 { width: 59px; height: 59px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-219 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-220 { border-radius: 12px; background: rgba(255,255,255,0.00); border: 1px solid rgba(255,255,255,0.00); padding: 12px; }
+.as-routing-220 { display: flex; gap: 8px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-220 { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-220 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-221 { border-radius: 13px; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.01); padding: 13px; }
+.as-routing-221 { display: flex; gap: 9px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-221 { width: 61px; height: 61px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-221 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-222 { border-radius: 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.02); padding: 14px; }
+.as-routing-222 { display: flex; gap: 10px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-222 { width: 62px; height: 62px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-222 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-223 { border-radius: 15px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.03); padding: 15px; }
+.as-routing-223 { display: flex; gap: 11px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-223 { width: 63px; height: 63px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-223 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-224 { border-radius: 16px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.04); padding: 8px; }
+.as-routing-224 { display: flex; gap: 4px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-224 { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-224 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-225 { border-radius: 17px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); padding: 9px; }
+.as-routing-225 { display: flex; gap: 5px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-225 { width: 65px; height: 65px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-225 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-226 { border-radius: 18px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); padding: 10px; }
+.as-routing-226 { display: flex; gap: 6px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-226 { width: 66px; height: 66px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-226 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-227 { border-radius: 19px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.07); padding: 11px; }
+.as-routing-227 { display: flex; gap: 7px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-227 { width: 67px; height: 67px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-227 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-228 { border-radius: 20px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.08); padding: 12px; }
+.as-routing-228 { display: flex; gap: 8px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-228 { width: 68px; height: 68px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-228 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-229 { border-radius: 21px; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.09); padding: 13px; }
+.as-routing-229 { display: flex; gap: 9px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-229 { width: 69px; height: 69px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-229 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-230 { border-radius: 22px; background: rgba(255,255,255,0.00); border: 1px solid rgba(255,255,255,0.00); padding: 14px; }
+.as-routing-230 { display: flex; gap: 10px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-230 { width: 70px; height: 70px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-230 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-231 { border-radius: 23px; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.01); padding: 15px; }
+.as-routing-231 { display: flex; gap: 11px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-231 { width: 71px; height: 71px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-231 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-232 { border-radius: 24px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.02); padding: 8px; }
+.as-routing-232 { display: flex; gap: 4px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-232 { width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-232 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-233 { border-radius: 25px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.03); padding: 9px; }
+.as-routing-233 { display: flex; gap: 5px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-233 { width: 73px; height: 73px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-233 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-234 { border-radius: 26px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.04); padding: 10px; }
+.as-routing-234 { display: flex; gap: 6px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-234 { width: 74px; height: 74px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-234 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-235 { border-radius: 27px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); padding: 11px; }
+.as-routing-235 { display: flex; gap: 7px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-235 { width: 75px; height: 75px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-235 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-236 { border-radius: 28px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); padding: 12px; }
+.as-routing-236 { display: flex; gap: 8px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-236 { width: 76px; height: 76px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-236 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-237 { border-radius: 29px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.07); padding: 13px; }
+.as-routing-237 { display: flex; gap: 9px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-237 { width: 77px; height: 77px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-237 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-238 { border-radius: 30px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.08); padding: 14px; }
+.as-routing-238 { display: flex; gap: 10px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-238 { width: 78px; height: 78px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-238 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-239 { border-radius: 31px; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.09); padding: 15px; }
+.as-routing-239 { display: flex; gap: 11px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-239 { width: 79px; height: 79px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-239 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-240 { border-radius: 12px; background: rgba(255,255,255,0.00); border: 1px solid rgba(255,255,255,0.00); padding: 8px; }
+.as-routing-240 { display: flex; gap: 4px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-240 { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-240 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-241 { border-radius: 13px; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.01); padding: 9px; }
+.as-routing-241 { display: flex; gap: 5px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-241 { width: 41px; height: 41px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-241 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-242 { border-radius: 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.02); padding: 10px; }
+.as-routing-242 { display: flex; gap: 6px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-242 { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-242 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-243 { border-radius: 15px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.03); padding: 11px; }
+.as-routing-243 { display: flex; gap: 7px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-243 { width: 43px; height: 43px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-243 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-244 { border-radius: 16px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.04); padding: 12px; }
+.as-routing-244 { display: flex; gap: 8px; align-items: center; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-244 { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-244 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-245 { border-radius: 17px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); padding: 13px; }
+.as-routing-245 { display: flex; gap: 9px; align-items: center; padding: 13px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-245 { width: 45px; height: 45px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-245 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-246 { border-radius: 18px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); padding: 14px; }
+.as-routing-246 { display: flex; gap: 10px; align-items: center; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-246 { width: 46px; height: 46px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-246 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-247 { border-radius: 19px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.07); padding: 15px; }
+.as-routing-247 { display: flex; gap: 11px; align-items: center; padding: 9px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-247 { width: 47px; height: 47px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-247 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-248 { border-radius: 20px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.08); padding: 8px; }
+.as-routing-248 { display: flex; gap: 4px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-248 { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-248 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+.as-booking-249 { border-radius: 21px; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.09); padding: 9px; }
+.as-routing-249 { display: flex; gap: 5px; align-items: center; padding: 11px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+.as-voice-249 { width: 49px; height: 49px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+.as-crm-249 { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,0.03); }
+@media (max-width: 640px) { .as-section { padding: 48px 16px; } .as-answering-orb { width: 48px; height: 48px; } }
+.as-channel-pill:focus-visible { outline: 2px solid #3b82f6; outline-offset: 2px; }
+.as-glass:focus-within { border-color: rgba(59,130,246,0.4); }

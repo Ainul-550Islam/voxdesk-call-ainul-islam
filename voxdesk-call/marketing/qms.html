@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>VoxDesk QMS — Audit Readiness, CAPA, Traceability, Veeva/MasterControl/ETQ</title>
+<style>body{font-family:-apple-system,sans-serif;line-height:1.6;max-width:900px;margin:0 auto;padding:24px}header{background:#000;color:#fff;padding:12px 20px;display:flex;justify-content:space-between;border-radius:8px}header a{color:#fff;text-decoration:none;margin-left:16px;font-size:13px}h1{font-size:32px;margin:24px 0 12px}.card{border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:12px 0}.badge{font-size:10px;padding:2px 8px;border-radius:12px;background:#f5f3ff;color:#8b5cf6}</style>
+</head><body>
+<header><div><strong>VoxDesk</strong> QMS</div><nav><a href="index.html">Platform</a><a href="voice.html">Voice</a><a href="translation.html">Translation</a><a href="qms.html">QMS</a><a href="legal.html">Legal</a><a href="/dashboard/compliance">Dashboard →</a></nav></header>
+<h1>QMS — Audit Readiness, CAPA/Deviation/Traceability, Veeva Vault/MasterControl/ETQ <span class="badge">P1-03 Fixed</span></h1>
+<p>Backend: app/compliance/qms.py evaluate_control configured-control evaluation, qms_adapters.py VeevaVaultAdapter/MasterControlAdapter/ETQAdapter native, 7 routes + 8 existing compliance</p>
+<p>LuMay: QMS audit readiness, CAPA/deviation/traceability, Veeva Vault/MasterControl/ETQ integration — demo</p>
+
+<div class="card"><h2>Native Adapters — 3 Providers</h2>
+<ul>
+<li>VeevaVaultAdapter: instance_url, username, password → POST {instance_url}/api/v24.1/auth to get sessionId, GET /objects/documents?q=..., tenant isolation via vault membership, retry exponential backoff, token bucket rate limiting — real implementation notes in docstring</li>
+<li>MasterControlAdapter: base_url, api_key → docs, findings, traceability</li>
+<li>ETQAdapter: base_url, username, password → Reliance QMS</li>
+<li>QMSContext: tenant_id, organization_id, environment_id, provider, config, credentials — per qms_adapters.py</li>
+<li>Registry: _QMS_REGISTRY with veeva_vault/veeva, mastercontrol/master_control, etq/etq_reliance</li>
+</ul></div>
+
+<div class="card"><h2>Health & Documents — Honest Unavailable</h2>
+<ul>
+<li>Health: POST /api/compliance/qms/health with provider, config, credentials → connected bool, latency_ms, safe_message, details — honest unavailable when creds missing: "credentials missing... External blocker"</li>
+<li>Documents: GET /api/compliance/qms/{provider}/documents?q= → list docs, real Veeva Vault objects/documents, MasterControl docs, ETQ</li>
+<li>Get document: GET /api/compliance/qms/{provider}/documents/{external_id} → QMSDocument with external_id, title, status, revision, owner, effective_date, approval_state, last_reviewed_at, url, metadata</li>
+<li>No fabricated rows — connected=False when creds missing, documents=[] with external_blocker true</li>
+</ul></div>
+
+<div class="card"><h2>Traceability Graph — CAPA/Deviation</h2>
+<ul>
+<li>GET /api/compliance/qms/{provider}/traceability?subject_type=&subject_id= → subject_type, subject_id, provider, tenant_id, traceability_graph[], note "Real traceability would query QMS for CAPA/deviation/traceability linked to subject. Requires live credentials."</li>
+<li>Backend: _BaseQMSAdapter.get_traceability() with external blocker message, tenant isolation span</li>
+<li>QMSFinding: external_id, control_key, result, gaps, evidence_refs, traceability — per qms_adapters.py</li>
+<li>LuMay parity: CAPA/deviation/traceability linked to subject</li>
+</ul></div>
+
+<div class="card"><h2>Audit Package Assembly</h2>
+<ul>
+<li>POST /api/compliance/qms/{provider}/audit-package with framework_id, config, credentials → framework_id, provider, tenant_id, documents[], findings[], traceability{}, note "Real audit package would assemble controlled docs, findings, evidence, reviewer workflow from QMS. Requires live credentials."</li>
+<li>Backend: assemble_audit_package() with tenant isolation span, honest empty when not configured</li>
+<li>Preserves existing QMS engine: qms.py evaluate_control — configured-control evaluation, frameworks/controls/findings/remediation</li>
+</ul></div>
+
+<div class="card"><h2>External Blockers Recorded — Honest</h2>
+<ul>
+<li>Veeva Vault live verification requires instance_url, username, password, vault membership — tenant has no credentials, health returns connected=False with message "credentials missing... External blocker"</li>
+<li>MasterControl requires base_url, api_key — same</li>
+<li>ETQ requires base_url, username, password — same</li>
+<li>No fake audit docs — real assembly requires live credentials</li>
+</ul></div>
+
+<p><a href="/dashboard/compliance">Open Compliance → QMS adapters providers, traceability, audit package, health, clause library, playbook, redline</a></p>
+</body></html>

@@ -1,0 +1,1301 @@
+/** dashboard/src/styles/integrations.css — Integrations — CRM, telephony, automation, healthcare, calendar, CX — searchable filterable directory — Deep black/navy, electric blue/violet/cyan, glassmorphism, premium cards 20-32px — Full file 1000+ lines */
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-0 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-1 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-2 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-3 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-4 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-5 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-6 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-7 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-8 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-9 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-10 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-11 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-12 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-13 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-14 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-15 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-16 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-17 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-18 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-19 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-20 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-21 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-22 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-23 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-24 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-25 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-26 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-27 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-28 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-29 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-30 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-31 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-32 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-33 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-34 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-35 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-36 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-37 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-38 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-39 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-40 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-41 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-42 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-43 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-44 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-45 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-46 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-47 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-48 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-49 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-50 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-51 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-52 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-53 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-54 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-55 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-56 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-57 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-58 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-59 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-60 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-61 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-62 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-63 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-64 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-65 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-66 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-67 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-68 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-69 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-70 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-71 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-72 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-73 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-74 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-75 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-76 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-77 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-78 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-79 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-80 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-81 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-82 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-83 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-84 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-85 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-86 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-87 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-88 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-89 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-90 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-91 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-92 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-93 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-94 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-95 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-96 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-97 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-98 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-99 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-100 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-101 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-102 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-103 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-104 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-105 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-106 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-107 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-108 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-109 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-110 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-111 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-112 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-113 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-114 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-115 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-116 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-117 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-118 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-119 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-120 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-121 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-122 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-123 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-124 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-125 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-126 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-127 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-128 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-129 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-130 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-131 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-132 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-133 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-134 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-135 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-136 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-137 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-138 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-139 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-140 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-141 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-142 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-143 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-144 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-145 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-146 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-147 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-148 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-149 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-150 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-151 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-152 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-153 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-154 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-155 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-156 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-157 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-158 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-159 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-160 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-161 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-162 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-163 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-164 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-165 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-166 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-167 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-168 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-169 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-170 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-171 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-172 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-173 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-174 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-175 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-176 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-177 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-178 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-179 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-180 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-181 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-182 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-183 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-184 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-185 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-186 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-187 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-188 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-189 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-190 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-191 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-192 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-193 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-194 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-195 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-196 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-197 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-198 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-199 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-200 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-201 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-202 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-203 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-204 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-205 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-206 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-207 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-208 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-209 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-210 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-211 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-212 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-213 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-214 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-215 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-216 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-217 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-218 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-219 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-220 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-221 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-222 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-223 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-224 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-225 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-226 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-227 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-228 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-229 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-230 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-231 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-232 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-233 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-234 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-235 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-236 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-237 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-238 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-239 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-240 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-241 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-242 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-243 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-244 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-245 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-246 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-247 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-248 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-249 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-250 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-251 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-252 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-253 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-254 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-255 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-256 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-257 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-258 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-259 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-260 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-261 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-262 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-263 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-264 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-265 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-266 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-267 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-268 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-269 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-270 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-271 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-272 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-273 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-274 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-275 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-276 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-277 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-278 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-279 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-280 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-281 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-282 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-283 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-284 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-285 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-286 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-287 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-288 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-289 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-290 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-291 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-292 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-293 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-294 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-295 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-296 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-297 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-298 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-299 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-300 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-301 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-302 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-303 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-304 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-305 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-306 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-307 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-308 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-309 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-310 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-311 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-312 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-313 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-314 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-315 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-316 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-317 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-318 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-319 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-320 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-321 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-322 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-323 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-324 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-325 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-326 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-327 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-328 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-329 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-330 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-331 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-332 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-333 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-334 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-335 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-336 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-337 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-338 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-339 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-340 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-341 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-342 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-343 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-344 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-345 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-346 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-347 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-348 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-349 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-350 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-351 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-352 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-353 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-354 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-355 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-356 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-357 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-358 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-359 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-360 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-361 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-362 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-363 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-364 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-365 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-366 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-367 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-368 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-369 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-370 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-371 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-372 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-373 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-374 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-375 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-376 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-377 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-378 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-379 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-380 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-381 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-382 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-383 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-384 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-385 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-386 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-387 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-388 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-389 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-390 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-391 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-392 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-393 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-394 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-395 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-396 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-397 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-398 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-399 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-400 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-401 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-402 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-403 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-404 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-405 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-406 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-407 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-408 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-409 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-410 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-411 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-412 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-413 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-414 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-415 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-416 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-417 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-418 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-419 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-420 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-421 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-422 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-423 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-424 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-425 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-426 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-427 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-428 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-429 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-430 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-431 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-432 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-433 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-434 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-435 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-436 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-437 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-438 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-439 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-440 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-441 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-442 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-443 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-444 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-445 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-446 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-447 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-448 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-449 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-450 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-451 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-452 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-453 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-454 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-455 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-456 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-457 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-458 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-459 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-460 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-461 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-462 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-463 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-464 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-465 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-466 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-467 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-468 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-469 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-470 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-471 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-472 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-473 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-474 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-475 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-476 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-477 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-478 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-479 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-480 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-481 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-482 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-483 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-484 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-485 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-486 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-487 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-488 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-489 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-490 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-491 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-492 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-493 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-494 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-495 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-496 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-497 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-498 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-499 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-500 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-501 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-502 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-503 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-504 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-505 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-506 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-507 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-508 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-509 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-510 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-511 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-512 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-513 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-514 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-515 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-516 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-517 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-518 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-519 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-520 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-521 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-522 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-523 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-524 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-525 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-526 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-527 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-528 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-529 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-530 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-531 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-532 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-533 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-534 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-535 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-536 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-537 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-538 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-539 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-540 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-541 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-542 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-543 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-544 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-545 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-546 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-547 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-548 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-549 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-550 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-551 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-552 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-553 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-554 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-555 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-556 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-557 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-558 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-559 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-560 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-561 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-562 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-563 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-564 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-565 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-566 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-567 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-568 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-569 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-570 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-571 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-572 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-573 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-574 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-575 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-576 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-577 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-578 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-579 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-580 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-581 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-582 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-583 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-584 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-585 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-586 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-587 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-588 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-589 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-590 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-591 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-592 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-593 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-594 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-595 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-596 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-597 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-598 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-599 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-600 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-601 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-602 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-603 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-604 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-605 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-606 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-607 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-608 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-609 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-610 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-611 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-612 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-613 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-614 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-615 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-616 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-617 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-618 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-619 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-620 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-621 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-622 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-623 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-624 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-625 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-626 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-627 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-628 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-629 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-630 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-631 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-632 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-633 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-634 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-635 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-636 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-637 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-638 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-639 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-640 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-641 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-642 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-643 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-644 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-645 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-646 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-647 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-648 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-649 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-650 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-651 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-652 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-653 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-654 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-655 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-656 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-657 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-658 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-659 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-660 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-661 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-662 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-663 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-664 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-665 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-666 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-667 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-668 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-669 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-670 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-671 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-672 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-673 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-674 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-675 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-676 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-677 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-678 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-679 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-680 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-681 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-682 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-683 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-684 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-685 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-686 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-687 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-688 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-689 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-690 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-691 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-692 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-693 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-694 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-695 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-696 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-697 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-698 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-699 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-700 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-701 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-702 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-703 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-704 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-705 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-706 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-707 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-708 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-709 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-710 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-711 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-712 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-713 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-714 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-715 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-716 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-717 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-718 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-719 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-720 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-721 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-722 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-723 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-724 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-725 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-726 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-727 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-728 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-729 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-730 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-731 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-732 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-733 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-734 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-735 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-736 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-737 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-738 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-739 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-740 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-741 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-742 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-743 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-744 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-745 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-746 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-747 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-748 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-749 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-750 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-751 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-752 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-753 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-754 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-755 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-756 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-757 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-758 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-759 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-760 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-761 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-762 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-763 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-764 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-765 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-766 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-767 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-768 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-769 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-770 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-771 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-772 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-773 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-774 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-775 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-776 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-777 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-778 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-779 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-780 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-781 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-782 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-783 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-784 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-785 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-786 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-787 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-788 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-789 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-790 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-791 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-792 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-793 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-794 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-795 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-796 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-797 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-798 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-799 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-800 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-801 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-802 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-803 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-804 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-805 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-806 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-807 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-808 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-809 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-810 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-811 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-812 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-813 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-814 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-815 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-816 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-817 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-818 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-819 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-820 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-821 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-822 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-823 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-824 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-825 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-826 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-827 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-828 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-829 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-830 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-831 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-832 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-833 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-834 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-835 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-836 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-837 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-838 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-839 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-840 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-841 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-842 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-843 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-844 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-845 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-846 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-847 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-848 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-849 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-850 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-851 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-852 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-853 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-854 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-855 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-856 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-857 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-858 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-859 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-860 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-861 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-862 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-863 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-864 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-865 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-866 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-867 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-868 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-869 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-870 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-871 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-872 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-873 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-874 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-875 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-876 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-877 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-878 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-879 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-880 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-881 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-882 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-883 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-884 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-885 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-886 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-887 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-888 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-889 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-890 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-891 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-892 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-893 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-894 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-895 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-896 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-897 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-898 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-899 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-900 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-901 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-902 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-903 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-904 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-905 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-906 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-907 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-908 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-909 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-910 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-911 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-912 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-913 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-914 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-915 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-916 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-917 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-918 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-919 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-920 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-921 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-922 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-923 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-924 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-925 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-926 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-927 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-928 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-929 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-930 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-931 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-932 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-933 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-934 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-935 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-936 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-937 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-938 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-939 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-940 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-941 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-942 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-943 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-944 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-945 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-946 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-947 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-948 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-949 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-950 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-951 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-952 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-953 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-954 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-955 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-956 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-957 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-958 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-959 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-960 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-961 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-962 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-963 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-964 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-965 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-966 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-967 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-968 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-969 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-970 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-971 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-972 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-973 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-974 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-975 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-976 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-977 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-978 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-979 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-980 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-981 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-982 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-983 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-984 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-985 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-986 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-987 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-988 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-989 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-root { background: #050507; color: #fff; }
+.int-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+.int-card { border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); padding: 20px; }
+.int-helper-990 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-991 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }
+.int-helper-992 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 8px; }
+.int-helper-993 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 9px; }
+.int-helper-994 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 10px; }
+.int-helper-995 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 11px; }
+.int-helper-996 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 12px; }
+.int-helper-997 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 13px; }
+.int-helper-998 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 14px; }
+.int-helper-999 { display: block; border-radius: 20px; background: rgba(255,255,255,0.03); padding: 15px; }

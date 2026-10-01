@@ -1,4 +1,8 @@
-# services/control-plane — Rust control plane (roadmap Phase 2)
+# services/control-plane — Rust control plane (roadmap Phase 2, SHADOW PARITY)
+
+**Status:** Roadmap / Shadow Parity — NOT in production compose per P0-07
+Canonical production realtime path is `gateway-go` (Go) + `media-engine-rs` (Rust) per `docker-compose.prod.yml` and `docs/CURRENT-ARCHITECTURE.md`
+This service is CI-tested in `.github/workflows/polyglot.yml` job `control-plane` but NOT production-wired.
 
 The control plane owns the *coordination* half of a call: session lifecycle,
 SIP/SDP signaling, WebSocket fan-out to live clients, and the usage/rating
@@ -91,7 +95,9 @@ reaped after 60 s.
 ## Building and testing
 
 ```sh
-# Requires Rust 1.98+ (rustup stable).
+# Requires Rust 1.90 (aligned with .github/workflows/polyglot.yml job control-plane)
+# Previously documented as 1.98+ — fixed to 1.90 per BUG-01 audit
+# CI uses dtolnay/rust-toolchain@1.90.0
 cargo fmt --all --check      # formatting
 cargo clippy --workspace --all-targets   # lints
 cargo test --workspace       # core unit tests + signal integration tests
@@ -100,3 +106,9 @@ cargo run -p voxdesk-signal --bin signal-server   # dev server on :8765
 
 `VOXDESK_SIGNAL_PORT` overrides the listen port. The server binds
 `0.0.0.0:<port>` and serves until terminated.
+
+## Canonical Topology Marker
+
+- Production: gateway-go + media-engine-rs (Go + Rust) in docker-compose.prod.yml
+- This crate: shadow parity, roadmap Phase 2, NOT production compose
+- See docs/CURRENT-ARCHITECTURE.md for canonical vs shadow separation

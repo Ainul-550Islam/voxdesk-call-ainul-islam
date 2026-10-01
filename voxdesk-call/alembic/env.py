@@ -11,6 +11,7 @@ from app.db.models import Base
 import app.governance  # noqa: F401 - registers additive governance models
 import app.qa.outcomes  # noqa: F401 - registers durable call-outcome metadata
 import app.deployment.models  # noqa: F401 - registers runtime deployment observation metadata
+import app.db.enterprise_models  # noqa: F401 - registers P0/P1 missing API tables (batch_calls, ab_experiments, pcap, retention, webhooks, salesforce, kb collections, simulation, tool registry, workflow triggers, multichannel, call policies, DNC)
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.database_url)

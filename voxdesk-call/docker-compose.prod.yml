@@ -1,6 +1,14 @@
 # Production compose: no source bind-mounts, no --reload, explicit healthchecks,
 # persistent volumes, and the full observability + backup stack.
 #
+# CANONICAL PRODUCTION TOPOLOGY (P0-01, P0-07 audit):
+# - Frontend: dashboard/ (Vite + React) built in Dockerfile stage dashboard-build
+#   dashboard-next/ (Next.js) is roadmap/shadow-parity, CI-tested but NOT shipped here
+# - Realtime: realtime-gateway (Go) + media-engine (Rust) is the canonical prod path
+#   signal-go (Go) and control-plane (Rust) are differential/shadow paths, not in this compose
+#   media-plane (C++) is DSP foundation, not full production media stack per its README
+# - See docs/CURRENT-ARCHITECTURE.md for full canonical topology documentation
+#
 #   docker compose -f docker-compose.prod.yml up -d --build
 #
 # Requires a .env next to this file (see .env.example): APP_ENV=production,
@@ -53,6 +61,9 @@ services:
       # rather than booting a silently-degraded realtime pair.
       REALTIME_GATEWAY_URL: http://realtime-gateway:8790
       REALTIME_GATEWAY_INGEST_SECRET: ${REALTIME_GATEWAY_INGEST_SECRET:?set REALTIME_GATEWAY_INGEST_SECRET in .env (>=16 random chars, shared with the realtime-gateway service)}
+      # Frontend canonical marker for observability
+      VOXDESK_CANONICAL_FRONTEND: "dashboard-vite"
+      VOXDESK_SHADOW_FRONTEND: "dashboard-next-roadmap"
     ports:
       - "127.0.0.1:8000:8000"   # host-only; public traffic enters via Caddy
     volumes:
@@ -73,6 +84,7 @@ services:
   # gateway verifies dashboard bearer tokens without the API being in the
   # request loop. The ingest secret is the API→gateway shared secret and must
   # match the API's REALTIME_GATEWAY_INGEST_SECRET or every publish 401s.
+  # CANONICAL REALTIME PATH per P0-07: gateway-go + media-engine-rs
   realtime-gateway:
     build: ./services/realtime/gateway-go
     restart: unless-stopped
@@ -101,6 +113,8 @@ services:
       # dashboard ships wire 1.2). See services/realtime/gateway-go's
       # internal/signaling/steer.go for the full contract.
       VOXDESK_GATEWAY_ENGINE_STEER: ${MEDIA_ENGINE_STEER:-off}
+      VOXDESK_CANONICAL_REALTIME: "gateway-go+media-engine-rs"
+      VOXDESK_SHADOW_REALTIME: "signal-go,control-plane,media-plane-roadmap"
     ports:
       - "127.0.0.1:8790:8790"  # host-only; public sockets enter via Caddy
     healthcheck:
@@ -117,6 +131,7 @@ services:
   # media is published on the HOST (browsers ICE against this address —
   # VOXDESK_PUBLIC_IP must be the host's public v4, set in .env); the
   # control plane is inter-container only, hit by realtime-gateway.
+  # CANONICAL MEDIA ENGINE per P0-07
   media-engine:
     build: ./services/realtime/media-engine-rs
     restart: unless-stopped
@@ -130,7 +145,7 @@ services:
     ports:
       - "5000:5000/udp"   # public: browser ICE targets this directly
     healthcheck:
-      test: ["CMD", "/bin/bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9001 && echo -e 'GET /v1/health HTTP/1.1\r\nHost: x\r\n\r\n' >&3 && grep -q ready <&3"]
+      test: ["CMD", "/bin/bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9001 && echo -e 'GET /v1/health HTTP/1.1\\r\\nHost: x\\r\\n\\r\\n' >&3 && grep -q ready <&3"]
       interval: 10s
       timeout: 3s
       retries: 5

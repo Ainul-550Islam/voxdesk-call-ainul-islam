@@ -17,6 +17,22 @@
  * logic lived here; it now lives in `useApi`, and this file makes no data
  * request of its own beyond `/auth/me`.
  */
+import './styles/industries.css';
+import './styles/integrations.css';
+import './styles/pricing.css';
+import './styles/developers.css';
+import './styles/resources.css';
+import './styles/blog.css';
+import './styles/security.css';
+import './styles/compliance.css';
+import './styles/company.css';
+import './styles/legal.css';
+import './styles/solutions.css';
+import './styles/use-cases.css';
+import './styles/trust.css';
+import './styles/contact.css';
+import './styles/auth.css';
+import './styles/docs.css';
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import Login from './components/Login'
@@ -39,6 +55,41 @@ import Integrations from './pages/Integrations'
 import Knowledge from './pages/Knowledge'
 import Leads from './pages/Leads'
 import Overview from './pages/Overview'
+import AgentsPage from './pages/agents/AgentsPage'
+import CreateAgentPage from './pages/agents/CreateAgentPage'
+import AgentBuilderPage from './pages/agents/AgentBuilderPage'
+import AgentSettingsPage from './pages/agents/AgentSettingsPage'
+import VoiceAgentsPage from './pages/product/voice-agents/VoiceAgentsPage'
+import UseCasesPage from './pages/use-cases/UseCasesPage'
+import UseCasesDetailPage from './pages/use-cases/UseCasesDetailPage'
+import IndustriesPage from './pages/industries/IndustriesPage';
+import IndustryDetailPage from './pages/industries/IndustryDetailPage';
+import IntegrationsPage from './pages/integrations/IntegrationsPage';
+import IntegrationDetailPage from './pages/integrations/IntegrationDetailPage';
+import PricingPage from './pages/pricing/PricingPage';
+import DevelopersPage from './pages/developers/DevelopersPage';
+import ResourcesPage from './pages/resources/ResourcesPage';
+import BlogPage from './pages/blog/BlogPage';
+import SecurityPage from './pages/security/SecurityPage';
+import CompliancePage from './pages/compliance/CompliancePage';
+import AboutPage from './pages/company/AboutPage';
+import CareersPage from './pages/company/CareersPage';
+import CompanyContactPage from './pages/company/ContactPage';
+import PrivacyPage from './pages/legal/PrivacyPage';
+import TermsPage from './pages/legal/TermsPage';
+import OutboundPage from './pages/product/outbound/OutboundPage';
+import InboundPage from './pages/product/inbound/InboundPage';
+import VoiceCloningPage from './pages/product/voice-cloning/VoiceCloningPage';
+import AnalyticsPage from './pages/product/analytics/AnalyticsPage';
+import SolutionsPage from './pages/solutions/SolutionsPage';
+import TrustPage from './pages/trust/TrustPage';
+import ContactPage from './pages/contact/ContactPage';
+import BookDemoPage from './pages/contact/BookDemoPage';
+import LoginPage from './pages/auth/LoginPage';
+import SignupPage from './pages/auth/SignupPage';
+import DocsPage from './pages/docs/DocsPage';
+
+
 
 /**
  * The route table.
@@ -158,6 +209,218 @@ const ROUTES = [
     permission: P.AUDIT_READ,
     render: (props) => <Audit {...props} />,
   },
+  {
+    // PUBLIC product page also accessible via hash for legacy dashboard entry — real backend data, no fake.
+    pattern: '/product/voice-agents',
+    title: 'Voice Agents',
+    permission: P.TENANT_READ,
+    render: () => <VoiceAgentsPage />,
+  },
+  {
+    pattern: '/agents',
+    title: 'Voice Agents',
+    permission: P.TENANT_READ,
+    render: () => <AgentsPage />,
+  },
+  {
+    pattern: '/dashboard/agents',
+    title: 'Voice Agents',
+    permission: P.TENANT_READ,
+    render: () => <AgentsPage />,
+  },
+  {
+    pattern: '/agents/new',
+    title: 'Create Agent',
+    permission: P.TENANT_READ,
+    render: () => <CreateAgentPage />,
+  },
+  {
+    pattern: '/dashboard/agents/new',
+    title: 'Create Agent',
+    permission: P.TENANT_READ,
+    render: () => <CreateAgentPage />,
+  },
+  {
+    pattern: '/agents/:id/builder',
+    title: 'Agent Builder',
+    permission: P.TENANT_READ,
+    render: (props, params) => <AgentBuilderPage agentId={params.id} {...props} />,
+  },
+  {
+    pattern: '/dashboard/agents/:id/builder',
+    title: 'Agent Builder',
+    permission: P.TENANT_READ,
+    render: (props, params) => <AgentBuilderPage agentId={params.id} {...props} />,
+  },
+  {
+    pattern: '/agents/:id/settings',
+    title: 'Agent Settings',
+    permission: P.TENANT_READ,
+    render: (props, params) => <AgentSettingsPage agentId={params.id} {...props} />,
+  },
+  {
+    pattern: '/dashboard/agents/:id/settings',
+    title: 'Agent Settings',
+    permission: P.TENANT_READ,
+    render: (props, params) => <AgentSettingsPage agentId={params.id} {...props} />,
+  },
+  {
+    pattern: '/agents/:id',
+    title: 'Agent Builder',
+    permission: P.TENANT_READ,
+    render: (props, params) => <AgentBuilderPage agentId={params.id} {...props} />,
+  },
+  {
+    pattern: '/dashboard/agents/:id',
+    title: 'Agent Builder',
+    permission: P.TENANT_READ,
+    render: (props, params) => <AgentBuilderPage agentId={params.id} {...props} />,
+  },
+  {
+    pattern: '/use-cases',
+    title: 'Use Cases',
+    permission: P.TENANT_READ,
+    render: () => <UseCasesPage />,
+  },
+  {
+    pattern: '/use-cases/:slug',
+    title: 'Use Case Detail',
+    permission: P.TENANT_READ,
+    render: (props, params) => <UseCasesDetailPage slug={params.slug} {...props} />,
+  },
+  {
+    pattern: '/solutions/use-cases',
+    title: 'Use Cases',
+    permission: P.TENANT_READ,
+    render: () => <UseCasesPage />,
+  },
+  {
+    pattern: '/solutions/use-cases/:slug',
+    title: 'Use Case Detail',
+    permission: P.TENANT_READ,
+    render: (props, params) => <UseCasesDetailPage slug={params.slug} {...props} />,
+  },
+  {
+    pattern: '/industries',
+    title: 'Industries',
+    permission: P.TENANT_READ,
+    render: () => <IndustriesPage />,
+  },
+  {
+    pattern: '/industries/:slug',
+    title: 'Industry Detail',
+    permission: P.TENANT_READ,
+    render: (props, params) => <IndustryDetailPage slug={params.slug} {...props} />,
+  },
+  {
+    pattern: '/integrations',
+    title: 'Integrations',
+    permission: P.TENANT_READ,
+    render: () => <IntegrationsPage />,
+  },
+  {
+    pattern: '/integrations/:slug',
+    title: 'Integration Detail',
+    permission: P.TENANT_READ,
+    render: (props, params) => <IntegrationDetailPage slug={params.slug} {...props} />,
+  },
+  {
+    pattern: '/pricing',
+    title: 'Pricing',
+    permission: P.TENANT_READ,
+    render: () => <PricingPage />,
+  },
+  {
+    pattern: '/developers',
+    title: 'Developers',
+    permission: P.TENANT_READ,
+    render: () => <DevelopersPage />,
+  },
+  {
+    pattern: '/resources',
+    title: 'Resources',
+    permission: P.TENANT_READ,
+    render: () => <ResourcesPage />,
+  },
+  {
+    pattern: '/blog',
+    title: 'Blog',
+    permission: P.TENANT_READ,
+    render: () => <BlogPage />,
+  },
+  {
+    pattern: '/security',
+    title: 'Security',
+    permission: P.TENANT_READ,
+    render: () => <SecurityPage />,
+  },
+  {
+    pattern: '/compliance',
+    title: 'Compliance',
+    permission: P.TENANT_READ,
+    render: () => <CompliancePage />,
+  },
+  {
+    pattern: '/company/about',
+    title: 'About',
+    permission: P.TENANT_READ,
+    render: () => <AboutPage />,
+  },
+  {
+    pattern: '/company/careers',
+    title: 'Careers',
+    permission: P.TENANT_READ,
+    render: () => <CareersPage />,
+  },
+  {
+    pattern: '/company/contact',
+    title: 'Contact',
+    permission: P.TENANT_READ,
+    render: () => <CompanyContactPage />,
+  },
+  {
+    pattern: '/legal/privacy',
+    title: 'Privacy',
+    permission: P.TENANT_READ,
+    render: () => <PrivacyPage />,
+  },
+  {
+    pattern: '/legal/terms',
+    title: 'Terms',
+    permission: P.TENANT_READ,
+    render: () => <TermsPage />,
+  },
+  {
+    pattern: '/product/outbound',
+    title: 'Outbound',
+    permission: P.TENANT_READ,
+    render: () => <OutboundPage />,
+  },
+  {
+    pattern: '/product/inbound',
+    title: 'Inbound',
+    permission: P.TENANT_READ,
+    render: () => <InboundPage />,
+  },
+  {
+    pattern: '/product/voice-cloning',
+    title: 'Voice Cloning',
+    permission: P.TENANT_READ,
+    render: () => <VoiceCloningPage />,
+  },
+  {
+    pattern: '/product/analytics',
+    title: 'Analytics',
+    permission: P.TENANT_READ,
+    render: () => <AnalyticsPage />,
+  },
+  {
+    pattern: '/solutions',
+    title: 'Solutions',
+    permission: P.TENANT_READ,
+    render: () => <SolutionsPage />,
+  },
+
 ]
 
 /** Resolve a path to `{ route, params }`, or `null` for a 404. */

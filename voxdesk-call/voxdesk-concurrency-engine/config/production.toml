@@ -1,0 +1,81 @@
+[server]
+host = "0.0.0.0"
+port = 8080
+metrics_port = 9090
+health_port = 8081
+workers = 200
+max_connections = 50000
+ping_interval_secs = 20
+pong_timeout_secs = 10
+read_buffer_size = 131072
+write_buffer_size = 131072
+max_message_size = 2097152
+
+[websocket]
+path = "/ws"
+heartbeat_interval_secs = 20
+client_timeout_secs = 45
+per_message_deflate = true
+max_frame_size = 2097152
+broadcast_channel_capacity = 50000
+
+[signaling]
+type = "livekit"
+stun_servers = ["stun:stun.livekit.cloud:3478"]
+turn_servers = ["turn:turn.livekit.cloud:3478"]
+ice_candidate_pool_size = 20
+sdp_semantics = "unified-plan"
+
+[livekit]
+api_key = "${LIVEKIT_API_KEY}"
+api_secret = "${LIVEKIT_API_SECRET}"
+host = "${LIVEKIT_HOST}"
+ws_url = "${LIVEKIT_WS_URL}"
+enabled = true
+rooms_auto_create = true
+token_ttl_secs = 3600
+
+[redis]
+url = "${REDIS_URL}"
+pool_size = 200
+cluster_enabled = true
+cluster_nodes = ["${REDIS_CLUSTER_NODES}"]
+pubsub_channel = "voxdesk:signaling:prod"
+session_ttl_secs = 1800
+key_prefix = "voxdesk:prod:"
+
+[audio]
+sample_rate = 48000
+channels = 1
+frame_size_ms = 20
+opus_bitrate = 32000
+ring_buffer_capacity = 5000
+jitter_buffer_enabled = true
+echo_cancellation = true
+noise_suppression = true
+
+[metrics]
+enabled = true
+endpoint = "/metrics"
+prometheus_enabled = true
+tracing_enabled = true
+log_level = "info"
+json_logs = true
+
+[security]
+jwt_secret = "${JWT_SECRET}"
+jwt_algorithm = "RS256"
+token_expiry_secs = 3600
+hmac_secret = "${HMAC_SECRET}"
+encryption_enabled = true
+tls_enabled = true
+cert_path = "/etc/ssl/certs/server.crt"
+key_path = "/etc/ssl/private/server.key"
+
+[concurrency]
+worker_threads = 200
+blocking_threads = 1024
+engine_type = "tokio"
+queue_capacity = 50000
+backpressure_enabled = true
+rate_limit_per_tenant = 5000

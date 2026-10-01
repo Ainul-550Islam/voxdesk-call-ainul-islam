@@ -1,4 +1,11 @@
 # ============================================================ stage 1: web ===
+# CANONICAL PRODUCTION FRONTEND: dashboard/ (Vite + React)
+# This is the sole frontend shipped in production per P0-01 audit finding.
+# dashboard-next/ (Next.js) is a roadmap/shadow-parity migration target per
+# docs/EXPANSION-ROADMAP.md Phase 1 and dashboard-next/README.md.
+# It is CI-tested in .github/workflows/polyglot.yml but NOT included in this
+# production image until full parity is proven. See docs/CURRENT-ARCHITECTURE.md
+# and docs/DASHBOARD.md for the canonical topology.
 # Build the React dashboard into static assets. This keeps node entirely out
 # of the runtime image.
 FROM node:20-alpine AS dashboard-build

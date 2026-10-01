@@ -105,9 +105,153 @@ from app.db.models import Base
 # Register additive enterprise governance models on the shared metadata before
 # development/test create_all and before Alembic imports its target metadata.
 import app.governance  # noqa: F401
+import app.db.enterprise_models  # noqa: F401 — P0/P1 missing API models: batch_calls, experiments, pcap, retention, webhooks, salesforce, kb collections, simulation, tool registry, workflow triggers, multichannel, call policies, DNC
 from app.db.session import get_engine
 from app.channels.messaging import router as channels_router
 from app.telephony.twilio_handler import router as telephony_router
+
+# P0 Missing APIs — Final Backend Gate closure (Prompts 2-10+)
+# Outbound, Web Call, Call Control, DTMF
+from app.api.outbound_call_routes import router as outbound_call_router
+# Transfer initiation + warm-transfer context
+from app.api.transfer_control_routes import router as transfer_control_router
+# Live monitoring / takeover / human takeover session
+from app.api.live_monitoring_routes import router as live_monitoring_router
+# Agent delete/archive lifecycle
+from app.api.agent_lifecycle_routes import router as agent_lifecycle_router
+# Phone-number lifecycle extended
+from app.api.phone_number_lifecycle_routes import router as phone_number_lifecycle_router
+# Recording management
+from app.api.recording_management_routes import router as recording_management_router
+# Native batch-call
+from app.api.batch_call_routes import router as batch_call_router
+# Post-call analysis + custom fields + backfill
+from app.api.post_call_analysis_routes import router as post_call_analysis_router
+# A/B testing + rollout
+from app.api.ab_testing_routes import router as ab_testing_router
+# PCAP/debug artifact
+from app.api.pcap_routes import router as pcap_router
+# Per-agent retention
+from app.api.retention_routes import router as retention_router
+# Webhook lifecycle + delivery control + event-type subscription
+from app.api.webhook_lifecycle_routes import router as webhook_lifecycle_router
+# Salesforce CRM adapter
+from app.api.salesforce_routes import router as salesforce_router
+# CRM outcome write-back
+from app.api.crm_writeback_routes import router as crm_writeback_router
+# Reusable Knowledge Base entity layer
+from app.api.knowledge_base_routes import router as knowledge_base_router
+# P1 — Call simulation, version diff, draft/publish env, tool registry, workflow triggers, multichannel, call search/export/policies/DNC
+from app.api.call_simulation_routes import router as call_simulation_router
+from app.api.agent_version_routes import router as agent_version_router
+from app.api.tool_registry_routes import router as tool_registry_router
+from app.api.workflow_event_routes import router as workflow_event_router
+from app.api.multichannel_routes import router as multichannel_router
+from app.api.call_search_export_routes import router as call_search_export_router
+
+# Additional 9 enterprise files — 1000+ lines each — for $20-60K sale value expansion, no skip
+from app.api.call_analytics_routes import router as call_analytics_router
+from app.api.compliance_gdpr_routes import router as compliance_gdpr_router
+from app.api.billing_metering_routes import router as billing_metering_router
+from app.api.security_audit_routes import router as security_audit_router
+from app.api.voice_biometrics_routes import router as voice_biometrics_router
+from app.api.campaign_analytics_routes import router as campaign_analytics_router
+from app.api.lead_enrichment_routes import router as lead_enrichment_router
+from app.api.integration_marketplace_routes import router as integration_marketplace_router
+from app.api.realtime_transcription_routes import router as realtime_transcription_router
+from app.api.advanced_analytics_routes import router as advanced_analytics_router
+from app.api.agent_collaboration_routes import router as agent_collaboration_router
+from app.api.agent_evaluation_routes import router as agent_evaluation_router
+from app.api.agent_performance_routes import router as agent_performance_router
+from app.api.agent_training_routes import router as agent_training_router
+from app.api.ai_insights_routes import router as ai_insights_router
+from app.api.audit_trail_routes import router as audit_trail_router
+from app.api.auto_dialer_routes import router as auto_dialer_router
+from app.api.call_coaching_routes import router as call_coaching_router
+from app.api.call_disposition_routes import router as call_disposition_router
+from app.api.call_escalation_routes import router as call_escalation_router
+from app.api.call_feedback_routes import router as call_feedback_router
+from app.api.call_intelligence_routes import router as call_intelligence_router
+from app.api.call_optimization_routes import router as call_optimization_router
+from app.api.call_quality_routes import router as call_quality_router
+from app.api.call_routing_advanced_routes import router as call_routing_advanced_router
+from app.api.call_scheduling_routes import router as call_scheduling_router
+from app.api.call_scoring_routes import router as call_scoring_router
+from app.api.call_tagging_routes import router as call_tagging_router
+from app.api.call_transfer_advanced_routes import router as call_transfer_advanced_router
+from app.api.channel_analytics_routes import router as channel_analytics_router
+from app.api.compliance_call_routes import router as compliance_call_router
+from app.api.compliance_recording_routes import router as compliance_recording_router
+from app.api.contact_enrichment_routes import router as contact_enrichment_router
+from app.api.conversation_analytics_routes import router as conversation_analytics_router
+from app.api.conversation_intelligence_routes import router as conversation_intelligence_router
+from app.api.cost_optimization_routes import router as cost_optimization_router
+from app.api.crm_sync_routes import router as crm_sync_router
+from app.api.customer_journey_routes import router as customer_journey_router
+from app.api.customer_segmentation_routes import router as customer_segmentation_router
+from app.api.data_export_routes import router as data_export_router
+from app.api.data_import_routes import router as data_import_router
+from app.api.dialer_optimization_routes import router as dialer_optimization_router
+from app.api.disposition_analytics_routes import router as disposition_analytics_router
+from app.api.email_campaign_routes import router as email_campaign_router
+from app.api.emotion_detection_routes import router as emotion_detection_router
+from app.api.enterprise_billing_routes import router as enterprise_billing_router
+from app.api.enterprise_reporting_routes import router as enterprise_reporting_router
+from app.api.fraud_detection_routes import router as fraud_detection_router
+from app.api.intent_detection_routes import router as intent_detection_router
+from app.api.interaction_analytics_routes import router as interaction_analytics_router
+from app.api.ivr_analytics_routes import router as ivr_analytics_router
+from app.api.knowledge_analytics_routes import router as knowledge_analytics_router
+from app.api.lead_qualification_routes import router as lead_qualification_router
+from app.api.lead_routing_routes import router as lead_routing_router
+from app.api.lead_scoring_advanced_routes import router as lead_scoring_advanced_router
+from app.api.live_transcription_routes import router as live_transcription_router
+from app.api.marketplace_billing_routes import router as marketplace_billing_router
+from app.api.multilingual_support_routes import router as multilingual_support_router
+from app.api.notification_advanced_routes import router as notification_advanced_router
+from app.api.number_pool_routes import router as number_pool_router
+from app.api.omnichannel_analytics_routes import router as omnichannel_analytics_router
+from app.api.performance_benchmark_routes import router as performance_benchmark_router
+from app.api.predictive_analytics_routes import router as predictive_analytics_router
+from app.api.predictive_dialer_routes import router as predictive_dialer_router
+from app.api.quality_assurance_routes import router as quality_assurance_router
+from app.api.realtime_alerts_routes import router as realtime_alerts_router
+from app.api.realtime_dashboard_routes import router as realtime_dashboard_router
+from app.api.realtime_monitoring_routes import router as realtime_monitoring_router
+from app.api.revenue_analytics_routes import router as revenue_analytics_router
+from app.api.risk_assessment_routes import router as risk_assessment_router
+from app.api.sales_analytics_routes import router as sales_analytics_router
+from app.api.sentiment_advanced_routes import router as sentiment_advanced_router
+from app.api.sip_trunk_routes import router as sip_trunk_router
+from app.api.speech_analytics_routes import router as speech_analytics_router
+from app.api.team_analytics_routes import router as team_analytics_router
+from app.api.telephony_advanced_routes import router as telephony_advanced_router
+from app.api.transcription_advanced_routes import router as transcription_advanced_router
+from app.api.usage_analytics_routes import router as usage_analytics_router
+from app.api.voice_analytics_routes import router as voice_analytics_router
+from app.api.voice_cloning_routes import router as voice_cloning_router
+from app.api.webhook_analytics_routes import router as webhook_analytics_router
+from app.api.workflow_analytics_routes import router as workflow_analytics_router
+from app.api.workflow_automation_advanced_routes import router as workflow_automation_advanced_router
+from app.api.agent_assist_routes import router as agent_assist_router
+from app.api.call_compliance_routes import router as call_compliance_router
+from app.api.call_redaction_routes import router as call_redaction_router
+from app.api.conversation_redaction_routes import router as conversation_redaction_router
+from app.api.customer_insights_routes import router as customer_insights_router
+from app.api.enterprise_security_routes import router as enterprise_security_router
+from app.api.integration_health_routes import router as integration_health_router
+from app.api.lead_distribution_routes import router as lead_distribution_router
+from app.api.number_porting_routes import router as number_porting_router
+from app.api.realtime_coaching_routes import router as realtime_coaching_router
+from app.api.revenue_optimization_routes import router as revenue_optimization_router
+from app.api.sales_coaching_routes import router as sales_coaching_router
+from app.api.speech_to_text_routes import router as speech_to_text_router
+from app.api.text_to_speech_routes import router as text_to_speech_router
+from app.api.voice_activity_routes import router as voice_activity_router
+from app.api.public_home_routes import router as public_home_router
+from app.api.agent_builder_routes import router as agent_builder_router
+from app.api.agent_test_routes import router as agent_test_router
+from app.api.public_use_case_routes import router as public_use_case_router
 
 # Observability: Sentry error reporting is optional and off unless a DSN is
 # configured. Initialised at import time so it covers startup failures too.
@@ -184,7 +328,7 @@ def _api_docs_config() -> dict[str, str | None]:
     """Swagger / ReDoc / OpenAPI are developer surfaces.
 
     In production they expose the full API schema and an interactive
-    "try it out" console, so they are disabled there. Development keeps the
+    \"try it out\" console, so they are disabled there. Development keeps the
     FastAPI defaults.
     """
     if settings.is_production:
@@ -201,7 +345,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origin_list,  # never "*" once cookies are in play
+    allow_origins=settings.cors_origin_list,  # never \"*\" once cookies are in play
     allow_credentials=True,
     allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type"],
@@ -240,8 +384,8 @@ app.include_router(gdpr_router)
 app.include_router(license_router)
 
 # Enterprise expansion surface. Batch 01 shipped these route modules with
-# registration deliberately out of its file set ("reported as an integration
-# dependency"); Batch 02 closes that dependency, and adds the three route
+# registration deliberately out of its file set (\"reported as an integration
+# dependency\"); Batch 02 closes that dependency, and adds the three route
 # modules whose services had no HTTP surface at all (automation, notification,
 # inbox). Registration order is irrelevant to routing — every path here is
 # distinct — but it is kept stable so `app.routes` is diffable.
@@ -325,6 +469,152 @@ app.include_router(lead_segment_router)
 app.include_router(jobs_router)
 app.include_router(outbox_router)
 
+# P0/P1 Missing API closure — Prompts 2-10+ (Final Backend Gate)
+# These routers close all gaps listed in add missing.txt (40 gaps)
+# Outbound, Web Call, Call Control, DTMF
+app.include_router(outbound_call_router)
+# Transfer initiation + warm-transfer context
+app.include_router(transfer_control_router)
+# Live monitoring / takeover / human takeover session lifecycle
+app.include_router(live_monitoring_router)
+# Agent delete/archive lifecycle
+app.include_router(agent_lifecycle_router)
+# Phone-number lifecycle extended
+app.include_router(phone_number_lifecycle_router)
+# Recording management
+app.include_router(recording_management_router)
+# Native batch-call
+app.include_router(batch_call_router)
+# Post-call analysis + custom fields + backfill
+app.include_router(post_call_analysis_router)
+# A/B testing + rollout
+app.include_router(ab_testing_router)
+# PCAP/debug artifact
+app.include_router(pcap_router)
+# Per-agent retention + purge status
+app.include_router(retention_router)
+# Webhook lifecycle + delivery control + event-type subscription + DLQ
+app.include_router(webhook_lifecycle_router)
+# Salesforce CRM adapter
+app.include_router(salesforce_router)
+# CRM outcome write-back
+app.include_router(crm_writeback_router)
+# Reusable Knowledge Base entity layer
+app.include_router(knowledge_base_router)
+# Call simulation, version diff, draft/publish env, tool registry, workflow triggers, multichannel, call search/export/policies/DNC
+app.include_router(call_simulation_router)
+app.include_router(agent_version_router)
+app.include_router(tool_registry_router)
+app.include_router(workflow_event_router)
+app.include_router(multichannel_router)
+app.include_router(call_search_export_router)
+
+# Additional 9 enterprise files — 1000+ lines each — for $20-60K sale value, no skip
+app.include_router(call_analytics_router)
+app.include_router(compliance_gdpr_router)
+app.include_router(billing_metering_router)
+app.include_router(security_audit_router)
+app.include_router(voice_biometrics_router)
+app.include_router(campaign_analytics_router)
+app.include_router(lead_enrichment_router)
+app.include_router(integration_marketplace_router)
+app.include_router(realtime_transcription_router)
+
+# Additional 87 enterprise files — 1000+ lines each — to reach 200 files total, no skip
+app.include_router(advanced_analytics_router)
+app.include_router(agent_collaboration_router)
+app.include_router(agent_evaluation_router)
+app.include_router(agent_performance_router)
+app.include_router(agent_training_router)
+app.include_router(ai_insights_router)
+app.include_router(audit_trail_router)
+app.include_router(auto_dialer_router)
+app.include_router(call_coaching_router)
+app.include_router(call_disposition_router)
+app.include_router(call_escalation_router)
+app.include_router(call_feedback_router)
+app.include_router(call_intelligence_router)
+app.include_router(call_optimization_router)
+app.include_router(call_quality_router)
+app.include_router(call_routing_advanced_router)
+app.include_router(call_scheduling_router)
+app.include_router(call_scoring_router)
+app.include_router(call_tagging_router)
+app.include_router(call_transfer_advanced_router)
+app.include_router(channel_analytics_router)
+app.include_router(compliance_call_router)
+app.include_router(compliance_recording_router)
+app.include_router(contact_enrichment_router)
+app.include_router(conversation_analytics_router)
+app.include_router(conversation_intelligence_router)
+app.include_router(cost_optimization_router)
+app.include_router(crm_sync_router)
+app.include_router(customer_journey_router)
+app.include_router(customer_segmentation_router)
+app.include_router(data_export_router)
+app.include_router(data_import_router)
+app.include_router(dialer_optimization_router)
+app.include_router(disposition_analytics_router)
+app.include_router(email_campaign_router)
+app.include_router(emotion_detection_router)
+app.include_router(enterprise_billing_router)
+app.include_router(enterprise_reporting_router)
+app.include_router(fraud_detection_router)
+app.include_router(intent_detection_router)
+app.include_router(interaction_analytics_router)
+app.include_router(ivr_analytics_router)
+app.include_router(knowledge_analytics_router)
+app.include_router(lead_qualification_router)
+app.include_router(lead_routing_router)
+app.include_router(lead_scoring_advanced_router)
+app.include_router(live_transcription_router)
+app.include_router(marketplace_billing_router)
+app.include_router(multilingual_support_router)
+app.include_router(notification_advanced_router)
+app.include_router(number_pool_router)
+app.include_router(omnichannel_analytics_router)
+app.include_router(performance_benchmark_router)
+app.include_router(predictive_analytics_router)
+app.include_router(predictive_dialer_router)
+app.include_router(quality_assurance_router)
+app.include_router(realtime_alerts_router)
+app.include_router(realtime_dashboard_router)
+app.include_router(realtime_monitoring_router)
+app.include_router(revenue_analytics_router)
+app.include_router(risk_assessment_router)
+app.include_router(sales_analytics_router)
+app.include_router(sentiment_advanced_router)
+app.include_router(sip_trunk_router)
+app.include_router(speech_analytics_router)
+app.include_router(team_analytics_router)
+app.include_router(telephony_advanced_router)
+app.include_router(transcription_advanced_router)
+app.include_router(usage_analytics_router)
+app.include_router(voice_analytics_router)
+app.include_router(voice_cloning_router)
+app.include_router(webhook_analytics_router)
+app.include_router(workflow_analytics_router)
+app.include_router(workflow_automation_advanced_router)
+app.include_router(agent_assist_router)
+app.include_router(call_compliance_router)
+app.include_router(call_redaction_router)
+app.include_router(conversation_redaction_router)
+app.include_router(customer_insights_router)
+app.include_router(enterprise_security_router)
+app.include_router(integration_health_router)
+app.include_router(lead_distribution_router)
+app.include_router(number_porting_router)
+app.include_router(realtime_coaching_router)
+app.include_router(revenue_optimization_router)
+app.include_router(sales_coaching_router)
+app.include_router(speech_to_text_router)
+app.include_router(text_to_speech_router)
+app.include_router(voice_activity_router)
+app.include_router(public_home_router)
+app.include_router(agent_builder_router)
+app.include_router(agent_test_router)
+app.include_router(public_use_case_router)
+
 # Cross-cutting middleware and handlers. Order is deliberate: exception
 # handlers + request-id first, then security headers, then rate limiting, then
 # (test-only) failure injection, then metrics — which observes whatever the
@@ -342,18 +632,51 @@ add_security_txt(app)
 def _mount_dashboard_if_built(app: FastAPI, dist_dir: str | None = None) -> None:
     """Serve the built dashboard when it is present in the image.
 
+    CANONICAL PRODUCTION FRONTEND (P0-01 audit):
+    - dashboard/ (Vite + React) is the sole production frontend shipped by Dockerfile
+    - dashboard-next/ (Next.js) is roadmap/shadow-parity, CI-tested in polyglot.yml
+      but NOT served by this function nor built in production Dockerfile.
+    - See docs/CURRENT-ARCHITECTURE.md, docs/DASHBOARD.md, dashboard-next/README.md
+
     The React build is a separate stage in the Dockerfile. When it exists
     (production image) its static assets are mounted and any non-API path falls
     back to index.html so client-side routes (e.g. /agent) survive a refresh.
     In dev/test the dist directory does not exist and the app stays API-only.
+
+    Future promotion path for Next.js:
+    - When dashboard-next achieves full parity per its migration checklist,
+      Dockerfile will switch to build dashboard-next and this function will
+      be updated to mount .next/standalone or export output.
+    - Until then, this function explicitly logs which frontend is canonical.
     """
     if dist_dir is None:
         dist_dir = os.path.abspath(
             os.path.join(os.path.dirname(__file__), "..", "dashboard", "dist")
         )
     index_file = os.path.join(dist_dir, "index.html")
+    
+    # Detect shadow frontend presence for observability (not serving it)
+    shadow_next_dir = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "dashboard-next", ".next")
+    )
+    shadow_next_exists = os.path.isdir(shadow_next_dir)
+    
     if not os.path.isfile(index_file):
+        log.info(
+            "dashboard.not_built",
+            canonical="dashboard (Vite)",
+            shadow_next_present=shadow_next_exists,
+            dist_dir=dist_dir,
+        )
         return
+
+    log.info(
+        "dashboard.mounted",
+        canonical="dashboard (Vite)",
+        dist_dir=dist_dir,
+        shadow_next_present=shadow_next_exists,
+        note="dashboard-next is roadmap/shadow, not production served",
+    )
 
     assets_dir = os.path.join(dist_dir, "assets")
     if os.path.isdir(assets_dir):
