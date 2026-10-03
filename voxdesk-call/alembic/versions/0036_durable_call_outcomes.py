@@ -1,7 +1,7 @@
 """Durable, reviewable call-outcome events.
 
 Revision: 0036_durable_call_outcomes
-Revises: 0035_enterprise_compliance_roi_deployment
+Revises: 0035_compliance_roi_deployment
 """
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision = "0036_durable_call_outcomes"
-down_revision = "0035_enterprise_compliance_roi_deployment"
+down_revision = "0035_compliance_roi_deployment"
 branch_labels = None
 depends_on = None
 

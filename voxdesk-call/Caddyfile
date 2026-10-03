@@ -7,6 +7,15 @@
 # Certificate verification is never disabled: Caddy's default ACME + cert
 # validation is used unchanged.
 #
+# The fallback default below MUST carry the scheme (`http://localhost`, not
+# bare `localhost`) and the compose files must never pass an empty DOMAIN:
+# Caddy's `{$DOMAIN:default}` replaces the value only when the variable is
+# ABSENT, so a set-but-empty DOMAIN expands to an empty site address — and
+# Caddy refuses to start ("server block without any key is global
+# configuration"). A scheme-less `localhost` would also serve HTTPS-only on
+# :443, never the documented plain HTTP on :80. Both traps were real: the
+# staging drill caught caddy crash-looping this exact way.
+#
 # WebSockets (wss://) for the live voice stream pass through unchanged -- Caddy
 # v2 upgrades WebSocket connections by default, which is what the Twilio Media
 # Streams handshake depends on. Nothing in this file may interfere with that
@@ -22,12 +31,11 @@
 #
 # The Caddy admin API is disabled: it is a localhost control plane this
 # deployment does not use, and leaving it on is an unnecessary surface.
-
 {
 	admin off
 }
 
-{$DOMAIN:localhost} {
+{$DOMAIN:http://localhost} {
 	encode zstd gzip
 
 	# Security headers. Strict-Transport-Security is ignored by browsers over
@@ -74,7 +82,7 @@
 # 127.0.0.1:3001. Set GRAFANA_DOMAIN=grafana.staging.example.com to serve it on
 # a real hostname; any request that matches the site still requires Grafana
 # sign-in (anonymous access and self-sign-up are disabled in compose).
-{$GRAFANA_DOMAIN:grafana.localhost} {
+{$GRAFANA_DOMAIN:http://grafana.localhost} {
 	encode zstd gzip
 
 	header {

@@ -6,7 +6,7 @@ canonical person record. This revision does not add a Contact table and does
 not rename ``LeadStatus``.
 
 Revision ID: 0025_enterprise_leads
-Revises: 0024_qa_conversation_intelligence
+Revises: 0024_qa_conversation_intel
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision = "0025_enterprise_leads"
-down_revision = "0024_qa_conversation_intelligence"
+down_revision = "0024_qa_conversation_intel"
 branch_labels = None
 depends_on = None
 

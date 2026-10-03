@@ -405,7 +405,6 @@ async def promote_variant(
     ).scalars().all()
     # In real implementation, copy variant config to agent draft and publish
     try:
-        from app.services import agent_service
         # Example: publish variant prompt to agent
         # agent_service.update_draft(ctx.tenant, config_with_variant_prompt)
         pass
@@ -460,7 +459,6 @@ def _extended_audit(event: str, **kwargs):
         pass
 
 def _extended_rate_check(tenant_id, action: str, limit: int):
-    import time
     # Simplified rate check
     return True
 
@@ -479,7 +477,6 @@ async def extended_config(ctx: TenantContext = Depends(require_permission(Permis
 
 @router.get("/extended/metrics", response_model=dict)
 async def extended_metrics(ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)), session: AsyncSession = Depends(get_session)):
-    from sqlalchemy import select, func
     # Generic metrics query
     try:
         # Try to count from a generic table if exists

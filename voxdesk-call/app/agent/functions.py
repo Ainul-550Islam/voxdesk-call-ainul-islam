@@ -65,6 +65,10 @@ TOOL_CONTRACTS = {
     "answer_question": {"effect": "read", "scope": "knowledge:read", "agent_runtime": True},
     "qualify_lead": {"effect": "write", "scope": "lead:create", "agent_runtime": True},
     "mark_do_not_call": {"effect": "write", "scope": "compliance:write", "agent_runtime": True},
+    # Prompt 1: a handoff (like escalate_to_human, but to another AI agent) and
+    # a durable note about the caller. Both write tenant-scoped rows only.
+    "request_agent_transfer": {"effect": "handoff", "scope": "lead:update", "agent_runtime": True},
+    "save_contact_memory": {"effect": "write", "scope": "lead:update", "agent_runtime": True},
 }
 
 
@@ -87,6 +91,10 @@ DISPATCHABLE_TOOLS = frozenset({
     "answer_question",
     "qualify_lead",
     "mark_do_not_call",
+    # Prompt 1 (Retell parity): real agent-to-agent handoff and durable
+    # contact memory, both dispatched through the same allowlist.
+    "request_agent_transfer",
+    "save_contact_memory",
 })
 
 TOOL_SCHEMAS = [
@@ -227,6 +235,62 @@ TOOL_SCHEMAS = [
             "parameters": {
                 "type": "object",
                 "properties": {"reason": {"type": "string"}},
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "request_agent_transfer",
+            "description": (
+                "Hand this conversation to another AI agent of this business "
+                "(for example a billing specialist). The conversation keeps its "
+                "identity and context; the destination agent must be a published "
+                "chat agent of this tenant. Never claim the handoff happened -- "
+                "call this tool and report what it returns."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "to_agent": {
+                        "type": "string",
+                        "description": "Exact name of the destination chat agent",
+                    },
+                    "reason": {
+                        "type": "string",
+                        "description": "Why this conversation should move",
+                    },
+                },
+                "required": ["to_agent", "reason"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "save_contact_memory",
+            "description": (
+                "Remember a durable fact about this caller (preferences, account "
+                "details they stated, follow-up context) so future conversations "
+                "with the same number start informed. Never store passwords, "
+                "tokens or payment credentials -- those keys are refused."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string",
+                        "description": (
+                            "Short lower-case identifier, e.g. preferred_language "
+                            "or account_number"
+                        ),
+                    },
+                    "value": {
+                        "type": "string",
+                        "description": "The fact itself, one short sentence or value",
+                    },
+                },
+                "required": ["key", "value"],
             },
         },
     },
@@ -639,6 +703,116 @@ class FunctionHandlers:
         return {
             "ok": True,
             "message": "I've removed you from our list. Sorry for the trouble.",
+        }
+
+    # -- Prompt 1: durable contact memory + agent-to-agent handoff ----------
+    def _remote_party_number(self) -> str:
+        """The other side of this call: the caller when inbound, the callee
+        when outbound. Never the tenant's own number."""
+        direction = getattr(self.call, "direction", None)
+        value = getattr(direction, "value", direction)
+        if value == "inbound":
+            return (self.call.from_number or "").strip()
+        return (self.call.to_number or "").strip()
+
+    async def save_contact_memory(self, key: str, value: str) -> dict:
+        """Upsert one durable fact against this caller's contact.
+
+        Runs through the same service the HTTP surface uses, so the key
+        validation (and the credential-shaped-key refusal) applies here too --
+        a model that tries `save_contact_memory(key="api_key", ...)` gets a
+        refusal, not a stored secret.
+        """
+        from app.domain.contact_memory_models import MemorySaveRequest, MemorySource
+        from app.services import contact_memory_service, contact_service
+
+        number = self._remote_party_number()
+        if not number:
+            return {"ok": False, "message": "I could not identify a phone number for this call."}
+        try:
+            contact = await contact_service.get_by_phone(self.session, self.tenant, number)
+        except Exception:
+            contact = None
+        if contact is None:
+            from app.domain.contact_models import ContactCreate, ContactSource
+
+            try:
+                result = await contact_service.create(
+                    self.session,
+                    self.tenant,
+                    ContactCreate(phone=number, source=ContactSource.CALL),
+                )
+                contact = result.contact
+            except Exception as exc:
+                log.warning("function.contact_memory.no_contact", error=str(exc))
+                return {"ok": False, "message": "I could not save that right now."}
+        try:
+            await contact_memory_service.save(
+                self.session,
+                self.tenant,
+                contact,
+                key,
+                MemorySaveRequest(
+                    value=value,
+                    source=MemorySource.CALL,
+                    source_ref=getattr(self.call, "call_sid", None),
+                ),
+            )
+        except Exception as exc:
+            log.warning("function.contact_memory.rejected", key=key, error=str(exc))
+            return {"ok": False, "message": "I can't store that kind of detail."}
+        return {"ok": True, "message": "Got it, I'll remember that."}
+
+    async def request_agent_transfer(self, to_agent: str, reason: str) -> dict:
+        """Start a real agent-to-agent handoff and record it durably.
+
+        The destination must be a *published* chat agent of this tenant, found
+        by exact name. The idempotency key is derived from the call and the
+        destination, so a model that calls the tool three times in a row gets
+        one transfer, not three.
+        """
+        from sqlalchemy import select as _select
+
+        from app.db.retell_models import ChatAgent
+        from app.domain.transfer_state_machine import TransferMode
+        from app.services import agent_transfer_service
+
+        name = (to_agent or "").strip()
+        if not name:
+            return {"ok": False, "message": "Which team should I hand this to?"}
+        target = (
+            await self.session.execute(
+                _select(ChatAgent).where(
+                    ChatAgent.tenant_id == self.tenant.id,
+                    ChatAgent.name == name,
+                    ChatAgent.status == "published",
+                )
+            )
+        ).scalar_one_or_none()
+        if target is None:
+            return {"ok": False, "message": f"I don't have an agent called {name!r} available."}
+        try:
+            transfer, created = await agent_transfer_service.request_transfer(
+                self.session,
+                self.tenant,
+                mode=TransferMode.AGENT_TO_AGENT,
+                idempotency_key=f"call:{getattr(self.call, 'id', '')}:agent:{target.id}",
+                call_id=getattr(self.call, "id", None),
+                to_agent_id=target.id,
+                reason=reason or "caller routed by the AI agent",
+                context_snapshot={
+                    "call_sid": getattr(self.call, "call_sid", ""),
+                    "intent": getattr(self.call, "intent", None),
+                },
+            )
+        except Exception as exc:
+            log.error("function.agent_transfer.failed", error=str(exc))
+            return {"ok": False, "message": "I couldn't move this conversation right now."}
+        return {
+            "ok": True,
+            "transfer_id": str(transfer.id),
+            "created": created,
+            "message": f"Handing you over to {name} now.",
         }
 
     # -- tool availability -------------------------------------------------

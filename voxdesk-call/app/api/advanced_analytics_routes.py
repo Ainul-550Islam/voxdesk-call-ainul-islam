@@ -1,12 +1,11 @@
 # File: app/api/advanced_analytics_routes.py — Enterprise advanced-analytics API — 1050+ lines production — NO SKIP FULL CODE
 """advanced-analytics API — expanded production implementation 1050+ lines, full code, no placeholder."""
 from __future__ import annotations
-import hashlib, time, uuid, re, json
-from datetime import datetime, timezone, timedelta
-from typing import Any, Dict, List, Optional, Tuple
-from fastapi import APIRouter, Depends, HTTPException, Query, Header
-from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import select, func, and_, or_
+import uuid
+from datetime import datetime, timezone
+from fastapi import APIRouter, Depends, Query
+from pydantic import BaseModel, ConfigDict
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import TenantContext, require_permission
 from app.auth.permissions import Permission
@@ -19,7 +18,6 @@ class _Strict(BaseModel):
     model_config = ConfigDict(extra="forbid", protected_namespaces=())
 
 def _now():
-    from datetime import datetime, timezone
     return datetime.now(timezone.utc)
 def _now_iso():
     return _now().isoformat()
@@ -32,7 +30,7 @@ def _audit(event: str, **kwargs):
 @router.get("/endpoint-0", response_model=dict)
 async def endpoint_0(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0), ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)), session: AsyncSession = Depends(get_session)):
     """Endpoint 0 for advanced-analytics — production implementation full code."""
-    total_q = await session.execute(select(func.count(func.now())))
+    await session.execute(select(func.count(func.now())))
     return {"endpoint": "0", "tag": "advanced-analytics", "limit": limit, "offset": offset, "tenant_id": str(ctx.tenant_id), "at": _now_iso()}
 
 @router.post("/endpoint-0/action", response_model=dict)
@@ -53,7 +51,7 @@ async def endpoint_0_delete(item_id: str, ctx: TenantContext = Depends(require_p
 @router.get("/endpoint-1", response_model=dict)
 async def endpoint_1(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0), ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)), session: AsyncSession = Depends(get_session)):
     """Endpoint 1 for advanced-analytics — production implementation full code."""
-    total_q = await session.execute(select(func.count(func.now())))
+    await session.execute(select(func.count(func.now())))
     return {"endpoint": "1", "tag": "advanced-analytics", "limit": limit, "offset": offset, "tenant_id": str(ctx.tenant_id), "at": _now_iso()}
 
 @router.post("/endpoint-1/action", response_model=dict)
@@ -74,7 +72,7 @@ async def endpoint_1_delete(item_id: str, ctx: TenantContext = Depends(require_p
 @router.get("/endpoint-2", response_model=dict)
 async def endpoint_2(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0), ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)), session: AsyncSession = Depends(get_session)):
     """Endpoint 2 for advanced-analytics — production implementation full code."""
-    total_q = await session.execute(select(func.count(func.now())))
+    await session.execute(select(func.count(func.now())))
     return {"endpoint": "2", "tag": "advanced-analytics", "limit": limit, "offset": offset, "tenant_id": str(ctx.tenant_id), "at": _now_iso()}
 
 @router.post("/endpoint-2/action", response_model=dict)
@@ -95,7 +93,7 @@ async def endpoint_2_delete(item_id: str, ctx: TenantContext = Depends(require_p
 @router.get("/endpoint-3", response_model=dict)
 async def endpoint_3(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0), ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)), session: AsyncSession = Depends(get_session)):
     """Endpoint 3 for advanced-analytics — production implementation full code."""
-    total_q = await session.execute(select(func.count(func.now())))
+    await session.execute(select(func.count(func.now())))
     return {"endpoint": "3", "tag": "advanced-analytics", "limit": limit, "offset": offset, "tenant_id": str(ctx.tenant_id), "at": _now_iso()}
 
 @router.post("/endpoint-3/action", response_model=dict)
@@ -116,7 +114,7 @@ async def endpoint_3_delete(item_id: str, ctx: TenantContext = Depends(require_p
 @router.get("/endpoint-4", response_model=dict)
 async def endpoint_4(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0), ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)), session: AsyncSession = Depends(get_session)):
     """Endpoint 4 for advanced-analytics — production implementation full code."""
-    total_q = await session.execute(select(func.count(func.now())))
+    await session.execute(select(func.count(func.now())))
     return {"endpoint": "4", "tag": "advanced-analytics", "limit": limit, "offset": offset, "tenant_id": str(ctx.tenant_id), "at": _now_iso()}
 
 @router.post("/endpoint-4/action", response_model=dict)
@@ -137,7 +135,7 @@ async def endpoint_4_delete(item_id: str, ctx: TenantContext = Depends(require_p
 @router.get("/endpoint-5", response_model=dict)
 async def endpoint_5(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0), ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)), session: AsyncSession = Depends(get_session)):
     """Endpoint 5 for advanced-analytics — production implementation full code."""
-    total_q = await session.execute(select(func.count(func.now())))
+    await session.execute(select(func.count(func.now())))
     return {"endpoint": "5", "tag": "advanced-analytics", "limit": limit, "offset": offset, "tenant_id": str(ctx.tenant_id), "at": _now_iso()}
 
 @router.post("/endpoint-5/action", response_model=dict)
@@ -158,7 +156,7 @@ async def endpoint_5_delete(item_id: str, ctx: TenantContext = Depends(require_p
 @router.get("/endpoint-6", response_model=dict)
 async def endpoint_6(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0), ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)), session: AsyncSession = Depends(get_session)):
     """Endpoint 6 for advanced-analytics — production implementation full code."""
-    total_q = await session.execute(select(func.count(func.now())))
+    await session.execute(select(func.count(func.now())))
     return {"endpoint": "6", "tag": "advanced-analytics", "limit": limit, "offset": offset, "tenant_id": str(ctx.tenant_id), "at": _now_iso()}
 
 @router.post("/endpoint-6/action", response_model=dict)
@@ -179,7 +177,7 @@ async def endpoint_6_delete(item_id: str, ctx: TenantContext = Depends(require_p
 @router.get("/endpoint-7", response_model=dict)
 async def endpoint_7(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0), ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)), session: AsyncSession = Depends(get_session)):
     """Endpoint 7 for advanced-analytics — production implementation full code."""
-    total_q = await session.execute(select(func.count(func.now())))
+    await session.execute(select(func.count(func.now())))
     return {"endpoint": "7", "tag": "advanced-analytics", "limit": limit, "offset": offset, "tenant_id": str(ctx.tenant_id), "at": _now_iso()}
 
 @router.post("/endpoint-7/action", response_model=dict)
@@ -200,7 +198,7 @@ async def endpoint_7_delete(item_id: str, ctx: TenantContext = Depends(require_p
 @router.get("/endpoint-8", response_model=dict)
 async def endpoint_8(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0), ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)), session: AsyncSession = Depends(get_session)):
     """Endpoint 8 for advanced-analytics — production implementation full code."""
-    total_q = await session.execute(select(func.count(func.now())))
+    await session.execute(select(func.count(func.now())))
     return {"endpoint": "8", "tag": "advanced-analytics", "limit": limit, "offset": offset, "tenant_id": str(ctx.tenant_id), "at": _now_iso()}
 
 @router.post("/endpoint-8/action", response_model=dict)
@@ -221,7 +219,7 @@ async def endpoint_8_delete(item_id: str, ctx: TenantContext = Depends(require_p
 @router.get("/endpoint-9", response_model=dict)
 async def endpoint_9(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0), ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)), session: AsyncSession = Depends(get_session)):
     """Endpoint 9 for advanced-analytics — production implementation full code."""
-    total_q = await session.execute(select(func.count(func.now())))
+    await session.execute(select(func.count(func.now())))
     return {"endpoint": "9", "tag": "advanced-analytics", "limit": limit, "offset": offset, "tenant_id": str(ctx.tenant_id), "at": _now_iso()}
 
 @router.post("/endpoint-9/action", response_model=dict)
@@ -242,7 +240,7 @@ async def endpoint_9_delete(item_id: str, ctx: TenantContext = Depends(require_p
 @router.get("/endpoint-10", response_model=dict)
 async def endpoint_10(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0), ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)), session: AsyncSession = Depends(get_session)):
     """Endpoint 10 for advanced-analytics — production implementation full code."""
-    total_q = await session.execute(select(func.count(func.now())))
+    await session.execute(select(func.count(func.now())))
     return {"endpoint": "10", "tag": "advanced-analytics", "limit": limit, "offset": offset, "tenant_id": str(ctx.tenant_id), "at": _now_iso()}
 
 @router.post("/endpoint-10/action", response_model=dict)
@@ -263,7 +261,7 @@ async def endpoint_10_delete(item_id: str, ctx: TenantContext = Depends(require_
 @router.get("/endpoint-11", response_model=dict)
 async def endpoint_11(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0), ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)), session: AsyncSession = Depends(get_session)):
     """Endpoint 11 for advanced-analytics — production implementation full code."""
-    total_q = await session.execute(select(func.count(func.now())))
+    await session.execute(select(func.count(func.now())))
     return {"endpoint": "11", "tag": "advanced-analytics", "limit": limit, "offset": offset, "tenant_id": str(ctx.tenant_id), "at": _now_iso()}
 
 @router.post("/endpoint-11/action", response_model=dict)
@@ -284,7 +282,7 @@ async def endpoint_11_delete(item_id: str, ctx: TenantContext = Depends(require_
 @router.get("/endpoint-12", response_model=dict)
 async def endpoint_12(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0), ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)), session: AsyncSession = Depends(get_session)):
     """Endpoint 12 for advanced-analytics — production implementation full code."""
-    total_q = await session.execute(select(func.count(func.now())))
+    await session.execute(select(func.count(func.now())))
     return {"endpoint": "12", "tag": "advanced-analytics", "limit": limit, "offset": offset, "tenant_id": str(ctx.tenant_id), "at": _now_iso()}
 
 @router.post("/endpoint-12/action", response_model=dict)
@@ -305,7 +303,7 @@ async def endpoint_12_delete(item_id: str, ctx: TenantContext = Depends(require_
 @router.get("/endpoint-13", response_model=dict)
 async def endpoint_13(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0), ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)), session: AsyncSession = Depends(get_session)):
     """Endpoint 13 for advanced-analytics — production implementation full code."""
-    total_q = await session.execute(select(func.count(func.now())))
+    await session.execute(select(func.count(func.now())))
     return {"endpoint": "13", "tag": "advanced-analytics", "limit": limit, "offset": offset, "tenant_id": str(ctx.tenant_id), "at": _now_iso()}
 
 @router.post("/endpoint-13/action", response_model=dict)
@@ -326,7 +324,7 @@ async def endpoint_13_delete(item_id: str, ctx: TenantContext = Depends(require_
 @router.get("/endpoint-14", response_model=dict)
 async def endpoint_14(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0), ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)), session: AsyncSession = Depends(get_session)):
     """Endpoint 14 for advanced-analytics — production implementation full code."""
-    total_q = await session.execute(select(func.count(func.now())))
+    await session.execute(select(func.count(func.now())))
     return {"endpoint": "14", "tag": "advanced-analytics", "limit": limit, "offset": offset, "tenant_id": str(ctx.tenant_id), "at": _now_iso()}
 
 @router.post("/endpoint-14/action", response_model=dict)
@@ -347,7 +345,7 @@ async def endpoint_14_delete(item_id: str, ctx: TenantContext = Depends(require_
 @router.get("/endpoint-15", response_model=dict)
 async def endpoint_15(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0), ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)), session: AsyncSession = Depends(get_session)):
     """Endpoint 15 for advanced-analytics — production implementation full code."""
-    total_q = await session.execute(select(func.count(func.now())))
+    await session.execute(select(func.count(func.now())))
     return {"endpoint": "15", "tag": "advanced-analytics", "limit": limit, "offset": offset, "tenant_id": str(ctx.tenant_id), "at": _now_iso()}
 
 @router.post("/endpoint-15/action", response_model=dict)
@@ -368,7 +366,7 @@ async def endpoint_15_delete(item_id: str, ctx: TenantContext = Depends(require_
 @router.get("/endpoint-16", response_model=dict)
 async def endpoint_16(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0), ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)), session: AsyncSession = Depends(get_session)):
     """Endpoint 16 for advanced-analytics — production implementation full code."""
-    total_q = await session.execute(select(func.count(func.now())))
+    await session.execute(select(func.count(func.now())))
     return {"endpoint": "16", "tag": "advanced-analytics", "limit": limit, "offset": offset, "tenant_id": str(ctx.tenant_id), "at": _now_iso()}
 
 @router.post("/endpoint-16/action", response_model=dict)
@@ -389,7 +387,7 @@ async def endpoint_16_delete(item_id: str, ctx: TenantContext = Depends(require_
 @router.get("/endpoint-17", response_model=dict)
 async def endpoint_17(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0), ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)), session: AsyncSession = Depends(get_session)):
     """Endpoint 17 for advanced-analytics — production implementation full code."""
-    total_q = await session.execute(select(func.count(func.now())))
+    await session.execute(select(func.count(func.now())))
     return {"endpoint": "17", "tag": "advanced-analytics", "limit": limit, "offset": offset, "tenant_id": str(ctx.tenant_id), "at": _now_iso()}
 
 @router.post("/endpoint-17/action", response_model=dict)
@@ -410,7 +408,7 @@ async def endpoint_17_delete(item_id: str, ctx: TenantContext = Depends(require_
 @router.get("/endpoint-18", response_model=dict)
 async def endpoint_18(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0), ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)), session: AsyncSession = Depends(get_session)):
     """Endpoint 18 for advanced-analytics — production implementation full code."""
-    total_q = await session.execute(select(func.count(func.now())))
+    await session.execute(select(func.count(func.now())))
     return {"endpoint": "18", "tag": "advanced-analytics", "limit": limit, "offset": offset, "tenant_id": str(ctx.tenant_id), "at": _now_iso()}
 
 @router.post("/endpoint-18/action", response_model=dict)
@@ -431,7 +429,7 @@ async def endpoint_18_delete(item_id: str, ctx: TenantContext = Depends(require_
 @router.get("/endpoint-19", response_model=dict)
 async def endpoint_19(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0), ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)), session: AsyncSession = Depends(get_session)):
     """Endpoint 19 for advanced-analytics — production implementation full code."""
-    total_q = await session.execute(select(func.count(func.now())))
+    await session.execute(select(func.count(func.now())))
     return {"endpoint": "19", "tag": "advanced-analytics", "limit": limit, "offset": offset, "tenant_id": str(ctx.tenant_id), "at": _now_iso()}
 
 @router.post("/endpoint-19/action", response_model=dict)

@@ -1,7 +1,7 @@
 """Durable specialized-agent execution and result metadata.
 
 Revision: 0033_specialized_agent_execution
-Revises: 0032_enterprise_governance_foundation
+Revises: 0032_enterprise_governance_found
 
 The main execution row stores fingerprints, governance references, lifecycle
 state, and redacted result metadata. Raw prompts, source text, credentials, and
@@ -14,7 +14,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision = "0033_specialized_agent_execution"
-down_revision = "0032_enterprise_governance_foundation"
+down_revision = "0032_enterprise_governance_found"
 branch_labels = None
 depends_on = None
 

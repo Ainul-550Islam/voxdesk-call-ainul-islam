@@ -1,7 +1,7 @@
 """Enterprise missing APIs closure — batch calls, A/B testing, PCAP, retention, webhooks, Salesforce, KB collections, simulation, tool registry, workflow triggers, multichannel, call policies, analysis, backfill, live sessions, DNC
 
 Revision ID: 0037_enterprise_missing_apis
-Revises: 0036_runtime_deployment_observability
+Revises: 0036_runtime_deployment_observ
 Create Date: 2026-09-29
 """
 from __future__ import annotations
@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 from alembic import op
 
 revision = "0037_enterprise_missing_apis"
-down_revision = "0036_runtime_deployment_observability"
+down_revision = "0036_runtime_deployment_observ"
 branch_labels = None
 depends_on = None
 

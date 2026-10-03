@@ -4,7 +4,7 @@ Prompt versions, model policy, evaluation datasets and an admission counter.
 No provider API key is stored. Billing usage events are not copied.
 
 Revision ID: 0021_ai_governance
-Revises: 0020_durable_enterprise_operations
+Revises: 0020_durable_enterprise_ops
 """
 
 from __future__ import annotations
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision = "0021_ai_governance"
-down_revision = "0020_durable_enterprise_operations"
+down_revision = "0020_durable_enterprise_ops"
 branch_labels = None
 depends_on = None
 

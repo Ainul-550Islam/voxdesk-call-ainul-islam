@@ -23,11 +23,13 @@ jobs:
           python-version: "3.12"
 
       # SAST: bandit only scans our code (app/, scripts/) — never vendored
-      # dependencies, so it stays fast and actionable.
+      # dependencies, so it stays fast and actionable. The skip list lives in
+      # pyproject.toml [tool.bandit] (each skip carries its review rationale)
+      # and is passed explicitly: bandit does not auto-discover pyproject.toml.
       - name: Bandit (Python SAST)
         run: |
           pip install bandit
-          bandit -r app scripts -q
+          bandit -c pyproject.toml -r app scripts -q
 
   dependency-audit:
     runs-on: ubuntu-latest

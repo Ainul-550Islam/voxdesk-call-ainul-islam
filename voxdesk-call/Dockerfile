@@ -42,6 +42,16 @@ COPY alembic.ini .
 COPY scripts ./scripts
 COPY --from=dashboard-build /srv/dist ./dashboard/dist
 
+# Test configuration (FIX): pytest reads its options from pytest.ini — most
+# importantly `asyncio_mode = auto`. Without this file in the image, pytest runs
+# in its STRICT default and every plain `@pytest.fixture async def corpus(db, tenant_a, tenant_b):` fixture
+# is handed to the test as an un-awaited coroutine instead of its value, which
+# showed up as 35 spurious failures in tests/evals/rag plus further errors
+# elsewhere. With the file present the same suite passes. Keeping it in the
+# image means `docker compose exec api python -m pytest` behaves exactly like CI
+# instead of silently testing something else.
+COPY pytest.ini pyproject.toml ./
+
 # Unprivileged runtime user; writable dirs for the local knowledge backend and
 # mounted secrets.
 RUN useradd --create-home --uid 10001 appuser \

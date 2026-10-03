@@ -12,10 +12,18 @@ dist/
 # Database dumps and backup artifacts: they contain the whole business,
 # calls and PII included, and must never be committable even by accident.
 backups/
+backups-staging/
 *.dump
 *.pem
 *.key
 .netrc
+
+# Staging's own env file. docker-compose.staging.yml tells operators to create
+# it with REAL staging credentials (DB password, JWT secret, Twilio test
+# numbers), so it must be ignored exactly like .env — while the template
+# (.env.staging.example) stays tracked for copying. The API image build never
+# sees it either (.dockerignore carries the same rule via `.env.*`).
+.env.staging
 
 # Local tooling state.
 .idea/
