@@ -1,0 +1,8 @@
+{
+  "restored_1a_commit": "63348f2ace5362c4bb6d5f65c4b0c3802789c7e8",
+  "staged_ab3_unchanged": true,
+  "staged_patch_sha256": "d6381eee5322f484ca1ebfdb3a1ff42450ca7a29ba970f1b2eee98a650d65b10",
+  "current_1c_runtime": "applied to main working tree, uncommitted until full 1C completion",
+  "migration_head": "0051_post_call_pipeline",
+  "deployment": "isolated local validation only; no production deployment"
+}

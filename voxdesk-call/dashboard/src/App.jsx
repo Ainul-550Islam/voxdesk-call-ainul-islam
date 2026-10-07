@@ -50,6 +50,7 @@ import Calls from './pages/Calls'
 import Campaigns from './pages/Campaigns'
 import Billing from './pages/Billing'
 import Audit from './pages/Audit'
+import EnterpriseSecuritySettings from './pages/security/EnterpriseSecuritySettings'
 import Team from './pages/Team'
 import Integrations from './pages/Integrations'
 import Knowledge from './pages/Knowledge'
@@ -208,6 +209,15 @@ const ROUTES = [
     title: 'Audit log',
     permission: P.AUDIT_READ,
     render: (props) => <Audit {...props} />,
+  },
+  {
+    // Session management is available to every signed-in user. Tenant policy,
+    // role inventory, and API-key controls remain permission-gated inside the
+    // page and enforced again by the corresponding backend endpoints.
+    pattern: '/security-settings',
+    title: 'Security & sessions',
+    permission: P.TENANT_READ,
+    render: (props) => <EnterpriseSecuritySettings {...props} />,
   },
   {
     // PUBLIC product page also accessible via hash for legacy dashboard entry — real backend data, no fake.

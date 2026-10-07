@@ -1,0 +1,11 @@
+# Shrink-only facade register; each entry must retain a detected marker.
+app/api/batch_call_routes.py
+app/api/crm_writeback_routes.py
+app/api/live_monitoring_routes.py
+app/api/multichannel_routes.py
+app/api/outbound_call_routes.py
+app/api/post_call_analysis_routes.py
+app/api/retention_routes.py
+app/api/salesforce_routes.py
+app/api/webhook_lifecycle_routes.py
+app/integrations/connector.py

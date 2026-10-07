@@ -1,0 +1,11 @@
+[2m2026-10-05T11:45:53.534784Z[0m [[32m[1minfo     [0m] [1mdashboard.not_built           [0m [36mcanonical[0m=[35mdashboard (Vite)[0m [36mdist_dir[0m=[35m/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/dist[0m [36mshadow_next_present[0m=[35mFalse[0m
+TIMESTAMP_DHAKA=2026-10-05T17:45:53.546101+06:00
+ENTRYPOINT=import app.main (standard application import order); SERVICE=disposable local PostgreSQL 17.11 + Redis 8.0.2
+[2m2026-10-05T11:45:53.884638Z[0m [[32m[1minfo     [0m] [1mruntime.dependency_observed   [0m [36mcomponent[0m=[35mdatabase[0m [36mconfigured[0m=[35mTrue[0m [36mlatency_ms[0m=[35m323.8[0m [36mok[0m=[35mTrue[0m [36mreason[0m=[35mNone[0m
+[2m2026-10-05T11:45:53.964183Z[0m [[32m[1minfo     [0m] [1mruntime.dependency_observed   [0m [36mcomponent[0m=[35mredis[0m [36mconfigured[0m=[35mTrue[0m [36mlatency_ms[0m=[35m78.94[0m [36mok[0m=[35mTrue[0m [36mreason[0m=[35mNone[0m
+LIVE_OK database=True; redis=True; provider_probes=not_checked; external_reachability_verified=False
+[2m2026-10-05T11:45:53.970998Z[0m [[32m[1minfo     [0m] [1mruntime.dependency_observed   [0m [36mcomponent[0m=[35mdatabase[0m [36mconfigured[0m=[35mTrue[0m [36mlatency_ms[0m=[35m3.64[0m [36mok[0m=[35mTrue[0m [36mreason[0m=[35mNone[0m
+[2m2026-10-05T11:45:53.972560Z[0m [[33m[1mwarning  [0m] [1mcache.ping_failed             [0m [36merror_type[0m=[35mConnectionError[0m
+[2m2026-10-05T11:45:53.972897Z[0m [[32m[1minfo     [0m] [1mruntime.dependency_observed   [0m [36mcomponent[0m=[35mredis[0m [36mconfigured[0m=[35mTrue[0m [36mlatency_ms[0m=[35m1.46[0m [36mok[0m=[35mFalse[0m [36mreason[0m=[35mcache probe failed[0m
+FAILED_REDIS_PROBE database=True; configured=True; reachable=False; cache_state=unavailable; overall=unavailable
+RESULT=PASS: health only reports Redis reachable after PING; an unreachable configured Redis makes health unavailable.

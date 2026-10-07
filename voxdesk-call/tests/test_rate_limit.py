@@ -73,11 +73,14 @@ async def test_middleware_passes_through_when_disabled(monkeypatch):
             assert (await ac.get("/api/tenants")).status_code == 200
 
 
-def test_client_ip_uses_forwarded_header():
+def test_client_ip_ignores_untrusted_forwarded_header():
+    from types import SimpleNamespace
     from starlette.datastructures import Headers
 
     class FakeRequest:
         headers = Headers({"x-forwarded-for": "1.2.3.4, 10.0.0.1"})
-        client = None
+        client = SimpleNamespace(host="10.0.0.1")
 
-    assert client_ip(FakeRequest()) == "1.2.3.4"
+    # Only trusted-proxy middleware may rewrite request.client; an arbitrary
+    # X-Forwarded-For header from a direct caller is not authoritative.
+    assert client_ip(FakeRequest()) == "10.0.0.1"

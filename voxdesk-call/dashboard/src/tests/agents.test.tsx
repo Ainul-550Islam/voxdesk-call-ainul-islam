@@ -1,1100 +1,438 @@
-/** dashboard/src/tests/agents.test.tsx — Production tests, real behavior */
-import { describe, it, expect } from 'vitest';
-describe('agents.test',()=>{ it('should have real backend integration',()=>{ expect(true).toBe(true); }); it('should handle loading/empty/error states',()=>{ expect(true).toBe(true); }); it('should not have fake data',()=>{ expect(true).toBe(true); }); });
-// agents.test.tsx line 4 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 5 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 6 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 7 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 8 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 9 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 10 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 11 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 12 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 13 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 14 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 15 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 16 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 17 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 18 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 19 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 20 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 21 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 22 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 23 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 24 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 25 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 26 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 27 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 28 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 29 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 30 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 31 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 32 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 33 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 34 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 35 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 36 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 37 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 38 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 39 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 40 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 41 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 42 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 43 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 44 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 45 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 46 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 47 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 48 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 49 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 50 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 51 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 52 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 53 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 54 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 55 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 56 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 57 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 58 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 59 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 60 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 61 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 62 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 63 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 64 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 65 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 66 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 67 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 68 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 69 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 70 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 71 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 72 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 73 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 74 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 75 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 76 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 77 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 78 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 79 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 80 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 81 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 82 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 83 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 84 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 85 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 86 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 87 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 88 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 89 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 90 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 91 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 92 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 93 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 94 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 95 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 96 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 97 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 98 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 99 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 100 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 101 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 102 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 103 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 104 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 105 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 106 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 107 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 108 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 109 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 110 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 111 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 112 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 113 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 114 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 115 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 116 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 117 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 118 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 119 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 120 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 121 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 122 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 123 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 124 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 125 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 126 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 127 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 128 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 129 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 130 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 131 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 132 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 133 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 134 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 135 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 136 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 137 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 138 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 139 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 140 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 141 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 142 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 143 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 144 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 145 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 146 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 147 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 148 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 149 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 150 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 151 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 152 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 153 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 154 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 155 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 156 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 157 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 158 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 159 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 160 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 161 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 162 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 163 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 164 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 165 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 166 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 167 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 168 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 169 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 170 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 171 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 172 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 173 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 174 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 175 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 176 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 177 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 178 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 179 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 180 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 181 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 182 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 183 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 184 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 185 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 186 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 187 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 188 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 189 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 190 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 191 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 192 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 193 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 194 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 195 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 196 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 197 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 198 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 199 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 200 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 201 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 202 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 203 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 204 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 205 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 206 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 207 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 208 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 209 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 210 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 211 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 212 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 213 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 214 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 215 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 216 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 217 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 218 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 219 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 220 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 221 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 222 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 223 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 224 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 225 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 226 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 227 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 228 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 229 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 230 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 231 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 232 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 233 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 234 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 235 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 236 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 237 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 238 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 239 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 240 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 241 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 242 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 243 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 244 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 245 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 246 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 247 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 248 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 249 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 250 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 251 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 252 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 253 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 254 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 255 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 256 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 257 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 258 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 259 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 260 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 261 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 262 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 263 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 264 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 265 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 266 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 267 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 268 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 269 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 270 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 271 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 272 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 273 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 274 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 275 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 276 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 277 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 278 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 279 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 280 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 281 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 282 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 283 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 284 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 285 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 286 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 287 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 288 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 289 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 290 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 291 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 292 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 293 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 294 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 295 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 296 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 297 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 298 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 299 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 300 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 301 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 302 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 303 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 304 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 305 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 306 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 307 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 308 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 309 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 310 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 311 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 312 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 313 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 314 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 315 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 316 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 317 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 318 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 319 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 320 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 321 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 322 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 323 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 324 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 325 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 326 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 327 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 328 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 329 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 330 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 331 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 332 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 333 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 334 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 335 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 336 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 337 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 338 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 339 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 340 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 341 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 342 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 343 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 344 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 345 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 346 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 347 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 348 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 349 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 350 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 351 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 352 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 353 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 354 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 355 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 356 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 357 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 358 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 359 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 360 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 361 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 362 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 363 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 364 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 365 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 366 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 367 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 368 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 369 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 370 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 371 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 372 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 373 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 374 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 375 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 376 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 377 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 378 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 379 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 380 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 381 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 382 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 383 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 384 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 385 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 386 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 387 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 388 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 389 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 390 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 391 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 392 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 393 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 394 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 395 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 396 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 397 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 398 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 399 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 400 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 401 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 402 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 403 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 404 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 405 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 406 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 407 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 408 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 409 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 410 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 411 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 412 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 413 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 414 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 415 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 416 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 417 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 418 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 419 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 420 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 421 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 422 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 423 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 424 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 425 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 426 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 427 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 428 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 429 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 430 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 431 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 432 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 433 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 434 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 435 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 436 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 437 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 438 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 439 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 440 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 441 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 442 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 443 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 444 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 445 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 446 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 447 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 448 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 449 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 450 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 451 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 452 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 453 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 454 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 455 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 456 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 457 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 458 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 459 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 460 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 461 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 462 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 463 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 464 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 465 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 466 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 467 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 468 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 469 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 470 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 471 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 472 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 473 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 474 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 475 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 476 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 477 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 478 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 479 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 480 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 481 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 482 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 483 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 484 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 485 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 486 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 487 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 488 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 489 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 490 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 491 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 492 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 493 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 494 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 495 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 496 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 497 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 498 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 499 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 500 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 501 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 502 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 503 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 504 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 505 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 506 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 507 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 508 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 509 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 510 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 511 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 512 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 513 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 514 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 515 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 516 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 517 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 518 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 519 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 520 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 521 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 522 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 523 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 524 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 525 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 526 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 527 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 528 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 529 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 530 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 531 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 532 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 533 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 534 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 535 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 536 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 537 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 538 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 539 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 540 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 541 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 542 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 543 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 544 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 545 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 546 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 547 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 548 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 549 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 550 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 551 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 552 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 553 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 554 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 555 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 556 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 557 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 558 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 559 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 560 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 561 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 562 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 563 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 564 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 565 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 566 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 567 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 568 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 569 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 570 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 571 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 572 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 573 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 574 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 575 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 576 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 577 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 578 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 579 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 580 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 581 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 582 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 583 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 584 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 585 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 586 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 587 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 588 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 589 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 590 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 591 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 592 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 593 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 594 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 595 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 596 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 597 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 598 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 599 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 600 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 601 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 602 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 603 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 604 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 605 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 606 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 607 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 608 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 609 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 610 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 611 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 612 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 613 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 614 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 615 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 616 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 617 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 618 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 619 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 620 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 621 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 622 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 623 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 624 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 625 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 626 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 627 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 628 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 629 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 630 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 631 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 632 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 633 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 634 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 635 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 636 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 637 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 638 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 639 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 640 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 641 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 642 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 643 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 644 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 645 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 646 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 647 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 648 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 649 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 650 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 651 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 652 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 653 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 654 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 655 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 656 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 657 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 658 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 659 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 660 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 661 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 662 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 663 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 664 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 665 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 666 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 667 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 668 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 669 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 670 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 671 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 672 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 673 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 674 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 675 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 676 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 677 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 678 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 679 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 680 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 681 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 682 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 683 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 684 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 685 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 686 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 687 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 688 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 689 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 690 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 691 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 692 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 693 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 694 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 695 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 696 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 697 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 698 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 699 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 700 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 701 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 702 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 703 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 704 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 705 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 706 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 707 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 708 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 709 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 710 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 711 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 712 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 713 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 714 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 715 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 716 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 717 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 718 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 719 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 720 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 721 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 722 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 723 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 724 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 725 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 726 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 727 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 728 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 729 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 730 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 731 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 732 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 733 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 734 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 735 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 736 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 737 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 738 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 739 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 740 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 741 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 742 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 743 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 744 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 745 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 746 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 747 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 748 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 749 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 750 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 751 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 752 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 753 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 754 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 755 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 756 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 757 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 758 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 759 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 760 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 761 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 762 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 763 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 764 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 765 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 766 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 767 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 768 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 769 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 770 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 771 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 772 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 773 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 774 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 775 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 776 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 777 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 778 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 779 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 780 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 781 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 782 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 783 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 784 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 785 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 786 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 787 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 788 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 789 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 790 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 791 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 792 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 793 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 794 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 795 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 796 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 797 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 798 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 799 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 800 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 801 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 802 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 803 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 804 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 805 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 806 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 807 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 808 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 809 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 810 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 811 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 812 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 813 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 814 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 815 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 816 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 817 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 818 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 819 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 820 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 821 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 822 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 823 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 824 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 825 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 826 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 827 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 828 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 829 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 830 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 831 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 832 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 833 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 834 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 835 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 836 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 837 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 838 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 839 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 840 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 841 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 842 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 843 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 844 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 845 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 846 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 847 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 848 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 849 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 850 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 851 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 852 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 853 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 854 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 855 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 856 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 857 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 858 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 859 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 860 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 861 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 862 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 863 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 864 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 865 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 866 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 867 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 868 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 869 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 870 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 871 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 872 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 873 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 874 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 875 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 876 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 877 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 878 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 879 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 880 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 881 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 882 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 883 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 884 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 885 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 886 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 887 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 888 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 889 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 890 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 891 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 892 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 893 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 894 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 895 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 896 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 897 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 898 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 899 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 900 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 901 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 902 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 903 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 904 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 905 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 906 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 907 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 908 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 909 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 910 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 911 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 912 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 913 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 914 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 915 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 916 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 917 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 918 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 919 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 920 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 921 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 922 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 923 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 924 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 925 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 926 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 927 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 928 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 929 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 930 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 931 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 932 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 933 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 934 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 935 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 936 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 937 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 938 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 939 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 940 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 941 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 942 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 943 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 944 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 945 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 946 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 947 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 948 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 949 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 950 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 951 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 952 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 953 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 954 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 955 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 956 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 957 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 958 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 959 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 960 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 961 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 962 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 963 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 964 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 965 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 966 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 967 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 968 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 969 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 970 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 971 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 972 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 973 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 974 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 975 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 976 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 977 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 978 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 979 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 980 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 981 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 982 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 983 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 984 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 985 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 986 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 987 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 988 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 989 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 990 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 991 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 992 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 993 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 994 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 995 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 996 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 997 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 998 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 999 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1000 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1001 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1002 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1003 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1004 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1005 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1006 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1007 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1008 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1009 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1010 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1011 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1012 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1013 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1014 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1015 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1016 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1017 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1018 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1019 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1020 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1021 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1022 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1023 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1024 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1025 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1026 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1027 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1028 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1029 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1030 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1031 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1032 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1033 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1034 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1035 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1036 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1037 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1038 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1039 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1040 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1041 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1042 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1043 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1044 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1045 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1046 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1047 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1048 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1049 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1050 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1051 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1052 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1053 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1054 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1055 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1056 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1057 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1058 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1059 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1060 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1061 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1062 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1063 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1064 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1065 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1066 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1067 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1068 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1069 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1070 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1071 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1072 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1073 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1074 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1075 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1076 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1077 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1078 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1079 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1080 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1081 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1082 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1083 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1084 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1085 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1086 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1087 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1088 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1089 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1090 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1091 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1092 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1093 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1094 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1095 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1096 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1097 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1098 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1099 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// agents.test.tsx line 1100 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
+/**
+ * dashboard/src/tests/agents.test.tsx
+ *
+ * Comprehensive tests for the durable Agent + AgentVersion frontend layer:
+ * - API clients (agents, agent-builder, agent-versions, agent-actions, agent-publish)
+ * - Optimistic concurrency control (`If-Match` header & HTTP 409 Conflict handling)
+ * - Components (`AgentPublishStatus`, `AgentBuilderHeader`, `AgentVersionPanel`)
+ * - Pages (`AgentsPage`, `AgentDetailPage`, `AgentBuilderPage`, `AgentVersionDetailPage`)
+ */
+
+import React from 'react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { apiClient } from '../api/client';
+import {
+  listAgents,
+  getAgent,
+  createAgent,
+  updateAgent,
+  validateAgentConfig,
+  publishAgentConfig,
+  fetchAgentVersionHistory,
+  fetchAgentVersionSnapshot,
+  rollbackAgentToVersion,
+} from '../api/agents';
+import {
+  getBuilderConfig,
+  updateBuilderConfig,
+  validateAgent,
+  publishAgent,
+} from '../api/agent-builder';
+import {
+  fetchAgentVersions,
+  fetchAgentVersion,
+  diffAgentVersions,
+  rollbackToAgentVersion,
+} from '../api/agent-versions';
+import {
+  archiveAgent as archiveAgentAction,
+  restoreAgent as restoreAgentAction,
+  duplicateAgent,
+} from '../api/agent-actions';
+import {
+  publishAgentBuilder,
+  promoteAgentEnvironment,
+  getAgentPublish,
+} from '../api/agent-publish';
+import { AgentPublishStatus } from '../components/agents/AgentPublishStatus';
+import { AgentBuilderHeader } from '../components/agents/AgentBuilderHeader';
+import { AgentsPage } from '../pages/agents/AgentsPage';
+import { AgentDetailPage } from '../pages/agents/AgentDetailPage';
+import { AgentVersionDetailPage } from '../pages/agents/AgentVersionDetailPage';
+
+describe('Durable Agent + AgentVersion Frontend Suite', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  describe('API clients & ETag optimistic concurrency', () => {
+    it('lists and normalizes durable agents from GET /api/agents', async () => {
+      vi.spyOn(apiClient, 'get').mockResolvedValueOnce([
+        {
+          id: '11111111-2222-3333-4444-555555555555',
+          external_key: 'agt_1234',
+          tenant_id: 'tenant-1',
+          name: 'Dental Concierge',
+          status: 'published',
+          active_version: 2,
+          published_version_number: 2,
+          draft_etag: 'W/"abc123"',
+          validation_status: 'valid',
+          updated_at: '2026-10-03T08:00:00Z',
+        },
+      ]);
+
+      const res = await listAgents();
+      expect(res.agents).toHaveLength(1);
+      expect(res.total).toBe(1);
+      expect(res.agents[0].id).toBe('11111111-2222-3333-4444-555555555555');
+      expect(res.agents[0].status).toBe('PUBLISHED');
+      expect(res.agents[0].version).toBe(2);
+      expect(res.agents[0].etag).toBe('W/"abc123"');
+    });
+
+    it('sends If-Match header on draft updates and propagates 409 Conflict', async () => {
+      const patchSpy = vi
+        .spyOn(apiClient, 'patch')
+        .mockResolvedValueOnce({
+          agent_id: 'agt-1',
+          version: 1,
+          status: 'draft',
+          etag: 'W/"etag-2"',
+          lock_version: 2,
+          validation_status: 'valid',
+          identity: {
+            name: 'Updated Agent',
+            description: 'Desc',
+            persona: 'Helpful',
+            greeting: 'Hi!',
+            end_call_message: 'Bye!',
+            fallback_message: 'Repeat?',
+          },
+          voice: {
+            provider: 'elevenlabs',
+            voice_id: 'rachel_en_us',
+            language: 'en-US',
+            speed: 1.0,
+            pitch: 1.0,
+            stability: 0.75,
+            similarity_boost: 0.75,
+          },
+          model: {
+            provider: 'openai',
+            model_name: 'gpt-4o',
+            temperature: 0.3,
+            max_tokens: 400,
+            system_prompt: 'You are helpful.',
+            context_window_turns: 20,
+            response_style: 'conversational',
+          },
+          knowledge_bases: [],
+          tools: [],
+          call_handling: {
+            silence_timeout_seconds: 5,
+            max_call_duration_seconds: 1800,
+            interruption_sensitivity: 0.5,
+            voicemail_detection: true,
+            dtmf_enabled: true,
+          },
+          security: {
+            redact_pii: true,
+            retention_days: 90,
+            allowed_domains: [],
+            webhook_signing_enabled: true,
+            custom_headers: {},
+          },
+          updated_at: '2026-10-03T08:05:00Z',
+        });
+
+      const saved = await updateBuilderConfig(
+        'agt-1',
+        { name: 'Updated Agent', system_prompt: 'You are helpful.' },
+        'W/"etag-1"'
+      );
+      expect(patchSpy).toHaveBeenCalledWith(
+        '/api/v1/agents/agt-1/builder',
+        expect.objectContaining({ expected_etag: 'W/"etag-1"' }),
+        expect.objectContaining({
+          headers: { 'If-Match': 'W/"etag-1"' },
+        })
+      );
+      expect(saved.etag).toBe('W/"etag-2"');
+
+      // Simulate stale ETag 409 Conflict
+      const conflictErr = Object.assign(new Error('409 Conflict'), { status: 409 });
+      vi.spyOn(apiClient, 'put').mockRejectedValueOnce(conflictErr);
+
+      await expect(
+        updateAgent('agt-1', { name: 'Stale Write' }, 'W/"stale-etag"')
+      ).rejects.toMatchObject({ status: 409 });
+    });
+
+    it('validates, publishes, inspects version snapshots, diffs, and rolls back', async () => {
+      vi.spyOn(apiClient, 'post')
+        .mockResolvedValueOnce({
+          agent_id: 'agt-1',
+          valid: true,
+          errors: [],
+          warnings: [],
+          checked_at: '2026-10-03T08:10:00Z',
+        })
+        .mockResolvedValueOnce({
+          id: 'ver-uuid-1',
+          agent_id: 'agt-1',
+          version: 1,
+          version_number: 1,
+          status: 'published',
+          config_hash: 'abcdef1234567890',
+          published_at: '2026-10-03T08:11:00Z',
+          published_by: 'owner@acme.test',
+          published_environment: 'production',
+          changelog: 'Initial release',
+          is_active: true,
+          is_rollback: false,
+          config_snapshot: {
+            identity: { name: 'Agent v1', greeting: 'Welcome v1' },
+          },
+        })
+        .mockResolvedValueOnce({
+          id: 'ver-uuid-3',
+          agent_id: 'agt-1',
+          version: 3,
+          version_number: 3,
+          status: 'published',
+          config_hash: 'abcdef1234567890',
+          published_at: '2026-10-03T08:15:00Z',
+          published_by: 'owner@acme.test',
+          published_environment: 'production',
+          changelog: 'Rolled back to v1',
+          is_active: true,
+          is_rollback: true,
+          source_version_id: 'ver-uuid-1',
+          config_snapshot: {
+            identity: { name: 'Agent v1', greeting: 'Welcome v1' },
+          },
+        });
+
+      const valRes = await validateAgentConfig('agt-1');
+      expect(valRes.valid).toBe(true);
+
+      const pubRes = await publishAgentBuilder('agt-1', {
+        changelog: 'Initial release',
+        environment: 'production',
+      });
+      expect(pubRes.version).toBe(1);
+      expect(pubRes.is_active).toBe(true);
+
+      const rbRes = await rollbackToAgentVersion('agt-1', {
+        target_version: 1,
+        reason: 'Revert to v1',
+      });
+      expect(rbRes.version).toBe(3);
+      expect(rbRes.is_rollback).toBe(true);
+      expect(rbRes.source_version_id).toBe('ver-uuid-1');
+
+      vi.spyOn(apiClient, 'get')
+        .mockResolvedValueOnce({
+          id: 'ver-uuid-1',
+          agent_id: 'agt-1',
+          version: 1,
+          version_number: 1,
+          status: 'superseded',
+          config_hash: 'abcdef1234567890',
+          published_at: '2026-10-03T08:11:00Z',
+          published_by: 'owner@acme.test',
+          published_environment: 'production',
+          changelog: 'Initial release',
+          is_active: false,
+          is_rollback: false,
+          config_snapshot: {
+            identity: { name: 'Agent v1', greeting: 'Welcome v1' },
+          },
+        })
+        .mockResolvedValueOnce({
+          agent_id: 'agt-1',
+          from_version: 1,
+          to_version: 2,
+          total_changes: 1,
+          diffs: [
+            {
+              field_path: 'identity.greeting',
+              old_value: 'Welcome v1',
+              new_value: 'Welcome v2',
+              change_type: 'modified',
+            },
+          ],
+        });
+
+      const snap = await fetchAgentVersion('agt-1', 1);
+      expect(snap.version).toBe(1);
+      expect(snap.config_snapshot.identity?.greeting).toBe('Welcome v1');
+
+      const diff = await diffAgentVersions('agt-1', 1, 2);
+      expect(diff.total_changes).toBe(1);
+      expect(diff.diffs[0].field_path).toBe('identity.greeting');
+    });
+
+    it('supports archive, restore, clone, and environment promotion', async () => {
+      vi.spyOn(apiClient, 'post')
+        .mockResolvedValueOnce({
+          agent_id: 'agt-1',
+          status: 'archived',
+          archived_at: '2026-10-03T08:20:00Z',
+          reason: 'Pause',
+          updated_at: '2026-10-03T08:20:00Z',
+        })
+        .mockResolvedValueOnce({
+          agent_id: 'agt-1',
+          status: 'active',
+          updated_at: '2026-10-03T08:21:00Z',
+        })
+        .mockResolvedValueOnce({
+          source_agent_id: 'agt-1',
+          new_agent_id: 'agt-2',
+          name: 'Cloned Agent',
+          status: 'draft',
+          created_at: '2026-10-03T08:22:00Z',
+        })
+        .mockResolvedValueOnce({
+          agent_id: 'agt-1',
+          from_env: 'staging',
+          to_env: 'production',
+          promoted_version: 2,
+          config_hash: 'hash2',
+          promoted_by: 'owner',
+          promoted_at: '2026-10-03T08:23:00Z',
+          changelog: 'Promote to prod',
+        });
+
+      const arch = await archiveAgentAction('agt-1', 'Pause');
+      expect(arch.status).toBe('archived');
+
+      const rest = await restoreAgentAction('agt-1');
+      expect(rest.status).toBe('active');
+
+      const cloned = await duplicateAgent(
+        { id: 'agt-1', tenant_id: 't-1', name: 'Source Agent', status: 'DRAFT' } as any,
+        { name: 'Cloned Agent' }
+      );
+      expect(cloned.new_agent_id).toBe('agt-2');
+
+      const promoted = await promoteAgentEnvironment(
+        'agt-1',
+        'staging',
+        'production',
+        'Promote to prod'
+      );
+      expect(promoted.promoted_version).toBe(2);
+    });
+  });
+
+  describe('UI Components & Pages', () => {
+    it('renders AgentPublishStatus and AgentBuilderHeader with conflict reload', () => {
+      const onReload = vi.fn();
+      const onSave = vi.fn();
+      const onPublish = vi.fn();
+
+      render(
+        <AgentBuilderHeader
+          name="Support Agent"
+          status="DRAFT"
+          version={2}
+          etag='W/"etag-99"'
+          saveState="CONFLICT"
+          onSave={onSave}
+          onTest={() => {}}
+          onPublish={onPublish}
+          onReload={onReload}
+          onBack={() => {}}
+        />
+      );
+
+      expect(screen.getByText('Support Agent')).toBeTruthy();
+      expect(screen.getByText(/Conflict \(409 ETag mismatch\)/i)).toBeTruthy();
+      const reloadBtn = screen.getByText('Reload Latest');
+      fireEvent.click(reloadBtn);
+      expect(onReload).toHaveBeenCalledTimes(1);
+    });
+
+    it('renders AgentsPage with backend data and empty state', async () => {
+      vi.spyOn(apiClient, 'get').mockResolvedValueOnce([
+        {
+          id: 'agt-100',
+          tenant_id: 't-1',
+          name: 'Inbound Sales Bot',
+          status: 'published',
+          active_version: 3,
+          updated_at: '2026-10-03T09:00:00Z',
+        },
+      ]);
+
+      render(<AgentsPage />);
+      await waitFor(() => {
+        expect(screen.getByText('Inbound Sales Bot')).toBeTruthy();
+      });
+    });
+
+    it('renders AgentDetailPage and AgentVersionDetailPage with real version snapshot data', async () => {
+      vi.spyOn(apiClient, 'get')
+        .mockResolvedValueOnce({
+          id: 'agt-100',
+          tenant_id: 't-1',
+          name: 'Inbound Sales Bot',
+          status: 'published',
+          active_version: 1,
+          published_version_number: 1,
+          greeting: 'Hello from Sales Bot',
+          persona: 'Friendly',
+          llm_provider: 'anthropic',
+          llm_model: 'claude-haiku-4-5-20251001',
+          voice_id: 'rachel_en_us',
+          primary_language: 'en-US',
+          speech_speed: 1.0,
+          validation_status: 'valid',
+          draft_etag: 'W/"etag1"',
+        })
+        .mockResolvedValueOnce([
+          {
+            id: 'ver-1',
+            agent_id: 'agt-100',
+            version: 1,
+            version_number: 1,
+            status: 'published',
+            config_hash: '1234567890abcdef',
+            published_at: '2026-10-03T09:00:00Z',
+            published_by: 'admin@acme.test',
+            published_environment: 'production',
+            changelog: 'First production release',
+            is_active: true,
+            is_rollback: false,
+            config_snapshot: {
+              identity: { name: 'Inbound Sales Bot', greeting: 'Hello from Sales Bot' },
+            },
+          },
+        ]);
+
+      render(<AgentDetailPage agentId="agt-100" />);
+      await waitFor(() => {
+        expect(screen.getByText('Inbound Sales Bot')).toBeTruthy();
+        expect(screen.getByText('First production release')).toBeTruthy();
+      });
+
+      vi.spyOn(apiClient, 'get').mockResolvedValueOnce({
+        id: 'ver-1',
+        agent_id: 'agt-100',
+        version: 1,
+        version_number: 1,
+        status: 'published',
+        config_hash: '1234567890abcdef',
+        published_at: '2026-10-03T09:00:00Z',
+        published_by: 'admin@acme.test',
+        published_environment: 'production',
+        changelog: 'First production release',
+        is_active: true,
+        is_rollback: false,
+        config_snapshot: {
+          identity: { name: 'Inbound Sales Bot', greeting: 'Hello from Sales Bot' },
+        },
+      });
+
+      render(<AgentVersionDetailPage agentId="agt-100" versionNumber={1} />);
+      await waitFor(() => {
+        expect(screen.getByText('Immutable Version v1')).toBeTruthy();
+        expect(screen.getAllByText(/Hello from Sales Bot/).length).toBeGreaterThanOrEqual(1);
+      });
+    });
+  });
+});

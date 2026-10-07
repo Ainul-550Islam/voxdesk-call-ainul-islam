@@ -21,7 +21,7 @@ from app.quotas.enforcement import enforce
 from app.quotas.models import QuotaError, QuotaKey
 from app.quotas.service import resolve_quota, set_quota
 from app.auth.identity.policies import default_policy
-from tests.conftest import auth_headers, make_user
+from tests.conftest import auth_headers
 
 pytestmark = pytest.mark.asyncio
 

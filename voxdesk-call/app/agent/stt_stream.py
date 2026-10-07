@@ -7,6 +7,7 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from typing import AsyncIterator, Callable, Protocol
+from urllib.parse import urlencode, urlsplit
 
 import websockets
 
@@ -66,7 +67,7 @@ class STTProvider(Protocol):
     name: str
     capabilities: STTProviderCapabilities
 
-    async def stream(
+    def stream(
         self, audio: AsyncIterator[bytes], request: STTStreamRequest
     ) -> AsyncIterator[STTEvent]: ...
 
@@ -84,33 +85,67 @@ class DeepgramStreamingProvider:
     )
 
     def __init__(self, api_key: str, *, endpoint: str = "wss://api.deepgram.com") -> None:
-        if not api_key.strip():
+        if not isinstance(api_key, str) or not api_key.strip():
             raise ProviderConfigurationError("Deepgram STT API key is not configured", provider=self.name)
+        try:
+            parsed_endpoint = urlsplit(endpoint)
+            endpoint_port = parsed_endpoint.port
+        except (TypeError, ValueError):
+            raise ProviderConfigurationError(
+                "Deepgram WebSocket endpoint must use the approved HTTPS provider origin",
+                provider=self.name,
+            ) from None
+        if (
+            parsed_endpoint.scheme != "wss"
+            or parsed_endpoint.hostname != "api.deepgram.com"
+            or parsed_endpoint.username
+            or parsed_endpoint.password
+            or endpoint_port not in (None, 443)
+            or parsed_endpoint.path not in ("", "/")
+            or parsed_endpoint.query
+            or parsed_endpoint.fragment
+        ):
+            raise ProviderConfigurationError(
+                "Deepgram WebSocket endpoint must use the approved HTTPS provider origin",
+                provider=self.name,
+            )
         try:
             self._headers_keyword = websocket_header_keyword(websockets.connect)
         except ProviderCompatibilityError as exc:
             raise ProviderConfigurationError("Deepgram WebSocket client API is incompatible", provider=self.name) from exc
-        self._api_key = api_key
-        self._endpoint = endpoint.rstrip("/")
+        self._api_key = api_key.strip()
+        self._endpoint = "wss://api.deepgram.com"
         self._active: dict[str, object] = {}
+
+    def _listen_url(self, request: STTStreamRequest) -> str:
+        """Build a fixed-origin URL with user-controlled query values encoded."""
+        params = urlencode(
+            {
+                "encoding": request.encoding,
+                "sample_rate": request.sample_rate,
+                "language": request.language,
+                "model": request.model,
+                "interim_results": "true",
+                "smart_format": "true",
+                "endpointing": 250,
+            }
+        )
+        return f"{self._endpoint}/v1/listen?{params}"
 
     async def stream(
         self, audio: AsyncIterator[bytes], request: STTStreamRequest
     ) -> AsyncIterator[STTEvent]:
         if request.encoding not in {"mulaw", "linear16"}:
             raise ProviderInvalidRequestError("unsupported STT audio encoding", provider=self.name)
-        params = (
-            f"encoding={request.encoding}&sample_rate={request.sample_rate}"
-            f"&language={request.language}&model={request.model}"
-            "&interim_results=true&smart_format=true&endpointing=250"
-        )
+        if not 0 < request.timeout_seconds <= 60:
+            raise ProviderInvalidRequestError("STT timeout must be greater than zero and at most 60 seconds", provider=self.name)
         websocket = None
         request_id = request.request_id or str(uuid.uuid4())
         started = time.perf_counter()
         try:
             websocket = await asyncio.wait_for(
                 websockets.connect(
-                    f"{self._endpoint}/v1/listen?{params}",
+                    self._listen_url(request),
                     **{self._headers_keyword: {"Authorization": f"Token {self._api_key}"}},
                     open_timeout=request.timeout_seconds,
                     close_timeout=2,

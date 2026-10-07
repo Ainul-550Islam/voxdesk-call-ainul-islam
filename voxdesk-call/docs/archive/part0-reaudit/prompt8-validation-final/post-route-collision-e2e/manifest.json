@@ -1,0 +1,112 @@
+{
+  "collection_status": "PASS",
+  "collection_exit_code": 0,
+  "collection_elapsed_seconds": 3.986,
+  "collection_log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/post-route-collision-e2e/collection.log",
+  "collected": 4,
+  "selected": 4,
+  "chunk_size_max": 1,
+  "chunk_count": 4,
+  "execution_mode": "sequential_child_processes",
+  "executed": 4,
+  "passed": 4,
+  "failed": 0,
+  "errors": 0,
+  "skipped": 0,
+  "not_run": 0,
+  "unconfirmed": 0,
+  "resource_unconfirmed": 0,
+  "unconfirmed_nodeids": [],
+  "resource_termination": false,
+  "full_suite_complete": true,
+  "chunks": [
+    {
+      "chunk": 1,
+      "collected": 1,
+      "submitted_nodeids": [
+        "tests/e2e/test_calls_analytics_flow.py::test_persisted_call_transcript_replay_and_analytics_read_paths"
+      ],
+      "executed_from_explicit_summary": 1,
+      "unconfirmed_count": 0,
+      "counts": {
+        "passed": 1,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "xfailed": 0,
+        "xpassed": 0
+      },
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 82.009,
+      "log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/post-route-collision-e2e/chunk-0001.log",
+      "terminal_summary_present": true
+    },
+    {
+      "chunk": 2,
+      "collected": 1,
+      "submitted_nodeids": [
+        "tests/e2e/test_live_monitor_takeover_flow.py::test_live_monitor_and_takeover_actions_are_audited_and_not_faked"
+      ],
+      "executed_from_explicit_summary": 1,
+      "unconfirmed_count": 0,
+      "counts": {
+        "passed": 1,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "xfailed": 0,
+        "xpassed": 0
+      },
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 84.093,
+      "log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/post-route-collision-e2e/chunk-0002.log",
+      "terminal_summary_present": true
+    },
+    {
+      "chunk": 3,
+      "collected": 1,
+      "submitted_nodeids": [
+        "tests/e2e/test_full_platform_e2e.py::test_master_new_customer_to_simulated_call_and_truthful_cross_module_state"
+      ],
+      "executed_from_explicit_summary": 1,
+      "unconfirmed_count": 0,
+      "counts": {
+        "passed": 1,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "xfailed": 0,
+        "xpassed": 0
+      },
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 89.63,
+      "log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/post-route-collision-e2e/chunk-0003.log",
+      "terminal_summary_present": true
+    },
+    {
+      "chunk": 4,
+      "collected": 1,
+      "submitted_nodeids": [
+        "tests/e2e/test_full_platform_e2e.py::test_call_pin_keeps_superseded_snapshot_and_unpinned_call_uses_persisted_pointer"
+      ],
+      "executed_from_explicit_summary": 1,
+      "unconfirmed_count": 0,
+      "counts": {
+        "passed": 1,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "xfailed": 0,
+        "xpassed": 0
+      },
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 88.458,
+      "log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/post-route-collision-e2e/chunk-0004.log",
+      "terminal_summary_present": true
+    }
+  ]
+}

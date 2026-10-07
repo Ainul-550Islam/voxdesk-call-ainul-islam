@@ -1,0 +1,72 @@
+[
+  {
+    "path": "app/db/models.py",
+    "bytes": 192403,
+    "sha256": "8cd7c7378a33a526be216b3e60caf50e4d288a191cbf5bb1331b363a301869e9"
+  },
+  {
+    "path": "app/db/enterprise_models.py",
+    "bytes": 42168,
+    "sha256": "12958098a85e478e88bfa29884f7e2ceb7240fa682c1ddfd0054732c46dbce5c"
+  },
+  {
+    "path": "app/api/webhook_lifecycle_routes.py",
+    "bytes": 46101,
+    "sha256": "e471010db8ee314fc3929ff23a5ee8bad464d992072786811abbaafb60198fcf"
+  },
+  {
+    "path": "app/outbox/dispatcher.py",
+    "bytes": 16813,
+    "sha256": "1a5bc24a768a81fcf343e3e5d75af9cd2a3922a2239dd07ff0b2be63793555c0"
+  },
+  {
+    "path": "app/webhooks/repository.py",
+    "bytes": 8886,
+    "sha256": "644716dc761dc81e2ae67006d1da7866a52216c5f7e36e273df5d54d0fad00b4"
+  },
+  {
+    "path": "app/webhooks/replay.py",
+    "bytes": 1739,
+    "sha256": "b3131ea783cf76a17413f8bc3f4c0a0b00a5bea8253300f4ac57d3697fb19f39"
+  },
+  {
+    "path": "app/core/rate_limit.py",
+    "bytes": 10476,
+    "sha256": "5af4893079cc21ebe22f76b49a3ef48878afe328d614f4ddd58753dc1adf23f0"
+  },
+  {
+    "path": "app/telephony/callback_reconciliation.py",
+    "bytes": 5329,
+    "sha256": "b6225eeadd45ff454d16891db2bc87874e8a3dac65c17e2c23b8a7e4c0951af1"
+  },
+  {
+    "path": "app/telephony/transfer_service.py",
+    "bytes": 19347,
+    "sha256": "2c25bdcf70111633c33067f5fe4752dfcbeecf65f45a62b3172cf44011e688a7"
+  },
+  {
+    "path": "app/telephony/recording.py",
+    "bytes": 13855,
+    "sha256": "77575cf6c12347410ce0fa479088720a667d0ce751418a80ed09bdd95b377299"
+  },
+  {
+    "path": "tests/test_external_success_honesty.py",
+    "bytes": 4953,
+    "sha256": "9b30b72bcaee3474ad8d7965a0c10bf5daaac6abb9816ac79cc95f653b3325b5"
+  },
+  {
+    "path": "scripts/fake_success_allowlist.txt",
+    "bytes": 391,
+    "sha256": "8d17d238ecc53282fc40d0dd26a41825a741dd63987b9a3da4a83ea7169f9c22"
+  },
+  {
+    "path": "tests/truth/routes_snapshot.json",
+    "bytes": 62,
+    "sha256": "23e1e800b4c06cc6b0a86d89a2f6793bfb4c32cee80efa3f246034203c556d82"
+  },
+  {
+    "path": "app/webhooks/retry.py",
+    "bytes": 1073,
+    "sha256": "174fc03e2c227b16df58d360f55310401296fa6521263e79cb7d5e084bb9b991"
+  }
+]

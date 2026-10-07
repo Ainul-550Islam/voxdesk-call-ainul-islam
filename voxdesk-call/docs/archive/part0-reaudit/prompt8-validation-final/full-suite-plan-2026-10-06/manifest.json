@@ -1,0 +1,23 @@
+{
+  "collection_status": "PASS",
+  "collection_exit_code": 0,
+  "collection_elapsed_seconds": 95.253,
+  "collection_log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/full-suite-plan-2026-10-06/collection.log",
+  "collected": 4139,
+  "selected": 4139,
+  "chunk_size_max": 50,
+  "chunk_count": 83,
+  "execution_mode": "plan_only",
+  "executed": 0,
+  "passed": 0,
+  "failed": 0,
+  "errors": 0,
+  "skipped": 0,
+  "not_run": 4139,
+  "unconfirmed": 0,
+  "resource_unconfirmed": 0,
+  "unconfirmed_nodeids": [],
+  "resource_termination": false,
+  "full_suite_complete": false,
+  "chunks": []
+}

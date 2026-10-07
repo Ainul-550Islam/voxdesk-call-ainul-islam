@@ -11,7 +11,7 @@ import sqlalchemy as sa
 def _load():
     path = (
         __import__("pathlib").Path(__file__).resolve().parents[2]
-        / "alembic" / "versions" / "0019_environment_scope_business_resources.py"
+        / "alembic" / "versions" / "0019_env_scope_business_res.py"
     )
     spec = importlib.util.spec_from_file_location("m0019", path)
     module = importlib.util.module_from_spec(spec)

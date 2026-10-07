@@ -1,0 +1,17 @@
+{
+  "app/api/crm_writeback_routes.py": 560,
+  "app/api/knowledge_base_routes.py": 473,
+  "app/api/live_monitoring_routes.py": 106,
+  "app/api/multichannel_routes.py": 511,
+  "app/api/pcap_routes.py": 589,
+  "app/api/phone_number_lifecycle_routes.py": 558,
+  "app/api/post_call_analysis_routes.py": 466,
+  "app/api/recording_management_routes.py": 578,
+  "app/api/retention_routes.py": 561,
+  "app/api/tool_registry_routes.py": 623,
+  "app/api/workflow_event_routes.py": 524,
+  "app/main.py": 3,
+  "app/schemas/public_use_case.py": 1,
+  "services/realtime/media-engine-rs/crates/livekit/src/lib.rs": 2,
+  "services/realtime/media-engine-rs/crates/livekit/tests/jwt.rs": 1
+}

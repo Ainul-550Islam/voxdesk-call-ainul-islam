@@ -1,2 +1,30 @@
-/* company.css — premium dark SaaS — deep black #050507 electric blue violet cyan glassmorphism 20-32px */
-.pricing-root { background: #050507; }
+/**
+ * dashboard/src/styles/company.css
+ * Company Pages — About VoxDesk, Engineering Culture, Careers, Leadership & Contact
+ */
+.company-root {
+  background: #050507;
+  color: #ffffff;
+  min-height: 100vh;
+}
+.company-value-card {
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 1.75rem;
+}
+.career-role-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.025);
+  padding: 1.25rem 1.5rem;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+.career-role-row:hover {
+  border-color: rgba(59, 130, 246, 0.35);
+  background: rgba(255, 255, 255, 0.05);
+}

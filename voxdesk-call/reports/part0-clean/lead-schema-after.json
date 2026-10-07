@@ -1,0 +1,65 @@
+{
+  "lead_identities": {
+    "columns": [],
+    "ddl": "\nCREATE TABLE lead_identities (\n\tlead_id UUID NOT NULL, \n\tphone_normalized VARCHAR(20), \n\temail_normalized VARCHAR(254), \n\towner_user_id UUID, \n\tmerged_into_id UUID, \n\tsource VARCHAR(64) NOT NULL, \n\tcreated_at TIMESTAMP WITH TIME ZONE NOT NULL, \n\tupdated_at TIMESTAMP WITH TIME ZONE NOT NULL, \n\tid UUID NOT NULL, \n\ttenant_id UUID NOT NULL, \n\tenvironment_id UUID NOT NULL, \n\tPRIMARY KEY (id), \n\tCONSTRAINT uq_lead_identities_lead UNIQUE (lead_id), \n\tCONSTRAINT uq_lead_identity_phone UNIQUE (tenant_id, environment_id, phone_normalized), \n\tCONSTRAINT uq_lead_identity_email UNIQUE (tenant_id, environment_id, email_normalized), \n\tFOREIGN KEY(lead_id) REFERENCES leads (id) ON DELETE CASCADE, \n\tFOREIGN KEY(owner_user_id) REFERENCES users (id) ON DELETE SET NULL, \n\tFOREIGN KEY(merged_into_id) REFERENCES leads (id) ON DELETE SET NULL, \n\tFOREIGN KEY(tenant_id) REFERENCES tenants (id) ON DELETE CASCADE, \n\tFOREIGN KEY(environment_id) REFERENCES environments (id) ON DELETE RESTRICT\n)\n\n",
+    "indexes": [
+      "CREATE INDEX ix_lead_identities_scope ON lead_identities (tenant_id, environment_id)"
+    ]
+  },
+  "lead_status_history": {
+    "columns": [],
+    "ddl": "\nCREATE TABLE lead_status_history (\n\tlead_id UUID NOT NULL, \n\tsequence INTEGER NOT NULL, \n\tfrom_status VARCHAR(32), \n\tto_status VARCHAR(32) NOT NULL, \n\treason VARCHAR(200) NOT NULL, \n\tactor_id UUID, \n\tsource VARCHAR(32) NOT NULL, \n\tcreated_at TIMESTAMP WITH TIME ZONE NOT NULL, \n\tid UUID NOT NULL, \n\ttenant_id UUID NOT NULL, \n\tenvironment_id UUID NOT NULL, \n\tPRIMARY KEY (id), \n\tCONSTRAINT uq_lead_status_history_sequence UNIQUE (lead_id, sequence), \n\tFOREIGN KEY(lead_id) REFERENCES leads (id) ON DELETE CASCADE, \n\tFOREIGN KEY(actor_id) REFERENCES users (id) ON DELETE SET NULL, \n\tFOREIGN KEY(tenant_id) REFERENCES tenants (id) ON DELETE CASCADE, \n\tFOREIGN KEY(environment_id) REFERENCES environments (id) ON DELETE RESTRICT\n)\n\n",
+    "indexes": [
+      "CREATE INDEX ix_lead_status_history_lead ON lead_status_history (tenant_id, environment_id, lead_id)"
+    ]
+  },
+  "lead_activities": {
+    "columns": [],
+    "ddl": "\nCREATE TABLE lead_activities (\n\tlead_id UUID NOT NULL, \n\tkind VARCHAR(32) NOT NULL, \n\tsummary VARCHAR(300) NOT NULL, \n\tcall_id UUID, \n\tappointment_id UUID, \n\ttask_id UUID, \n\tactor_id UUID, \n\tcreated_at TIMESTAMP WITH TIME ZONE NOT NULL, \n\tid UUID NOT NULL, \n\ttenant_id UUID NOT NULL, \n\tenvironment_id UUID NOT NULL, \n\tPRIMARY KEY (id), \n\tFOREIGN KEY(lead_id) REFERENCES leads (id) ON DELETE CASCADE, \n\tFOREIGN KEY(call_id) REFERENCES calls (id) ON DELETE SET NULL, \n\tFOREIGN KEY(appointment_id) REFERENCES appointments (id) ON DELETE SET NULL, \n\tFOREIGN KEY(actor_id) REFERENCES users (id) ON DELETE SET NULL, \n\tFOREIGN KEY(tenant_id) REFERENCES tenants (id) ON DELETE CASCADE, \n\tFOREIGN KEY(environment_id) REFERENCES environments (id) ON DELETE RESTRICT\n)\n\n",
+    "indexes": [
+      "CREATE INDEX ix_lead_activities_lead ON lead_activities (tenant_id, environment_id, lead_id)"
+    ]
+  },
+  "lead_tasks": {
+    "columns": [],
+    "ddl": "\nCREATE TABLE lead_tasks (\n\tlead_id UUID NOT NULL, \n\ttitle VARCHAR(160) NOT NULL, \n\tstatus VARCHAR(32) NOT NULL, \n\tassignee_id UUID, \n\tdue_at TIMESTAMP WITH TIME ZONE, \n\tcompleted_at TIMESTAMP WITH TIME ZONE, \n\tcreated_at TIMESTAMP WITH TIME ZONE NOT NULL, \n\tupdated_at TIMESTAMP WITH TIME ZONE NOT NULL, \n\tid UUID NOT NULL, \n\ttenant_id UUID NOT NULL, \n\tenvironment_id UUID NOT NULL, \n\tPRIMARY KEY (id), \n\tFOREIGN KEY(lead_id) REFERENCES leads (id) ON DELETE CASCADE, \n\tFOREIGN KEY(assignee_id) REFERENCES users (id) ON DELETE SET NULL, \n\tFOREIGN KEY(tenant_id) REFERENCES tenants (id) ON DELETE CASCADE, \n\tFOREIGN KEY(environment_id) REFERENCES environments (id) ON DELETE RESTRICT\n)\n\n",
+    "indexes": [
+      "CREATE INDEX ix_lead_tasks_scope ON lead_tasks (tenant_id, environment_id, status)"
+    ]
+  },
+  "lead_segments": {
+    "columns": [],
+    "ddl": "\nCREATE TABLE lead_segments (\n\tname VARCHAR(80) NOT NULL, \n\tdefinition JSON NOT NULL, \n\tcreated_by UUID, \n\tcreated_at TIMESTAMP WITH TIME ZONE NOT NULL, \n\tupdated_at TIMESTAMP WITH TIME ZONE NOT NULL, \n\tid UUID NOT NULL, \n\ttenant_id UUID NOT NULL, \n\tenvironment_id UUID NOT NULL, \n\tPRIMARY KEY (id), \n\tCONSTRAINT uq_lead_segments_name UNIQUE (tenant_id, environment_id, name), \n\tFOREIGN KEY(created_by) REFERENCES users (id) ON DELETE SET NULL, \n\tFOREIGN KEY(tenant_id) REFERENCES tenants (id) ON DELETE CASCADE, \n\tFOREIGN KEY(environment_id) REFERENCES environments (id) ON DELETE RESTRICT\n)\n\n",
+    "indexes": [
+      "CREATE INDEX ix_lead_segments_scope ON lead_segments (tenant_id, environment_id)"
+    ]
+  },
+  "lead_score_snapshots": {
+    "columns": [],
+    "ddl": "\nCREATE TABLE lead_score_snapshots (\n\tlead_id UUID NOT NULL, \n\tversion VARCHAR(32) NOT NULL, \n\tscore INTEGER NOT NULL, \n\tfactors JSON NOT NULL, \n\tcreated_at TIMESTAMP WITH TIME ZONE NOT NULL, \n\tid UUID NOT NULL, \n\ttenant_id UUID NOT NULL, \n\tenvironment_id UUID NOT NULL, \n\tPRIMARY KEY (id), \n\tFOREIGN KEY(lead_id) REFERENCES leads (id) ON DELETE CASCADE, \n\tFOREIGN KEY(tenant_id) REFERENCES tenants (id) ON DELETE CASCADE, \n\tFOREIGN KEY(environment_id) REFERENCES environments (id) ON DELETE RESTRICT\n)\n\n",
+    "indexes": [
+      "CREATE INDEX ix_lead_score_snapshots_lead ON lead_score_snapshots (tenant_id, lead_id, created_at)"
+    ]
+  },
+  "lead_consents": {
+    "columns": [],
+    "ddl": "\nCREATE TABLE lead_consents (\n\tlead_id UUID NOT NULL, \n\tchannel VARCHAR(16) NOT NULL, \n\tdecision VARCHAR(16) NOT NULL, \n\tsource VARCHAR(64) NOT NULL, \n\tversion INTEGER NOT NULL, \n\trecorded_at TIMESTAMP WITH TIME ZONE NOT NULL, \n\tid UUID NOT NULL, \n\ttenant_id UUID NOT NULL, \n\tenvironment_id UUID NOT NULL, \n\tPRIMARY KEY (id), \n\tCONSTRAINT uq_lead_consents_version UNIQUE (lead_id, channel, version), \n\tFOREIGN KEY(lead_id) REFERENCES leads (id) ON DELETE CASCADE, \n\tFOREIGN KEY(tenant_id) REFERENCES tenants (id) ON DELETE CASCADE, \n\tFOREIGN KEY(environment_id) REFERENCES environments (id) ON DELETE RESTRICT\n)\n\n",
+    "indexes": [
+      "CREATE INDEX ix_lead_consents_lead ON lead_consents (tenant_id, environment_id, lead_id)"
+    ]
+  },
+  "lead_merges": {
+    "columns": [],
+    "ddl": "\nCREATE TABLE lead_merges (\n\tsurvivor_lead_id UUID NOT NULL, \n\tduplicate_lead_id UUID NOT NULL, \n\treason VARCHAR(200) NOT NULL, \n\tactor_id UUID, \n\tcreated_at TIMESTAMP WITH TIME ZONE NOT NULL, \n\tid UUID NOT NULL, \n\ttenant_id UUID NOT NULL, \n\tenvironment_id UUID NOT NULL, \n\tPRIMARY KEY (id), \n\tCONSTRAINT uq_lead_merges_duplicate UNIQUE (tenant_id, duplicate_lead_id), \n\tFOREIGN KEY(survivor_lead_id) REFERENCES leads (id) ON DELETE CASCADE, \n\tFOREIGN KEY(duplicate_lead_id) REFERENCES leads (id) ON DELETE CASCADE, \n\tFOREIGN KEY(actor_id) REFERENCES users (id) ON DELETE SET NULL, \n\tFOREIGN KEY(tenant_id) REFERENCES tenants (id) ON DELETE CASCADE, \n\tFOREIGN KEY(environment_id) REFERENCES environments (id) ON DELETE RESTRICT\n)\n\n",
+    "indexes": [
+      "CREATE INDEX ix_lead_merges_scope ON lead_merges (tenant_id, environment_id)"
+    ]
+  },
+  "lead_enrichment_records": {
+    "columns": [],
+    "ddl": "\nCREATE TABLE lead_enrichment_records (\n\tlead_id UUID NOT NULL, \n\tstatus VARCHAR(32) NOT NULL, \n\tprovider VARCHAR(64) NOT NULL, \n\tdetail VARCHAR(200) NOT NULL, \n\tcreated_at TIMESTAMP WITH TIME ZONE NOT NULL, \n\tid UUID NOT NULL, \n\ttenant_id UUID NOT NULL, \n\tenvironment_id UUID NOT NULL, \n\tPRIMARY KEY (id), \n\tFOREIGN KEY(lead_id) REFERENCES leads (id) ON DELETE CASCADE, \n\tFOREIGN KEY(tenant_id) REFERENCES tenants (id) ON DELETE CASCADE, \n\tFOREIGN KEY(environment_id) REFERENCES environments (id) ON DELETE RESTRICT\n)\n\n",
+    "indexes": [
+      "CREATE INDEX ix_lead_enrichment_lead ON lead_enrichment_records (tenant_id, lead_id)"
+    ]
+  }
+}

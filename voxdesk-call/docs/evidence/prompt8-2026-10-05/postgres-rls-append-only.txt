@@ -1,0 +1,6 @@
+PASS forced tenant RLS read isolation: tenant A and tenant B each saw only rows for their own tenant.
+PASS forced RLS WITH CHECK rejected a tenant-A session inserting a tenant-B observation.
+PASS append-only trigger rejected UPDATE.
+PASS append-only trigger rejected DELETE.
+PASS the newly inserted tenant-A observation remained after rejected UPDATE/DELETE.
+DATABASE=voxdesk_prompt8; ROLE=voxdesk_prompt8; SERVICE=PostgreSQL 17.11; DATA=disposable Prompt8 fixtures only.

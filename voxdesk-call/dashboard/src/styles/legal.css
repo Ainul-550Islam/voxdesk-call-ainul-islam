@@ -1,2 +1,33 @@
-/* legal.css — premium dark SaaS — deep black #050507 electric blue violet cyan glassmorphism 20-32px */
-.pricing-root { background: #050507; }
+/**
+ * dashboard/src/styles/legal.css
+ * Legal Agreements — Privacy Policy, Terms of Service, Data Processing Agreement (DPA) & SLA
+ */
+.legal-root {
+  background: #050507;
+  color: #ffffff;
+  min-height: 100vh;
+}
+.legal-document-container {
+  max-width: 56rem;
+  margin: 0 auto;
+  padding: 4rem 1.5rem;
+}
+.legal-clause-card {
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.025);
+  padding: 1.75rem;
+  margin-bottom: 1.25rem;
+}
+.legal-sla-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+.legal-sla-table th,
+.legal-sla-table td {
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: left;
+  font-size: 0.85rem;
+}

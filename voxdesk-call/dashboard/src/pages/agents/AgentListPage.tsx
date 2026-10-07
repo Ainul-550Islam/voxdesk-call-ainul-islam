@@ -1,1100 +1,320 @@
-/** dashboard/src/pages/agents/AgentListPage.tsx */
-import React from 'react';
+/**
+ * dashboard/src/pages/agents/AgentListPage.tsx
+ *
+ * Table view of the tenant's agents.
+ *
+ * `AgentsPage` is the card wall; this is the dense operator table. It composes
+ * the three list hooks that used to be placeholders:
+ *
+ *   useAgentFilters  — status / type / language filters, options derived from
+ *                      the loaded rows so a new type is never unfilterable
+ *   useAgentSearch   — client-side search over name / description / id
+ *   useAgentSort     — column sorting; records missing the sort key sort last
+ *
+ * Every row links into the same durable surfaces as the card wall (detail +
+ * versions, builder). Counts are computed from the real rows, never from a
+ * hardcoded total.
+ */
+
+import React, { useMemo } from 'react';
+import { useAgents } from '../../hooks/useAgents';
+import { useAgentFilters } from '../../hooks/useAgentFilters';
+import { useAgentSearch } from '../../hooks/useAgentSearch';
+import { useAgentSort, type AgentSortKey } from '../../hooks/useAgentSort';
 import { GlassCard } from '../../components/ui/GlassCard';
-export function AgentListPage(){ return <div className="min-h-screen bg-black text-white p-8"><GlassCard><h1 className="text-lg font-medium">AgentListPage</h1><p className="mt-2 text-xs text-white/50">Real backend, no fake, production implementation.</p></GlassCard></div>; }
+import { Button } from '../../components/ui/Button';
+
+const COLUMNS: Array<{ key: AgentSortKey | null; label: string; className?: string }> = [
+  { key: 'name', label: 'Agent' },
+  { key: 'status', label: 'Status', className: 'w-32' },
+  { key: 'version', label: 'Version', className: 'w-24' },
+  { key: null, label: 'Language', className: 'w-32' },
+  { key: 'updated_at', label: 'Updated', className: 'w-48' },
+  { key: null, label: '', className: 'w-56' },
+];
+
+const STATUS_STYLES: Record<string, string> = {
+  PUBLISHED: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+  DRAFT: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+  ARCHIVED: 'bg-white/5 text-white/50 border-white/10',
+  VALIDATING: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
+  VALID: 'bg-sky-500/15 text-sky-300 border-sky-500/30',
+  INVALID: 'bg-red-500/15 text-red-300 border-red-500/30',
+  ERROR: 'bg-red-500/15 text-red-300 border-red-500/30',
+};
+
+function formatTimestamp(value: string | undefined): string {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
+}
+
+export function AgentListPage() {
+  const { agents, loading, error, retry } = useAgents();
+  const filters = useAgentFilters(agents);
+  const search = useAgentSearch(filters.filtered);
+  const sort = useAgentSort(search.results);
+
+  const counts = useMemo(
+    () => ({
+      total: agents.length,
+      published: agents.filter((agent) => String(agent.status).toUpperCase() === 'PUBLISHED').length,
+      draft: agents.filter((agent) => String(agent.status).toUpperCase() === 'DRAFT').length,
+      archived: agents.filter((agent) => String(agent.status).toUpperCase() === 'ARCHIVED').length,
+    }),
+    [agents],
+  );
+
+  return (
+    <div className="min-h-screen bg-black text-white">
+      <div className="border-b border-white/10 bg-black/60 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
+          <div>
+            <h1 className="text-lg font-semibold text-white">All agents</h1>
+            <p className="text-xs text-white/50">
+              Durable, tenant-scoped agents with immutable version history
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <a
+              href="/dashboard/agents"
+              className="rounded-xl border border-white/15 bg-white/[0.04] px-3 py-1.5 text-xs text-white/80 hover:bg-white/10"
+            >
+              Card view
+            </a>
+            <a
+              href="/dashboard/agents/archive"
+              className="rounded-xl border border-white/15 bg-white/[0.04] px-3 py-1.5 text-xs text-white/80 hover:bg-white/10"
+            >
+              Archive
+            </a>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                window.location.href = '/dashboard/agents/new';
+              }}
+            >
+              Create Agent
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mb-8 grid gap-4 sm:grid-cols-4">
+          <GlassCard>
+            <div className="text-xs text-white/50">Total</div>
+            <div className="mt-2 text-2xl font-bold text-white">{counts.total}</div>
+          </GlassCard>
+          <GlassCard>
+            <div className="text-xs text-white/50">Published</div>
+            <div className="mt-2 text-2xl font-bold text-emerald-300">{counts.published}</div>
+          </GlassCard>
+          <GlassCard>
+            <div className="text-xs text-white/50">Drafts</div>
+            <div className="mt-2 text-2xl font-bold text-amber-300">{counts.draft}</div>
+          </GlassCard>
+          <GlassCard>
+            <div className="text-xs text-white/50">Archived</div>
+            <div className="mt-2 text-2xl font-bold text-white/60">{counts.archived}</div>
+          </GlassCard>
+        </div>
+
+        <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center">
+          <input
+            value={search.query}
+            onChange={(event) => search.setQuery(event.target.value)}
+            placeholder="Search by name, description, or id..."
+            aria-label="Search agents"
+            className="flex-1 rounded-xl border border-white/10 bg-white/[0.05] px-4 py-2.5 text-sm text-white placeholder-white/40 focus:border-blue-500/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+          />
+          <select
+            value={filters.filters.status}
+            onChange={(event) => filters.setFilter('status', event.target.value)}
+            aria-label="Filter by status"
+            className="rounded-xl border border-white/10 bg-black/50 px-4 py-2.5 text-sm text-white"
+          >
+            <option value="all">All statuses</option>
+            {filters.options.statuses.map((status) => (
+              <option key={status} value={status}>
+                {status}
+              </option>
+            ))}
+          </select>
+          <select
+            value={filters.filters.agentType}
+            onChange={(event) => filters.setFilter('agentType', event.target.value)}
+            aria-label="Filter by agent type"
+            className="rounded-xl border border-white/10 bg-black/50 px-4 py-2.5 text-sm text-white"
+          >
+            <option value="all">All types</option>
+            {filters.options.agentTypes.map((type) => (
+              <option key={type} value={type}>
+                {type}
+              </option>
+            ))}
+          </select>
+          <select
+            value={filters.filters.language}
+            onChange={(event) => filters.setFilter('language', event.target.value)}
+            aria-label="Filter by language"
+            className="rounded-xl border border-white/10 bg-black/50 px-4 py-2.5 text-sm text-white"
+          >
+            <option value="all">All languages</option>
+            {filters.options.languages.map((language) => (
+              <option key={language} value={language}>
+                {language}
+              </option>
+            ))}
+          </select>
+          {(filters.activeCount > 0 || search.active) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                filters.reset();
+                search.clear();
+              }}
+            >
+              Clear
+            </Button>
+          )}
+        </div>
+
+        {loading ? (
+          <div className="space-y-2">
+            {[0, 1, 2, 3, 4].map((row) => (
+              <div key={row} className="h-14 rounded-xl bg-white/5 animate-pulse" />
+            ))}
+          </div>
+        ) : error ? (
+          <GlassCard className="py-12 text-center">
+            <div className="text-sm text-red-300">{error}</div>
+            <Button size="sm" variant="ghost" className="mt-4" onClick={retry}>
+              Retry
+            </Button>
+          </GlassCard>
+        ) : sort.sorted.length === 0 ? (
+          <GlassCard className="py-16 text-center">
+            <h3 className="text-base font-medium text-white">
+              {search.active || filters.activeCount > 0 ? 'No agents match' : 'No agents yet'}
+            </h3>
+            <p className="mx-auto mt-2 max-w-md text-sm text-white/60">
+              {search.active || filters.activeCount > 0
+                ? 'Try clearing the search box or resetting the filters.'
+                : 'Create your first agent to configure prompts, voice, knowledge bases, and immutable release versions.'}
+            </p>
+            {!search.active && filters.activeCount === 0 && (
+              <Button
+                variant="primary"
+                size="sm"
+                className="mt-6"
+                onClick={() => {
+                  window.location.href = '/dashboard/agents/new';
+                }}
+              >
+                Create your first agent
+              </Button>
+            )}
+          </GlassCard>
+        ) : (
+          <div className="overflow-x-auto rounded-2xl border border-white/10">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-white/[0.03] text-xs uppercase tracking-wide text-white/50">
+                <tr>
+                  {COLUMNS.map((column, index) => (
+                    <th key={column.label || `actions-${index}`} className={`px-4 py-3 font-medium ${column.className ?? ''}`}>
+                      {column.key ? (
+                        <button
+                          type="button"
+                          onClick={() => sort.toggle(column.key as AgentSortKey)}
+                          className="inline-flex items-center gap-1 hover:text-white"
+                          aria-label={`Sort by ${column.label}`}
+                        >
+                          {column.label}
+                          <span aria-hidden="true">
+                            {sort.sort.key === column.key
+                              ? sort.sort.direction === 'asc'
+                                ? '↑'
+                                : '↓'
+                              : ''}
+                          </span>
+                        </button>
+                      ) : (
+                        column.label
+                      )}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {sort.sorted.map((agent) => {
+                  const status = String(agent.status ?? 'DRAFT').toUpperCase();
+                  return (
+                    <tr key={agent.id} className="hover:bg-white/[0.02]">
+                      <td className="px-4 py-3">
+                        <div className="font-medium text-white">{agent.name}</div>
+                        {agent.description ? (
+                          <div className="mt-0.5 line-clamp-1 text-xs text-white/45">
+                            {agent.description}
+                          </div>
+                        ) : null}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${
+                            STATUS_STYLES[status] ?? 'border-white/10 bg-white/5 text-white/60'
+                          }`}
+                        >
+                          {status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-white/70">
+                        {agent.version ? `v${agent.version}` : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-white/70">{agent.language || '—'}</td>
+                      <td className="px-4 py-3 text-xs text-white/50">
+                        {formatTimestamp(agent.updated_at)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3 text-xs">
+                          <a
+                            href={`/dashboard/agents/${encodeURIComponent(agent.id)}`}
+                            className="text-blue-300 hover:text-blue-200"
+                          >
+                            Versions
+                          </a>
+                          <a
+                            href={`/dashboard/agents/${encodeURIComponent(agent.id)}/builder`}
+                            className="text-white/70 hover:text-white"
+                          >
+                            Builder
+                          </a>
+                          <a
+                            href={`/dashboard/agents/${encodeURIComponent(agent.id)}/duplicate`}
+                            className="text-white/70 hover:text-white"
+                          >
+                            Duplicate
+                          </a>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <p className="mt-4 text-xs text-white/40">
+          Showing {sort.sorted.length} of {counts.total} agents
+          {search.active ? ` matching “${search.query}”` : ''}.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default AgentListPage;
-// AgentListPage.tsx line 6 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 7 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 8 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 9 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 10 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 11 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 12 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 13 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 14 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 15 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 16 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 17 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 18 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 19 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 20 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 21 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 22 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 23 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 24 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 25 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 26 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 27 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 28 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 29 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 30 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 31 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 32 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 33 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 34 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 35 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 36 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 37 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 38 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 39 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 40 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 41 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 42 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 43 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 44 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 45 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 46 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 47 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 48 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 49 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 50 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 51 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 52 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 53 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 54 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 55 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 56 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 57 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 58 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 59 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 60 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 61 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 62 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 63 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 64 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 65 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 66 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 67 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 68 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 69 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 70 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 71 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 72 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 73 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 74 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 75 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 76 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 77 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 78 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 79 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 80 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 81 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 82 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 83 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 84 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 85 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 86 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 87 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 88 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 89 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 90 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 91 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 92 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 93 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 94 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 95 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 96 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 97 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 98 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 99 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 100 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 101 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 102 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 103 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 104 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 105 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 106 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 107 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 108 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 109 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 110 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 111 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 112 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 113 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 114 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 115 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 116 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 117 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 118 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 119 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 120 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 121 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 122 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 123 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 124 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 125 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 126 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 127 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 128 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 129 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 130 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 131 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 132 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 133 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 134 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 135 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 136 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 137 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 138 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 139 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 140 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 141 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 142 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 143 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 144 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 145 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 146 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 147 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 148 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 149 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 150 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 151 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 152 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 153 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 154 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 155 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 156 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 157 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 158 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 159 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 160 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 161 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 162 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 163 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 164 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 165 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 166 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 167 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 168 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 169 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 170 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 171 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 172 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 173 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 174 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 175 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 176 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 177 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 178 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 179 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 180 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 181 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 182 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 183 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 184 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 185 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 186 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 187 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 188 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 189 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 190 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 191 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 192 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 193 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 194 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 195 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 196 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 197 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 198 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 199 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 200 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 201 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 202 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 203 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 204 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 205 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 206 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 207 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 208 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 209 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 210 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 211 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 212 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 213 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 214 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 215 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 216 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 217 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 218 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 219 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 220 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 221 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 222 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 223 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 224 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 225 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 226 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 227 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 228 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 229 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 230 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 231 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 232 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 233 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 234 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 235 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 236 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 237 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 238 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 239 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 240 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 241 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 242 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 243 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 244 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 245 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 246 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 247 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 248 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 249 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 250 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 251 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 252 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 253 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 254 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 255 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 256 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 257 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 258 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 259 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 260 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 261 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 262 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 263 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 264 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 265 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 266 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 267 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 268 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 269 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 270 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 271 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 272 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 273 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 274 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 275 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 276 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 277 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 278 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 279 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 280 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 281 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 282 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 283 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 284 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 285 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 286 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 287 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 288 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 289 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 290 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 291 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 292 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 293 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 294 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 295 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 296 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 297 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 298 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 299 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 300 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 301 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 302 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 303 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 304 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 305 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 306 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 307 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 308 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 309 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 310 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 311 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 312 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 313 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 314 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 315 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 316 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 317 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 318 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 319 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 320 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 321 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 322 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 323 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 324 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 325 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 326 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 327 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 328 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 329 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 330 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 331 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 332 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 333 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 334 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 335 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 336 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 337 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 338 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 339 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 340 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 341 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 342 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 343 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 344 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 345 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 346 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 347 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 348 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 349 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 350 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 351 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 352 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 353 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 354 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 355 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 356 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 357 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 358 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 359 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 360 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 361 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 362 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 363 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 364 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 365 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 366 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 367 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 368 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 369 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 370 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 371 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 372 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 373 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 374 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 375 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 376 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 377 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 378 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 379 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 380 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 381 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 382 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 383 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 384 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 385 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 386 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 387 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 388 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 389 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 390 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 391 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 392 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 393 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 394 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 395 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 396 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 397 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 398 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 399 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 400 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 401 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 402 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 403 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 404 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 405 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 406 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 407 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 408 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 409 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 410 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 411 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 412 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 413 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 414 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 415 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 416 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 417 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 418 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 419 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 420 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 421 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 422 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 423 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 424 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 425 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 426 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 427 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 428 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 429 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 430 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 431 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 432 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 433 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 434 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 435 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 436 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 437 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 438 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 439 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 440 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 441 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 442 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 443 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 444 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 445 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 446 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 447 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 448 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 449 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 450 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 451 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 452 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 453 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 454 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 455 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 456 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 457 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 458 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 459 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 460 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 461 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 462 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 463 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 464 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 465 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 466 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 467 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 468 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 469 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 470 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 471 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 472 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 473 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 474 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 475 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 476 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 477 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 478 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 479 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 480 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 481 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 482 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 483 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 484 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 485 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 486 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 487 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 488 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 489 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 490 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 491 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 492 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 493 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 494 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 495 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 496 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 497 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 498 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 499 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 500 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 501 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 502 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 503 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 504 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 505 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 506 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 507 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 508 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 509 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 510 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 511 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 512 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 513 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 514 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 515 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 516 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 517 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 518 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 519 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 520 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 521 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 522 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 523 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 524 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 525 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 526 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 527 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 528 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 529 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 530 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 531 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 532 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 533 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 534 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 535 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 536 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 537 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 538 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 539 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 540 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 541 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 542 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 543 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 544 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 545 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 546 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 547 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 548 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 549 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 550 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 551 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 552 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 553 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 554 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 555 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 556 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 557 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 558 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 559 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 560 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 561 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 562 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 563 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 564 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 565 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 566 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 567 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 568 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 569 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 570 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 571 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 572 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 573 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 574 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 575 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 576 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 577 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 578 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 579 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 580 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 581 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 582 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 583 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 584 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 585 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 586 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 587 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 588 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 589 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 590 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 591 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 592 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 593 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 594 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 595 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 596 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 597 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 598 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 599 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 600 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 601 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 602 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 603 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 604 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 605 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 606 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 607 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 608 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 609 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 610 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 611 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 612 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 613 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 614 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 615 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 616 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 617 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 618 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 619 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 620 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 621 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 622 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 623 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 624 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 625 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 626 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 627 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 628 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 629 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 630 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 631 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 632 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 633 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 634 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 635 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 636 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 637 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 638 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 639 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 640 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 641 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 642 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 643 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 644 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 645 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 646 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 647 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 648 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 649 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 650 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 651 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 652 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 653 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 654 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 655 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 656 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 657 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 658 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 659 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 660 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 661 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 662 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 663 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 664 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 665 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 666 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 667 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 668 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 669 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 670 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 671 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 672 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 673 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 674 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 675 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 676 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 677 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 678 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 679 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 680 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 681 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 682 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 683 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 684 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 685 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 686 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 687 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 688 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 689 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 690 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 691 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 692 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 693 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 694 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 695 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 696 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 697 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 698 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 699 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 700 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 701 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 702 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 703 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 704 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 705 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 706 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 707 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 708 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 709 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 710 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 711 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 712 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 713 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 714 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 715 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 716 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 717 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 718 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 719 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 720 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 721 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 722 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 723 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 724 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 725 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 726 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 727 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 728 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 729 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 730 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 731 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 732 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 733 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 734 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 735 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 736 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 737 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 738 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 739 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 740 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 741 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 742 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 743 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 744 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 745 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 746 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 747 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 748 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 749 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 750 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 751 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 752 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 753 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 754 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 755 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 756 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 757 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 758 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 759 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 760 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 761 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 762 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 763 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 764 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 765 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 766 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 767 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 768 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 769 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 770 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 771 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 772 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 773 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 774 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 775 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 776 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 777 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 778 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 779 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 780 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 781 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 782 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 783 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 784 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 785 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 786 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 787 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 788 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 789 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 790 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 791 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 792 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 793 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 794 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 795 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 796 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 797 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 798 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 799 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 800 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 801 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 802 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 803 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 804 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 805 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 806 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 807 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 808 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 809 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 810 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 811 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 812 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 813 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 814 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 815 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 816 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 817 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 818 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 819 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 820 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 821 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 822 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 823 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 824 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 825 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 826 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 827 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 828 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 829 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 830 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 831 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 832 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 833 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 834 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 835 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 836 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 837 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 838 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 839 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 840 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 841 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 842 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 843 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 844 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 845 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 846 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 847 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 848 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 849 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 850 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 851 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 852 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 853 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 854 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 855 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 856 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 857 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 858 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 859 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 860 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 861 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 862 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 863 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 864 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 865 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 866 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 867 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 868 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 869 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 870 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 871 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 872 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 873 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 874 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 875 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 876 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 877 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 878 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 879 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 880 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 881 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 882 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 883 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 884 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 885 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 886 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 887 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 888 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 889 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 890 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 891 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 892 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 893 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 894 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 895 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 896 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 897 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 898 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 899 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 900 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 901 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 902 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 903 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 904 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 905 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 906 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 907 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 908 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 909 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 910 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 911 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 912 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 913 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 914 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 915 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 916 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 917 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 918 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 919 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 920 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 921 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 922 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 923 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 924 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 925 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 926 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 927 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 928 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 929 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 930 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 931 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 932 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 933 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 934 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 935 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 936 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 937 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 938 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 939 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 940 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 941 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 942 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 943 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 944 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 945 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 946 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 947 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 948 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 949 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 950 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 951 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 952 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 953 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 954 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 955 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 956 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 957 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 958 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 959 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 960 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 961 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 962 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 963 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 964 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 965 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 966 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 967 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 968 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 969 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 970 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 971 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 972 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 973 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 974 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 975 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 976 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 977 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 978 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 979 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 980 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 981 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 982 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 983 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 984 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 985 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 986 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 987 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 988 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 989 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 990 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 991 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 992 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 993 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 994 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 995 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 996 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 997 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 998 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 999 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1000 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1001 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1002 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1003 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1004 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1005 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1006 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1007 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1008 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1009 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1010 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1011 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1012 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1013 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1014 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1015 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1016 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1017 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1018 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1019 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1020 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1021 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1022 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1023 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1024 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1025 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1026 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1027 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1028 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1029 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1030 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1031 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1032 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1033 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1034 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1035 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1036 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1037 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1038 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1039 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1040 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1041 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1042 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1043 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1044 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1045 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1046 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1047 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1048 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1049 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1050 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1051 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1052 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1053 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1054 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1055 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1056 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1057 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1058 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1059 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1060 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1061 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1062 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1063 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1064 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1065 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1066 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1067 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1068 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1069 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1070 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1071 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1072 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1073 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1074 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1075 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1076 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1077 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1078 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1079 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1080 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1081 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1082 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1083 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1084 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1085 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1086 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1087 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1088 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1089 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1090 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1091 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1092 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1093 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1094 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1095 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1096 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1097 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1098 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1099 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.
-// AgentListPage.tsx line 1100 — extended production implementation, real backend integration, tenant isolation, RBAC, validation, loading/empty/error, no fake data, typed TS, centralized client, no hardcoded URLs, no secrets.

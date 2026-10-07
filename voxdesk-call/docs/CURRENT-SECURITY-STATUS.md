@@ -27,3 +27,13 @@ Implemented in this layer:
 
 Not in this layer: environment-scoped business tables, billing hierarchy,
 environment secrets, regional routing, and a second permission vocabulary.
+
+## Prompt 7 verification boundary (2026-10-05)
+
+This file remains a focused note on scope-aware identity authorization, not an
+exhaustive security certification or production assurance statement. The current
+repository-wide Prompt 7 threat matrix, 30-target accounting, dashboard
+integration evidence, chunked test matrix, open risks, and Prompt 8 handoff are
+in [`PROMPT7_SECURITY_HARDENING_REPORT.md`](PROMPT7_SECURITY_HARDENING_REPORT.md).
+No live PostgreSQL/Redis/provider environment, external penetration test,
+independent audit, or certification was verified in this workspace.

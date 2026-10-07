@@ -226,19 +226,19 @@ class TestAgentDomain:
 
 
 class TestAgentService:
-    async def test_draft_tenant_isolation(self, tenant_a, tenant_b):
+    async def test_draft_tenant_isolation(self, db, tenant_a, tenant_b):
         config_a = _agent("Alex", str(tenant_a.id))
-        agent_service.create_draft(tenant_a, config_a)
-        assert agent_service.list_agents(tenant_a)
-        assert agent_service.list_agents(tenant_b) == []
+        await agent_service.create_draft_async(db, tenant_a, config_a)
+        assert await agent_service.list_agents_async(db, tenant_a, ensure_default=False)
+        assert await agent_service.list_agents_async(db, tenant_b, ensure_default=False) == []
 
     async def test_publish_mints_immutable_version(self, db, tenant_a):
         config = _agent("Alex", str(tenant_a.id))
-        agent_service.create_draft(tenant_a, config)
+        await agent_service.create_draft_async(db, tenant_a, config)
         v1 = await agent_service.publish_async(db, tenant_a, config)
         v2 = await agent_service.publish_async(db, tenant_a, config, changelog="bump")
         assert v1.version == 1 and v2.version == 2
-        history = agent_service.version_history(tenant_a, config.id)
+        history = await agent_service.version_history_async(db, tenant_a, config.id)
         assert history[0].version == 2
         assert history[0].config_hash == history[1].config_hash
 
@@ -254,7 +254,7 @@ class TestAgentService:
             handoff=HandoffConfig(mode=HandoffMode.NUMBER, destination="+15550001111"),
             safety=SafetyPolicy(record_calls=True),
         )
-        agent_service.create_draft(tenant_a, config)
+        await agent_service.create_draft_async(db, tenant_a, config)
         await agent_service.publish_async(db, tenant_a, config)
         assert tenant_a.agent_name == "Rex"
         assert tenant_a.language == "fr-FR"
@@ -263,7 +263,7 @@ class TestAgentService:
 
     async def test_rollback_reapplies_history(self, db, tenant_a):
         v1 = _agent("Alex", str(tenant_a.id))
-        agent_service.create_draft(tenant_a, v1)
+        await agent_service.create_draft_async(db, tenant_a, v1)
         await agent_service.publish_async(db, tenant_a, v1)
         v2 = AgentConfig(
             tenant_id=str(tenant_a.id),
@@ -272,18 +272,20 @@ class TestAgentService:
             language=LanguageConfig(primary="en-US"),
             model=ModelConfig(provider="anthropic"),
         )
-        agent_service.update_draft(tenant_a, v2)
+        await agent_service.update_draft_async(db, tenant_a, v2)
         await agent_service.publish_async(db, tenant_a, v2)
         assert tenant_a.greeting == "New greeting"
         rolled = await agent_service.rollback_async(db, tenant_a, v1.id, 1)
         assert rolled.version == 3
         assert tenant_a.greeting == "Thanks for calling."
 
-    async def test_configure_tools_validation(self, tenant_a):
+    async def test_configure_tools_validation(self, db, tenant_a):
         config = _agent("Alex", str(tenant_a.id))
-        agent_service.create_draft(tenant_a, config)
+        await agent_service.create_draft_async(db, tenant_a, config)
         with pytest.raises(ValueError):
-            agent_service.configure_tools(tenant_a, config.id, enabled=("not_a_tool",))
+            await agent_service.configure_tools_async(
+                db, tenant_a, config.id, enabled=("not_a_tool",)
+            )
 
     async def test_test_configuration_offline(self, tenant_a):
         config = _agent("Alex", str(tenant_a.id))
@@ -709,12 +711,21 @@ class TestCampaignService:
 
     async def test_window_check_respects_tenant(self, db, tenant_a):
         lead = await make_lead(db, tenant_a)
+        tenant_a.timezone = "UTC"
         tenant_a.outbound_window_open = time(1, 0)
         tenant_a.outbound_window_close = time(2, 0)
         await db.commit()
         definition = _campaign(str(tenant_a.id))
-        ok, reason = await campaign_service.eligibility_check(db, tenant_a, lead, definition)
+        # The wall clock can genuinely be inside 01:00–02:00. Exercise both
+        # branches using the production function's existing explicit clock.
+        ok, reason = await campaign_service.eligibility_check(
+            db, tenant_a, lead, definition, now=datetime(2026, 10, 7, 12, tzinfo=timezone.utc)
+        )
         assert ok is False and reason == "outside the outbound call window"
+        ok, reason = await campaign_service.eligibility_check(
+            db, tenant_a, lead, definition, now=datetime(2026, 10, 7, 1, 30, tzinfo=timezone.utc)
+        )
+        assert ok is True and reason == ""
 
     async def test_attempt_limit(self, db, tenant_a):
         lead = await make_lead(db, tenant_a, attempts=3)
@@ -813,6 +824,7 @@ class TestAnalyticsService:
             quantity=120,
             unit="seconds",
             idempotency_key="usage-test-1",
+            created_at=datetime(2026, 9, 15),
             event_metadata={},
         )
         db.add(event)

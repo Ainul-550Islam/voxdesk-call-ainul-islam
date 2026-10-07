@@ -17,11 +17,12 @@ python scripts/migrate.py
 #   --workers            : one per CPU core (override with WEB_CONCURRENCY)
 #   --proxy-headers      : trust X-Forwarded-Proto/Host from the TLS terminator
 #                          so PUBLIC_BASE_URL, wss:// and Twilio signatures work
-#   --forwarded-allow-ips: restrict which proxies are trusted (default "*" for
-#                          single-proxy setups; tighten in hardened deployments)
+#   --forwarded-allow-ips: restrict which proxies are trusted. Production Compose
+#                          sets this to the fixed Caddy bridge address; the
+#                          local default trusts only loopback peers.
 exec uvicorn app.main:app \
   --host 0.0.0.0 \
   --port 8000 \
   --workers "${WEB_CONCURRENCY:-2}" \
   --proxy-headers \
-  --forwarded-allow-ips "${FORWARDED_ALLOW_IPS:-*}"
+  --forwarded-allow-ips "${FORWARDED_ALLOW_IPS:-127.0.0.1,::1}"

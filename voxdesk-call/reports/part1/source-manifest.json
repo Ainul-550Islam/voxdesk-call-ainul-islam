@@ -1,0 +1,182 @@
+[
+  {
+    "path": "alembic/versions/0050_unify_webhooks.py",
+    "bytes": 9181,
+    "sha256": "7a5cddce47699408ade9454bbb8b31572d3b1277edbe36a867f9908323a87fdf"
+  },
+  {
+    "path": "app/api/webhook_lifecycle_routes.py",
+    "bytes": 25125,
+    "sha256": "b45533a1f1e1add1acd75b61cb3a4fcd0401d0632602ef52cc4aeeed64bb3c3d"
+  },
+  {
+    "path": "app/api/outbound_call_routes.py",
+    "bytes": 68500,
+    "sha256": "050309c61ef1630d8fd683e8a400543648bb3a36e50ff08c30e01f7d283d4a1b"
+  },
+  {
+    "path": "app/core/rate_limit.py",
+    "bytes": 11105,
+    "sha256": "ed3c0c6251f07976d7004c5be18ae6e5d203cbf0db99410a33149f4044a9639b"
+  },
+  {
+    "path": "app/db/models.py",
+    "bytes": 193265,
+    "sha256": "cf82cbe6f3c7fd29744e27febc5a9c4715b034269675c01cc926e2c9b9ad5279"
+  },
+  {
+    "path": "app/db/enterprise_models.py",
+    "bytes": 38185,
+    "sha256": "7b3b0ddc65988d2c4a95b6e617016062c9959244439683fa969c4be2b3b7731a"
+  },
+  {
+    "path": "app/outbox/dispatcher.py",
+    "bytes": 19376,
+    "sha256": "a2b411ee6250fe70bbcb74498f172f7a1f35cef18e9b2a0bb1bbfb374db3a116"
+  },
+  {
+    "path": "app/webhooks/call_event_catalog.py",
+    "bytes": 3767,
+    "sha256": "1092c783cf14c28ac9bf0c89535c7f03114d07fd022609bf89f429e0391897ca"
+  },
+  {
+    "path": "app/webhooks/call_event_bridge.py",
+    "bytes": 2012,
+    "sha256": "0eb0b83484c49472af1356f6954e352260b3cd26d6d7fc13b4d82ecb31ae2f70"
+  },
+  {
+    "path": "app/webhooks/delivery.py",
+    "bytes": 4670,
+    "sha256": "475b775f840f1460729680d8afc2f4623d8f612f94df4350330805754f0b098e"
+  },
+  {
+    "path": "app/webhooks/repository.py",
+    "bytes": 12797,
+    "sha256": "a04a35e3c7860439a555dc5a87b5f7e10df0456f8e203c4addb9819bd5628bd7"
+  },
+  {
+    "path": "app/webhooks/replay.py",
+    "bytes": 3325,
+    "sha256": "a549871fb2f9e7bc013b80ccda3432d0d86782059cee4a66afa92d78abfb601e"
+  },
+  {
+    "path": "app/webhooks/retry.py",
+    "bytes": 1124,
+    "sha256": "394692f2e784b134ee3c2e44037339283b2dd8e73461b8265ac3abc352bc9c5c"
+  },
+  {
+    "path": "app/telephony/call_state.py",
+    "bytes": 10763,
+    "sha256": "a235629c3600c86eaca8681f69f58ead93c45ccaa0886822c60c2080fc5be4fa"
+  },
+  {
+    "path": "app/telephony/call_events.py",
+    "bytes": 7880,
+    "sha256": "dd67b83ad907a1e0ed62f494db0f4d9d91a96a6cd6a8f13b952d9ea4b113302d"
+  },
+  {
+    "path": "app/telephony/twilio_handler.py",
+    "bytes": 29549,
+    "sha256": "8c066ebf5dac05dc1ca7694c431f109e5a81747728cc2f0eaa574055a9fa260b"
+  },
+  {
+    "path": "app/telephony/callback_reconciliation.py",
+    "bytes": 5454,
+    "sha256": "40279d0e59f8e385f252eb8eb1d1c74b98cea2fc09255d6cbb2d0edf5d99bf6c"
+  },
+  {
+    "path": "app/telephony/transfer_service.py",
+    "bytes": 19757,
+    "sha256": "37e7d15e04682b34a105bc9a75c566937dbb0560f59ca8247da960942f60c5cd"
+  },
+  {
+    "path": "app/telephony/recording.py",
+    "bytes": 14392,
+    "sha256": "c333e3e6dc7ae7d5dc17e93a4c262ba1ea3d11e03ef1827f9a5a5a0b7287c3b8"
+  },
+  {
+    "path": "app/telephony/outbound.py",
+    "bytes": 13489,
+    "sha256": "ca399e0c588ebbffb45c46b4cbd78ce4697a84846d5191cea8b1a5e629a03215"
+  },
+  {
+    "path": "tests/webhooks/__init__.py",
+    "bytes": 42,
+    "sha256": "34e54f31646d11fc9da847c3295ce5823a0532ab0629170d27ba7b6d24ccec43"
+  },
+  {
+    "path": "tests/webhooks/conftest.py",
+    "bytes": 1875,
+    "sha256": "fafb509e08160edba21c29b8ec7742be912fd2404d77c63fedd5ea94df31bf21"
+  },
+  {
+    "path": "tests/webhooks/test_call_event_bridge.py",
+    "bytes": 16480,
+    "sha256": "851d44b4cc3f33086fca4c7e906d97e033c01d75f4291c0c67104fa9e03bfcbc"
+  },
+  {
+    "path": "tests/webhooks/test_webhook_lifecycle_real.py",
+    "bytes": 15564,
+    "sha256": "27e725faf292249e566cd037821deaff5b7229ba03b7e123f72faccc7cb4b775"
+  },
+  {
+    "path": "tests/webhooks/test_webhook_isolation.py",
+    "bytes": 12267,
+    "sha256": "72275c3738a076c0efa4f9af04236f96438dff4b821d3d2b7ae8910250952f6a"
+  },
+  {
+    "path": "tests/operations/test_notification_webhook_email.py",
+    "bytes": 12115,
+    "sha256": "df975271769a9b36aba89e354e3a107f779346c401a968ba683b5a4e82efddee"
+  },
+  {
+    "path": "tests/test_external_success_honesty.py",
+    "bytes": 5533,
+    "sha256": "0fa99976de0e1c3935f9f689105b578fbadd77f5f5a9ca6a57fcca1f5fa9f5f7"
+  },
+  {
+    "path": "tests/truth/routes_snapshot.json",
+    "bytes": 62,
+    "sha256": "475df52fceee32246b5b06d9ea56e480e990c5accb58a4543a3c12e0c19a15a4"
+  },
+  {
+    "path": "scripts/fake_success_allowlist.txt",
+    "bytes": 355,
+    "sha256": "98ceb40197106c93359c8b94fc0ce7588148bdec0c86c893f57f4c68ad7068c8"
+  },
+  {
+    "path": "contracts/openapi.json",
+    "bytes": 2493123,
+    "sha256": "7e15c6596b8418f6316e479c7f2dfebfb3f55417176f4870cf3220672f6dd547"
+  },
+  {
+    "path": "docs/WEBHOOKS.md",
+    "bytes": 9934,
+    "sha256": "32562ce69d3305e18df635cebe7e14a99c72c9eaba31917f698aafc134de5f10"
+  },
+  {
+    "path": "reports/part1/1A_SUMMARY.md",
+    "bytes": 7663,
+    "sha256": "4686ba3ec715a214a98b3dec0b90390cdb6b343c218bd207096e3ccbdd3b52a2"
+  },
+  {
+    "path": "reports/part1/final-1a/verify_migration.py",
+    "bytes": 5297,
+    "sha256": "8ef1d607e35a9c20ca047ee249e1779fa46e225d4ca88ec6e9f30a8e7335288e"
+  },
+  {
+    "path": "reports/part1/final-1a/verify_concurrency.py",
+    "bytes": 4987,
+    "sha256": "8383377967cbae5c40ec189e0d360ef79aa0ff970bd454163a09edb94926a7dc"
+  },
+  {
+    "path": "reports/part1/final-1a/legacy-ddl.json",
+    "bytes": 1472,
+    "sha256": "920155638283927af5065c4799e796c7181536727423b8149419a779d0640657"
+  },
+  {
+    "path": "reports/part1/build_report.py",
+    "bytes": 3874,
+    "sha256": "4978c9f024cc5a8191eb14ba9bd80c04c88d877bc59b7b033c40a2ea435bf051"
+  }
+]

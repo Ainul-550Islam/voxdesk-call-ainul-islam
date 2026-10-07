@@ -1,8 +1,6 @@
 """Batch 07: worker execution, lease renewal, heartbeat, recovery."""
-import asyncio
 from datetime import datetime, timezone, timedelta
-from app.jobs.worker import JobWorker, build_handlers, heartbeat
-from app.jobs.models import PermanentJobError, RetryableJobError
+from app.jobs.models import PermanentJobError
 from app.jobs.queue import enqueue, claim_next, ack, fail
 from app.jobs.types import FailureClass
 

@@ -22,8 +22,8 @@ from tests.test_release_gate import CHECKLIST, FROZEN, LIVE, TODAY
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 VERSIONS_DIR = REPO_ROOT / "alembic" / "versions"
-HEAD = "0036_runtime_deployment_observability"
-PREVIOUS_HEAD = "0036_durable_call_outcomes"
+HEAD = "0049_runtime_schema_alignment"
+PREVIOUS_HEAD = "0048_boolean_defaults"
 
 
 # ------------------------------------------------------------------ facts ---
@@ -58,7 +58,7 @@ def test_previous_head_file_exists_and_is_revised_exactly_once():
     for path in sorted(VERSIONS_DIR.glob("*.py")):
         text = path.read_text(encoding="utf-8", errors="replace")
         if re.search(
-            rf'^down_revision\s*=\s*["\']{re.escape(PREVIOUS_HEAD)}["\']',
+            rf'^down_revision(?:\s*:\s*[^=]+)?\s*=\s*["\']{re.escape(PREVIOUS_HEAD)}["\']',
             text,
             re.MULTILINE,
         ):

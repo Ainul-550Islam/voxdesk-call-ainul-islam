@@ -39,7 +39,7 @@ _MIGRATION = (
     Path(__file__).resolve().parents[2]
     / "alembic"
     / "versions"
-    / "0017_organization_environment_foundation.py"
+    / "0017_org_environment_foundation.py"
 )
 
 

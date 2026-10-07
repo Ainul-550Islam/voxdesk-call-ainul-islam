@@ -18,7 +18,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SKIP_DIRS = {".git", "node_modules", "target", "__pycache__", ".venv", "dist",
-             "toolchains", "go-work", "gop", "nltk_data", "backups"}
+             "toolchains", "go-work", "gop", "nltk_data", "backups", ".cache", "archive", "reports"}
 
 
 def _walk(pattern: str = "*"):

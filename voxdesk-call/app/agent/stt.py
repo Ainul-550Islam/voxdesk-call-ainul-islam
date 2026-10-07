@@ -20,14 +20,18 @@ Two defects fixed here (both were latent, never exercised by the test suite):
   Deepgram.
 
 STEP 10 (pipecat 0.0.55 -> 0.0.94) import change: ``LiveOptions`` is no
-longer defined by pipecat. pipecat 0.0.94 imports it from ``deepgram-sdk``
-(``pipecat/services/deepgram/stt.py`` does ``from deepgram import ...,
-LiveOptions, ...``), so this module imports ``DeepgramSTTService`` from the
-canonical ``pipecat.services.deepgram.stt`` package module and ``LiveOptions``
-from ``deepgram`` directly. The field set used here (encoding, sample_rate,
-punctuate, interim_results, endpointing, smart_format, filler_words,
-language, model) is identical in deepgram-sdk 4.7's dataclass, so the wire
-payload does not change.
+longer defined by pipecat; pipecat 0.0.94 imports it from ``deepgram-sdk``.
+The field set used here (encoding, sample_rate, punctuate, interim_results,
+endpointing, smart_format, filler_words, language, model) is identical in
+deepgram-sdk 4.7's dataclass, so the wire payload does not change.
+
+The provider SDK is deliberately imported only when ``build_stt`` actually
+constructs a live provider service (through ``require_deepgram``). Queueing a
+transcript job and validating configuration do not need Pipecat or Deepgram;
+importing them there initializes HTTP/TLS machinery on the request path and can
+block or consume substantial memory. The historical ``DeepgramSTTService``
+and ``LiveOptions`` module attributes remain available through ``__getattr__``
+and are resolved lazily only when a caller explicitly requests them.
 
 Capabilities mirror the contract style introduced for TTS in Step 2
 (``app/agent/tts.py``): the pipeline checks ``supports_*`` before forwarding a
@@ -35,18 +39,10 @@ setting, so an unsupported setting is never passed and silently dropped.
 """
 from __future__ import annotations
 
-try:
-    from deepgram import LiveOptions
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
     from pipecat.services.deepgram.stt import DeepgramSTTService
-except ImportError as exc:
-    # Developer/test environments may omit provider extras. The capability
-    # detector preserves the failure and build_stt raises a typed error; this
-    # fallback does not advertise or construct a working provider.
-    LiveOptions = None
-    DeepgramSTTService = None
-    _DEEPGRAM_IMPORT_ERROR = type(exc).__name__
-else:
-    _DEEPGRAM_IMPORT_ERROR = None
 
 from app.agent.errors import ProviderConfigurationError
 from app.core.config import settings
@@ -70,7 +66,8 @@ def validate_stt_config() -> None:
 
     Without a key the websocket connect fails downstream in a way pipecat
     logs but does not surface clearly; failing here turns it into a typed
-    ``configuration_error`` before the pipeline starts.
+    ``configuration_error`` before the pipeline starts. This check intentionally
+    does not import or probe the Deepgram/Pipecat SDK.
     """
     if not (settings.deepgram_api_key or "").strip():
         raise ProviderConfigurationError(
@@ -86,7 +83,8 @@ def build_stt(tenant) -> DeepgramSTTService:
     abstraction the pipeline used before this change, so a language that
     nova-3 does not cover still falls back to nova-2. Validation happens
     first so a missing key raises ``ProviderConfigurationError`` rather than
-    constructing a service that can never connect.
+    constructing a service that can never connect. The SDK is imported only
+    after configuration has been validated and a live service is requested.
     """
     validate_stt_config()
     # Check the actual installed SDK surfaces before constructing a service;
@@ -111,6 +109,16 @@ def build_stt(tenant) -> DeepgramSTTService:
             model=stt_opts["model"],
         ),
     )
+
+
+def __getattr__(name: str):
+    """Resolve legacy SDK class exports only when explicitly requested."""
+    if name not in {"DeepgramSTTService", "LiveOptions"}:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    service_class, live_options_class = require_deepgram()
+    globals()["DeepgramSTTService"] = service_class
+    globals()["LiveOptions"] = live_options_class
+    return globals()[name]
 
 
 # Public contract exports. The existing Pipecat builder above remains the

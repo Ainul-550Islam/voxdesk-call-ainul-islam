@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import pytest
+from sqlalchemy import select
 
 from app.core.config import settings
+from app.db.models import AuditLog, UserRole
 from app.telephony.call_events import TelephonyCallbackEvent
 from app.telephony.media_storage import issue, verify
 from app.telephony.number_provisioning import assign, provision, release
@@ -15,7 +17,7 @@ from app.telephony.recording_policy import get_owned, save
 from app.telephony.replay import replay
 from app.telephony.transcription import enqueue, get_owned as get_transcript
 from app.tenancy.isolation import Forbidden, NotFound
-from tests.conftest import auth_headers, make_call, subscribe
+from tests.conftest import auth_headers, make_call, make_user, subscribe
 
 pytestmark = pytest.mark.asyncio
 
@@ -130,11 +132,36 @@ async def test_tenant_a_cannot_touch_tenant_b_media(
     assert expired.reason == "expired"
     with pytest.raises(Forbidden):
         open_grant(recording, grant.token, role=viewer_a.role, now=1_700_000_000)
-    with pytest.raises(Forbidden):
+    # The actor's own tenant, not a caller-supplied tenant id, is the audit
+    # scope for an attempted cross-tenant read. The target tenant is not queried.
+    with pytest.raises(NotFound):
         await authorize_read(
             db,
             tenant_id=tenant_b.id,
             recording_id=recording.id,
             role=viewer_a.role,
             actor_user_id=viewer_a.id,
+        )
+    events = (
+        await db.execute(
+            select(AuditLog).where(
+                AuditLog.tenant_id == tenant_a.id,
+                AuditLog.actor_user_id == viewer_a.id,
+                AuditLog.event_type == "resource_exported",
+            )
+        )
+    ).scalars().all()
+    assert any(
+        event.detail.get("attempted_tenant_id") == str(tenant_b.id)
+        for event in events
+    )
+
+    viewer_b = await make_user(db, tenant_b, UserRole.VIEWER)
+    with pytest.raises(Forbidden):
+        await authorize_read(
+            db,
+            tenant_id=tenant_b.id,
+            recording_id=recording.id,
+            role=viewer_b.role,
+            actor_user_id=viewer_b.id,
         )

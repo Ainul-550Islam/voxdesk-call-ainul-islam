@@ -1,0 +1,1888 @@
+[
+  {
+    "cell": null,
+    "code": "F821",
+    "end_location": {
+      "column": 44,
+      "row": 74
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/agent/stt.py",
+    "fix": null,
+    "location": {
+      "column": 26,
+      "row": 74
+    },
+    "message": "Undefined name `DeepgramSTTService`",
+    "noqa_row": 74,
+    "url": "https://docs.astral.sh/ruff/rules/undefined-name"
+  },
+  {
+    "cell": null,
+    "code": "F822",
+    "end_location": {
+      "column": 25,
+      "row": 132
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/agent/stt.py",
+    "fix": null,
+    "location": {
+      "column": 5,
+      "row": 132
+    },
+    "message": "Undefined name `DeepgramSTTService` in `__all__`",
+    "noqa_row": 132,
+    "url": "https://docs.astral.sh/ruff/rules/undefined-export"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 10,
+      "row": 28
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/enterprise_models.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.db.models import (\n    Base,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 34
+          },
+          "location": {
+            "column": 1,
+            "row": 27
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 5,
+      "row": 28
+    },
+    "message": "`app.db.models.Agent` imported but unused",
+    "noqa_row": 28,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 25,
+      "row": 29
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/enterprise_models.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.db.models import (\n    Base,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 34
+          },
+          "location": {
+            "column": 1,
+            "row": 27
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 5,
+      "row": 29
+    },
+    "message": "`app.db.models.AgentLifecycleStatus` imported but unused",
+    "noqa_row": 29,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 26,
+      "row": 30
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/enterprise_models.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.db.models import (\n    Base,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 34
+          },
+          "location": {
+            "column": 1,
+            "row": 27
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 5,
+      "row": 30
+    },
+    "message": "`app.db.models.AgentValidationStatus` imported but unused",
+    "noqa_row": 30,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 17,
+      "row": 31
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/enterprise_models.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.db.models import (\n    Base,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 34
+          },
+          "location": {
+            "column": 1,
+            "row": 27
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 5,
+      "row": 31
+    },
+    "message": "`app.db.models.AgentVersion` imported but unused",
+    "noqa_row": 31,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 23,
+      "row": 32
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/enterprise_models.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.db.models import (\n    Base,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 34
+          },
+          "location": {
+            "column": 1,
+            "row": 27
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 5,
+      "row": 32
+    },
+    "message": "`app.db.models.AgentVersionStatus` imported but unused",
+    "noqa_row": 32,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 26,
+      "row": 20
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/domain/conductor_models.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.security.policy import (\n    MAX_PROPOSAL_CHANGES,\n    classify_change_risk,\n    validate_mutation_operation,\n    validate_mutation_path,\n    validate_natural_language_request,\n    validate_value_safety,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 25
+          },
+          "location": {
+            "column": 1,
+            "row": 17
+          }
+        }
+      ],
+      "message": "Remove unused import: `app.security.policy.classify_path_section`"
+    },
+    "location": {
+      "column": 5,
+      "row": 20
+    },
+    "message": "`app.security.policy.classify_path_section` imported but unused",
+    "noqa_row": 20,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 60,
+      "row": 11
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/domain/public_widget_models.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 1,
+            "row": 12
+          },
+          "location": {
+            "column": 1,
+            "row": 11
+          }
+        }
+      ],
+      "message": "Remove unused import: `app.domain.public_site_models.PublicDomainError`"
+    },
+    "location": {
+      "column": 43,
+      "row": 11
+    },
+    "message": "`app.domain.public_site_models.PublicDomainError` imported but unused",
+    "noqa_row": 11,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "E402",
+    "end_location": {
+      "column": 41,
+      "row": 39
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/agent_service.py",
+    "fix": null,
+    "location": {
+      "column": 1,
+      "row": 39
+    },
+    "message": "Module level import not at top of file",
+    "noqa_row": 39,
+    "url": "https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file"
+  },
+  {
+    "cell": null,
+    "code": "E402",
+    "end_location": {
+      "column": 48,
+      "row": 40
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/agent_service.py",
+    "fix": null,
+    "location": {
+      "column": 1,
+      "row": 40
+    },
+    "message": "Module level import not at top of file",
+    "noqa_row": 40,
+    "url": "https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file"
+  },
+  {
+    "cell": null,
+    "code": "E402",
+    "end_location": {
+      "column": 43,
+      "row": 42
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/agent_service.py",
+    "fix": null,
+    "location": {
+      "column": 1,
+      "row": 42
+    },
+    "message": "Module level import not at top of file",
+    "noqa_row": 42,
+    "url": "https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file"
+  },
+  {
+    "cell": null,
+    "code": "E402",
+    "end_location": {
+      "column": 42,
+      "row": 43
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/agent_service.py",
+    "fix": null,
+    "location": {
+      "column": 1,
+      "row": 43
+    },
+    "message": "Module level import not at top of file",
+    "noqa_row": 43,
+    "url": "https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file"
+  },
+  {
+    "cell": null,
+    "code": "E402",
+    "end_location": {
+      "column": 74,
+      "row": 44
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/agent_service.py",
+    "fix": null,
+    "location": {
+      "column": 1,
+      "row": 44
+    },
+    "message": "Module level import not at top of file",
+    "noqa_row": 44,
+    "url": "https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file"
+  },
+  {
+    "cell": null,
+    "code": "E402",
+    "end_location": {
+      "column": 33,
+      "row": 45
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/agent_service.py",
+    "fix": null,
+    "location": {
+      "column": 1,
+      "row": 45
+    },
+    "message": "Module level import not at top of file",
+    "noqa_row": 45,
+    "url": "https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file"
+  },
+  {
+    "cell": null,
+    "code": "E402",
+    "end_location": {
+      "column": 2,
+      "row": 54
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/agent_service.py",
+    "fix": null,
+    "location": {
+      "column": 1,
+      "row": 46
+    },
+    "message": "Module level import not at top of file",
+    "noqa_row": 46,
+    "url": "https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file"
+  },
+  {
+    "cell": null,
+    "code": "E402",
+    "end_location": {
+      "column": 2,
+      "row": 74
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/agent_service.py",
+    "fix": null,
+    "location": {
+      "column": 1,
+      "row": 55
+    },
+    "message": "Module level import not at top of file",
+    "noqa_row": 55,
+    "url": "https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 12,
+      "row": 19
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/call_service.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 1,
+            "row": 20
+          },
+          "location": {
+            "column": 1,
+            "row": 19
+          }
+        }
+      ],
+      "message": "Remove unused import: `time`"
+    },
+    "location": {
+      "column": 8,
+      "row": 19
+    },
+    "message": "`time` imported but unused",
+    "noqa_row": 19,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 59,
+      "row": 29
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/call_service.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.core.errors import BadRequestError",
+          "end_location": {
+            "column": 59,
+            "row": 29
+          },
+          "location": {
+            "column": 1,
+            "row": 29
+          }
+        }
+      ],
+      "message": "Remove unused import: `app.core.errors.NotFoundError`"
+    },
+    "location": {
+      "column": 46,
+      "row": 29
+    },
+    "message": "`app.core.errors.NotFoundError` imported but unused",
+    "noqa_row": 29,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 22,
+      "row": 29
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/conductor_apply_service.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.db.models import (\n    AgentVersion as AgentVersionRow,\n    ChatAgent,\n    ChatAgentVersion,\n    ConductorApproval,\n    ConductorApprovalActionEnum,\n    ConductorApprovalStateEnum,\n    ConductorChange,\n    ConductorProposal,\n    ConductorProposalStatusEnum,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 39
+          },
+          "location": {
+            "column": 1,
+            "row": 28
+          }
+        }
+      ],
+      "message": "Remove unused import: `app.db.models.Agent`"
+    },
+    "location": {
+      "column": 14,
+      "row": 29
+    },
+    "message": "`app.db.models.Agent` imported but unused",
+    "noqa_row": 29,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 23,
+      "row": 19
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/conductor_approval_service.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 1,
+            "row": 20
+          },
+          "location": {
+            "column": 1,
+            "row": 19
+          }
+        }
+      ],
+      "message": "Remove unused import: `typing.Any`"
+    },
+    "location": {
+      "column": 20,
+      "row": 19
+    },
+    "message": "`typing.Any` imported but unused",
+    "noqa_row": 19,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 22,
+      "row": 24
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/conductor_context_service.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.db.models import (\n    AgentVersion as AgentVersionRow,\n    Call,\n    ChatAgent,\n    EvaluationResult,\n    TestCase,\n    TestRun,\n    TestSuite,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 32
+          },
+          "location": {
+            "column": 1,
+            "row": 23
+          }
+        }
+      ],
+      "message": "Remove unused import: `app.db.models.Agent`"
+    },
+    "location": {
+      "column": 14,
+      "row": 24
+    },
+    "message": "`app.db.models.Agent` imported but unused",
+    "noqa_row": 24,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 10,
+      "row": 14
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/conductor_proposal_service.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 1,
+            "row": 15
+          },
+          "location": {
+            "column": 1,
+            "row": 14
+          }
+        }
+      ],
+      "message": "Remove unused import: `os`"
+    },
+    "location": {
+      "column": 8,
+      "row": 14
+    },
+    "message": "`os` imported but unused",
+    "noqa_row": 14,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 59,
+      "row": 23
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/conductor_proposal_service.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.core.errors import BadRequestError, NotFoundError",
+          "end_location": {
+            "column": 74,
+            "row": 23
+          },
+          "location": {
+            "column": 1,
+            "row": 23
+          }
+        }
+      ],
+      "message": "Remove unused import: `app.core.errors.ConflictError`"
+    },
+    "location": {
+      "column": 46,
+      "row": 23
+    },
+    "message": "`app.core.errors.ConflictError` imported but unused",
+    "noqa_row": 23,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 32,
+      "row": 28
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/conductor_proposal_service.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.db.models import (\n    ConductorApproval,\n    ConductorChange,\n    ConductorEvidence,\n    ConductorProposal,\n    ConductorProposalStatusEnum,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 33
+          },
+          "location": {
+            "column": 1,
+            "row": 24
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 5,
+      "row": 28
+    },
+    "message": "`app.db.models.ConductorEvidenceSourceEnum` imported but unused",
+    "noqa_row": 28,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 27,
+      "row": 31
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/conductor_proposal_service.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.db.models import (\n    ConductorApproval,\n    ConductorChange,\n    ConductorEvidence,\n    ConductorProposal,\n    ConductorProposalStatusEnum,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 33
+          },
+          "location": {
+            "column": 1,
+            "row": 24
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 5,
+      "row": 31
+    },
+    "message": "`app.db.models.ConductorRiskLevelEnum` imported but unused",
+    "noqa_row": 31,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 21,
+      "row": 32
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/conductor_proposal_service.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.db.models import (\n    ConductorApproval,\n    ConductorChange,\n    ConductorEvidence,\n    ConductorProposal,\n    ConductorProposalStatusEnum,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 33
+          },
+          "location": {
+            "column": 1,
+            "row": 24
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 5,
+      "row": 32
+    },
+    "message": "`app.db.models.ConductorSession` imported but unused",
+    "noqa_row": 32,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 33,
+      "row": 35
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/conductor_proposal_service.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.domain.conductor_diff import (\n    get_value_at_path,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 38
+          },
+          "location": {
+            "column": 1,
+            "row": 34
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 5,
+      "row": 35
+    },
+    "message": "`app.domain.conductor_diff.apply_operations_to_snapshot` imported but unused",
+    "noqa_row": 35,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 26,
+      "row": 36
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/conductor_proposal_service.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.domain.conductor_diff import (\n    get_value_at_path,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 38
+          },
+          "location": {
+            "column": 1,
+            "row": 34
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 5,
+      "row": 36
+    },
+    "message": "`app.domain.conductor_diff.canonical_config_hash` imported but unused",
+    "noqa_row": 36,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 28,
+      "row": 45
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/conductor_proposal_service.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.domain.conductor_models import (\n    ConductorApprovalEntryResponse,\n    ConductorChangeResponse,\n    ConductorEvidenceResponse,\n    ConductorOperationType,\n    ConductorProposalResponse,\n    ConductorRiskLevel,\n    ProposedChangeOperationInput,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 49
+          },
+          "location": {
+            "column": 1,
+            "row": 39
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 5,
+      "row": 45
+    },
+    "message": "`app.domain.conductor_models.ConductorProposalStatus` imported but unused",
+    "noqa_row": 45,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 32,
+      "row": 48
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/conductor_proposal_service.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.domain.conductor_models import (\n    ConductorApprovalEntryResponse,\n    ConductorChangeResponse,\n    ConductorEvidenceResponse,\n    ConductorOperationType,\n    ConductorProposalResponse,\n    ConductorRiskLevel,\n    ProposedChangeOperationInput,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 49
+          },
+          "location": {
+            "column": 1,
+            "row": 39
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 5,
+      "row": 48
+    },
+    "message": "`app.domain.conductor_models.enforce_proposal_transition` imported but unused",
+    "noqa_row": 48,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 25,
+      "row": 52
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/conductor_proposal_service.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.security.policy import (\n    MAX_PROPOSAL_CHANGES,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 54
+          },
+          "location": {
+            "column": 1,
+            "row": 50
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 5,
+      "row": 52
+    },
+    "message": "`app.security.policy.classify_change_risk` imported but unused",
+    "noqa_row": 52,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 26,
+      "row": 53
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/conductor_proposal_service.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.security.policy import (\n    MAX_PROPOSAL_CHANGES,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 54
+          },
+          "location": {
+            "column": 1,
+            "row": 50
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 5,
+      "row": 53
+    },
+    "message": "`app.security.policy.classify_path_section` imported but unused",
+    "noqa_row": 53,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 77,
+      "row": 55
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/conductor_proposal_service.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 1,
+            "row": 56
+          },
+          "location": {
+            "column": 1,
+            "row": 55
+          }
+        }
+      ],
+      "message": "Remove unused import: `app.services.conductor_evidence_service.record_proposal_evidence`"
+    },
+    "location": {
+      "column": 53,
+      "row": 55
+    },
+    "message": "`app.services.conductor_evidence_service.record_proposal_evidence` imported but unused",
+    "noqa_row": 55,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 59,
+      "row": 26
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/conductor_service.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.core.errors import BadRequestError, NotFoundError",
+          "end_location": {
+            "column": 74,
+            "row": 26
+          },
+          "location": {
+            "column": 1,
+            "row": 26
+          }
+        }
+      ],
+      "message": "Remove unused import: `app.core.errors.ConflictError`"
+    },
+    "location": {
+      "column": 46,
+      "row": 26
+    },
+    "message": "`app.core.errors.ConflictError` imported but unused",
+    "noqa_row": 26,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 27,
+      "row": 80
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/conductor_service.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.services.conductor_evidence_service import (\n    record_proposal_evidence,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 82
+          },
+          "location": {
+            "column": 1,
+            "row": 79
+          }
+        }
+      ],
+      "message": "Remove unused import: `app.services.conductor_evidence_service.list_proposal_evidence`"
+    },
+    "location": {
+      "column": 5,
+      "row": 80
+    },
+    "message": "`app.services.conductor_evidence_service.list_proposal_evidence` imported but unused",
+    "noqa_row": 80,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 27,
+      "row": 39
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/evaluation_service.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.db.retell_models import (\n    EvaluationResult,\n    EvaluationResultStatusEnum,\n    EvaluationRule,\n    TestCase,\n    TestRun,\n    TestRunStatusEnum,\n    TestSuite,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 44
+          },
+          "location": {
+            "column": 1,
+            "row": 35
+          }
+        }
+      ],
+      "message": "Remove unused import: `app.db.retell_models.EvaluationRuleTypeEnum`"
+    },
+    "location": {
+      "column": 5,
+      "row": 39
+    },
+    "message": "`app.db.retell_models.EvaluationRuleTypeEnum` imported but unused",
+    "noqa_row": 39,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 27,
+      "row": 47
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/evaluation_service.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.domain.evaluation_models import (\n    EvaluationEvidencePayload,\n    EvaluationRuleCreateRequest,\n    EvaluationRuleType,\n    EvaluationRuleUpdateRequest,\n    QAScorecardSummary,\n    ScorecardStatus,\n    _coerce_rule_type,\n    validate_rule_config,\n    validate_safe_json_path,\n    validate_safe_regex_pattern,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 57
+          },
+          "location": {
+            "column": 1,
+            "row": 45
+          }
+        }
+      ],
+      "message": "Remove unused import: `app.domain.evaluation_models.EvaluationResultStatus`"
+    },
+    "location": {
+      "column": 5,
+      "row": 47
+    },
+    "message": "`app.domain.evaluation_models.EvaluationResultStatus` imported but unused",
+    "noqa_row": 47,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 23,
+      "row": 20
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/public_key_service.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 1,
+            "row": 21
+          },
+          "location": {
+            "column": 1,
+            "row": 20
+          }
+        }
+      ],
+      "message": "Remove unused import: `typing.Any`"
+    },
+    "location": {
+      "column": 20,
+      "row": 20
+    },
+    "message": "`typing.Any` imported but unused",
+    "noqa_row": 20,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 32,
+      "row": 41
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/public_widget_service.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.db.models import (\n    AgentVersion,\n    AuditAction,\n    ChatAgentVersion,\n    ChatMessage,\n    ChatMessageRoleEnum,\n    ChatSession,\n    ChatSessionStatusEnum,\n    PublicWidgetKey,\n    PublicWidgetKeyStatusEnum,\n    PublicWidgetSession,\n    PublicWidgetSessionStatusEnum,\n    TestRun,\n    TestRunModeEnum,\n    TestRunStatusEnum,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 46
+          },
+          "location": {
+            "column": 1,
+            "row": 30
+          }
+        }
+      ],
+      "message": "Remove unused import: `app.db.models.PublicWidgetSessionModeEnum`"
+    },
+    "location": {
+      "column": 5,
+      "row": 41
+    },
+    "message": "`app.db.models.PublicWidgetSessionModeEnum` imported but unused",
+    "noqa_row": 41,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 21,
+      "row": 19
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/qa_service.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.db.retell_models import (\n    TestRun,\n    TestRunStatusEnum,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 23
+          },
+          "location": {
+            "column": 1,
+            "row": 18
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 5,
+      "row": 19
+    },
+    "message": "`app.db.retell_models.EvaluationResult` imported but unused",
+    "noqa_row": 19,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 31,
+      "row": 20
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/qa_service.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.db.retell_models import (\n    TestRun,\n    TestRunStatusEnum,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 23
+          },
+          "location": {
+            "column": 1,
+            "row": 18
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 5,
+      "row": 20
+    },
+    "message": "`app.db.retell_models.EvaluationResultStatusEnum` imported but unused",
+    "noqa_row": 20,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 21,
+      "row": 38
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/simulation_service.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.db.retell_models import (\n    EvaluationRule,\n    TestCase,\n    TestRun,\n    TestRunModeEnum,\n    TestRunStatusEnum,\n    TestSuite,\n    TestSuiteStatusEnum,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 46
+          },
+          "location": {
+            "column": 1,
+            "row": 37
+          }
+        }
+      ],
+      "message": "Remove unused import: `app.db.retell_models.EvaluationResult`"
+    },
+    "location": {
+      "column": 5,
+      "row": 38
+    },
+    "message": "`app.db.retell_models.EvaluationResult` imported but unused",
+    "noqa_row": 38,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 16,
+      "row": 54
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/simulation_service.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.domain.evaluation_models import (\n    BatchRunAggregationSummary,\n    EvaluationResultResponse,\n    LLMPlaygroundRunRequest,\n    MultiTurnSimulationRequest,\n    TestCaseCreateRequest,\n    TestCaseUpdateRequest,\n    TestRunResponse,\n    TestRunStatus,\n    TestSuiteCreateRequest,\n    TestSuiteResponse,\n    TestSuiteUpdateRequest,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 61
+          },
+          "location": {
+            "column": 1,
+            "row": 47
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 5,
+      "row": 54
+    },
+    "message": "`app.domain.evaluation_models.TestRunMode` imported but unused",
+    "noqa_row": 54,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 25,
+      "row": 60
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/simulation_service.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.domain.evaluation_models import (\n    BatchRunAggregationSummary,\n    EvaluationResultResponse,\n    LLMPlaygroundRunRequest,\n    MultiTurnSimulationRequest,\n    TestCaseCreateRequest,\n    TestCaseUpdateRequest,\n    TestRunResponse,\n    TestRunStatus,\n    TestSuiteCreateRequest,\n    TestSuiteResponse,\n    TestSuiteUpdateRequest,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 61
+          },
+          "location": {
+            "column": 1,
+            "row": 47
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 5,
+      "row": 60
+    },
+    "message": "`app.domain.evaluation_models.validate_rule_config` imported but unused",
+    "noqa_row": 60,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 30,
+      "row": 16
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/providers/base.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 1,
+            "row": 17
+          },
+          "location": {
+            "column": 1,
+            "row": 16
+          }
+        }
+      ],
+      "message": "Remove unused import: `datetime.datetime`"
+    },
+    "location": {
+      "column": 22,
+      "row": 16
+    },
+    "message": "`datetime.datetime` imported but unused",
+    "noqa_row": 16,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 70,
+      "row": 26
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/providers/base.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 1,
+            "row": 27
+          },
+          "location": {
+            "column": 1,
+            "row": 26
+          }
+        }
+      ],
+      "message": "Remove unused import: `app.telephony.exceptions.ProviderWebhookVerificationError`"
+    },
+    "location": {
+      "column": 38,
+      "row": 26
+    },
+    "message": "`app.telephony.exceptions.ProviderWebhookVerificationError` imported but unused",
+    "noqa_row": 26,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 31,
+      "row": 28
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/providers/base.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.telephony.provider_errors import (\n    ProviderValidationError,\n    TelephonyError,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 31
+          },
+          "location": {
+            "column": 1,
+            "row": 27
+          }
+        }
+      ],
+      "message": "Remove unused import: `app.telephony.provider_errors.ProviderConfigurationError`"
+    },
+    "location": {
+      "column": 5,
+      "row": 28
+    },
+    "message": "`app.telephony.provider_errors.ProviderConfigurationError` imported but unused",
+    "noqa_row": 28,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 29,
+      "row": 41
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/realtime.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.telephony.exceptions import (\n    MediaSessionError,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 44
+          },
+          "location": {
+            "column": 1,
+            "row": 40
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 5,
+      "row": 41
+    },
+    "message": "`app.telephony.exceptions.CallSessionNotFoundError` imported but unused",
+    "noqa_row": 41,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 32,
+      "row": 43
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/realtime.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.telephony.exceptions import (\n    MediaSessionError,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 44
+          },
+          "location": {
+            "column": 1,
+            "row": 40
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 5,
+      "row": 43
+    },
+    "message": "`app.telephony.exceptions.TelephonyAuthorizationError` imported but unused",
+    "noqa_row": 43,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 23,
+      "row": 11
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/runtime.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 1,
+            "row": 12
+          },
+          "location": {
+            "column": 1,
+            "row": 11
+          }
+        }
+      ],
+      "message": "Remove unused import: `typing.Any`"
+    },
+    "location": {
+      "column": 20,
+      "row": 11
+    },
+    "message": "`typing.Any` imported but unused",
+    "noqa_row": 11,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 29,
+      "row": 47
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/runtime.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.telephony.exceptions import (\n    PhoneNumberNotFoundError,\n    PhoneNumberValidationError,\n    TelephonyAuthorizationError,\n    TelephonyConfigurationError,\n    TelephonyRuntimeError,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 53
+          },
+          "location": {
+            "column": 1,
+            "row": 46
+          }
+        }
+      ],
+      "message": "Remove unused import: `app.telephony.exceptions.CallStateTransitionError`"
+    },
+    "location": {
+      "column": 5,
+      "row": 47
+    },
+    "message": "`app.telephony.exceptions.CallStateTransitionError` imported but unused",
+    "noqa_row": 47,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 22,
+      "row": 18
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/schemas.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.telephony.enums import (\n    CallDirection,\n    PhoneNumberLifecycleStatus,\n    ProviderEventType,\n    SipTransportProtocol,\n    TelephonyCallState,\n    TelephonyHealthState,\n    TelephonyProviderName,\n    TransferFallbackAction,\n    TransferMode,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 29
+          },
+          "location": {
+            "column": 1,
+            "row": 16
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 5,
+      "row": 18
+    },
+    "message": "`app.telephony.enums.MediaSessionState` imported but unused",
+    "noqa_row": 18,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 24,
+      "row": 21
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/schemas.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.telephony.enums import (\n    CallDirection,\n    PhoneNumberLifecycleStatus,\n    ProviderEventType,\n    SipTransportProtocol,\n    TelephonyCallState,\n    TelephonyHealthState,\n    TelephonyProviderName,\n    TransferFallbackAction,\n    TransferMode,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 29
+          },
+          "location": {
+            "column": 1,
+            "row": 16
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 5,
+      "row": 21
+    },
+    "message": "`app.telephony.enums.SipConnectionStatus` imported but unused",
+    "noqa_row": 21,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 27,
+      "row": 27
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/schemas.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.telephony.enums import (\n    CallDirection,\n    PhoneNumberLifecycleStatus,\n    ProviderEventType,\n    SipTransportProtocol,\n    TelephonyCallState,\n    TelephonyHealthState,\n    TelephonyProviderName,\n    TransferFallbackAction,\n    TransferMode,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 29
+          },
+          "location": {
+            "column": 1,
+            "row": 16
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 5,
+      "row": 27
+    },
+    "message": "`app.telephony.enums.TransferLifecycleState` imported but unused",
+    "noqa_row": 27,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 31,
+      "row": 39
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/webhooks.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.telephony.enums import (\n    TERMINAL_CALL_STATES,\n    CallDirection,\n    InternalTelephonyEventType,\n    MediaSessionState,\n    ProviderEventType,\n    TelephonyCallState,\n    TelephonyProviderName,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 43
+          },
+          "location": {
+            "column": 1,
+            "row": 34
+          }
+        }
+      ],
+      "message": "Remove unused import: `app.telephony.enums.PhoneNumberLifecycleStatus`"
+    },
+    "location": {
+      "column": 5,
+      "row": 39
+    },
+    "message": "`app.telephony.enums.PhoneNumberLifecycleStatus` imported but unused",
+    "noqa_row": 39,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 32,
+      "row": 30
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/integration/test_agent_version_persistence.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.db.models import AuditLog",
+          "end_location": {
+            "column": 75,
+            "row": 30
+          },
+          "location": {
+            "column": 1,
+            "row": 30
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 27,
+      "row": 30
+    },
+    "message": "`app.db.models.Agent` imported but unused",
+    "noqa_row": 30,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 65,
+      "row": 30
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/integration/test_agent_version_persistence.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.db.models import AuditLog",
+          "end_location": {
+            "column": 75,
+            "row": 30
+          },
+          "location": {
+            "column": 1,
+            "row": 30
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 50,
+      "row": 30
+    },
+    "message": "`app.db.models.AgentVersion` imported but unused",
+    "noqa_row": 30,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 14,
+      "row": 14
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/integration/test_chat_contact_memory_persistence.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.db.retell_models import (\n    ChatMessage,\n    ChatSession,\n    Contact,\n    ContactMemoryEntry,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 20
+          },
+          "location": {
+            "column": 1,
+            "row": 13
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 5,
+      "row": 14
+    },
+    "message": "`app.db.retell_models.ChatAgent` imported but unused",
+    "noqa_row": 14,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 21,
+      "row": 15
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/integration/test_chat_contact_memory_persistence.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.db.retell_models import (\n    ChatMessage,\n    ChatSession,\n    Contact,\n    ContactMemoryEntry,\n)",
+          "end_location": {
+            "column": 2,
+            "row": 20
+          },
+          "location": {
+            "column": 1,
+            "row": 13
+          }
+        }
+      ],
+      "message": "Remove unused import"
+    },
+    "location": {
+      "column": 5,
+      "row": 15
+    },
+    "message": "`app.db.retell_models.ChatAgentVersion` imported but unused",
+    "noqa_row": 15,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 55,
+      "row": 10
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/integration/test_public_auth_boundary.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from tests.conftest import TEST_PASSWORD, make_tenant, make_user",
+          "end_location": {
+            "column": 79,
+            "row": 10
+          },
+          "location": {
+            "column": 1,
+            "row": 10
+          }
+        }
+      ],
+      "message": "Remove unused import: `tests.conftest.auth_headers`"
+    },
+    "location": {
+      "column": 43,
+      "row": 10
+    },
+    "message": "`tests.conftest.auth_headers` imported but unused",
+    "noqa_row": 10,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  },
+  {
+    "cell": null,
+    "code": "F401",
+    "end_location": {
+      "column": 32,
+      "row": 11
+    },
+    "filename": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/test_agent_config.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "from app.db.models import AgentVersion as AgentVersionRow, AuditLog",
+          "end_location": {
+            "column": 75,
+            "row": 11
+          },
+          "location": {
+            "column": 1,
+            "row": 11
+          }
+        }
+      ],
+      "message": "Remove unused import: `app.db.models.Agent`"
+    },
+    "location": {
+      "column": 27,
+      "row": 11
+    },
+    "message": "`app.db.models.Agent` imported but unused",
+    "noqa_row": 11,
+    "url": "https://docs.astral.sh/ruff/rules/unused-import"
+  }
+]

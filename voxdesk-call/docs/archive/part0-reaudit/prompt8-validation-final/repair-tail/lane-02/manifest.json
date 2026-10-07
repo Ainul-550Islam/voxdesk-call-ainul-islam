@@ -1,0 +1,178 @@
+{
+  "collection_status": "PASS",
+  "collection_exit_code": 0,
+  "collection_elapsed_seconds": 4.635,
+  "collection_log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/repair-tail/lane-02/collection.log",
+  "collected": 28,
+  "selected": 28,
+  "chunk_size_max": 5,
+  "chunk_count": 6,
+  "execution_mode": "sequential_child_processes",
+  "executed": 28,
+  "passed": 28,
+  "failed": 0,
+  "errors": 0,
+  "skipped": 0,
+  "not_run": 0,
+  "unconfirmed": 0,
+  "resource_unconfirmed": 0,
+  "unconfirmed_nodeids": [],
+  "resource_termination": false,
+  "full_suite_complete": true,
+  "chunks": [
+    {
+      "chunk": 1,
+      "collected": 5,
+      "submitted_nodeids": [
+        "tests/test_tts.py::test_capability_model_declares_what_the_integration_can_map",
+        "tests/test_tts.py::test_normalize_speech_speed_clamps_into_the_provider_range[1.0-1.0]",
+        "tests/test_tts.py::test_normalize_speech_speed_clamps_into_the_provider_range[0.7-0.7]",
+        "tests/test_tts.py::test_normalize_speech_speed_clamps_into_the_provider_range[1.2-1.2]",
+        "tests/test_tts.py::test_normalize_speech_speed_clamps_into_the_provider_range[0.85-0.85]"
+      ],
+      "executed_from_explicit_summary": 5,
+      "unconfirmed_count": 0,
+      "counts": {
+        "passed": 5,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "xfailed": 0,
+        "xpassed": 0
+      },
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 3.813,
+      "log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/repair-tail/lane-02/chunk-0001.log",
+      "terminal_summary_present": true
+    },
+    {
+      "chunk": 2,
+      "collected": 5,
+      "submitted_nodeids": [
+        "tests/test_tts.py::test_normalize_speech_speed_clamps_into_the_provider_range[1.15-1.15]",
+        "tests/test_tts.py::test_normalize_speech_speed_clamps_into_the_provider_range[0.5-0.7]",
+        "tests/test_tts.py::test_normalize_speech_speed_clamps_into_the_provider_range[0.0-0.7]",
+        "tests/test_tts.py::test_normalize_speech_speed_clamps_into_the_provider_range[2.0-1.2]",
+        "tests/test_tts.py::test_normalize_speech_speed_clamps_into_the_provider_range[9.9-1.2]"
+      ],
+      "executed_from_explicit_summary": 5,
+      "unconfirmed_count": 0,
+      "counts": {
+        "passed": 5,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "xfailed": 0,
+        "xpassed": 0
+      },
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 3.983,
+      "log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/repair-tail/lane-02/chunk-0002.log",
+      "terminal_summary_present": true
+    },
+    {
+      "chunk": 3,
+      "collected": 5,
+      "submitted_nodeids": [
+        "tests/test_tts.py::test_normalize_speech_speed_reports_whether_it_adjusted",
+        "tests/test_tts.py::test_range_constants_are_consistent",
+        "tests/test_tts.py::test_pipecat_input_params_now_has_a_speed_field",
+        "tests/test_tts.py::test_pipecat_accepts_stability_and_similarity_independently",
+        "tests/test_tts.py::test_the_service_sends_voice_settings_on_the_wire"
+      ],
+      "executed_from_explicit_summary": 5,
+      "unconfirmed_count": 0,
+      "counts": {
+        "passed": 5,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "xfailed": 0,
+        "xpassed": 0
+      },
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 3.982,
+      "log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/repair-tail/lane-02/chunk-0003.log",
+      "terminal_summary_present": true
+    },
+    {
+      "chunk": 4,
+      "collected": 5,
+      "submitted_nodeids": [
+        "tests/test_tts.py::test_default_speed_is_omitted_like_before",
+        "tests/test_tts.py::test_a_faster_tenant_speed_is_mapped",
+        "tests/test_tts.py::test_a_slower_tenant_speed_is_mapped",
+        "tests/test_tts.py::test_the_boundary_values_are_passed_through",
+        "tests/test_tts.py::test_out_of_range_stored_speed_is_clamped_and_warned"
+      ],
+      "executed_from_explicit_summary": 5,
+      "unconfirmed_count": 0,
+      "counts": {
+        "passed": 5,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "xfailed": 0,
+        "xpassed": 0
+      },
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 4.016,
+      "log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/repair-tail/lane-02/chunk-0004.log",
+      "terminal_summary_present": true
+    },
+    {
+      "chunk": 5,
+      "collected": 5,
+      "submitted_nodeids": [
+        "tests/test_tts.py::test_no_speed_warning_for_in_range_values",
+        "tests/test_tts.py::test_the_warning_leaks_no_secret",
+        "tests/test_tts.py::test_model_and_voice_resolution_reuses_language_options",
+        "tests/test_tts.py::test_a_custom_tenant_voice_is_used",
+        "tests/test_tts.py::test_the_default_voice_is_used_when_none_is_configured"
+      ],
+      "executed_from_explicit_summary": 5,
+      "unconfirmed_count": 0,
+      "counts": {
+        "passed": 5,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "xfailed": 0,
+        "xpassed": 0
+      },
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 4.396,
+      "log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/repair-tail/lane-02/chunk-0005.log",
+      "terminal_summary_present": true
+    },
+    {
+      "chunk": 6,
+      "collected": 3,
+      "submitted_nodeids": [
+        "tests/test_tts.py::test_tenant_specific_speed_from_a_real_tenant_row",
+        "tests/test_tts.py::test_backward_compatibility_default_is_unchanged_for_existing_tenants",
+        "tests/test_tts.py::test_the_subclass_is_used_by_the_builder"
+      ],
+      "executed_from_explicit_summary": 3,
+      "unconfirmed_count": 0,
+      "counts": {
+        "passed": 3,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "xfailed": 0,
+        "xpassed": 0
+      },
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 5.502,
+      "log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/repair-tail/lane-02/chunk-0006.log",
+      "terminal_summary_present": true
+    }
+  ]
+}

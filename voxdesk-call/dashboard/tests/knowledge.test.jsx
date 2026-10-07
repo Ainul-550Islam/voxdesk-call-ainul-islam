@@ -164,7 +164,7 @@ describe('real API response rendering', () => {
   it('renders the real statistics and no invented ones', async () => {
     await openKnowledge()
 
-    const ready = await screen.findByText('Ready')
+    const ready = await screen.findByText('Ready', { selector: '.stat__label' })
     expect(ready.closest('.card')).toHaveTextContent('1')
     expect(screen.getByText(/searchable chunks/i).closest('.card'))
       .toHaveTextContent('42')

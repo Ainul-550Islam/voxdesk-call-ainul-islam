@@ -1,0 +1,4209 @@
+"""Database schema.
+
+Multi-tenant from day one: every business you sell to is a Tenant row.
+This is what lets you charge $199/month x N clients from one deployment.
+
+A tenant now also belongs to an Organization, and each tenant has Environments
+(development / staging / production). Calls, leads, appointments, knowledge
+documents, automations, notifications, inbox state and usage events also carry
+``environment_id``. ``tenant_id`` stays mandatory. Billing, SSO and service
+accounts remain tenant-scoped. API keys may optionally narrow to one environment;
+legacy keys without a binding keep their existing tenant-wide behavior.
+"""
+
+from __future__ import annotations
+
+import enum
+import uuid
+from datetime import datetime, time
+from typing import Any
+
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    Enum,
+    Float,
+    ForeignKey,
+    ForeignKeyConstraint,
+    Index,
+    Integer,
+    JSON,
+    String,
+    Text,
+    Time,
+    UniqueConstraint,
+    event,
+    false,
+    select,
+    text,
+)
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, synonym
+
+
+class Base(DeclarativeBase):
+    """Shared SQLAlchemy declarative base for the application schema."""
+
+
+def _uuid() -> uuid.UUID:
+    return uuid.uuid4()
+
+
+class CallStatus(str, enum.Enum):
+    """
+    Lifecycle of a single call.
+
+    NOTE: SQLAlchemy's Enum() persists the member *name* (e.g. "NO_ANSWER"),
+    not the value. The PostgreSQL type `callstatus` must therefore contain
+    the names declared here -- see the enum-consistency and additive enum migrations.
+    """
+
+    RINGING = "ringing"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    NO_ANSWER = "no_answer"  # Twilio "no-answer": rang out, nobody picked up
+    TRANSFERRED = "transferred"  # handed to a human via <Dial>
+    CANCELLED = "cancelled"  # provider confirmed cancellation
+
+
+class TransferState(str, enum.Enum):
+    """
+    Human-escalation sub-state, tracked separately from CallStatus.
+
+    A call can be IN_PROGRESS while a transfer is mid-flight, so this cannot be
+    folded into CallStatus. It also doubles as the idempotency lock: moving out
+    of NONE is what stops a second tool call from dialling the human twice.
+
+    NOTE: SQLAlchemy's Enum() persists the member NAME, so the PostgreSQL type
+    `transferstate` must contain NONE/REQUESTED/DIALING/CONNECTED/FAILED --
+    see alembic/versions/0004_call_transfer_lifecycle.py.
+    """
+
+    NONE = "none"  # no escalation has been requested
+    REQUESTED = "requested"  # the AI asked; we have not told the provider yet
+    DIALING = "dialing"  # the provider accepted; the human's phone is ringing
+    CONNECTED = "connected"  # the human answered
+    FAILED = "failed"  # busy, no answer, rejected, or a provider error
+
+
+#: States in which a transfer is already under way or finished. A second
+#: request while in one of these must be a no-op, never a second phone call.
+TRANSFER_IN_FLIGHT = frozenset(
+    {
+        TransferState.REQUESTED,
+        TransferState.DIALING,
+        TransferState.CONNECTED,
+    }
+)
+
+
+class CallDirection(str, enum.Enum):
+    INBOUND = "inbound"
+    OUTBOUND = "outbound"
+
+
+class LeadStatus(str, enum.Enum):
+    NEW = "new"
+    QUEUED = "queued"
+    CALLED = "called"
+    QUALIFIED = "qualified"
+    UNQUALIFIED = "unqualified"
+    FAILED = "failed"
+    DNC = "do_not_call"  # legally required: never call again
+
+
+class UserRole(str, enum.Enum):
+    """
+    Ordered by privilege. `rbac.ROLE_LEVEL` turns these into integers so a
+    role can never grant something above itself.
+    """
+
+    OWNER = "owner"
+    ADMIN = "admin"
+    MANAGER = "manager"
+    AGENT = "agent"
+    VIEWER = "viewer"
+
+
+class MembershipStatus(str, enum.Enum):
+    """Shared lifecycle for organization, tenant and environment memberships.
+
+    ``revoked`` and ``expired`` never authorize. ``suspended`` never authorizes
+    a privileged action. Ordinary callers cannot move ``revoked`` back to
+    ``active``; that requires a new invitation.
+    """
+
+    INVITED = "invited"
+    ACTIVE = "active"
+    SUSPENDED = "suspended"
+    REVOKED = "revoked"
+    EXPIRED = "expired"
+
+
+class InvitationScope(str, enum.Enum):
+    ORGANIZATION = "organization"
+    TENANT = "tenant"
+
+
+class PolicyScope(str, enum.Enum):
+    ORGANIZATION = "organization"
+    TENANT = "tenant"
+    ENVIRONMENT = "environment"
+
+
+class AuditAction(str, enum.Enum):
+    LOGIN_SUCCESS = "login_success"
+    LOGIN_FAILURE = "login_failure"
+    LOGOUT = "logout"
+    TOKEN_REFRESH = "token_refresh"
+    USER_CREATED = "user_created"
+    USER_DEACTIVATED = "user_deactivated"
+    USER_REACTIVATED = "user_reactivated"
+    ROLE_CHANGED = "role_changed"
+    PASSWORD_CHANGED = "password_changed"
+    AUTHZ_DENIED = "authz_denied"
+    # Governance details continue through the existing AuditLog table; the
+    # detailed immutable event lives in governance_evidence_events.
+    GOVERNANCE_EVENT = "governance_event"
+    # STEP 5. `detail` on these carries provider and outcome only -- never a
+    # token, never a config value that could hold one.
+    INTEGRATION_CONNECTED = "integration_connected"
+    INTEGRATION_UPDATED = "integration_updated"
+    INTEGRATION_DISCONNECTED = "integration_disconnected"
+    INTEGRATION_TESTED = "integration_tested"
+    # STEP 6. Same rule: provider and outcome only, never a token.
+    CALENDAR_CONNECTED = "calendar_connected"
+    CALENDAR_DISCONNECTED = "calendar_disconnected"
+    APPOINTMENT_CANCELLED = "appointment_cancelled"
+    APPOINTMENT_RESCHEDULED = "appointment_rescheduled"
+    # STEP 7. `detail` carries plan codes and outcomes only -- never a card
+    # number, never a Stripe key, never a webhook secret.
+    BILLING_CHECKOUT_STARTED = "billing_checkout_started"
+    BILLING_SUBSCRIPTION_CREATED = "billing_subscription_created"
+    BILLING_SUBSCRIPTION_CHANGED = "billing_subscription_changed"
+    BILLING_CANCELLATION_REQUESTED = "billing_cancellation_requested"
+    BILLING_CANCELLATION_COMPLETED = "billing_cancellation_completed"
+    BILLING_PAYMENT_FAILED = "billing_payment_failed"
+    BILLING_PLAN_CHANGED = "billing_plan_changed"
+    BILLING_LIMIT_HIT = "billing_limit_hit"
+    BILLING_ADJUSTMENT = "billing_adjustment"
+    # STEP 9. Data-subject rights and licensing; detail carries counts and
+    # plan codes only -- never personal data beyond what the action implies.
+    GDPR_EXPORT = "gdpr_export"
+    GDPR_ERASURE = "gdpr_erasure"
+    LICENSE_ISSUED = "license_issued"
+    # STEP 18, enterprise identity. Same discipline as every block above:
+    # `detail` carries ids, outcomes, counts and role names. It never carries a
+    # password, an access/refresh token, an API-key or SCIM secret, a TOTP seed,
+    # a recovery code, a raw SAML assertion, an ID token or a client secret.
+    IDENTITY_REAUTHENTICATED = "identity_reauthenticated"
+    IDENTITY_LINK_REJECTED = "identity_link_rejected"
+    PASSWORD_RESET_REQUESTED = "password_reset_requested"
+    PASSWORD_RESET_COMPLETED = "password_reset_completed"
+    EMAIL_VERIFICATION_SENT = "email_verification_sent"
+    EMAIL_VERIFIED = "email_verified"
+    MFA_ENROLLMENT_STARTED = "mfa_enrollment_started"
+    MFA_ENABLED = "mfa_enabled"
+    MFA_DISABLED = "mfa_disabled"
+    MFA_VERIFIED = "mfa_verified"
+    MFA_FAILED = "mfa_failed"
+    MFA_CHALLENGE_LOCKED = "mfa_challenge_locked"
+    MFA_RECOVERY_CODE_USED = "mfa_recovery_code_used"
+    MFA_RECOVERY_CODES_REGENERATED = "mfa_recovery_codes_regenerated"
+    SESSION_CREATED = "session_created"
+    SESSION_REVOKED = "session_revoked"
+    SESSION_SUSPICIOUS = "session_suspicious"
+    SSO_CONNECTION_CREATED = "sso_connection_created"
+    SSO_CONNECTION_UPDATED = "sso_connection_updated"
+    SSO_CONNECTION_DELETED = "sso_connection_deleted"
+    SSO_CONNECTION_ENABLED = "sso_connection_enabled"
+    SSO_CONNECTION_DISABLED = "sso_connection_disabled"
+    SSO_MAPPING_CHANGED = "sso_mapping_changed"
+    SSO_CERTIFICATE_ROTATED = "sso_certificate_rotated"
+    SSO_LOGIN_STARTED = "sso_login_started"
+    SSO_LOGIN_SUCCEEDED = "sso_login_succeeded"
+    SSO_LOGIN_FAILED = "sso_login_failed"
+    SSO_USER_PROVISIONED = "sso_user_provisioned"
+    SSO_ACCOUNT_LINKED = "sso_account_linked"
+    # Removing a federated subject from an account. The user row is not deleted,
+    # and the detail carries a hashed subject hint rather than the subject.
+    SSO_ACCOUNT_UNLINKED = "sso_account_unlinked"
+    SCIM_CREDENTIAL_CREATED = "scim_credential_created"
+    SCIM_CREDENTIAL_ROTATED = "scim_credential_rotated"
+    SCIM_CREDENTIAL_REVOKED = "scim_credential_revoked"
+    SCIM_USER_PROVISIONED = "scim_user_provisioned"
+    SCIM_USER_UPDATED = "scim_user_updated"
+    SCIM_USER_DEPROVISIONED = "scim_user_deprovisioned"
+    SCIM_GROUP_CREATED = "scim_group_created"
+    SCIM_GROUP_UPDATED = "scim_group_updated"
+    SCIM_GROUP_DELETED = "scim_group_deleted"
+    API_KEY_CREATED = "api_key_created"
+    API_KEY_ROTATED = "api_key_rotated"
+    API_KEY_REVOKED = "api_key_revoked"
+    # A machine credential that *resolved to a row* and was then refused:
+    # revoked, expired, its account switched off, its family disabled for the
+    # workspace, or its owner no longer active. An unknown or malformed token
+    # is not recorded here -- that would be an unauthenticated log amplifier --
+    # so every row of this kind names a credential the operator can look up.
+    CREDENTIAL_AUTH_REJECTED = "credential_auth_rejected"
+    SERVICE_ACCOUNT_CREATED = "service_account_created"
+    SERVICE_ACCOUNT_UPDATED = "service_account_updated"
+    SERVICE_ACCOUNT_DISABLED = "service_account_disabled"
+    SERVICE_ACCOUNT_ENABLED = "service_account_enabled"
+    SERVICE_ACCOUNT_CREDENTIAL_CREATED = "service_account_credential_created"
+    SERVICE_ACCOUNT_CREDENTIAL_ROTATED = "service_account_credential_rotated"
+    SERVICE_ACCOUNT_CREDENTIAL_REVOKED = "service_account_credential_revoked"
+    DOMAIN_ADDED = "domain_added"
+    DOMAIN_VERIFIED = "domain_verified"
+    DOMAIN_VERIFICATION_FAILED = "domain_verification_failed"
+    DOMAIN_REMOVED = "domain_removed"
+    DOMAIN_ENFORCEMENT_CHANGED = "domain_enforcement_changed"
+    # A change to the identity policy itself (PATCH /api/identity/policy).
+    # Separate from the controls it governs, so "who turned MFA on for this
+    # workspace, and when" is one row rather than an inference.
+    SECURITY_SETTINGS_CHANGED = "security_settings_changed"
+    # Organization → tenant → environment foundation. Identifiers and status
+    # only; never a credential. Added by 0017 as member *names*.
+    ORGANIZATION_CREATED = "organization_created"
+    ORGANIZATION_UPDATED = "organization_updated"
+    ORGANIZATION_SUSPENDED = "organization_suspended"
+    ORGANIZATION_RESTORED = "organization_restored"
+    ORGANIZATION_READ_ONLY = "organization_read_only"
+    TENANT_LIFECYCLE_CHANGED = "tenant_lifecycle_changed"
+    ENVIRONMENT_CREATED = "environment_created"
+    ENVIRONMENT_UPDATED = "environment_updated"
+    ENVIRONMENT_SUSPENDED = "environment_suspended"
+    ENVIRONMENT_RESTORED = "environment_restored"
+    ENVIRONMENT_ARCHIVED = "environment_archived"
+    ENVIRONMENT_DEFAULT_CHANGED = "environment_default_changed"
+    # Membership, invitation and quota events. Identifiers and status only.
+    # Added by 0018 as member names. Detail never carries an invitation token.
+    MEMBERSHIP_CREATED = "membership_created"
+    MEMBERSHIP_UPDATED = "membership_updated"
+    MEMBERSHIP_SUSPENDED = "membership_suspended"
+    MEMBERSHIP_RESTORED = "membership_restored"
+    MEMBERSHIP_REVOKED = "membership_revoked"
+    INVITATION_CREATED = "invitation_created"
+    INVITATION_ACCEPTED = "invitation_accepted"
+    INVITATION_REVOKED = "invitation_revoked"
+    INVITATION_RESENT = "invitation_resent"
+    ENVIRONMENT_SELECTED = "environment_selected"
+    QUOTA_UPDATED = "quota_updated"
+    QUOTA_DENIED = "quota_denied"
+    # Environment-scoped business resources. Identifiers and resource type only.
+    # Added by 0019 as member names. Detail never carries a token or transcript.
+    RESOURCE_BOUND = "resource_bound"
+    RESOURCE_SCOPE_DENIED = "resource_scope_denied"
+    RESOURCE_EXPORTED = "resource_exported"
+
+
+class Speaker(str, enum.Enum):
+    """
+    Who produced a transcript turn.
+
+    Canonical values are USER / ASSISTANT / SYSTEM. They match the role
+    vocabulary the LLM context and the text channels already use, and they
+    match the `speaker` PostgreSQL type created by the baseline migration,
+    so no persisted row has to be rewritten on an Alembic-managed database.
+    """
+
+    USER = "user"  # the caller / the person texting
+    ASSISTANT = "assistant"  # the AI receptionist
+    SYSTEM = "system"  # system notes (transfer, timeout, error)
+
+
+class Organization(Base):
+    """Parent of one or more tenants.
+
+    Not a billing account and not a second tenant. Suspending or marking an
+    organization deleted changes this row's status; it does not delete tenants,
+    users, calls or invoices.
+    """
+
+    __tablename__ = "organizations"
+    __table_args__ = (
+        UniqueConstraint("slug", name="uq_organizations_slug"),
+        CheckConstraint(
+            "status IN ('active', 'suspended', 'read_only', 'deleted')",
+            name="ck_organizations_status",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    slug: Mapped[str] = mapped_column(String(63), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), default="active", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
+    )
+
+
+class Tenant(Base):
+    """One business = one tenant. Their phone number routes to their config.
+
+    ``organization_id`` is the hierarchy parent. Callers that still construct a
+    ``Tenant`` without one — tests, the seed script, the operator create path —
+    receive a dedicated organization from the insert hook below. The id is never
+    read from a JWT claim.
+    """
+
+    __tablename__ = "tenants"
+    __table_args__ = (
+        CheckConstraint(
+            "lifecycle_status IN ('active', 'suspended', 'read_only', 'deleted')",
+            name="ck_tenants_lifecycle_status",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    name: Mapped[str] = mapped_column(String(200))
+    # Nullable in no shipped schema: the insert hook assigns it before the
+    # INSERT, and migration 0017 backfills then sets NOT NULL. Declared
+    # non-null so a tenant cannot be stored without a parent.
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("organizations.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    # Separate from ``is_active``. Lifecycle is the new hierarchy state;
+    # ``is_active`` remains the existing login/kill switch and is not flipped
+    # by suspend, so a token issued before this feature still authenticates.
+    lifecycle_status: Mapped[str] = mapped_column(
+        String(16), default="active", server_default="active", nullable=False
+    )
+    industry: Mapped[str] = mapped_column(
+        String(80), default="general"
+    )  # dental, legal, restaurant...
+    twilio_number: Mapped[str] = mapped_column(String(32), unique=True, index=True)
+
+    # Agent personality / knowledge
+    agent_name: Mapped[str] = mapped_column(String(80), default="Alex")
+    greeting: Mapped[str] = mapped_column(
+        Text, default="Thanks for calling. How can I help you today?"
+    )
+    system_prompt_extra: Mapped[str] = mapped_column(Text, default="")
+    knowledge_base: Mapped[dict] = mapped_column(
+        JSON, default=dict
+    )  # {"hours": "...", "services": [...]}
+
+    # ---- LLM choice (প্রতি ক্লায়েন্টে আলাদা AI) ----
+    llm_preset: Mapped[str | None] = mapped_column(String(32), default="natural")
+    llm_provider: Mapped[str | None] = mapped_column(
+        String(32), nullable=True
+    )  # openai|anthropic|google
+    llm_model: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    temperature: Mapped[float] = mapped_column(Float, default=0.65)
+
+    # ---- মানুষের মতো শোনানোর সেটিং ----
+    humanize: Mapped[bool] = mapped_column(Boolean, default=True)
+    vad_stop_secs: Mapped[float] = mapped_column(Float, default=0.45)
+    speech_speed: Mapped[float] = mapped_column(Float, default=1.0)
+    voice_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    language: Mapped[str] = mapped_column(String(16), default="en-US")
+
+    # Behaviour
+    timezone: Mapped[str] = mapped_column(String(64), default="America/New_York")
+    business_open: Mapped[time] = mapped_column(Time, default=time(9, 0))
+    business_close: Mapped[time] = mapped_column(Time, default=time(17, 0))
+    appointment_minutes: Mapped[int] = mapped_column(Integer, default=30)
+    escalation_number: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    notify_sms_number: Mapped[str | None] = mapped_column(String(32), nullable=True)
+
+    # Integrations
+    google_calendar_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    crm_webhook_url: Mapped[str | None] = mapped_column(
+        String(500), nullable=True
+    )  # GHL / Zapier / Make / n8n
+    crm_type: Mapped[str] = mapped_column(
+        String(32), default="webhook"
+    )  # webhook|gohighlevel|hubspot
+    crm_api_key: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    # Outbound calling (cold calls, follow-ups, reminders)
+    outbound_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    outbound_caller_id: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    outbound_window_open: Mapped[time] = mapped_column(
+        Time, default=time(9, 0)
+    )  # TCPA: no calls before 8am
+    outbound_window_close: Mapped[time] = mapped_column(
+        Time, default=time(20, 0)
+    )  # TCPA: none after 9pm
+    max_call_attempts: Mapped[int] = mapped_column(Integer, default=3)
+
+    # Reminders
+    reminder_hours_before: Mapped[int] = mapped_column(Integer, default=24)
+    reminder_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    # IVR / call flow (JSON so the dashboard can edit it without a deploy)
+    ivr_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    ivr_flow: Mapped[dict] = mapped_column(JSON, default=dict)
+
+    # Text channels
+    sms_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    whatsapp_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    whatsapp_number: Mapped[str | None] = mapped_column(String(32), nullable=True)
+
+    # A2P 10DLC (US SMS is silently filtered without this)
+    a2p_brand_sid: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    a2p_campaign_sid: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    a2p_status: Mapped[str] = mapped_column(String(32), default="not_started")
+
+    # Compliance / recording
+    record_calls: Mapped[bool] = mapped_column(Boolean, default=False)
+    recording_disclaimer: Mapped[str] = mapped_column(
+        Text, default="This call may be recorded for quality purposes."
+    )
+
+    # Data-subject rights (STEP 9). Consent provenance is recorded when the
+    # business captures opt-in; erasure_requested_at marks a GDPR erasure
+    # request (set by app/api/gdpr_routes.py) for operator completion.
+    data_consent_recorded_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    data_consent_source: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    erasure_requested_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    # Billing
+    plan: Mapped[str] = mapped_column(String(32), default="starter")  # starter / pro
+    included_minutes: Mapped[int] = mapped_column(Integer, default=500)
+    minutes_used: Mapped[float] = mapped_column(Float, default=0.0)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    # Real-call E2E readiness (STEP 5). `is_test_tenant` marks a tenant that a
+    # human operator created for a genuine, manual end-to-end Twilio call. It is
+    # the single source of truth the E2E guard trusts; it has no effect on
+    # anything else in the product. Defaults to False so no existing tenant is
+    # ever silently marked as a test tenant.
+    is_test_tenant: Mapped[bool] = mapped_column(Boolean, server_default=false(), default=False)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+
+    calls: Mapped[list["Call"]] = relationship(back_populates="tenant")
+
+
+class Environment(Base):
+    """Deployment target for one tenant. Not a second tenant and not a secret store.
+
+    ``production_guard`` / ``default_guard`` are the uniqueness locks. A NULL
+    guard does not collide, so a tenant may hold one development and one staging
+    row beside the single production row. ``UNIQUE (tenant_id, id)`` is the
+    target of the composite foreign keys on environment-scoped resources, so a
+    row cannot point at another tenant's environment.
+    """
+
+    __tablename__ = "environments"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "id", name="uq_environments_tenant_identity"),
+        UniqueConstraint("tenant_id", "slug", name="uq_environments_tenant_slug"),
+        UniqueConstraint("tenant_id", "kind", name="uq_environments_tenant_kind"),
+        UniqueConstraint("production_guard", name="uq_environments_production_guard"),
+        UniqueConstraint("default_guard", name="uq_environments_default_guard"),
+        CheckConstraint(
+            "kind IN ('development', 'staging', 'production')",
+            name="ck_environments_kind",
+        ),
+        CheckConstraint(
+            "status IN ('active', 'suspended', 'archived')",
+            name="ck_environments_status",
+        ),
+        Index("ix_environments_tenant_id", "tenant_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+    )
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    slug: Mapped[str] = mapped_column(String(63), nullable=False)
+    kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), default="active", nullable=False)
+    is_default: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    #: Set to ``tenant_id`` only for the production row. Unique, so a second
+    #: production cannot be inserted. NULL for every other kind.
+    production_guard: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    #: Set to ``tenant_id`` only for the default row. Unique, so two defaults
+    #: cannot exist. NULL on every non-default row.
+    default_guard: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    release_version: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    deployed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    deployment_status: Mapped[str] = mapped_column(String(16), default="idle", nullable=False)
+    deployment_source: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    health_state: Mapped[str] = mapped_column(String(16), default="unknown", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
+    )
+
+
+class Call(Base):
+    __tablename__ = "calls"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["tenant_id", "environment_id"],
+            ["environments.tenant_id", "environments.id"],
+            name="fk_calls_tenant_environment",
+        ),
+        Index("ix_calls_tenant_environment", "tenant_id", "environment_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tenants.id"), index=True)
+    environment_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("environments.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    call_sid: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    from_number: Mapped[str] = mapped_column(String(32))
+    to_number: Mapped[str] = mapped_column(String(32))
+    status: Mapped[CallStatus] = mapped_column(Enum(CallStatus), default=CallStatus.RINGING)
+
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+    ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    duration_seconds: Mapped[float] = mapped_column(Float, default=0.0)
+
+    # Outcome
+    summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    intent: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    booked: Mapped[bool] = mapped_column(Boolean, default=False)
+    escalated: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    # Latency stats -- your product's #1 quality metric
+    avg_response_ms: Mapped[float | None] = mapped_column(Float, nullable=True)
+    llm_used: Mapped[str | None] = mapped_column(String(80), nullable=True)
+
+    direction: Mapped[CallDirection] = mapped_column(
+        Enum(CallDirection), default=CallDirection.INBOUND
+    )
+    recording_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    lead_score: Mapped[int | None] = mapped_column(Integer, nullable=True)  # 0-100
+
+    # Why the call ended badly ("busy", "no-answer", ...). Only set for
+    # FAILED/NO_ANSWER; `summary` stays the human-readable outcome.
+    failure_reason: Mapped[str | None] = mapped_column(String(120), nullable=True)
+
+    # --- human transfer -------------------------------------------------
+    # `escalated` (above) stays as the boolean the dashboard and CRM payload
+    # already read; these columns record how the escalation actually went.
+    transfer_state: Mapped[TransferState] = mapped_column(
+        Enum(TransferState), default=TransferState.NONE, nullable=False
+    )
+    transfer_destination: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    transfer_reason: Mapped[str | None] = mapped_column(String(400), nullable=True)
+    transfer_attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    transfer_error: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    transfer_requested_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    transfer_started_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    transfer_completed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    transfer_failed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    transfer_context: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    crm_synced: Mapped[bool] = mapped_column(Boolean, default=False)
+    lead_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("leads.id"), nullable=True, index=True
+    )
+
+    tenant: Mapped[Tenant] = relationship(back_populates="calls")
+    turns: Mapped[list["Turn"]] = relationship(back_populates="call", cascade="all, delete-orphan")
+
+
+class Turn(Base):
+    """One utterance. Storing these gives you transcripts + training data."""
+
+    __tablename__ = "turns"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    call_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("calls.id"), index=True)
+    speaker: Mapped[Speaker] = mapped_column(Enum(Speaker))
+    text: Mapped[str] = mapped_column(Text)
+    latency_ms: Mapped[float | None] = mapped_column(Float, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+
+    call: Mapped[Call] = relationship(back_populates="turns")
+
+
+class AppointmentStatus(str, enum.Enum):
+    """
+    Lifecycle of one booking.
+
+    Before STEP 6 there was no status at all: a row existed or it did not, so
+    there was no way to cancel, to record a no-show, or -- most importantly --
+    to distinguish "the provider accepted this" from "we wrote a row and hoped".
+
+    PENDING    persisted, provider has not accepted (yet, or ever)
+    CONFIRMED  the provider accepted and returned an event id
+    RESCHEDULED  moved; `starts_at` is the new time
+    CANCELLED  cancelled by anyone
+    NO_SHOW    the customer did not arrive
+    FAILED     the provider refused permanently; nothing is on the calendar
+    """
+
+    PENDING = "pending"
+    CONFIRMED = "confirmed"
+    RESCHEDULED = "rescheduled"
+    CANCELLED = "cancelled"
+    NO_SHOW = "no_show"
+    FAILED = "failed"
+
+
+#: Statuses that still occupy their slot. Anything outside this set frees the
+#: time for someone else, so it is the definition the conflict check uses --
+#: named here rather than inlined, because "does a cancelled appointment still
+#: block the slot" is a policy question and it should have one answer.
+BLOCKING_APPOINTMENT_STATUSES = frozenset(
+    {
+        AppointmentStatus.PENDING,
+        AppointmentStatus.CONFIRMED,
+        AppointmentStatus.RESCHEDULED,
+    }
+)
+
+#: Terminal: no further provider call will be made for these.
+TERMINAL_APPOINTMENT_STATUSES = frozenset(
+    {
+        AppointmentStatus.CANCELLED,
+        AppointmentStatus.NO_SHOW,
+        AppointmentStatus.FAILED,
+    }
+)
+
+
+class CalendarProviderType(str, enum.Enum):
+    """
+    Calendar backends with an adapter.
+
+    `GOOGLE_SERVICE_ACCOUNT` is the pre-STEP-6 path, kept as a distinct member
+    rather than folded into `GOOGLE`: it authenticates with a platform-wide
+    service-account file instead of per-tenant OAuth, which is a different
+    security posture and a different set of failure modes. Merging them would
+    hide which tenants are still on the shared credential.
+    """
+
+    GOOGLE = "google"
+    GOOGLE_SERVICE_ACCOUNT = "google_service_account"
+    MICROSOFT = "microsoft"
+    CALCOM = "calcom"
+    INTERNAL = "internal"
+
+
+class Appointment(Base):
+    """
+    One booking.
+
+    Columns added in STEP 6 are all nullable or defaulted, so existing rows
+    keep working: `status` defaults to CONFIRMED for them (they were created
+    under the old code, which only ever wrote a row it believed in), and
+    `timezone` is backfilled from the tenant.
+    """
+
+    __tablename__ = "appointments"
+    __table_args__ = (
+        # The concurrency primitive. Two callers racing for the same slot both
+        # compute the same key, so the second INSERT loses at the database
+        # rather than in application logic. See `service.book`.
+        UniqueConstraint("tenant_id", "slot_key", name="uq_appointment_slot"),
+        # Requirement 9: a retried booking request must find its own earlier
+        # attempt rather than creating a second appointment.
+        UniqueConstraint("tenant_id", "idempotency_key", name="uq_appointment_idempotency"),
+        Index("ix_appointment_tenant_start", "tenant_id", "starts_at"),
+        Index("ix_appointment_tenant_status", "tenant_id", "status"),
+        ForeignKeyConstraint(
+            ["tenant_id", "environment_id"],
+            ["environments.tenant_id", "environments.id"],
+            name="fk_appointments_tenant_environment",
+        ),
+        Index("ix_appointments_tenant_environment", "tenant_id", "environment_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tenants.id"), index=True)
+    environment_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("environments.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    call_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("calls.id"), nullable=True)
+
+    customer_name: Mapped[str] = mapped_column(String(200))
+    customer_phone: Mapped[str] = mapped_column(String(32))
+    reason: Mapped[str] = mapped_column(Text, default="")
+    starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    google_event_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+
+    # ---- STEP 6 ----------------------------------------------------------
+
+    status: Mapped[AppointmentStatus] = mapped_column(
+        Enum(AppointmentStatus), default=AppointmentStatus.PENDING, nullable=False
+    )
+
+    #: The IANA zone the customer agreed to, captured at booking time.
+    #:
+    #: Not derivable from `Tenant.timezone` after the fact: a business that
+    #: relocates, or corrects a wrong timezone, would otherwise silently
+    #: reinterpret every appointment already in the book. The offset alone is
+    #: not enough either -- it does not survive a DST boundary.
+    timezone: Mapped[str] = mapped_column(String(64), default="UTC", nullable=False)
+
+    provider: Mapped[CalendarProviderType | None] = mapped_column(
+        Enum(CalendarProviderType), nullable=True
+    )
+    #: The provider's own event id. Proof that the booking was accepted; a row
+    #: is only CONFIRMED when this is set.
+    external_event_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    #: Which calendar within the provider (Google calendar id, Graph calendar
+    #: id, Cal.com event-type id).
+    calendar_reference: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    lead_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("leads.id", ondelete="SET NULL"), nullable=True
+    )
+    attendee_email: Mapped[str | None] = mapped_column(String(320), nullable=True)
+    notes: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    meeting_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+    #: Deterministic `{start}|{end}` in UTC. The unique constraint above turns
+    #: it into a slot lock. Nullable so pre-STEP-6 rows do not all collide on
+    #: NULL -- in both PostgreSQL and SQLite, NULLs are distinct in a UNIQUE
+    #: index, which is exactly the behaviour needed for a backfill.
+    slot_key: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    #: Stable across retries of one booking request.
+    idempotency_key: Mapped[str | None] = mapped_column(String(128), nullable=True)
+
+    confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    cancellation_reason: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    #: Free text rather than a FK: the canceller may be a staff user, the
+    #: customer on a call, or the provider itself via a webhook.
+    cancelled_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+    rescheduled_from: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    #: Scrubbed before storage. Shown to staff, so never a raw provider body.
+    last_error: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
+    )
+
+
+class Campaign(Base):
+    """A batch of outbound calls: cold-call list, follow-up sweep, reminder run.
+
+    Environment-scoped like ``Lead``, ``Call`` and ``Appointment`` (Batch 06):
+    a campaign belongs to exactly one tenant + environment pair, and the
+    composite foreign key below makes a campaign that points at another
+    tenant's environment impossible at the database level. A campaign may only
+    ever target leads and segments from its own environment — the dialer
+    (``app/telephony/outbound.py``) and the campaign service both filter on
+    ``environment_id``, and the ``before_insert`` hook at the bottom of this
+    module resolves the environment for legacy inserts through the *existing*
+    ``app.environments.resource_binding`` scope machinery (explicit id → the
+    tenant's active production environment; closed environments and
+    cross-tenant ids fail closed). ``environment_id`` is immutable after
+    insert, enforced by the matching ``before_update`` hook.
+    """
+
+    __tablename__ = "campaigns"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["tenant_id", "environment_id"],
+            ["environments.tenant_id", "environments.id"],
+            name="fk_campaigns_tenant_environment",
+        ),
+        Index("ix_campaigns_tenant_environment", "tenant_id", "environment_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tenants.id"), index=True)
+    environment_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("environments.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    name: Mapped[str] = mapped_column(String(200))
+    goal: Mapped[str] = mapped_column(
+        String(32), default="qualify"
+    )  # qualify|remind|followup|survey
+    script_prompt: Mapped[str] = mapped_column(Text, default="")
+    opening_line: Mapped[str] = mapped_column(
+        Text, default="Hi, this is {agent} calling from {business}. Do you have a quick minute?"
+    )
+    is_active: Mapped[bool] = mapped_column(Boolean, default=False)
+    calls_per_minute: Mapped[int] = mapped_column(Integer, default=2)  # throttle
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+
+    leads: Mapped[list["Lead"]] = relationship(back_populates="campaign")
+
+
+class Lead(Base):
+    """A person to call. Feeds outbound campaigns and gets pushed to the CRM."""
+
+    __tablename__ = "leads"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["tenant_id", "environment_id"],
+            ["environments.tenant_id", "environments.id"],
+            name="fk_leads_tenant_environment",
+        ),
+        Index("ix_leads_tenant_environment", "tenant_id", "environment_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tenants.id"), index=True)
+    environment_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("environments.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    campaign_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("campaigns.id"), nullable=True, index=True
+    )
+
+    name: Mapped[str] = mapped_column(String(200), default="")
+    phone: Mapped[str] = mapped_column(String(32), index=True)
+    email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    company: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    notes: Mapped[str] = mapped_column(Text, default="")
+    custom_fields: Mapped[dict] = mapped_column(JSON, default=dict)
+
+    status: Mapped[LeadStatus] = mapped_column(Enum(LeadStatus), default=LeadStatus.NEW)
+    score: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    last_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    next_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+
+    campaign: Mapped["Campaign | None"] = relationship(back_populates="leads")
+
+
+class Reminder(Base):
+    """Scheduled outbound reminder for an appointment. Cuts no-shows ~30%."""
+
+    __tablename__ = "reminders"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tenants.id"), index=True)
+    appointment_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("appointments.id"), index=True)
+    channel: Mapped[str] = mapped_column(String(16), default="sms")  # sms|call|whatsapp
+    send_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    sent: Mapped[bool] = mapped_column(Boolean, default=False)
+    confirmed: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Step 6 (scale-compliance): a durable send lease. The worker that wins the
+    # atomic claim (see `app/integrations/reminders.py`) stamps these before
+    # sending; a crashed worker's lease is reclaimed by the reaper. Without
+    # this, two overlapping ticks (or a crash between the SMS send and the
+    # commit) would text the customer twice.
+    claimed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    claimed_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+
+# =============================================================================
+# Authentication / RBAC
+# =============================================================================
+
+
+class User(Base):
+    """
+    A human operator. Always belongs to exactly one tenant -- that binding is
+    the root of tenant isolation and is never taken from a request.
+
+    Email is unique GLOBALLY, not per tenant. Login is by email alone with no
+    tenant selector, so a duplicate address across tenants would make
+    authentication ambiguous. Documented in README under "Tenant isolation".
+    """
+
+    __tablename__ = "users"
+    __table_args__ = (
+        UniqueConstraint("email", name="uq_users_email"),
+        Index("ix_users_tenant_role", "tenant_id", "role"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+
+    email: Mapped[str] = mapped_column(String(320), nullable=False)  # RFC 5321 max
+    full_name: Mapped[str] = mapped_column(String(200), default="")
+
+    # bcrypt output. Never exposed by any serializer -- see UserOut.
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+
+    role: Mapped[UserRole] = mapped_column(Enum(UserRole), default=UserRole.VIEWER)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+    # Bumping this invalidates every access token issued earlier for this user,
+    # which is how deactivation and role changes take effect before expiry.
+    token_version: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    failed_login_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
+    )
+    last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # ---- STEP 18, enterprise identity (all nullable/defaulted) ----
+    # `email_verified_at` is the proof the login address never had. It is
+    # nullable so every pre-existing user keeps working unchanged: an unverified
+    # address is only *refused* where a flow explicitly requires proof.
+    email_verified_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    #: Per-user MFA override. NULL means "follow the tenant policy", which is
+    #: what every existing user has.
+    mfa_required: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    #: Set on every password change; drives "sessions older than the password
+    #: change are dead" without parsing tokens.
+    password_changed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    tenant: Mapped["Tenant"] = relationship()
+
+
+class RefreshToken(Base):
+    """
+    Only a SHA-256 digest of the refresh token is stored, so a database leak
+    does not hand out sessions. Rotation is enforced: using a token marks it
+    used and links the replacement, and replaying a used token revokes the
+    whole chain (a standard reuse-detection scheme).
+    """
+
+    __tablename__ = "refresh_tokens"
+    __table_args__ = (Index("ix_refresh_active", "user_id", "revoked_at"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
+
+    issued_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    replaced_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+
+    user_agent: Mapped[str] = mapped_column(String(300), default="")
+    ip_address: Mapped[str] = mapped_column(String(64), default="")
+
+    #: STEP 18: the browser/device session this refresh token belongs to.
+    #: Nullable, so tokens minted before this feature (and by any caller that
+    #: does not open a session) remain valid.
+    session_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("user_sessions.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+
+
+class AuditLog(Base):
+    """
+    Security events. Deliberately holds no secret material: no passwords, no
+    raw tokens, no API keys. `detail` is free-form JSON for non-sensitive
+    context such as which role changed to what.
+    """
+
+    __tablename__ = "audit_logs"
+    __table_args__ = (
+        Index("ix_audit_tenant_time", "tenant_id", "created_at"),
+        Index("ix_audit_tenant_environment_time", "tenant_id", "environment_id", "created_at"),
+        Index("ix_audit_tenant_event_time", "tenant_id", "event_type", "created_at"),
+        Index("ix_audit_tenant_resource", "tenant_id", "resource_type", "resource_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+    actor_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    actor_type: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default=lambda context: "human" if context.get_current_parameters().get("actor_user_id") else "system",
+        server_default="system",
+    )
+    target_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+
+    action: Mapped[AuditAction] = mapped_column(Enum(AuditAction), nullable=False)
+    event_type: Mapped[str] = mapped_column(
+        String(128),
+        nullable=False,
+        default=lambda context: getattr(
+            context.get_current_parameters().get("action"),
+            "value",
+            "governance_event",
+        ),
+    )
+    environment_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    resource_type: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    resource_id: Mapped[str | None] = mapped_column(String(160), nullable=True)
+    request_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    result: Mapped[str] = mapped_column(String(24), default="success", nullable=False)
+    # Stored even on failed logins, so it must never be a real credential.
+    actor_email: Mapped[str] = mapped_column(String(320), default="")
+    ip_address: Mapped[str] = mapped_column(String(64), default="")
+    user_agent: Mapped[str] = mapped_column(String(300), default="")
+    detail: Mapped[dict] = mapped_column(JSON, default=dict)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, index=True, nullable=False
+    )
+
+
+# ============================================================ knowledge ===
+#
+# STEP 4: tenant-scoped RAG. `Tenant.knowledge_base` (the flat JSON dict) is
+# kept and still works -- it holds the handful of one-line facts a business
+# types into the dashboard, and those are cheap enough to sit in the system
+# prompt. Documents are the new thing: too large to inline, so they are
+# chunked, embedded, and retrieved a few chunks at a time.
+#
+# Uploading a document does NOT mean the agent may answer from all of it. Only
+# chunks returned by a retrieval query ever reach the model.
+
+
+class DocumentStatus(str, enum.Enum):
+    """
+    Ingestion lifecycle.
+
+    Only READY is searchable. Everything else -- including ARCHIVED -- is
+    excluded from retrieval at the SQL level, not filtered afterwards.
+
+    NOTE: SQLAlchemy's Enum() persists the member NAME, so the PostgreSQL type
+    `documentstatus` must contain UPLOADED/PROCESSING/READY/FAILED/ARCHIVED.
+    """
+
+    UPLOADED = "uploaded"  # stored, not yet processed
+    PROCESSING = "processing"  # extraction/chunking/embedding in flight
+    READY = "ready"  # searchable
+    FAILED = "failed"  # ingestion failed; error_message explains
+    ARCHIVED = "archived"  # soft-deleted; never retrieved
+
+
+#: The only status whose chunks may be returned by a search.
+SEARCHABLE_DOCUMENT_STATUSES = frozenset({DocumentStatus.READY})
+
+
+class DocumentSourceType(str, enum.Enum):
+    UPLOAD = "upload"  # a file the tenant uploaded
+    TEXT = "text"  # pasted directly into the dashboard
+    URL = "url"  # fetched from a URL (not implemented yet)
+
+
+class KnowledgeDocument(Base):
+    """One uploaded source document belonging to exactly one tenant."""
+
+    __tablename__ = "knowledge_documents"
+    __table_args__ = (
+        # Deduplication is per tenant: two businesses may legitimately upload
+        # the same price list, and that must not collide.
+        UniqueConstraint("tenant_id", "content_hash", name="uq_knowledge_doc_hash"),
+        Index("ix_knowledge_doc_tenant_status", "tenant_id", "status"),
+        ForeignKeyConstraint(
+            ["tenant_id", "environment_id"],
+            ["environments.tenant_id", "environments.id"],
+            name="fk_knowledge_documents_tenant_environment",
+        ),
+        Index("ix_knowledge_documents_tenant_environment", "tenant_id", "environment_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    environment_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("environments.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+
+    title: Mapped[str] = mapped_column(String(300), nullable=False)
+    source_type: Mapped[DocumentSourceType] = mapped_column(
+        Enum(DocumentSourceType), default=DocumentSourceType.UPLOAD, nullable=False
+    )
+    #: Storage key, NOT a filesystem path. Resolved by the storage backend so
+    #: nothing outside app/knowledge/storage knows where bytes actually live.
+    source_uri: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    original_filename: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    mime_type: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    file_size: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    #: SHA-256 of the raw bytes. Drives per-tenant deduplication.
+    content_hash: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+
+    status: Mapped[DocumentStatus] = mapped_column(
+        Enum(DocumentStatus), default=DocumentStatus.UPLOADED, nullable=False
+    )
+    #: Bumped on every reindex. Chunks record the version they were built from,
+    #: so a half-finished reindex can never mix old and new chunks.
+    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+
+    #: Which embedding model produced this document's vectors. If it stops
+    #: matching the configured model the document is not searchable until it
+    #: is reindexed -- mixing vector spaces silently returns nonsense.
+    embedding_model: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    embedding_dimensions: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    chunk_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    char_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    token_estimate: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    #: Free-form, tenant-visible. Never holds credentials or storage paths.
+    doc_metadata: Mapped[dict] = mapped_column(JSON, default=dict)
+    #: Safe, human-readable failure summary. Never a raw stack trace.
+    error_message: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
+    )
+    ingested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    #: Set when PROCESSING begins, so a stuck job can be detected and reaped.
+    processing_started_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    chunks: Mapped[list["KnowledgeChunk"]] = relationship(
+        back_populates="document", cascade="all, delete-orphan"
+    )
+
+    @property
+    def is_searchable(self) -> bool:
+        return self.status in SEARCHABLE_DOCUMENT_STATUSES
+
+
+class KnowledgeChunk(Base):
+    """
+    One retrievable passage.
+
+    `tenant_id` is denormalised onto the chunk on purpose. Retrieval filters on
+    it directly in the WHERE clause, so a bug in a join can never widen the
+    result set past one tenant.
+    """
+
+    __tablename__ = "knowledge_chunks"
+    __table_args__ = (
+        UniqueConstraint("document_id", "version", "chunk_index", name="uq_knowledge_chunk_slot"),
+        Index("ix_knowledge_chunk_tenant_doc", "tenant_id", "document_id"),
+        ForeignKeyConstraint(
+            ["tenant_id", "environment_id"],
+            ["environments.tenant_id", "environments.id"],
+            name="fk_knowledge_chunks_tenant_environment",
+        ),
+        Index("ix_knowledge_chunks_tenant_environment", "tenant_id", "environment_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    document_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("knowledge_documents.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    #: Denormalised with ``tenant_id`` so retrieval can filter environment in
+    #: the WHERE clause without trusting a join alone.
+    environment_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("environments.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+
+    chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)
+    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    token_estimate: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+
+    #: Page number, heading trail, CSV row range -- whatever the extractor knew.
+    chunk_metadata: Mapped[dict] = mapped_column(JSON, default=dict)
+
+    #: The vector. Stored as JSON so the same code runs on SQLite in tests and
+    #: on PostgreSQL in production; app/knowledge/vectorstore.py upgrades to a
+    #: real pgvector column when the extension is available.
+    embedding: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    embedding_model: Mapped[str | None] = mapped_column(String(120), nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+
+    document: Mapped[KnowledgeDocument] = relationship(back_populates="chunks")
+
+
+# ===========================================================================
+# STEP 5 -- CRM integration layer
+#
+# The pre-existing CRM support was three columns on `Tenant`
+# (`crm_webhook_url`, `crm_type`, `crm_api_key`) and one best-effort POST.
+# Those columns are deliberately left in place: `tests/test_outbound.py` still
+# exercises the legacy helper, and a migration that drops a column holding a
+# live tenant's webhook URL is not something to do in the same change that
+# introduces its replacement. Nothing in the new layer reads them.
+#
+# Five new tables, and the reason each one is separate rather than folded into
+# an existing row:
+#
+# * `CrmIntegration` -- per (tenant, provider) configuration and credentials.
+#   Not on `Tenant`, because a tenant may connect several providers at once
+#   and because credentials need their own encrypted column with its own
+#   access pattern.
+# * `CrmEvent`       -- the normalized business event. Persisted *before* any
+#   provider is contacted, so a crash between "the call ended" and "the CRM
+#   accepted it" loses nothing.
+# * `CrmSync`        -- one delivery attempt-set per (event, integration). Fan
+#   out to three providers is three rows, so one provider being down cannot
+#   mark the others failed.
+# * `CrmContactLink` -- the (tenant, provider, identity) -> external id map.
+#   This is what stops a second call from the same phone number creating a
+#   second contact.
+# * `CrmWebhookReceipt` -- inbound replay protection.
+# ===========================================================================
+
+
+class CrmProviderType(str, enum.Enum):
+    """
+    Providers with an adapter. A closed enum on purpose: the old `crm_type`
+    was a free string, so a typo silently selected the generic branch instead
+    of failing.
+    """
+
+    GOHIGHLEVEL = "gohighlevel"
+    HUBSPOT = "hubspot"
+    JOBBER = "jobber"
+    WEBHOOK = "webhook"
+
+
+class CrmEntityType(str, enum.Enum):
+    CALL = "call"
+    LEAD = "lead"
+    APPOINTMENT = "appointment"
+
+
+class CrmEventType(str, enum.Enum):
+    """
+    Normalized business events.
+
+    The values are dotted wire strings rather than the lowercase-of-the-name
+    convention the knowledge enums follow, because these values are published:
+    they appear in outbound webhook bodies and in tenant-facing filters.
+    `lead.created` is a documented part of the integration contract, so it is
+    the value, and the enum member name is what the database stores.
+    """
+
+    CALL_COMPLETED = "call.completed"
+    CALL_MISSED = "call.missed"
+    LEAD_CREATED = "lead.created"
+    LEAD_UPDATED = "lead.updated"
+    APPOINTMENT_BOOKED = "appointment.booked"
+    APPOINTMENT_CANCELLED = "appointment.cancelled"
+    TRANSFER_COMPLETED = "transfer.completed"
+
+
+class CrmSyncStatus(str, enum.Enum):
+    """
+    PENDING            queued, not yet picked up
+    PROCESSING         a worker holds it right now
+    SYNCED             the provider acknowledged the write
+    FAILED             transient failure, attempts remain
+    PERMANENT_FAILURE  will not be retried without human action
+    """
+
+    PENDING = "pending"
+    PROCESSING = "processing"
+    SYNCED = "synced"
+    FAILED = "failed"
+    PERMANENT_FAILURE = "permanent_failure"
+
+
+#: Statuses a worker may pick up. `SYNCED` and `PERMANENT_FAILURE` are
+#: terminal; `PROCESSING` is excluded so two workers cannot claim one row, and
+#: is recovered by the stuck-sync reaper instead.
+RETRYABLE_SYNC_STATUSES = frozenset({CrmSyncStatus.PENDING, CrmSyncStatus.FAILED})
+TERMINAL_SYNC_STATUSES = frozenset({CrmSyncStatus.SYNCED, CrmSyncStatus.PERMANENT_FAILURE})
+
+
+class CrmIntegration(Base):
+    """
+    One tenant's connection to one provider.
+
+    `credentials_encrypted` is ciphertext produced by
+    `app.integrations.crm.crypto`. It is never selected into an API response --
+    the response models in `app/api/integration_routes.py` are allowlists, and
+    there is a test asserting the column name does not appear in any response
+    body.
+    """
+
+    __tablename__ = "crm_integrations"
+    __table_args__ = (
+        # The isolation primitive. Lookups are (tenant_id, provider); this
+        # constraint is what makes that pair a key rather than a filter.
+        UniqueConstraint("tenant_id", "provider", name="uq_crm_integration_tenant_provider"),
+        Index("ix_crm_integration_tenant_enabled", "tenant_id", "is_enabled"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    provider: Mapped[CrmProviderType] = mapped_column(Enum(CrmProviderType), nullable=False)
+
+    is_enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+    #: AES-GCM ciphertext of a JSON credential bundle. Opaque here on purpose.
+    credentials_encrypted: Mapped[str | None] = mapped_column(Text, nullable=True)
+    #: Which key encrypted it, so keys can be rotated without a flag day.
+    credentials_key_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    #: Set when credentials change, so "connected but never tested" is visible.
+    credentials_updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    #: Non-secret provider settings: GHL location id, HubSpot pipeline, the
+    #: outbound webhook URL. Safe to return from the API.
+    config: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    #: Tenant-defined mapping of VoxDesk fields to provider custom fields.
+    field_mappings: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+
+    #: Which normalized events this integration wants. Empty = all of them.
+    subscribed_events: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+
+    #: Requirement 18: transcripts are not shared unless asked for.
+    share_transcripts: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    last_health_check_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    last_health_ok: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    #: Operator-facing, already scrubbed of anything secret.
+    last_error: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
+    )
+
+
+class CrmEvent(Base):
+    """
+    A business fact, recorded once, independent of any provider.
+
+    Written inside the same transaction as the thing that caused it. Delivery
+    is a separate concern with separate rows, which is what makes "the CRM was
+    down when the call ended" a recoverable situation rather than a lost lead.
+    """
+
+    __tablename__ = "crm_events"
+    __table_args__ = (
+        # The idempotency primitive. Scoped to the tenant so two tenants can
+        # never collide, and so a key from one tenant cannot suppress
+        # another's event.
+        UniqueConstraint("tenant_id", "idempotency_key", name="uq_crm_event_idempotency"),
+        Index("ix_crm_event_tenant_created", "tenant_id", "created_at"),
+        Index("ix_crm_event_entity", "tenant_id", "entity_type", "entity_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+
+    event_type: Mapped[CrmEventType] = mapped_column(Enum(CrmEventType), nullable=False)
+    entity_type: Mapped[CrmEntityType] = mapped_column(Enum(CrmEntityType), nullable=False)
+    entity_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+
+    #: Deterministic; see `events.idempotency_key`. Same business fact, same
+    #: key, forever.
+    idempotency_key: Mapped[str] = mapped_column(String(128), nullable=False)
+
+    #: The normalized payload, already scrubbed. Versioned so an adapter can
+    #: tell an old row from a new one after a schema change.
+    payload: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    payload_version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+
+
+class CrmSync(Base):
+    """
+    Delivery state for one event to one integration.
+
+    `external_id` is written in the same commit that sets SYNCED, so a row can
+    never claim success without recording what the provider created.
+    """
+
+    __tablename__ = "crm_syncs"
+    __table_args__ = (
+        # One delivery record per (event, integration). This is the constraint
+        # that makes a duplicate worker pass a no-op rather than a second POST.
+        UniqueConstraint("event_id", "integration_id", name="uq_crm_sync_event_integration"),
+        Index("ix_crm_sync_due", "status", "next_attempt_at"),
+        Index("ix_crm_sync_tenant_status", "tenant_id", "status"),
+        Index("ix_crm_sync_entity", "tenant_id", "entity_type", "entity_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    event_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("crm_events.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    integration_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("crm_integrations.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+
+    provider: Mapped[CrmProviderType] = mapped_column(Enum(CrmProviderType), nullable=False)
+    entity_type: Mapped[CrmEntityType] = mapped_column(Enum(CrmEntityType), nullable=False)
+    entity_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+
+    status: Mapped[CrmSyncStatus] = mapped_column(
+        Enum(CrmSyncStatus), default=CrmSyncStatus.PENDING, nullable=False
+    )
+    #: What the provider created or updated. Proof of the SYNCED claim.
+    external_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    attempt_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    last_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    next_attempt_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
+    synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    #: Scrubbed before storage -- see `errors.safe_message`. Shown to the
+    #: tenant, so it must never contain a token or a raw provider body.
+    last_error: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    #: Normalized error class (`rate_limited`, `unauthorized`, ...), for
+    #: dashboards that want to group failures without parsing prose.
+    last_error_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
+    )
+
+
+class CrmContactLink(Base):
+    """
+    (tenant, provider, identity) -> provider contact id.
+
+    The identity is a normalized phone or email, hashed, never the raw value:
+    this table exists to be looked up quickly and it should not become a
+    second copy of the customer list.
+
+    Requirement 19's "never match contacts across tenants" is enforced by
+    `tenant_id` being the first column of the unique constraint, not by
+    application code remembering to filter.
+    """
+
+    __tablename__ = "crm_contact_links"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "provider", "identity_hash", name="uq_crm_contact_identity"),
+        Index("ix_crm_contact_tenant_provider", "tenant_id", "provider"),
+        Index("ix_crm_contact_lead", "tenant_id", "lead_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    provider: Mapped[CrmProviderType] = mapped_column(Enum(CrmProviderType), nullable=False)
+
+    lead_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("leads.id", ondelete="SET NULL"), nullable=True
+    )
+    #: sha256 of the normalized identity, salted per tenant.
+    identity_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    external_contact_id: Mapped[str] = mapped_column(String(255), nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    last_seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
+    )
+
+
+class CrmWebhookReceipt(Base):
+    """
+    Inbound provider events we have already processed.
+
+    Requirement 21 needs replay protection, and replay protection needs
+    somewhere durable to remember event ids. Rows are pruned by age, not kept
+    forever.
+    """
+
+    __tablename__ = "crm_webhook_receipts"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "provider", "provider_event_id", name="uq_crm_receipt_event"),
+        Index("ix_crm_receipt_received", "received_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    provider: Mapped[CrmProviderType] = mapped_column(Enum(CrmProviderType), nullable=False)
+    provider_event_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    event_type: Mapped[str] = mapped_column(String(120), default="", nullable=False)
+    received_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+
+
+class MessageWebhookReceipt(Base):
+    """
+    Inbound Twilio message events (SMS/WhatsApp) we have already processed.
+
+    The messaging channel was the one inbound webhook without durable replay
+    protection: a redelivered message would have been appended as a second turn
+    and answered a second time (extra LLM spend + a duplicate reply SMS). The
+    unique constraint on `(tenant_id, channel, provider_message_id)` turns the
+    redelivery into a no-op. Rows are pruned by age, not kept forever.
+    """
+
+    __tablename__ = "message_webhook_receipts"
+    __table_args__ = (
+        UniqueConstraint(
+            "tenant_id",
+            "channel",
+            "provider_message_id",
+            name="uq_message_receipt_event",
+        ),
+        Index("ix_message_receipt_received", "received_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    channel: Mapped[str] = mapped_column(String(16), nullable=False)  # sms | whatsapp
+    provider_message_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    received_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+
+
+# ===========================================================================
+# STEP 6 -- calendar integration layer
+#
+# Three tables. The split mirrors STEP 5's, and for the same reason: what a
+# tenant configured, what policy applies, and what the provider told us are
+# three different lifetimes.
+#
+# * `CalendarIntegration`  -- per (tenant, provider) connection + encrypted
+#   OAuth credentials. Reuses STEP 5's AES-GCM envelope, including its
+#   (tenant, provider) associated data.
+# * `SchedulingPolicy`     -- business hours, breaks, holidays, buffers.
+#   Business policy is *not* provider availability; both are checked, so both
+#   need somewhere to live.
+# * `CalendarWebhookReceipt` -- inbound provider notification dedupe.
+# ===========================================================================
+
+
+class CalendarIntegration(Base):
+    """
+    One tenant's connection to one calendar provider.
+
+    Note what is *not* here: a `google_calendar_id` equivalent on `Tenant`.
+    That column still exists and still works for the legacy service-account
+    path; this table is what a tenant gets when they connect through OAuth.
+    """
+
+    __tablename__ = "calendar_integrations"
+    __table_args__ = (
+        # Same isolation primitive as STEP 5: the pair is a key, not a filter.
+        UniqueConstraint("tenant_id", "provider", name="uq_calendar_integration_tenant_provider"),
+        Index("ix_calendar_integration_tenant_enabled", "tenant_id", "is_enabled"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    provider: Mapped[CalendarProviderType] = mapped_column(
+        Enum(CalendarProviderType), nullable=False
+    )
+
+    is_enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    #: Which provider a booking goes to when the tenant has several connected.
+    is_primary: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    #: AES-256-GCM envelope over {"access_token", "refresh_token", ...}.
+    #: Identical scheme to CRM credentials -- one cipher, one key ring, one
+    #: rotation story. Opaque here.
+    credentials_encrypted: Mapped[str | None] = mapped_column(Text, nullable=True)
+    credentials_key_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    credentials_updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    #: When the access token stops working. Stored in the clear because it is
+    #: not secret and the refresh scheduler needs to query on it.
+    token_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    #: Non-secret settings: calendar id, Cal.com event-type id, base_url.
+    config: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+
+    last_health_check_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    last_health_ok: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    last_error: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
+    )
+
+
+class SchedulingPolicy(Base):
+    """
+    A tenant's booking rules.
+
+    One row per tenant. Separate from `Tenant` because the pre-STEP-6
+    `business_open` / `business_close` / `appointment_minutes` columns are read
+    by existing code paths and tests, and widening `Tenant` with fifteen more
+    scheduling columns would make an already-large table the home of a second
+    subsystem.
+
+    `Tenant`'s three columns remain the fallback: a tenant with no policy row
+    behaves exactly as it did before STEP 6.
+    """
+
+    __tablename__ = "scheduling_policies"
+    __table_args__ = (UniqueConstraint("tenant_id", name="uq_scheduling_policy_tenant"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+
+    #: `{"mon": [["09:00", "12:00"], ["13:00", "17:00"]], "sun": []}`
+    #: A list of intervals rather than one open/close pair, because a lunch
+    #: break is the single most common reason a booking lands when nobody is
+    #: there. An empty list means closed that day.
+    weekly_hours: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+
+    #: `["2026-12-25", "2026-01-01"]` -- full-day closures.
+    holidays: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    #: `[{"start": "2026-07-01T00:00:00", "end": "2026-07-14T23:59:59"}]`
+    #: Local wall-clock. Vacations, refits, a one-off closure.
+    blocked_periods: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+
+    slot_minutes: Mapped[int] = mapped_column(Integer, default=30, nullable=False)
+    #: How far apart candidate slots start. Distinct from duration: a 60-minute
+    #: appointment offered on a 30-minute grid gives twice the choice.
+    slot_interval_minutes: Mapped[int] = mapped_column(Integer, default=30, nullable=False)
+    buffer_before_minutes: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    buffer_after_minutes: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    #: The soonest a caller may book. Zero means "in one second", which is
+    #: what the pre-STEP-6 code allowed.
+    minimum_notice_minutes: Mapped[int] = mapped_column(Integer, default=60, nullable=False)
+    #: The furthest ahead. Stops a caller booking in 2071.
+    booking_horizon_days: Mapped[int] = mapped_column(Integer, default=60, nullable=False)
+    #: How many options the voice agent reads aloud. Reading twelve kills a call.
+    max_slots_offered: Mapped[int] = mapped_column(Integer, default=3, nullable=False)
+
+    #: Escape hatch for businesses that genuinely take out-of-hours bookings.
+    #: Off by default: requirement 5 says do not book outside business hours
+    #: "unless explicitly enabled".
+    allow_outside_business_hours: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False
+    )
+    #: When the provider cannot be reached, refuse to book rather than
+    #: guessing. Default True -- see the audit's F2.
+    require_provider_confirmation: Mapped[bool] = mapped_column(
+        Boolean, default=True, nullable=False
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
+    )
+
+
+class CalendarWebhookReceipt(Base):
+    """
+    Inbound calendar notifications already processed.
+
+    Same shape and same reasoning as `CrmWebhookReceipt`: replay protection
+    needs somewhere durable to remember provider event ids, and rows are
+    pruned by age rather than kept forever.
+    """
+
+    __tablename__ = "calendar_webhook_receipts"
+    __table_args__ = (
+        UniqueConstraint(
+            "tenant_id",
+            "provider",
+            "provider_event_id",
+            name="uq_calendar_receipt_event",
+        ),
+        Index("ix_calendar_receipt_received", "received_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    provider: Mapped[CalendarProviderType] = mapped_column(
+        Enum(CalendarProviderType), nullable=False
+    )
+    provider_event_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    resource_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    received_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+
+
+# ===========================================================================
+# STEP 7 -- billing, subscriptions and usage metering
+#
+# The pre-STEP-7 billing was four columns on `Tenant` and one `+=` on a float.
+# Those columns stay (see `docs/BILLING-AUDIT.md`): `minutes_used` is demoted
+# from *authority* to *cache*, kept in sync so the dashboard field and any
+# external reader keep working, while the number that decides an invoice is
+# derived from immutable `UsageEvent` rows.
+#
+# Five new tables. The split is not decoration -- each has a different
+# lifetime and a different trust level:
+#
+# * `BillingPlan`   -- the catalogue. Server-owned. A tenant never names a
+#   price, only a plan code, and the code is resolved here.
+# * `Subscription`  -- per (tenant, provider) state, mirrored from the
+#   provider. Never authoritative on its own: only a verified webhook or a
+#   direct provider read may set it.
+# * `UsageEvent`    -- immutable, append-only, idempotency-keyed. The
+#   financial record of truth.
+# * `UsageSummary`  -- a derived rollup per (tenant, period, metric). A cache
+#   that can always be rebuilt from events, which is the property that makes
+#   a metering bug recoverable.
+# * `BillingWebhookReceipt` -- provider event dedupe and ordering.
+# ===========================================================================
+
+
+class BillingProviderType(str, enum.Enum):
+    """
+    Billing backends with an adapter.
+
+    `MANUAL` is not a placeholder: it is how a tenant on an invoice-me
+    contract, or a development instance with no Stripe account, still gets
+    plans, entitlements and metering. Everything except the payment rail works
+    identically.
+    """
+
+    STRIPE = "stripe"
+    MANUAL = "manual"
+
+
+class SubscriptionStatus(str, enum.Enum):
+    """
+    Normalized subscription state.
+
+    Stripe's own vocabulary is mapped into this inside
+    `app/billing/providers/stripe.py` and nowhere else. The brief is explicit
+    that Stripe status strings must not be scattered through business logic,
+    and the practical reason is that Stripe has changed them before --
+    `incomplete_expired` did not always exist.
+
+    CANCELING is ours, not Stripe's: Stripe expresses "cancel at period end"
+    as `active` plus a boolean, which loses the distinction every UI needs.
+    """
+
+    TRIALING = "trialing"
+    ACTIVE = "active"
+    PAST_DUE = "past_due"
+    CANCELING = "canceling"
+    CANCELED = "canceled"
+    INCOMPLETE = "incomplete"
+    INCOMPLETE_EXPIRED = "incomplete_expired"
+    PAUSED = "paused"
+
+
+#: Statuses that entitle a tenant to use the product. `PAST_DUE` is included
+#: deliberately -- see `app/billing/entitlements.py`. Cutting a business off
+#: the instant a card expires costs far more goodwill than the few days of
+#: service it saves, and Stripe is still retrying the payment.
+ENTITLED_SUBSCRIPTION_STATUSES = frozenset(
+    {
+        SubscriptionStatus.TRIALING,
+        SubscriptionStatus.ACTIVE,
+        SubscriptionStatus.CANCELING,
+        SubscriptionStatus.PAST_DUE,
+    }
+)
+
+#: No further provider transition is expected.
+TERMINAL_SUBSCRIPTION_STATUSES = frozenset(
+    {
+        SubscriptionStatus.CANCELED,
+        SubscriptionStatus.INCOMPLETE_EXPIRED,
+    }
+)
+
+
+class BillingInterval(str, enum.Enum):
+    MONTH = "month"
+    YEAR = "year"
+
+
+class UsageMetric(str, enum.Enum):
+    """
+    What is counted.
+
+    Values are the wire names used in the API and in plan configuration, so
+    they are part of the published contract.
+    """
+
+    VOICE_MINUTE = "voice_minute"
+    SMS_SEGMENT = "sms_segment"
+    LLM_TOKEN = "llm_token"
+    TTS_CHARACTER = "tts_character"
+
+
+class UsageEventType(str, enum.Enum):
+    """
+    Why something was counted.
+
+    Distinct from `UsageMetric` because one metric has several sources -- an
+    inbound call, an outbound campaign call and a transfer leg all produce
+    VOICE_MINUTE -- and the source is what makes a disputed invoice
+    answerable.
+    """
+
+    VOICE_MINUTE_USED = "voice_minute_used"
+    SMS_SEGMENT_USED = "sms_segment_used"
+    LLM_TOKEN_USED = "llm_token_used"
+    TTS_CHARACTER_USED = "tts_character_used"
+    #: A signed correction. Never a destructive edit -- see `UsageEvent`.
+    MANUAL_ADJUSTMENT = "manual_adjustment"
+
+
+class InvoiceStatus(str, enum.Enum):
+    DRAFT = "draft"
+    OPEN = "open"
+    PAID = "paid"
+    UNCOLLECTIBLE = "uncollectible"
+    VOID = "void"
+
+
+class BillingPlan(Base):
+    """
+    The plan catalogue. Server-owned, and the reason a browser can never name
+    a price.
+
+    Prices are integer **minor units** (cents), not floats. A float `19.99`
+    is not exactly 19.99, and accumulating overage across a few thousand
+    fractional minutes in binary floating point produces invoices that do not
+    reconcile with themselves. Money is counted, not measured.
+    """
+
+    __tablename__ = "billing_plans"
+    __table_args__ = (
+        UniqueConstraint("code", name="uq_billing_plan_code"),
+        Index("ix_billing_plan_active", "is_active"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    #: Stable identifier used by the API and by config. Never renamed.
+    code: Mapped[str] = mapped_column(String(64), nullable=False)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    description: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    #: Ordering for a pricing page. Not billing-relevant.
+    display_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    currency: Mapped[str] = mapped_column(String(3), default="usd", nullable=False)
+    monthly_price_cents: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    annual_price_cents: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    included_voice_minutes: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    included_sms_segments: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    included_llm_tokens: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    included_tts_characters: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    #: Overage rates, in **hundredths of a cent** per unit.
+    #:
+    #: A voice minute at 5c is 500 here; an LLM token at $2/million is 0.0002c,
+    #: which cents cannot express at all. Sub-cent granularity is not
+    #: fastidiousness -- token and character pricing is genuinely below one
+    #: cent per unit, and rounding each unit to a cent would overcharge by
+    #: several orders of magnitude.
+    overage_voice_minute_millicents: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    overage_sms_millicents: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    overage_llm_token_millicents: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    overage_tts_character_millicents: Mapped[int] = mapped_column(
+        Integer, default=0, nullable=False
+    )
+
+    #: When false, exceeding the included allowance is refused rather than
+    #: metered. Requirement 26: the check happens *before* the provider call.
+    overage_enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+    #: Non-metered limits: {"team_members": 5, "rag_documents": 100, ...}.
+    #: JSON rather than columns because these are the ones that change per
+    #: sales conversation, and adding a column per feature would mean a
+    #: migration every time someone negotiates.
+    feature_entitlements: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+
+    #: Provider price identifiers, keyed by interval:
+    #: {"month": "price_FAKE123", "year": "price_FAKE456"}.
+    #: **This is the trust boundary.** A checkout request names a plan code
+    #: and an interval; the price id comes from here and never from a client.
+    provider_price_ids: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+
+    trial_days: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
+    )
+
+
+class Subscription(Base):
+    """
+    One tenant's subscription with one provider.
+
+    `provider_updated_at` and `provider_event_sequence` exist for requirement
+    23. Provider webhooks arrive out of order routinely -- `subscription.updated`
+    can land before `checkout.session.completed` -- and applying a stale event
+    would downgrade a customer who just upgraded. Every write compares
+    timestamps first.
+    """
+
+    __tablename__ = "subscriptions"
+    __table_args__ = (
+        # One subscription per (tenant, provider). The isolation primitive,
+        # and what makes "the tenant's subscription" a well-defined phrase.
+        UniqueConstraint("tenant_id", "provider", name="uq_subscription_tenant_provider"),
+        # A provider subscription id belongs to exactly one tenant. Without
+        # this, a webhook carrying an id could be matched to the wrong row.
+        UniqueConstraint(
+            "provider",
+            "external_subscription_id",
+            name="uq_subscription_external_id",
+        ),
+        Index("ix_subscription_tenant_status", "tenant_id", "status"),
+        Index("ix_subscription_period_end", "current_period_end"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    plan_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("billing_plans.id", ondelete="RESTRICT"), nullable=True, index=True
+    )
+    provider: Mapped[BillingProviderType] = mapped_column(Enum(BillingProviderType), nullable=False)
+
+    external_customer_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    external_subscription_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    #: Which price the provider actually billed. Recorded so a mismatch with
+    #: the plan's configured price is detectable rather than invisible.
+    external_price_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    status: Mapped[SubscriptionStatus] = mapped_column(
+        Enum(SubscriptionStatus), default=SubscriptionStatus.INCOMPLETE, nullable=False
+    )
+    interval: Mapped[BillingInterval] = mapped_column(
+        Enum(BillingInterval), default=BillingInterval.MONTH, nullable=False
+    )
+
+    current_period_start: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    current_period_end: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    trial_start: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    trial_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    cancel_at_period_end: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    canceled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    #: A downgrade that takes effect at renewal. Requirement 18 asks for an
+    #: unambiguous policy: upgrades are immediate, downgrades are scheduled,
+    #: and this is where a scheduled one waits.
+    pending_plan_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("billing_plans.id", ondelete="SET NULL"), nullable=True
+    )
+    pending_interval: Mapped[BillingInterval | None] = mapped_column(
+        Enum(BillingInterval), nullable=True
+    )
+
+    #: The provider's own clock for the last state we applied. Ordering
+    #: authority -- see the class docstring.
+    provider_updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    last_invoice_status: Mapped[InvoiceStatus | None] = mapped_column(
+        Enum(InvoiceStatus), nullable=True
+    )
+    last_payment_failed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    #: Scrubbed before storage. Shown to staff, never a raw provider body.
+    last_error: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
+    )
+
+
+class UsageEvent(Base):
+    """
+    One immutable, idempotency-keyed unit of consumption.
+
+    **Append-only.** Nothing in `app/billing` updates or deletes a row here.
+    A correction is a new row with a negative `quantity` and
+    `event_type = MANUAL_ADJUSTMENT`, which is requirement 35's "never modify
+    historical usage quantities destructively" -- and also the only way an
+    invoice dispute can ever be answered, because the original figure survives
+    alongside the correction.
+
+    `quantity` is an integer in the metric's smallest unit: **seconds** for
+    voice, segments for SMS, tokens, characters. Not minutes. Storing 1.5
+    minutes as a float and summing a few thousand of them is how a total stops
+    matching the sum of its parts.
+    """
+
+    __tablename__ = "usage_events"
+    __table_args__ = (
+        # The idempotency guarantee, at the database rather than in Python.
+        # Requirement 14 asks for exactly this backstop.
+        UniqueConstraint("tenant_id", "idempotency_key", name="uq_usage_event_idempotency"),
+        # The aggregation query: everything for a tenant, period and metric.
+        Index("ix_usage_event_rollup", "tenant_id", "billing_period", "metric"),
+        Index("ix_usage_event_source", "tenant_id", "source_entity_id"),
+        Index("ix_usage_event_created", "created_at"),
+        ForeignKeyConstraint(
+            ["tenant_id", "environment_id"],
+            ["environments.tenant_id", "environments.id"],
+            name="fk_usage_events_tenant_environment",
+        ),
+        Index("ix_usage_events_tenant_environment", "tenant_id", "environment_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    #: Reporting attribution only. Billing authority remains the tenant.
+    environment_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("environments.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+
+    #: `YYYY-MM` of the *billing* period, not the calendar month. Derived from
+    #: the subscription's anchor where one exists -- see `billing/periods.py`.
+    #: A string because it is a label, compared and grouped, never arithmetic.
+    billing_period: Mapped[str] = mapped_column(String(16), nullable=False)
+
+    metric: Mapped[UsageMetric] = mapped_column(Enum(UsageMetric), nullable=False)
+    event_type: Mapped[UsageEventType] = mapped_column(Enum(UsageEventType), nullable=False)
+
+    #: The call, message or document this came from. Makes an invoice line
+    #: traceable back to the thing the customer actually did.
+    source_entity_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    source_reference: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    #: Signed. Negative only for MANUAL_ADJUSTMENT.
+    quantity: Mapped[int] = mapped_column(Integer, nullable=False)
+    unit: Mapped[str] = mapped_column(String(32), nullable=False)
+
+    #: Derived from the business fact, never generated per attempt. See
+    #: `billing/metering.py::usage_idempotency_key`.
+    idempotency_key: Mapped[str] = mapped_column(String(160), nullable=False)
+
+    #: Safe context: direction, whether the call was transferred, which leg.
+    #: Never a transcript, never a credential.
+    event_metadata: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+
+
+class UsageSummary(Base):
+    """
+    A derived rollup per (tenant, period, metric).
+
+    Purely a cache: `metering.rebuild_summary()` can reconstruct any row from
+    `UsageEvent` at any time. That property is the point -- it means a bug in
+    the summariser is a recoverable inconvenience rather than a corrupted
+    ledger, and it is what makes requirement 34's reconciliation possible.
+
+    `finalized` marks a closed period. Once true the figures are what was
+    invoiced, and later events for that period are counted but do not silently
+    change the number a customer already paid.
+    """
+
+    __tablename__ = "usage_summaries"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "billing_period", "metric", name="uq_usage_summary_slot"),
+        Index("ix_usage_summary_period", "billing_period"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    billing_period: Mapped[str] = mapped_column(String(16), nullable=False)
+    metric: Mapped[UsageMetric] = mapped_column(Enum(UsageMetric), nullable=False)
+
+    #: All in the metric's smallest unit, matching `UsageEvent.quantity`.
+    included_quantity: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    used_quantity: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    overage_quantity: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    #: Hundredths of a cent, to match the plan's overage rates.
+    estimated_overage_millicents: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    event_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    finalized: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    finalized_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    #: Highest threshold already announced (80, 100). Stops a warning firing
+    #: on every single call once a tenant is over the line.
+    warned_at_percent: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
+    )
+
+
+class BillingInvoice(Base):
+    """
+    A mirror of a provider invoice, holding only what is safe to show.
+
+    Deliberately not a general-purpose accounting record: no line items, no
+    tax breakdown, no payment method. Requirement 20 asks for metadata and a
+    hosted URL, and anything beyond that would be re-implementing Stripe's
+    invoice object badly.
+    """
+
+    __tablename__ = "billing_invoices"
+    __table_args__ = (
+        UniqueConstraint("provider", "external_invoice_id", name="uq_billing_invoice_external"),
+        Index("ix_billing_invoice_tenant_created", "tenant_id", "created_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    provider: Mapped[BillingProviderType] = mapped_column(Enum(BillingProviderType), nullable=False)
+    external_invoice_id: Mapped[str] = mapped_column(String(255), nullable=False)
+
+    status: Mapped[InvoiceStatus] = mapped_column(Enum(InvoiceStatus), nullable=False)
+    currency: Mapped[str] = mapped_column(String(3), default="usd", nullable=False)
+    amount_due_cents: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    amount_paid_cents: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    period_start: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    period_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    #: Stripe's short-lived signed URL. Safe to hand to an authorized user;
+    #: it carries no API credential.
+    hosted_invoice_url: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
+    )
+
+
+class BillingWebhookReceipt(Base):
+    """
+    Provider events already processed.
+
+    Same pattern as `CrmWebhookReceipt` and `CalendarWebhookReceipt`. The
+    difference here is that a duplicate has financial consequences, so the
+    unique constraint is not an optimisation.
+
+    `tenant_id` is nullable because a Stripe event can arrive before the
+    customer is linked to a tenant -- the receipt is still recorded so a
+    retry of that same event is recognised.
+    """
+
+    __tablename__ = "billing_webhook_receipts"
+    __table_args__ = (
+        # Provider event ids are globally unique, so this is not tenant-scoped.
+        UniqueConstraint("provider", "provider_event_id", name="uq_billing_receipt_event"),
+        Index("ix_billing_receipt_received", "received_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+    provider: Mapped[BillingProviderType] = mapped_column(Enum(BillingProviderType), nullable=False)
+    provider_event_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    event_type: Mapped[str] = mapped_column(String(120), default="", nullable=False)
+    #: The provider's own creation time, used to detect a stale replay.
+    provider_created_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    processed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    #: Scrubbed. Kept so a failed event can be investigated and replayed.
+    last_error: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+    received_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+
+
+# =============================================================================
+# Batch 02: the enterprise surface's durable home
+# =============================================================================
+#
+# Batch 01 shipped the automation, notification and inbox services with state in
+# process-local dictionaries and reported the missing schema as a known gap.
+# These five tables close it. The service *logic* is untouched: the registries
+# keep their shape, and `app/services/enterprise_store.py` hydrates them from
+# these rows before an operation and flushes them back afterwards, so there is
+# exactly one implementation of every rule and it is the one Batch 01 wrote.
+#
+# Column-type notes (deliberate, not accidental):
+#   * Ids are the domain's own stable hashes (`stable_id(...)`, 24 hex chars), so
+#     they are String(64) primary keys rather than UUIDs — the id a client holds
+#     is the id stored, with no translation layer to drift.
+#   * Timestamps that the domain models carry as ISO-8601 *strings* are stored as
+#     String(40) so a round-trip through the database cannot change their
+#     meaning (offset form, fractional seconds). Nothing queries them
+#     arithmetically; retention uses `created_at`, which is a real timestamp.
+#   * State fields are String, not `Enum`, on purpose: `test_enum_consistency.py`
+#     pins the PostgreSQL enum types created by the migrations, and adding new
+#     PG enum types here would extend that contract for no benefit — the closed
+#     vocabularies are enforced in the domain layer, where they are tested.
+
+
+class Automation(Base):
+    """A tenant-owned automation definition (Batch 02 persistence)."""
+
+    __tablename__ = "automations"
+    __table_args__ = (
+        Index("ix_automations_tenant_event", "tenant_id", "event"),
+        ForeignKeyConstraint(
+            ["tenant_id", "environment_id"],
+            ["environments.tenant_id", "environments.id"],
+            name="fk_automations_tenant_environment",
+        ),
+        Index("ix_automations_tenant_environment", "tenant_id", "environment_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), index=True
+    )
+    environment_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("environments.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    event: Mapped[str] = mapped_column(String(32), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), default="disabled", nullable=False)
+    #: [{"field", "operator", "value"}, ...] — evaluated by the domain rule.
+    filters: Mapped[list] = mapped_column(JSON, default=list)
+    #: [{"name", "params"}, ...] — names are restricted to CONTROLLED_ACTIONS.
+    actions: Mapped[list] = mapped_column(JSON, default=list)
+    schedule_kind: Mapped[str] = mapped_column(String(16), default="on_event", nullable=False)
+    delay_seconds: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    max_attempts: Mapped[int] = mapped_column(Integer, default=3, nullable=False)
+    backoff_seconds: Mapped[int] = mapped_column(Integer, default=60, nullable=False)
+    cooldown_seconds: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    max_per_event: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    #: ISO-8601 of the last completed run — the cooldown anchor.
+    last_run_at: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
+    )
+
+
+class AutomationRun(Base):
+    """One attempted execution of an automation for one business event."""
+
+    __tablename__ = "automation_runs"
+    __table_args__ = (
+        # The idempotency key IS the primary key: two deliveries of the same
+        # business fact cannot create two rows, whatever the concurrency.
+        Index("ix_automation_runs_tenant_automation", "tenant_id", "automation_id"),
+        Index("ix_automation_runs_created", "created_at"),
+        ForeignKeyConstraint(
+            ["tenant_id", "environment_id"],
+            ["environments.tenant_id", "environments.id"],
+            name="fk_automation_runs_tenant_environment",
+        ),
+        Index("ix_automation_runs_tenant_environment", "tenant_id", "environment_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), index=True
+    )
+    environment_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("environments.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    automation_id: Mapped[str] = mapped_column(String(64), index=True)
+    idempotency_key: Mapped[str] = mapped_column(String(64), index=True)
+    event: Mapped[str] = mapped_column(String(32), nullable=False)
+    business_event_id: Mapped[str] = mapped_column(String(200), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), default="pending", nullable=False)
+    attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    next_attempt_at: Mapped[str] = mapped_column(String(40), default="", nullable=False)
+    last_error: Mapped[str] = mapped_column(String(500), default="", nullable=False)
+    result_summary: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[str] = mapped_column(String(40), default="", nullable=False)
+    finished_at: Mapped[str] = mapped_column(String(40), default="", nullable=False)
+
+
+class NotificationTemplateRow(Base):
+    """A tenant-owned notification template (Batch 02 persistence)."""
+
+    __tablename__ = "notification_templates"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), index=True
+    )
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    channel: Mapped[str] = mapped_column(String(32), nullable=False)
+    body: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    variables: Mapped[list] = mapped_column(JSON, default=list)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+
+
+class NotificationRow(Base):
+    """One rendered notification, durable across restarts.
+
+    PII: ``recipient`` holds the delivery target (phone number, email address or
+    webhook URL). The API never returns it unmasked, logs never include it, and
+    :func:`app.core.retention.purge_expired_notifications` deletes whole rows
+    once they are older than the retention window.
+    """
+
+    __tablename__ = "notifications"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "dedupe_key", name="uq_notification_dedupe"),
+        Index("ix_notifications_tenant_state", "tenant_id", "delivery_state"),
+        Index("ix_notifications_created", "created_at"),
+        ForeignKeyConstraint(
+            ["tenant_id", "environment_id"],
+            ["environments.tenant_id", "environments.id"],
+            name="fk_notifications_tenant_environment",
+        ),
+        Index("ix_notifications_tenant_environment", "tenant_id", "environment_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), index=True
+    )
+    environment_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("environments.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    template_id: Mapped[str] = mapped_column(String(64), index=True)
+    channel: Mapped[str] = mapped_column(String(32), nullable=False)
+    #: {"kind", "target", "user_id"} — see the PII note above.
+    recipient: Mapped[dict] = mapped_column(JSON, default=dict)
+    event_source: Mapped[str] = mapped_column(String(32), nullable=False)
+    priority: Mapped[str] = mapped_column(String(16), default="normal", nullable=False)
+    dedupe_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    rendered_body: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    delivery_state: Mapped[str] = mapped_column(String(16), default="pending", nullable=False)
+    attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    next_attempt_at: Mapped[str] = mapped_column(String(40), default="", nullable=False)
+    sent_at: Mapped[str] = mapped_column(String(40), default="", nullable=False)
+    error_summary: Mapped[str] = mapped_column(String(500), default="", nullable=False)
+    read: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+
+
+class InboxThreadState(Base):
+    """Inbox-only state overlaid on a real ``Call`` row.
+
+    Assignment, priority, tags, internal notes, read/unread and the SLA clock
+    have no columns on ``calls`` (Batch 01 kept them in an overlay dict), so they
+    live here — one row per (tenant, call), deleted by cascade when the call
+    itself is purged by retention.
+    """
+
+    __tablename__ = "inbox_thread_states"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "call_id", name="uq_inbox_thread_state_call"),
+        ForeignKeyConstraint(
+            ["tenant_id", "environment_id"],
+            ["environments.tenant_id", "environments.id"],
+            name="fk_inbox_thread_states_tenant_environment",
+        ),
+        Index("ix_inbox_thread_states_tenant_environment", "tenant_id", "environment_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), index=True
+    )
+    environment_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("environments.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    call_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("calls.id", ondelete="CASCADE"), index=True
+    )
+    #: Explicit thread status once an operator moves it (open/assigned/…).
+    status: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    priority: Mapped[str] = mapped_column(String(16), default="normal", nullable=False)
+    assignee_id: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    tags: Mapped[list] = mapped_column(JSON, default=list)
+    #: [{"body", "at", "author"}, ...] — internal notes, never customer-visible.
+    notes: Mapped[list] = mapped_column(JSON, default=list)
+    unread: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    opened_at: Mapped[str] = mapped_column(String(40), default="", nullable=False)
+    sla_deadline_at: Mapped[str] = mapped_column(String(40), default="", nullable=False)
+    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    first_response_deadline: Mapped[str] = mapped_column(String(40), default="", nullable=False)
+    resolution_deadline: Mapped[str] = mapped_column(String(40), default="", nullable=False)
+    sla_state: Mapped[str] = mapped_column(String(16), default="running", nullable=False)
+    sla_breached_at: Mapped[str] = mapped_column(String(40), default="", nullable=False)
+    sla_paused: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
+    )
+
+
+# ================================================= membership and quotas ===
+#
+# ORM mappings live here, with the rest of the schema. The services under
+# ``app/organization``, ``app/tenancy``, ``app/environments`` and ``app/quotas``
+# own the rules. Role values are the existing ``UserRole`` enum — there is no
+# second role namespace. A missing membership row is legacy single-tenant
+# behaviour; a revoked row is an explicit deny.
+
+_MEMBERSHIP_STATUSES = "('invited', 'active', 'suspended', 'revoked', 'expired')"
+
+
+class OrganizationMembership(Base):
+    """One principal's place in an organization.
+
+    ``user_id`` is the principal. Machine credentials do not get a second row:
+    they are attributed to this user and then narrowed by their own scopes.
+    """
+
+    __tablename__ = "organization_memberships"
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id", "user_id", name="uq_organization_memberships_principal"
+        ),
+        CheckConstraint(
+            f"status IN {_MEMBERSHIP_STATUSES}",
+            name="ck_organization_memberships_status",
+        ),
+        Index("ix_organization_memberships_user", "user_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("organizations.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    role: Mapped[UserRole] = mapped_column(Enum(UserRole), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="active")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
+    )
+    invited_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    suspended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class TenantMembership(Base):
+    """One principal's place in a tenant. Unique per tenant and user."""
+
+    __tablename__ = "tenant_memberships"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "user_id", name="uq_tenant_memberships_principal"),
+        CheckConstraint(
+            f"status IN {_MEMBERSHIP_STATUSES}",
+            name="ck_tenant_memberships_status",
+        ),
+        Index("ix_tenant_memberships_user", "user_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    role: Mapped[UserRole] = mapped_column(Enum(UserRole), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="active")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
+    )
+    invited_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    suspended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class EnvironmentMembership(Base):
+    """Optional explicit environment binding. Absence means inherit."""
+
+    __tablename__ = "environment_memberships"
+    __table_args__ = (
+        UniqueConstraint("environment_id", "user_id", name="uq_environment_memberships_principal"),
+        CheckConstraint(
+            f"status IN {_MEMBERSHIP_STATUSES}",
+            name="ck_environment_memberships_status",
+        ),
+        Index("ix_environment_memberships_user", "user_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    environment_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("environments.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    role: Mapped[UserRole] = mapped_column(Enum(UserRole), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="active")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
+    )
+
+
+class MembershipInvitation(Base):
+    """An invitation bound to one organization, and optionally one tenant.
+
+    Only the SHA-256 digest of the token is stored. ``binding_key`` is the
+    server-chosen scope key used to stop a second live invitation for the same
+    address. It is not a client-supplied id.
+    """
+
+    __tablename__ = "membership_invitations"
+    __table_args__ = (
+        UniqueConstraint("token_hash", name="uq_membership_invitations_token"),
+        CheckConstraint(
+            "scope IN ('organization', 'tenant')",
+            name="ck_membership_invitations_scope",
+        ),
+        CheckConstraint(
+            "status IN ('invited', 'accepted', 'revoked', 'expired')",
+            name="ck_membership_invitations_status",
+        ),
+        CheckConstraint(
+            "(scope = 'organization' AND tenant_id IS NULL) "
+            "OR (scope = 'tenant' AND tenant_id IS NOT NULL)",
+            name="ck_membership_invitations_scope_tenant",
+        ),
+        Index(
+            "uq_membership_invitations_active",
+            "binding_key",
+            "email",
+            unique=True,
+            sqlite_where=text("status = 'invited'"),
+            postgresql_where=text("status = 'invited'"),
+        ),
+        Index("ix_membership_invitations_org", "organization_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    scope: Mapped[str] = mapped_column(String(16), nullable=False)
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("organizations.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    tenant_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=True
+    )
+    #: The tenant a newly accepted user is placed in. Set by the service from
+    #: the inviter's tenant or the invitation tenant. Never taken from the body.
+    home_tenant_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="RESTRICT"), nullable=False
+    )
+    email: Mapped[str] = mapped_column(String(320), nullable=False)
+    role: Mapped[UserRole] = mapped_column(Enum(UserRole), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="invited")
+    token_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    binding_key: Mapped[str] = mapped_column(String(80), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    invited_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    accepted_by_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
+    )
+    accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class QuotaLimit(Base):
+    """A typed limit at one scope. Absence is unknown, not zero and not unlimited."""
+
+    __tablename__ = "quota_limits"
+    __table_args__ = (
+        UniqueConstraint("scope_kind", "scope_id", "quota_key", name="uq_quota_limits_scope_key"),
+        CheckConstraint(
+            "scope_kind IN ('organization', 'tenant', 'environment')",
+            name="ck_quota_limits_scope",
+        ),
+        CheckConstraint(
+            "mode IN ('hard', 'soft', 'unlimited', 'unknown')",
+            name="ck_quota_limits_mode",
+        ),
+        CheckConstraint(
+            "(mode IN ('hard', 'soft') AND limit_value IS NOT NULL AND limit_value >= 0) "
+            "OR (mode IN ('unlimited', 'unknown') AND limit_value IS NULL)",
+            name="ck_quota_limits_value",
+        ),
+        Index("ix_quota_limits_scope", "scope_kind", "scope_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    scope_kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    scope_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    quota_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    mode: Mapped[str] = mapped_column(String(16), nullable=False)
+    limit_value: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
+    )
+
+
+class ScopePolicy(Base):
+    """Stricter overlay on the existing identity policy. Null means inherit.
+
+    This is not a second policy engine. The resolver starts from
+    ``IdentityPolicy`` and then refuses any overlay that would weaken a
+    mandatory parent control.
+    """
+
+    __tablename__ = "scope_policies"
+    __table_args__ = (
+        UniqueConstraint("scope_kind", "scope_id", name="uq_scope_policies_scope"),
+        CheckConstraint(
+            "scope_kind IN ('organization', 'tenant', 'environment')",
+            name="ck_scope_policies_kind",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    scope_kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    scope_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    mfa_required: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    mfa_required_for_admins: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    sso_required: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    password_login_allowed: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    api_keys_allowed: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    service_accounts_allowed: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    session_idle_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    session_max_active: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
+    )
+
+
+class EnvironmentSelection(Base):
+    """Server-side current environment. Not a JWT claim."""
+
+    __tablename__ = "environment_selections"
+    __table_args__ = (
+        UniqueConstraint("user_id", "tenant_id", name="uq_environment_selections_principal"),
+        Index("ix_environment_selections_environment", "environment_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+    )
+    environment_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("environments.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
+    )
+
+
+# ===================================================== enterprise identity ===
+#
+# The identity tables live in `app/auth/identity/models.py`, next to the domain
+# rules that use them, rather than at the bottom of this already-2100-line
+# module. They are attached to the *same* `Base`, imported here at the very end
+# so `Base.metadata` is complete for Alembic and for `create_all` in tests,
+# while the import cycle stays one-way: identity.models needs `Base` from this
+# module, and this module needs nothing from it beyond the side effect of the
+# definitions executing. No name is imported, precisely so a partially
+# initialised module cannot fail this import.
+from app.organization.models import (  # noqa: E402
+    legacy_organization_name,
+    legacy_organization_slug,
+)
+
+
+@event.listens_for(Tenant, "before_insert")
+def _assign_legacy_organization(mapper, connection, target) -> None:
+    """Give a tenant inserted without a parent its own organization.
+
+    Existing callers (``make_tenant``, the seed script, ``POST /api/tenants``)
+    construct a ``Tenant`` and do not know about organizations. Leaving
+    ``organization_id`` null would either fail the NOT NULL constraint or store
+    an orphan. One organization per tenant, slug derived from the tenant id,
+    so two businesses are never folded into a shared default organization.
+    """
+    if target.organization_id is not None:
+        return
+    if target.id is None:
+        target.id = _uuid()
+    org_id = _uuid()
+    now = datetime.utcnow()
+    connection.execute(
+        Organization.__table__.insert().values(
+            id=org_id,
+            name=legacy_organization_name(getattr(target, "name", None)),
+            slug=legacy_organization_slug(target.id),
+            status="active",
+            created_at=now,
+            updated_at=now,
+        )
+    )
+    target.organization_id = org_id
+
+
+@event.listens_for(Tenant, "after_insert")
+def _ensure_production_environment(mapper, connection, target) -> None:
+    """Every tenant gets exactly one production environment, including legacy inserts."""
+    if target.id is None:
+        return
+    existing = connection.execute(
+        select(Environment.id).where(
+            Environment.tenant_id == target.id,
+            Environment.kind == "production",
+        )
+    ).first()
+    if existing is not None:
+        from app.environments.resource_binding import remember_production
+
+        remember_production(target.id, existing.id)
+        return
+    now = datetime.utcnow()
+    environment_id = _uuid()
+    connection.execute(
+        Environment.__table__.insert().values(
+            id=environment_id,
+            tenant_id=target.id,
+            name="Production",
+            slug="production",
+            kind="production",
+            status="active",
+            is_default=True,
+            production_guard=target.id,
+            default_guard=target.id,
+            release_version="",
+            deployed_at=None,
+            deployment_status="idle",
+            deployment_source="",
+            health_state="unknown",
+            created_at=now,
+            updated_at=now,
+        )
+    )
+    from app.environments.resource_binding import remember_production
+
+    remember_production(target.id, environment_id)
+
+
+def _role_name(role: UserRole | str | None) -> str:
+    if isinstance(role, UserRole):
+        return role.name
+    text_role = str(role or UserRole.VIEWER.value)
+    try:
+        return UserRole(text_role).name
+    except ValueError:
+        return text_role
+
+
+@event.listens_for(User, "after_insert")
+def _ensure_legacy_membership(mapper, connection, target) -> None:
+    """Give a newly inserted user the membership their tenant already implies.
+
+    Callers that still do ``User(...)`` — tests, the team API, SCIM — do not
+    know about membership tables. Without this hook a later revoke would have
+    no row to revoke, and a backfilled database would not match a fresh insert.
+    The role copied is the role already on the user. Nothing here grants a
+    higher one.
+    """
+    if target.id is None or target.tenant_id is None:
+        return
+    tenant_row = connection.execute(
+        select(Tenant.organization_id).where(Tenant.id == target.tenant_id)
+    ).first()
+    if tenant_row is None or tenant_row[0] is None:
+        return
+    organization_id = tenant_row[0]
+    now = datetime.utcnow()
+    role = _role_name(target.role)
+    existing_org = connection.execute(
+        select(OrganizationMembership.id).where(
+            OrganizationMembership.organization_id == organization_id,
+            OrganizationMembership.user_id == target.id,
+        )
+    ).first()
+    if existing_org is None:
+        connection.execute(
+            OrganizationMembership.__table__.insert().values(
+                id=_uuid(),
+                organization_id=organization_id,
+                user_id=target.id,
+                role=role,
+                status=MembershipStatus.ACTIVE.value,
+                created_at=now,
+                updated_at=now,
+                invited_at=None,
+                accepted_at=now,
+                suspended_at=None,
+                revoked_at=None,
+            )
+        )
+    existing_tenant = connection.execute(
+        select(TenantMembership.id).where(
+            TenantMembership.tenant_id == target.tenant_id,
+            TenantMembership.user_id == target.id,
+        )
+    ).first()
+    if existing_tenant is None:
+        connection.execute(
+            TenantMembership.__table__.insert().values(
+                id=_uuid(),
+                tenant_id=target.tenant_id,
+                user_id=target.id,
+                role=role,
+                status=MembershipStatus.ACTIVE.value,
+                created_at=now,
+                updated_at=now,
+                invited_at=None,
+                accepted_at=now,
+                suspended_at=None,
+                revoked_at=None,
+            )
+        )
+
+
+class DurableJob(Base):
+    """PostgreSQL-authoritative background job. Not a Python queue.
+
+    Batch 07 (durable async jobs) extends this row — the single job
+    source-of-truth — instead of adding a second job table:
+
+    * ``priority`` orders claiming (0=high, 1=normal, 2=low; see
+      ``app.jobs.types.JobPriority``). Claim ordering also ages low-priority
+      rows forward so they can never starve behind a stream of high-priority
+      work (``app.jobs.queue``).
+    * ``cancel_requested`` is the durable cancellation intent for a *running*
+      job. A queued job is cancelled by moving it straight to ``cancelled``;
+      a running job cannot be yanked mid-handler, so the flag is set and the
+      worker/reaper finalise the cancellation at the next safe point. The
+      winning acknowledgement checks the flag, so a cancel that lands while
+      the handler runs still beats a late success.
+
+    Lease semantics: ``worker_id`` + ``leased_until`` are the lease. Only the
+    holder inside the window may acknowledge (guarded updates in
+    ``app.jobs.queue``); an expired lease is reclaimed by
+    ``app.jobs.heartbeat.recover_abandoned``. ``status`` values live in
+    ``app.jobs.models.JobState`` (``quarantined`` joins ``dead_letter`` as an
+    operator-held DLQ state).
+    """
+
+    __tablename__ = "jobs"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "idempotency_key", name="uq_jobs_tenant_idempotency"),
+        Index("ix_jobs_claim", "status", "available_at"),
+        Index("ix_jobs_tenant_environment", "tenant_id", "environment_id"),
+        # Batch 07 claim/lease/inspection indexes. ix_jobs_claim_priority
+        # serves the priority-aware claim order; ix_jobs_leased_until serves
+        # the abandoned-lease reaper; the tenant composites serve the
+        # operator APIs and per-tenant concurrency counts.
+        Index("ix_jobs_claim_priority", "status", "priority", "available_at"),
+        Index("ix_jobs_leased_until", "leased_until"),
+        Index("ix_jobs_tenant_status", "tenant_id", "status"),
+        Index("ix_jobs_tenant_environment_status", "tenant_id", "environment_id", "status"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    organization_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="SET NULL"), nullable=True
+    )
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    environment_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("environments.id", ondelete="RESTRICT"), nullable=True
+    )
+    job_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    payload: Mapped[dict] = mapped_column(JSON, default=dict)
+    status: Mapped[str] = mapped_column(String(32), default="queued", nullable=False)
+    #: Batch 07: claim ordering. 0=high, 1=normal, 2=low. Aged rows are
+    #: promoted ahead of newer high-priority work so ``low`` cannot starve.
+    priority: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    #: Batch 07: durable cancellation intent for a running job. Cleared only
+    #: by the transition that finalises the cancellation.
+    cancel_requested: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    attempt_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    max_attempts: Mapped[int] = mapped_column(Integer, default=5, nullable=False)
+    replay_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    available_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    leased_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    worker_id: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    last_error_category: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    last_error: Mapped[str] = mapped_column(String(500), default="", nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(128), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class JobAttempt(Base):
+    __tablename__ = "job_attempts"
+    __table_args__ = (
+        UniqueConstraint("job_id", "attempt_number", name="uq_job_attempts_number"),
+        Index("ix_job_attempts_job", "job_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    job_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("jobs.id", ondelete="CASCADE"), nullable=False
+    )
+    attempt_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    worker_id: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    error_category: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class JobIdempotency(Base):
+    __tablename__ = "job_idempotency"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "idempotency_key", name="uq_job_idempotency_key"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    idempotency_key: Mapped[str] = mapped_column(String(128), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), default="in_progress", nullable=False)
+    result_ref: Mapped[str] = mapped_column(String(128), default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+
+
+class RequestIdempotencyReceipt(Base):
+    """Durable idempotency state for synchronous API side effects.
+
+    Only a digest of the client key and a digest of the canonical request are
+    stored. A committed ``in_progress`` receipt is deliberately fail-closed: if
+    a process dies after an external side effect but before recording its
+    result, retries must not blindly repeat that side effect.
+    """
+
+    __tablename__ = "request_idempotency_receipts"
+    __table_args__ = (
+        UniqueConstraint(
+            "tenant_id", "environment_scope", "operation", "key_digest",
+            name="uq_request_idempotency_scope_operation_key",
+        ),
+        Index("ix_request_idempotency_tenant_status", "tenant_id", "status"),
+        ForeignKeyConstraint(
+            ["tenant_id", "environment_id"],
+            ["environments.tenant_id", "environments.id"],
+            name="fk_request_idempotency_tenant_environment",
+            ondelete="CASCADE",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+    )
+    environment_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    environment_scope: Mapped[str] = mapped_column(String(36), nullable=False, default="tenant")
+    operation: Mapped[str] = mapped_column(String(64), nullable=False)
+    key_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    request_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(String(24), nullable=False, default="in_progress")
+    resource_type: Mapped[str] = mapped_column(String(64), nullable=False, default="")
+    resource_id: Mapped[str] = mapped_column(String(160), nullable=False, default="")
+    error_category: Mapped[str] = mapped_column(String(64), nullable=False, default="")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=datetime.utcnow
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class AutomationActionReceipt(Base):
+    """One side effect for one automation action and business event."""
+
+    __tablename__ = "automation_actions"
+    __table_args__ = (
+        UniqueConstraint(
+            "tenant_id",
+            "automation_id",
+            "business_event_id",
+            "action_id",
+            name="uq_automation_action_once",
+        ),
+        Index("ix_automation_actions_tenant_environment", "tenant_id", "environment_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    organization_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    environment_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("environments.id", ondelete="RESTRICT"), nullable=False
+    )
+    automation_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    business_event_id: Mapped[str] = mapped_column(String(200), nullable=False)
+    action_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), default="started", nullable=False)
+    job_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+
+
+class NotificationDeliveryAttempt(Base):
+    __tablename__ = "notification_deliveries"
+    __table_args__ = (
+        UniqueConstraint(
+            "notification_id", "attempt_number", name="uq_notification_delivery_attempt"
+        ),
+        Index("ix_notification_deliveries_tenant_environment", "tenant_id", "environment_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    environment_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("environments.id", ondelete="RESTRICT"), nullable=False
+    )
+    notification_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    attempt_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    provider: Mapped[str] = mapped_column(String(32), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    response_class: Mapped[str] = mapped_column(String(32), default="", nullable=False)
+    error_category: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+
+
+class NotificationPreference(Base):
+    __tablename__ = "notification_preferences"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "user_id", name="uq_notification_preferences_user"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    email_enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    sms_enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    in_app_enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    webhook_enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    operational_alerts: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    security_alerts: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+
+class WebhookSubscription(Base):
+    __tablename__ = "webhook_subscriptions"
+    __table_args__ = (
+        Index("ix_webhook_subscriptions_tenant_environment", "tenant_id", "environment_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    environment_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("environments.id", ondelete="RESTRICT"), nullable=True
+    )
+    endpoint: Mapped[str] = mapped_column(String(500), nullable=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    event_types: Mapped[list] = mapped_column(JSON, default=list)
+    secret_envelope: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    secret_version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+
+
+class WebhookDelivery(Base):
+    __tablename__ = "webhook_deliveries"
+    __table_args__ = (
+        UniqueConstraint("subscription_id", "event_id", name="uq_webhook_delivery_event"),
+        Index("ix_webhook_deliveries_status", "status", "next_attempt_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    environment_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    subscription_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("webhook_subscriptions.id", ondelete="CASCADE"), nullable=False
+    )
+    event_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    attempt: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    status: Mapped[str] = mapped_column(String(32), default="queued", nullable=False)
+    next_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_error_category: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    replay_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+
+class EmailDelivery(Base):
+    __tablename__ = "email_deliveries"
+    __table_args__ = (
+        Index("ix_email_deliveries_tenant", "tenant_id", "status"),
+        Index(
+            "uq_email_delivery_idempotency",
+            "tenant_id",
+            "idempotency_key",
+            unique=True,
+            postgresql_where=text("idempotency_key <> ''"),
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    environment_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    recipient_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    template_name: Mapped[str] = mapped_column(String(120), default="", nullable=False)
+    subject: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    provider: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(
+        String(180), default="", nullable=False, index=True
+    )
+    status: Mapped[str] = mapped_column(String(32), default="queued", nullable=False)
+    attempt_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    error_category: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+
+
+# ===========================================================================
+# Voice runtime -- provider-backed profiles and clone jobs. These records keep
+# provider identifiers and opaque object references only; no audio bytes or
+# provider credentials are stored in JSON columns.
+
+
+class VoiceProfile(Base):
+    __tablename__ = "voice_profiles"
+    __table_args__ = (
+        UniqueConstraint(
+            "tenant_id", "provider", "provider_voice_id", name="uq_voice_profile_provider_voice"
+        ),
+        Index("ix_voice_profiles_tenant_status", "tenant_id", "status"),
+        Index("ix_voice_profiles_tenant_name", "tenant_id", "name"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    environment_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    provider: Mapped[str] = mapped_column(String(64), nullable=False)
+    provider_voice_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    language: Mapped[str] = mapped_column(String(32), nullable=False, default="en-US")
+    locale: Mapped[str] = mapped_column(String(32), nullable=False, default="en-US")
+    voice_type: Mapped[str] = mapped_column(String(24), nullable=False, default="provider")
+    status: Mapped[str] = mapped_column(String(24), nullable=False, default="pending")
+    capabilities: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    profile_metadata: Mapped[dict] = mapped_column("metadata", JSON, nullable=False, default=dict)
+    created_by: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+    deactivated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class VoiceCloneJob(Base):
+    __tablename__ = "voice_clone_jobs"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "request_fingerprint", name="uq_voice_clone_job_idempotency"),
+        Index("ix_voice_clone_jobs_tenant_status", "tenant_id", "status"),
+        Index("ix_voice_clone_jobs_provider_job", "provider", "provider_job_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    environment_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    voice_profile_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("voice_profiles.id", ondelete="SET NULL"), nullable=True
+    )
+    provider: Mapped[str] = mapped_column(String(64), nullable=False)
+    provider_job_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="requested")
+    input_object_reference: Mapped[str] = mapped_column(String(1000), nullable=False)
+    request_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    progress: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    error_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    error_message_redacted: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    attempt_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    last_heartbeat_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    requested_by: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+# ===========================================================================
+# Durable workflow persistence. The public workflow domain objects remain
+# immutable dataclasses; these rows are the single authoritative state store.
+
+
+class Workflow(Base):
+    __tablename__ = "workflows"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "slug", name="uq_workflows_tenant_slug"),
+        Index("ix_workflows_tenant", "tenant_id"),
+        Index("ix_workflows_status", "status"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    slug: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="draft")
+    # SQLAlchemy reserves the Python attribute ``metadata``; the database
+    # column remains the migration's existing ``metadata`` column.
+    workflow_metadata: Mapped[dict] = mapped_column("metadata", JSON, nullable=False, default=dict)
+    current_version_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("workflow_versions.id", ondelete="SET NULL"), nullable=True
+    )
+    published_version_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("workflow_versions.id", ondelete="SET NULL"), nullable=True
+    )
+    created_by: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+
+class WorkflowVersion(Base):
+    __tablename__ = "workflow_versions"
+    __table_args__ = (
+        UniqueConstraint("workflow_id", "version_number", name="uq_workflow_versions"),
+        Index("ix_workflow_versions_workflow", "workflow_id"),
+        Index("ix_workflow_versions_tenant", "tenant_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    workflow_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workflows.id", ondelete="CASCADE"), nullable=False
+    )
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+    )
+    version_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    graph_config: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    checksum: Mapped[str] = mapped_column(String(64), nullable=False, default="")
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="draft")
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_by: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+
+
+class WorkflowExecution(Base):
+    __tablename__ = "workflow_executions"
+    __table_args__ = (
+        Index("ix_workflow_executions_tenant_status", "tenant_id", "status"),
+        Index("ix_workflow_executions_workflow", "workflow_id"),
+        Index(
+            "ix_workflow_executions_recovery",
+            "tenant_id",
+            "status",
+            "last_heartbeat_at",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    workflow_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workflows.id", ondelete="RESTRICT"), nullable=False
+    )
+    workflow_version_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workflow_versions.id", ondelete="RESTRICT"), nullable=False
+    )
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+    )
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="created")
+    current_node_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    input_payload: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    output_metadata: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    error_metadata: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    attempt_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    checkpoint_data: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_heartbeat_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    recovery_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    concurrency_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+
+class ExecutionCheckpoint(Base):
+    __tablename__ = "execution_checkpoints"
+    __table_args__ = (Index("ix_checkpoints_execution", "execution_id"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    execution_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workflow_executions.id", ondelete="CASCADE"), nullable=False
+    )
+    node_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    checkpoint_data: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+
+
+class WorkflowIdempotency(Base):
+    __tablename__ = "workflow_idempotency"
+    __table_args__ = (
+        UniqueConstraint(
+            "tenant_id", "operation", "idempotency_key", name="uq_workflow_idempotency"
+        ),
+        Index("ix_workflow_idempotency_key", "tenant_id", "idempotency_key"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+    )
+    operation: Mapped[str] = mapped_column(String(64), nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(128), nullable=False)
+    request_fingerprint: Mapped[str] = mapped_column(String(256), nullable=False, default="")
+    result_ref: Mapped[str] = mapped_column(String(128), nullable=False, default="")
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="in_progress")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+# ===========================================================================
+# Prompt 3 -- tenant-scoped connector, tool, MCP, privacy and webhook records.
+# Secret-bearing values are references to the configured secret store only;
+# these tables deliberately have no plaintext credential columns.
+
+
+class Connector(Base):
+    __tablename__ = "connectors"
+    __table_args__ = (
+        UniqueConstraint(
+            "tenant_id", "environment_id", "provider", name="uq_connector_scope_provider"
+        ),
+        Index("ix_connectors_tenant_status", "tenant_id", "status"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    environment_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True, index=True
+    )
+    provider: Mapped[str] = mapped_column(String(80), nullable=False)
+    kind: Mapped[str] = mapped_column(String(40), nullable=False, default="generic")
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="configured")
+    capabilities: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    config: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    credential_ref: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    health_message: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    last_health_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+
+class ConnectorOAuth(Base):
+    __tablename__ = "connector_oauth"
+    __table_args__ = (UniqueConstraint("connector_id", name="uq_connector_oauth_connector"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    connector_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("connectors.id", ondelete="CASCADE"), nullable=False
+    )
+    state: Mapped[str] = mapped_column(String(24), nullable=False, default="disconnected")
+    oauth_state_nonce: Mapped[str | None] = mapped_column(String(96), nullable=True)
+    oauth_state_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    scopes: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    access_token_ref: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    refresh_token_ref: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    provider_account_ref: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+
+class ApiTool(Base):
+    __tablename__ = "api_tools"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "environment_id", "name", name="uq_api_tools_scope_name"),
+        Index("ix_api_tools_tenant_enabled", "tenant_id", "enabled"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    environment_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True, index=True
+    )
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    description: Mapped[str] = mapped_column(String(500), nullable=False, default="")
+    method: Mapped[str] = mapped_column(String(8), nullable=False)
+    url_template: Mapped[str] = mapped_column(String(1000), nullable=False)
+    parameter_schema: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    body_schema: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    result_schema: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    auth_ref: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    timeout_seconds: Mapped[float] = mapped_column(Float, nullable=False, default=10.0)
+    retry_max_attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=3)
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+
+class ToolExecution(Base):
+    __tablename__ = "tool_executions"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "idempotency_key", name="uq_tool_execution_idempotency"),
+        Index("ix_tool_executions_tenant_created", "tenant_id", "created_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    environment_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    tool_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    tool_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(180), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="started")
+    result_metadata: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    error_category: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class McpServer(Base):
+    __tablename__ = "mcp_servers"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "environment_id", "name", name="uq_mcp_server_scope_name"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    environment_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    endpoint: Mapped[str] = mapped_column(String(1000), nullable=False)
+    transport: Mapped[str] = mapped_column(String(32), nullable=False, default="streamable_http")
+    auth_ref: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="configured")
+    server_info: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    last_health_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+
+class McpTool(Base):
+    __tablename__ = "mcp_tools"
+    __table_args__ = (UniqueConstraint("server_id", "name", name="uq_mcp_tool_server_name"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    server_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("mcp_servers.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    description: Mapped[str] = mapped_column(String(1000), nullable=False, default="")
+    input_schema: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    annotations: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    discovered_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+
+
+class KnowledgeSource(Base):
+    __tablename__ = "knowledge_sources"
+    __table_args__ = (
+        UniqueConstraint(
+            "tenant_id", "environment_id", "canonical_url", name="uq_knowledge_source_url"
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    environment_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    canonical_url: Mapped[str] = mapped_column(String(2000), nullable=False)
+    max_depth: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="queued")
+    last_error: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+
+class PrivacyPolicy(Base):
+    __tablename__ = "privacy_policies"
+    __table_args__ = (UniqueConstraint("tenant_id", name="uq_privacy_policy_tenant"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+    )
+    mode: Mapped[str] = mapped_column(String(16), nullable=False, default="mask")
+    rules: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+
+class HumanApproval(Base):
+    __tablename__ = "human_approvals"
+    __table_args__ = (Index("ix_human_approvals_tenant_status", "tenant_id", "status"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    environment_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    action: Mapped[str] = mapped_column(String(120), nullable=False)
+    subject_ref: Mapped[str] = mapped_column(String(255), nullable=False)
+    payload_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(String(24), nullable=False, default="pending")
+    requested_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    decided_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+
+
+class PublicWebhookEndpoint(Base):
+    __tablename__ = "public_webhook_endpoints"
+    __table_args__ = (UniqueConstraint("tenant_id", "name", name="uq_public_webhook_tenant_name"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    secret_ref: Mapped[str] = mapped_column(String(255), nullable=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+
+
+class PublicWebhookReceipt(Base):
+    __tablename__ = "public_webhook_receipts"
+    __table_args__ = (
+        UniqueConstraint("endpoint_id", "event_id", name="uq_public_webhook_receipt_event"),
+        Index("ix_public_webhook_receipts_received", "received_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    endpoint_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("public_webhook_endpoints.id", ondelete="CASCADE"), nullable=False
+    )
+    event_id: Mapped[str] = mapped_column(String(180), nullable=False)
+    payload_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    received_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+
+
+class AgentLifecycleStatus(str, enum.Enum):
+    """Durable lifecycle states for a first-class Agent record."""
+
+    DRAFT = "draft"
+    PUBLISHED = "published"
+    ARCHIVED = "archived"
+    RETIRED = "retired"
+
+
+class AgentValidationStatus(str, enum.Enum):
+    """Validation states for an Agent's working draft configuration."""
+
+    VALID = "valid"
+    INVALID = "invalid"
+    UNVALIDATED = "unvalidated"
+
+
+class AgentVersionStatus(str, enum.Enum):
+    """Lifecycle states for an immutable AgentVersion snapshot."""
+
+    PUBLISHED = "published"
+    SUPERSEDED = "superseded"
+    ROLLED_BACK = "rolled_back"
+
+
+class Agent(Base):
+    """First-class, tenant-scoped, environment-aware AI Agent entity.
+
+    Holds the mutable working draft configuration (`current_draft_config`),
+    optimistic concurrency tokens (`draft_etag`, `lock_version`), validation
+    state, and a pointer to the currently active immutable `AgentVersion`
+    (`published_version_id`, `published_version_number`).
+    """
+
+    __tablename__ = "agents"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "external_key", name="uq_agents_tenant_external_key"),
+        Index("ix_agents_tenant_status", "tenant_id", "status"),
+        Index("ix_agents_tenant_env", "tenant_id", "environment_id"),
+        Index("ix_agents_tenant_updated", "tenant_id", "updated_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    environment_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("environments.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    external_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    agent_type: Mapped[str] = mapped_column(String(32), nullable=False, default="voice")
+    status: Mapped[str] = mapped_column(String(24), nullable=False, default="draft")
+    current_draft_config: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    draft_etag: Mapped[str] = mapped_column(String(64), nullable=False, default="")
+    published_version_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True
+    )
+    published_version_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    validation_status: Mapped[str] = mapped_column(
+        String(24), nullable=False, default="unvalidated"
+    )
+    validation_errors: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    lock_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    updated_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    archived_reason: Mapped[str] = mapped_column(String(500), nullable=False, default="")
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+    meta: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+
+    versions: Mapped[list["AgentVersion"]] = relationship(
+        "AgentVersion",
+        back_populates="agent",
+        cascade="all, delete-orphan",
+        order_by="desc(AgentVersion.version_number)",
+    )
+
+    def as_dict(self) -> dict:
+        return {
+            "id": str(self.id),
+            "tenant_id": str(self.tenant_id),
+            "environment_id": str(self.environment_id) if self.environment_id else None,
+            "external_key": self.external_key,
+            "name": self.name,
+            "description": self.description,
+            "agent_type": self.agent_type,
+            "status": self.status,
+            "current_draft_config": self.current_draft_config or {},
+            "draft_etag": self.draft_etag,
+            "published_version_id": (
+                str(self.published_version_id) if self.published_version_id else None
+            ),
+            "published_version_number": self.published_version_number,
+            "validation_status": self.validation_status,
+            "validation_errors": self.validation_errors or [],
+            "lock_version": self.lock_version,
+            "created_by_user_id": (
+                str(self.created_by_user_id) if self.created_by_user_id else None
+            ),
+            "updated_by_user_id": (
+                str(self.updated_by_user_id) if self.updated_by_user_id else None
+            ),
+            "archived_at": self.archived_at.isoformat() if self.archived_at else None,
+            "archived_reason": self.archived_reason,
+            "deleted_at": self.deleted_at.isoformat() if self.deleted_at else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "meta": self.meta or {},
+        }
+
+
+class AgentVersion(Base):
+    """Immutable, append-only published snapshot of an Agent's configuration."""
+
+    __tablename__ = "agent_versions"
+    __table_args__ = (
+        UniqueConstraint("agent_id", "version_number", name="uq_agent_versions_agent_version"),
+        Index("ix_agent_versions_tenant_agent", "tenant_id", "agent_id", "version_number"),
+        Index("ix_agent_versions_agent_active", "agent_id", "is_active"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    agent_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("agents.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    version_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    version_label: Mapped[str] = mapped_column(String(64), nullable=False, default="")
+    status: Mapped[str] = mapped_column(String(24), nullable=False, default="published")
+    config_snapshot: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    config_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    changelog: Mapped[str] = mapped_column(String(500), nullable=False, default="")
+    published_environment_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("environments.id", ondelete="SET NULL"), nullable=True
+    )
+    published_environment: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="production"
+    )
+    published_Environment = synonym("published_environment")
+    source_version_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True
+    )
+    is_rollback: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    published_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    published_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    meta: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+
+    agent: Mapped[Agent] = relationship("Agent", back_populates="versions")
+
+    def as_dict(self) -> dict:
+        return {
+            "id": str(self.id),
+            "tenant_id": str(self.tenant_id),
+            "agent_id": str(self.agent_id),
+            "version": self.version_number,
+            "version_number": self.version_number,
+            "version_label": self.version_label or f"v{self.version_number}",
+            "status": self.status,
+            "config_snapshot": self.config_snapshot or {},
+            "config_hash": self.config_hash,
+            "changelog": self.changelog,
+            "published_environment_id": (
+                str(self.published_environment_id) if self.published_environment_id else None
+            ),
+            "published_environment": self.published_environment,
+            "source_version_id": str(self.source_version_id) if self.source_version_id else None,
+            "is_rollback": self.is_rollback,
+            "is_active": self.is_active,
+            "published_by_user_id": (
+                str(self.published_by_user_id) if self.published_by_user_id else None
+            ),
+            "published_at": self.published_at.isoformat() if self.published_at else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "meta": self.meta or {},
+        }
+
+
+from app.auth.identity import models as identity_models  # noqa: E402,F401  (metadata side effect)
+from app.ai import models as ai_governance_models  # noqa: E402,F401  (metadata side effect)
+from app.governance import models as enterprise_governance_models  # noqa: E402,F401
+from app.telephony.providers import factory as telephony_provider_factory  # noqa: E402,F401
+from app.telephony import number_provisioning as telephony_numbers  # noqa: E402,F401
+from app.telephony import recording as telephony_recordings  # noqa: E402,F401
+from app.telephony import recording_policy as telephony_recording_policy  # noqa: E402,F401
+from app.telephony import consent as telephony_consent  # noqa: E402,F401
+from app.telephony import transcription as telephony_transcription  # noqa: E402,F401
+from app.telephony import call_events as telephony_call_events  # noqa: E402,F401
+from app.telephony import qos as telephony_qos  # noqa: E402,F401
+from app.contact_center import models as contact_center_models  # noqa: E402,F401
+from app.qa import models as qa_models  # noqa: E402,F401
+from app.leads import models as lead_models  # noqa: E402,F401
+from app.db.retell_models import (  # noqa: E402,F401
+    ChatAgent,
+    ChatAgentStatusEnum,
+    ChatAgentVersion,
+    ChatAgentVersionStatusEnum,
+    ChatMessage,
+    ChatMessageRoleEnum,
+    ChatSession,
+    ChatSessionStatusEnum,
+    ConductorApproval,
+    ConductorApprovalActionEnum,
+    ConductorApprovalStateEnum,
+    ConductorChange,
+    ConductorEvidence,
+    ConductorEvidenceSourceEnum,
+    ConductorOperationTypeEnum,
+    ConductorProposal,
+    ConductorProposalStatusEnum,
+    ConductorRiskLevelEnum,
+    ConductorSession,
+    ConductorSessionStatusEnum,
+    ConductorWebhookReceipt,
+    Contact,
+    ContactLifecycleEnum,
+    ContactMemoryEntry,
+    ContactSourceEnum,
+    DynamicVariableDefinition,
+    DynamicVariableTypeEnum,
+    EvaluationResult,
+    EvaluationResultStatusEnum,
+    EvaluationRule,
+    EvaluationRuleTypeEnum,
+    MemorySourceEnum,
+    MemoryValueTypeEnum,
+    PublicContactSalesRequest,
+    PublicWidgetKey,
+    PublicWidgetKeyStatusEnum,
+    PublicWidgetSession,
+    PublicWidgetSessionModeEnum,
+    PublicWidgetSessionStatusEnum,
+    TestCase,
+    TestRun,
+    TestRunModeEnum,
+    TestRunStatusEnum,
+    TestSuite,
+    TestSuiteStatusEnum,
+)
+
+# Batch 07: the transactional outbox owns its ORM in ``app.outbox.models``
+# (same pattern as ``app.leads.models``). Imported last so ``Base.metadata``
+# carries ``outbox_events`` for create_all and Alembic autogenerate alike.
+from app.outbox import models as outbox_models  # noqa: E402,F401
+from app.environments.resource_binding import register as _register_resource_binding  # noqa: E402
+
+_register_resource_binding()
+
+
+@event.listens_for(Campaign, "before_insert")
+def _assign_campaign_scope(mapper, connection, target) -> None:
+    """Bind every Campaign insert to a tenant-owned, writable environment.
+
+    This is the *same* generic scope machinery ``app.environments.
+    resource_binding.register()`` attaches to leads, calls, appointments and
+    the other environment-scoped tables — reused, not reimplemented, so there
+    is exactly one resolution rule set in the codebase:
+
+    1. an explicit ``environment_id`` is validated (same tenant, not
+       suspended/archived — anything else fails closed);
+    2. otherwise the tenant's active production environment is used;
+    3. a tenant with no safe production environment is rejected rather than
+       having an environment invented for it.
+
+    Legacy callers that still construct ``Campaign(tenant_id=..., ...)`` keep
+    working exactly like legacy ``Lead(...)`` inserts do.
+    """
+    from app.environments.resource_binding import _assign_scope
+
+    _assign_scope(mapper, connection, target)
+
+
+@event.listens_for(Campaign, "before_update")
+def _freeze_campaign_scope(mapper, connection, target) -> None:
+    """A campaign can never move between environments after creation.
+
+    Reuses the same immutability check the other environment-scoped models
+    get from ``resource_binding``; only the wiring lives here because the
+    registry's model table is owned by that module.
+    """
+    from app.environments.resource_binding import _freeze_scope
+
+    _freeze_scope(mapper, connection, target)
+
+
+from app.db.telephony_models import (  # noqa: E402,F401
+    TelephonyCallSession,
+    TelephonyPhoneNumber,
+    TelephonyProviderEvent,
+    TelephonySipConnection,
+    TelephonyTransferRecord,
+    TelephonyUsageLedger,
+)
+

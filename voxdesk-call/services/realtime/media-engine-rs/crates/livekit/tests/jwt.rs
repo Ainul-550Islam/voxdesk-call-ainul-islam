@@ -16,7 +16,6 @@ fn b64url_round_trip_is_strict_against_tampered_shape() {
     assert_eq!(encode_b64url(b"foobar"), "Zm9vYmFy");
     assert_eq!(encode_b64url(&[0xFF, 0xEE]), "_-4");
     assert_eq!(decode_b64url("Zm9vYmFy").unwrap(), b"foobar");
-    // Padding on input is accepted if AND ONLY IF consistent.
     assert_eq!(decode_b64url("Zm8=").unwrap(), b"fo");
     assert_eq!(decode_b64url("Zg==").unwrap(), b"f");
     assert!(decode_b64url("Z===").is_none());

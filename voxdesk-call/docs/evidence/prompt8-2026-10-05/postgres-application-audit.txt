@@ -1,0 +1,7 @@
+TIMESTAMP_DHAKA=2026-10-05T17:46:53.537770+06:00
+DATABASE=voxdesk_prompt8; SERVER=PostgreSQL 17.11 (Debian 17.11-0+deb13u1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit
+AFTER_PRIOR_POSTGRES_RESTART committed_authorization_denials=2; rolled_back_audit_rows=0
+PASS application audit commit/redaction: authorization_denied is tenant/environment scoped; credential keys, bearer material, known secret, email, and phone were scrubbed before persistence; committed row reread.
+PASS caller transaction coupling: a flushed audit record was removed by rollback and absent from a separate session.
+PASS application scope validation: foreign-tenant environment, unowned user reference, and tenant-owned environment without tenant_id each rejected.
+BOUNDARY=application validation only; audit_logs RLS/FORCE RLS and append-only trigger are absent (see postgres-schema-checks.txt).

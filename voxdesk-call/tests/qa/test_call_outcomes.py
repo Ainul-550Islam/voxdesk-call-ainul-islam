@@ -10,7 +10,6 @@ from app.db.models import Call, CallStatus, TransferState
 from app.qa.evidence import load_call
 from app.qa.models import QAEvidence
 from app.qa.outcomes import (
-    CallOutcomeEvent,
     latest_call_outcomes,
     outcome_metrics,
     record_call_outcome,

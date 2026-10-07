@@ -1,0 +1,22 @@
+{
+  "truth": 0,
+  "make-verify-truth": 0,
+  "ruff": 0,
+  "compile": 0,
+  "contracts": 0,
+  "heads": 0,
+  "padding": 0,
+  "null": 0,
+  "active-references": 0,
+  "collection": 0,
+  "compose": 0,
+  "scope": "revised PART 0 executable gate; original literal clauses are disclosed separately",
+  "truth_passed": 41,
+  "backend_unique_passed": 348,
+  "backend_collected": 4234,
+  "next_tests_passed": 81,
+  "next_typecheck": 0,
+  "next_build": 0,
+  "original_literal_reference_grep": "not claimed empty",
+  "original_removals_only_contract": "not asserted for authorized contract repairs"
+}

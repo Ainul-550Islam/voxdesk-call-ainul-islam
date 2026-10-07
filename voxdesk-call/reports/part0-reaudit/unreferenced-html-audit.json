@@ -1,0 +1,167 @@
+[
+  {
+    "source": "src/pages/auth/LoginPage.html",
+    "sha256": "775dd682f90abaaf25a2c56331a46f9a10b80fa3d5aa76f29e1ad72b354e51b2",
+    "bytes": 127368,
+    "lines": 1000,
+    "script_tags": 0,
+    "external_scripts": 0,
+    "exact_filename_references": [],
+    "built_output_exists": false,
+    "generated_section_markers": 200
+  },
+  {
+    "source": "src/pages/auth/SignupPage.html",
+    "sha256": "c34171dc7e521b3f2db8bbfaa9cb9e99ce8920d216e1ade219309bb4ab726995",
+    "bytes": 116353,
+    "lines": 1000,
+    "script_tags": 0,
+    "external_scripts": 0,
+    "exact_filename_references": [],
+    "built_output_exists": false,
+    "generated_section_markers": 200
+  },
+  {
+    "source": "src/pages/contact/BookDemoPage.html",
+    "sha256": "2fb930897da8d928dfecf2b6c6fac48d1518d6e7f63c9993aedb033019a001fb",
+    "bytes": 120594,
+    "lines": 1000,
+    "script_tags": 0,
+    "external_scripts": 0,
+    "exact_filename_references": [],
+    "built_output_exists": false,
+    "generated_section_markers": 200
+  },
+  {
+    "source": "src/pages/contact/ContactPage.html",
+    "sha256": "f94003cfcf7d61e3246ebb2874bdcebdd16767ca892056a2f0d5043c411ded79",
+    "bytes": 124393,
+    "lines": 1000,
+    "script_tags": 0,
+    "external_scripts": 0,
+    "exact_filename_references": [],
+    "built_output_exists": false,
+    "generated_section_markers": 200
+  },
+  {
+    "source": "src/pages/docs/DocsPage.html",
+    "sha256": "b0a17b63a60fb84292dc06e882a2eb560216a19cbd985080b78b1b241c58ee47",
+    "bytes": 153810,
+    "lines": 1000,
+    "script_tags": 0,
+    "external_scripts": 0,
+    "exact_filename_references": [],
+    "built_output_exists": false,
+    "generated_section_markers": 200
+  },
+  {
+    "source": "src/pages/industries/IndustriesPage.html",
+    "sha256": "e9e81128eac651224dfb2788c06e2c25c46f5b86fa4a50d9bd2bef2ff24c24e3",
+    "bytes": 113552,
+    "lines": 1000,
+    "script_tags": 0,
+    "external_scripts": 0,
+    "exact_filename_references": [],
+    "built_output_exists": false,
+    "generated_section_markers": 201
+  },
+  {
+    "source": "src/pages/integrations/IntegrationDetailPage.html",
+    "sha256": "7cf3c3bbdd916542a0db8a28f0e4aa2ed474f606509f671365938c680750a31b",
+    "bytes": 65898,
+    "lines": 1000,
+    "script_tags": 0,
+    "external_scripts": 0,
+    "exact_filename_references": [],
+    "built_output_exists": false,
+    "generated_section_markers": 0
+  },
+  {
+    "source": "src/pages/integrations/IntegrationsPage.html",
+    "sha256": "b25130b64e2ee5faff4763d074b54d9364c6c5089d0a810979cfef14e86cca09",
+    "bytes": 104133,
+    "lines": 1000,
+    "script_tags": 0,
+    "external_scripts": 0,
+    "exact_filename_references": [],
+    "built_output_exists": false,
+    "generated_section_markers": 200
+  },
+  {
+    "source": "src/pages/product/answering-service/AnsweringServicePage.html",
+    "sha256": "d43f4dfd67f9d1d80df17b0b4a65eb17a70a2cba3903a07fee8789d3f6b568fc",
+    "bytes": 224007,
+    "lines": 1000,
+    "script_tags": 0,
+    "external_scripts": 0,
+    "exact_filename_references": [],
+    "built_output_exists": false,
+    "generated_section_markers": 200
+  },
+  {
+    "source": "src/pages/product/appointment-setter/AppointmentSetterPage.html",
+    "sha256": "6985618eb3aa302ee4c569c433981ab0ac31bcfa67b1572d33e102b5dc800c8f",
+    "bytes": 193624,
+    "lines": 1000,
+    "script_tags": 0,
+    "external_scripts": 0,
+    "exact_filename_references": [],
+    "built_output_exists": false,
+    "generated_section_markers": 200
+  },
+  {
+    "source": "src/pages/product/customer-service/CustomerServicePage.html",
+    "sha256": "5fe15ed9de65779e6a5c6b9d9ce9ffe878393cd95a79cee352df75561cbf8b82",
+    "bytes": 98561,
+    "lines": 1000,
+    "script_tags": 0,
+    "external_scripts": 0,
+    "exact_filename_references": [],
+    "built_output_exists": false,
+    "generated_section_markers": 3
+  },
+  {
+    "source": "src/pages/product/telemarketing/TelemarketingPage.html",
+    "sha256": "614e61ff09fa944bdc270ad4c585bb86f8bfc2f7b36031e585280f8d254c13e9",
+    "bytes": 206190,
+    "lines": 1000,
+    "script_tags": 0,
+    "external_scripts": 0,
+    "exact_filename_references": [],
+    "built_output_exists": false,
+    "generated_section_markers": 200
+  },
+  {
+    "source": "src/pages/product/voice-agents/VoiceAgentsPage.html",
+    "sha256": "02192de6d8fc776f373c0f45621871ac57e7c26cf14ba62f67f1c8e6fe9ec1ca",
+    "bytes": 142822,
+    "lines": 1003,
+    "script_tags": 0,
+    "external_scripts": 0,
+    "exact_filename_references": [],
+    "built_output_exists": false,
+    "generated_section_markers": 3
+  },
+  {
+    "source": "src/pages/trust/TrustPage.html",
+    "sha256": "b922d18c5e5ccd00e8f3cd246211ab3db70e623bc45beb22a7cb226c53825a36",
+    "bytes": 143659,
+    "lines": 1000,
+    "script_tags": 0,
+    "external_scripts": 0,
+    "exact_filename_references": [],
+    "built_output_exists": false,
+    "generated_section_markers": 200
+  },
+  {
+    "source": "src/pages/use-cases/UseCasesPage.html",
+    "sha256": "e9c2b0341fbc246a8ba197c5e230ec121b59d55f72b6669daa2a92f85aa089f0",
+    "bytes": 151384,
+    "lines": 1003,
+    "script_tags": 0,
+    "external_scripts": 0,
+    "exact_filename_references": [],
+    "built_output_exists": false,
+    "generated_section_markers": 0
+  }
+]

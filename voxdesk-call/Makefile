@@ -53,3 +53,12 @@ worker:
 
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+.PHONY: verify-truth
+verify-truth:
+	python scripts/strip_generated_tails.py --check dashboard/src dashboard-next
+	python scripts/verify_no_filler.py
+	python scripts/verify_no_fake_success.py
+	python scripts/verify_retired_references.py
+	python scripts/verify_no_null_bytes.py
+	python scripts/strip_padding_markers.py --check
+	python -m pytest tests/truth -q

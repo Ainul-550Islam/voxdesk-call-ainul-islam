@@ -1,14 +1,21 @@
 """Scoped deployment runtime observations and evidence metadata.
 
-The filename and unique Alembic revision ID use the ``0036_runtime...`` name.
-Its parent is the distinct, already-existing ``0036_durable_call_outcomes``
-revision. Alembic identity is the full string, not the numeric prefix.
+This canonical filename is retained for the required migration target. The
+Alembic revision ID is a shorter stable identifier because Alembic's default
+``version_num`` column is ``VARCHAR(32)``. Its parent is the distinct,
+already-existing ``0036_durable_call_outcomes`` revision. The migration
+compatibility helper maps the previous overlength ID for databases that may
+have recorded it in SQLite or a custom version table.
 """
 from __future__ import annotations
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0036_runtime_deployment_observability"
+# The former 37-character revision ID exceeded Alembic's default
+# alembic_version.version_num VARCHAR(32) on PostgreSQL. The short ID below is
+# canonical; app/db/migration_compatibility.py recognizes the previous value
+# for SQLite or custom version tables that may already contain it.
+revision = "0036_runtime_deployment_observ"
 down_revision = "0036_durable_call_outcomes"
 branch_labels = None
 depends_on = None

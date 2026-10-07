@@ -1,0 +1,13 @@
+./.prompt8-validation-final/prompt8b-git-status.txt
+./docs/archive/DOCKER_BUILD_SIMULATION.md
+./docs/archive/FILE_LIST.txt
+./docs/archive/FULL_AUDIT_REPORT.md
+./docs/archive/PART0_REMOVED_SOURCES.zip
+./reports/PART_0_REPORT.md
+./reports/part0-reaudit/before/scripts/verify_no_filler.py
+./reports/part0/changed-files.json
+./reports/part0/references.log
+./reports/part0/task-commits.log
+./scripts/__pycache__/verify_no_filler.cpython-312.pyc
+./scripts/verify_no_filler.py
+./scripts/verify_retired_references.py

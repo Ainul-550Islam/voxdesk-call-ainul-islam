@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="1" skipped="1" tests="39" time="19.363" timestamp="2026-10-07T04:49:02.394091+00:00" hostname="e2b.local"><testcase classname="tests.ai.test_post_call_llm" name="test_actual_provider_request_contract[openai]" time="0.010" /><testcase classname="tests.ai.test_post_call_llm" name="test_actual_provider_request_contract[anthropic]" time="0.004" /><testcase classname="tests.ai.test_post_call_llm" name="test_actual_provider_request_contract[google]" time="0.003" /><testcase classname="tests.ai.test_post_call_llm" name="test_gateway_retry_records_each_measured_usage" time="0.834" /><testcase classname="tests.ai.test_post_call_llm" name="test_missing_provider_never_fabricates_result" time="0.604" /><testcase classname="tests.ai.test_post_call_llm" name="test_invalid_outputs_are_bounded_not_success[{&quot;booked&quot;:&quot;yes&quot;}]" time="0.640" /><testcase classname="tests.ai.test_post_call_llm" name="test_invalid_outputs_are_bounded_not_success[{&quot;booked&quot;:true,&quot;extra&quot;:7}]" time="0.640" /><testcase classname="tests.ai.test_post_call_llm" name="test_invalid_outputs_are_bounded_not_success[{&quot;booked&quot;:true,&quot;booked&quot;:false}]" time="0.588" /><testcase classname="tests.ai.test_post_call_llm" name="test_invalid_outputs_are_bounded_not_success[{&quot;booked&quot;:NaN}]" time="0.614" /><testcase classname="tests.ai.test_post_call_llm" name="test_invalid_outputs_are_bounded_not_success[not JSON]" time="0.595" /><testcase classname="tests.ai.test_post_call_llm" name="test_unknown_usage_is_not_zero" time="0.579" /><testcase classname="tests.ai.test_post_call_llm" name="test_budget_denial_precedes_provider" time="0.598" /><testcase classname="tests.ai.test_post_call_llm" name="test_http_failures_not_success_or_redirect[301-ProviderInvalidRequestError]" time="0.004" /><testcase classname="tests.ai.test_post_call_llm" name="test_http_failures_not_success_or_redirect[401-ProviderAuthenticationError]" time="0.003" /><testcase classname="tests.ai.test_post_call_llm" name="test_http_failures_not_success_or_redirect[403-ProviderAuthorizationError]" time="0.003" /><testcase classname="tests.ai.test_post_call_llm" name="test_http_failures_not_success_or_redirect[408-ProviderUnavailableError]" time="0.003" /><testcase classname="tests.ai.test_post_call_llm" name="test_http_failures_not_success_or_redirect[429-ProviderRateLimitedError]" time="0.003" /><testcase classname="tests.ai.test_post_call_llm" name="test_http_failures_not_success_or_redirect[503-ProviderUnavailableError]" time="0.003" /><testcase classname="tests.ai.test_post_call_llm" name="test_dns_private_answer_rejected_before_http" time="0.003" /><testcase classname="tests.ai.test_post_call_llm" name="test_nonlocal_schema_rejected[schema0]" time="0.001" /><testcase classname="tests.ai.test_post_call_llm" name="test_nonlocal_schema_rejected[schema1]" time="0.001" /><testcase classname="tests.ai.test_post_call_llm" name="test_nonlocal_schema_rejected[schema2]" time="0.001" /><testcase classname="tests.ai.test_post_call_llm" name="test_summary_sentiment_are_real_validated_values" time="0.598" /><testcase classname="tests.ai.test_post_call_llm" name="test_opt_in_real_structured_provider" time="0.002"><skipped type="pytest.skip" message="Requires explicit post-call live opt-in and provider credential">/home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/ai/test_post_call_llm.py:208: Requires explicit post-call live opt-in and provider credential</skipped></testcase><testcase classname="tests.ai.test_post_call_llm" name="test_gateway_fallback_uses_real_second_provider_contract" time="0.581"><failure message="AssertionError: assert 'api.anthropic.com' == 'generativela...oogleapis.com'&#10;  &#10;  - generativelanguage.googleapis.com&#10;  + api.anthropic.com">db = &lt;sqlalchemy.ext.asyncio.session.AsyncSession object at 0x7f63675d3ef0&gt;
+tenant_a = &lt;app.db.models.Tenant object at 0x7f63677797f0&gt;
+owner_a = &lt;app.db.models.User object at 0x7f6367367bc0&gt;, configured = None
+
+    async def test_gateway_fallback_uses_real_second_provider_contract(db, tenant_a, owner_a, configured):
+        seen = []
+    
+        async def receiver(request):
+            seen.append(request.url.host)
+            if request.url.host == "api.openai.com":
+                return httpx.Response(503)
+            assert request.url.host == "generativelanguage.googleapis.com"
+            return httpx.Response(200, json={"candidates": [{"content": {"parts": [{"text": '{"booked":true}'}]}}], "usageMetadata": {"totalTokenCount": 11}})
+    
+        async with httpx.AsyncClient(transport=httpx.MockTransport(receiver)) as client:
+&gt;           output = await llm.extract_fields(db, ctx(tenant_a, owner_a), SCHEMA, "Booking confirmed", executor=llm.StructuredExecutor(SCHEMA, client=client))
+
+tests/ai/test_post_call_llm.py:227: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+app/ai/post_call_llm.py:212: in extract_fields
+    response = await gateway.govern(
+app/ai/gateway.py:207: in govern
+    produced = await executor(current, text, timeout_ms)
+app/ai/post_call_llm.py:121: in __call__
+    raw = await self._request(self.client, url, headers, payload, timeout_ms, provider)
+app/ai/post_call_llm.py:152: in _request
+    async with client.stream("POST", url, headers=headers, json=payload,
+../../.local/share/uv/python/cpython-3.12.15-linux-x86_64-gnu/lib/python3.12/contextlib.py:210: in __aenter__
+    return await anext(self.gen)
+.venv/lib/python3.12/site-packages/httpx/_client.py:1583: in stream
+    response = await self.send(
+.venv/lib/python3.12/site-packages/httpx/_client.py:1629: in send
+    response = await self._send_handling_auth(
+.venv/lib/python3.12/site-packages/httpx/_client.py:1657: in _send_handling_auth
+    response = await self._send_handling_redirects(
+.venv/lib/python3.12/site-packages/httpx/_client.py:1694: in _send_handling_redirects
+    response = await self._send_single_request(request)
+.venv/lib/python3.12/site-packages/httpx/_client.py:1730: in _send_single_request
+    response = await transport.handle_async_request(request)
+.venv/lib/python3.12/site-packages/httpx/_transports/mock.py:41: in handle_async_request
+    response = await response
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+request = &lt;Request('POST', 'https://api.anthropic.com/v1/messages')&gt;
+
+    async def receiver(request):
+        seen.append(request.url.host)
+        if request.url.host == "api.openai.com":
+            return httpx.Response(503)
+&gt;       assert request.url.host == "generativelanguage.googleapis.com"
+E       AssertionError: assert 'api.anthropic.com' == 'generativela...oogleapis.com'
+E         
+E         - generativelanguage.googleapis.com
+E         + api.anthropic.com
+
+tests/ai/test_post_call_llm.py:223: AssertionError</failure></testcase><testcase classname="tests.ai.test_post_call_llm" name="test_adapter_enforces_deadline_even_when_transport_ignores_timeout" time="0.014" /><testcase classname="tests.ai.test_post_call_llm" name="test_response_size_is_bounded" time="0.004" /><testcase classname="tests.ai.test_post_call_llm" name="test_numeric_overflow_cannot_be_validated_as_a_number" time="0.589" /><testcase classname="tests.ai.test_post_call_llm" name="test_usage_and_cost_do_not_cross_tenants" time="0.632" /><testcase classname="tests.ai.test_gateway" name="test_existing_resolve_is_unchanged" time="0.577" /><testcase classname="tests.ai.test_gateway" name="test_allowlist_fallback_timeout_and_telemetry" time="0.769" /><testcase classname="tests.ai.test_gateway" name="test_permanent_failure_does_not_fallback" time="0.584" /><testcase classname="tests.ai.test_gateway" name="test_voice_deadline_does_not_grow_retries" time="0.002" /><testcase classname="tests.ai.test_gateway" name="test_unknown_cost_is_not_zero" time="0.001" /><testcase classname="tests.ai.test_gateway" name="test_budget_ceiling_and_unknown" time="0.628" /><testcase classname="tests.ai.test_gateway" name="test_circuit_opens_and_half_opens" time="0.002" /><testcase classname="tests.ai.test_gateway" name="test_compare_and_reserve_one_winner" time="0.609" /><testcase classname="tests.ai.test_gateway" name="test_telemetry_drops_secrets" time="0.002" /><testcase classname="tests.ai.test_gateway" name="test_policy_http_is_owner_only" time="7.753" /></testsuite></testsuites>

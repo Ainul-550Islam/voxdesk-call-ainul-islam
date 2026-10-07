@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="59" time="35.410" timestamp="2026-10-07T05:45:14.657382+00:00" hostname="e2b.local"><testcase classname="tests.telephony.test_post_call_pipeline" name="test_terminal_transition_enqueues_once_in_same_transaction" time="0.738" /><testcase classname="tests.telephony.test_post_call_pipeline" name="test_enqueue_failure_rolls_back_terminal_fact" time="0.593" /><testcase classname="tests.telephony.test_post_call_pipeline" name="test_real_worker_governed_http_persists_output_and_usage" time="0.747" /><testcase classname="tests.telephony.test_post_call_pipeline" name="test_step_failure_isolated_and_retry_skips_completed" time="0.619"><failure message="sqlalchemy.exc.MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)">db = &lt;sqlalchemy.ext.asyncio.session.AsyncSession object at 0x7f074da4d550&gt;
+tenant_a = &lt;app.db.models.Tenant object at 0x7f074db68c80&gt;
+sessionmaker_ = async_sessionmaker(class_='AsyncSession', bind=&lt;sqlalchemy.ext.asyncio.engine.AsyncEngine object at 0x7f074d9ddb50&gt;, autoflush=True, expire_on_commit=False)
+
+    async def test_step_failure_isolated_and_retry_skips_completed(db, tenant_a, sessionmaker_):
+        call = await prepared(db, tenant_a)
+        counts = {"summary": 0, "sentiment": 0}
+    
+        async def executor(choice, prompt, timeout_ms):
+            key = "summary" if '"summary"' in prompt else "sentiment"
+            counts[key] += 1
+            if key == "summary":
+                raise ProviderTimeoutError("sensitive text must not be saved", provider=choice.provider)
+            return await completed_executor(choice, prompt, timeout_ms)
+    
+        first = await PostCallPipeline(sessionmaker_, executor=executor).run(call.id, **scope(call, tenant_a))
+        assert not first.success and first.failure_class.value == "transient"
+        rows = await step_rows(db, call)
+        assert rows["summary"].status == "failed" and rows["summary"].retryable
+        assert rows["sentiment"].status == "completed"
+        assert rows["summary"].error == "timeout"
+        await db.rollback()
+&gt;       second = await PostCallPipeline(sessionmaker_, executor=completed_executor).run(call.id, **scope(call, tenant_a))
+
+tests/telephony/test_post_call_pipeline.py:158: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:566: in __get__
+    return self.impl.get(state, dict_)  # type: ignore[no-any-return]
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:1086: in get
+    value = self._fire_loader_callables(state, key, passive)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:1116: in _fire_loader_callables
+    return state._load_expired(state, passive)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:803: in _load_expired
+    self.manager.expired_attribute_loader(self, toload, passive)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/loading.py:1670: in load_scalar_attributes
+    result = load_on_ident(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/loading.py:509: in load_on_ident
+    return load_on_pk_identity(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/loading.py:694: in load_on_pk_identity
+    session.execute(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:2362: in execute
+    return self._execute_internal(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:2247: in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/context.py:305: in orm_execute_statement
+    result = conn.execute(
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1418: in execute
+    return meth(
+.venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py:515: in _execute_on_connection
+    return connection._execute_clauseelement(
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1640: in _execute_clauseelement
+    ret = self._execute_context(
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1846: in _execute_context
+    return self._exec_single_context(
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1986: in _exec_single_context
+    self._handle_dbapi_exception(
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:2358: in _handle_dbapi_exception
+    raise exc_info[1].with_traceback(exc_info[2])
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1967: in _exec_single_context
+    self.dialect.do_execute(
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:941: in do_execute
+    cursor.execute(statement, parameters)
+.venv/lib/python3.12/site-packages/sqlalchemy/dialects/sqlite/aiosqlite.py:147: in execute
+    self._adapt_connection._handle_exception(error)
+.venv/lib/python3.12/site-packages/sqlalchemy/dialects/sqlite/aiosqlite.py:298: in _handle_exception
+    raise error
+.venv/lib/python3.12/site-packages/sqlalchemy/dialects/sqlite/aiosqlite.py:124: in execute
+    _cursor = self.await_(self._connection.cursor())
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+awaitable = &lt;aiosqlite.context.Result object at 0x7f074d0e7590&gt;
+
+    def await_only(awaitable: Awaitable[_T]) -&gt; _T:
+        """Awaits an async function in a sync method.
+    
+        The sync method must be inside a :func:`greenlet_spawn` context.
+        :func:`await_only` calls cannot be nested.
+    
+        :param awaitable: The coroutine to call.
+    
+        """
+        # this is called in the context greenlet while running fn
+        current = getcurrent()
+        if not getattr(current, "__sqlalchemy_greenlet_provider__", False):
+            _safe_cancel_awaitable(awaitable)
+    
+&gt;           raise exc.MissingGreenlet(
+                "greenlet_spawn has not been called; can't call await_only() "
+                "here. Was IO attempted in an unexpected place?"
+            )
+E           sqlalchemy.exc.MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)
+
+.venv/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py:123: MissingGreenlet</failure></testcase><testcase classname="tests.telephony.test_post_call_pipeline" name="test_missing_credentials_are_durable_not_success" time="0.629" /><testcase classname="tests.telephony.test_post_call_pipeline" name="test_foreign_scope_cannot_read_or_analyze[tenant]" time="0.602" /><testcase classname="tests.telephony.test_post_call_pipeline" name="test_foreign_scope_cannot_read_or_analyze[environment]" time="0.580" /><testcase classname="tests.telephony.test_post_call_pipeline" name="test_foreign_scope_cannot_read_or_analyze[organization]" time="0.566" /><testcase classname="tests.telephony.test_post_call_pipeline" name="test_late_transcript_can_retry_without_replaying_finished_steps" time="0.641" /><testcase classname="tests.telephony.test_post_call_pipeline" name="test_transcript_erasure_blocks_recovery_instead_of_resurrecting_text" time="0.613" /><testcase classname="tests.telephony.test_post_call_pipeline" name="test_existing_summary_not_overwritten" time="0.618" /><testcase classname="tests.telephony.test_post_call_pipeline" name="test_no_terminal_job_on_ringing_or_transfer_acceptance" time="0.627" /><testcase classname="tests.telephony.test_post_call_pipeline" name="test_main_worker_registry_contains_post_call_without_test_injection" time="0.002" /><testcase classname="tests.telephony.test_post_call_pipeline" name="test_inactive_environment_blocks_execution" time="0.662" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_transition_and_replay_publish_one_fact" time="0.568" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_rollback_removes_event_and_state" time="0.619" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_rejected_transition_publishes_nothing" time="0.571" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_payload_cannot_override_scope_or_leak_transcript" time="0.559" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_catalog_schema_is_versioned_and_not_shared[agent_published]" time="0.002" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_catalog_schema_is_versioned_and_not_shared[batch_completed]" time="0.001" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_catalog_schema_is_versioned_and_not_shared[batch_started]" time="0.001" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_catalog_schema_is_versioned_and_not_shared[call_analyzed]" time="0.001" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_catalog_schema_is_versioned_and_not_shared[call_ended]" time="0.001" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_catalog_schema_is_versioned_and_not_shared[call_started]" time="0.001" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_catalog_schema_is_versioned_and_not_shared[dtmf_received]" time="0.001" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_catalog_schema_is_versioned_and_not_shared[recording_ready]" time="0.001" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_catalog_schema_is_versioned_and_not_shared[transfer_completed]" time="0.001" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_catalog_schema_is_versioned_and_not_shared[transfer_failed]" time="0.001" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_catalog_schema_is_versioned_and_not_shared[transfer_started]" time="0.001" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_catalog_schema_is_versioned_and_not_shared[voicemail_detected]" time="0.001" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_unknown_event_rejected" time="0.001" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_real_status_route_is_replay_safe" time="8.900" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_subscription_fanout_is_tenant_environment_and_filter_scoped" time="0.613" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_callback_publication_failure_rolls_back_state" time="0.589" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_dtmf_occurrence_is_private_scoped_and_replay_safe" time="0.610" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_call_sid_cannot_be_reused_under_another_tenant_number[/telephony/ivr]" time="0.610" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_call_sid_cannot_be_reused_under_another_tenant_number[/telephony/voice]" time="0.562" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_empty_or_invalid_dtmf_publishes_nothing[-200]" time="0.567" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_empty_or_invalid_dtmf_publishes_nothing[not-dtmf-422]" time="0.611" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_empty_or_invalid_dtmf_publishes_nothing[11111111111111111111111111111111111111111111111111111111111111111-422]" time="0.573" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_machine_verdict_publishes_one_owned_event[machine_start]" time="0.579" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_machine_verdict_publishes_one_owned_event[machine_end_beep]" time="0.610" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_machine_verdict_publishes_one_owned_event[machine_end_silence]" time="0.567" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_machine_verdict_publishes_one_owned_event[machine_end_other]" time="0.580" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_non_machine_verdict_is_not_fabricated_voicemail[human]" time="0.535" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_non_machine_verdict_is_not_fabricated_voicemail[unknown]" time="0.575" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_non_machine_verdict_is_not_fabricated_voicemail[machine_invented]" time="0.562" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_unknown_machine_call_is_acknowledged_without_event" time="0.556" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_transfer_acceptance_does_not_publish_completion" time="0.562" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_transfer_ringing_then_provider_failure_then_late_answer" time="0.612" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_authoritative_failure_replaces_inference_before_late_answer" time="0.592" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_new_producers_reject_unverified_callbacks[/telephony/ivr]" time="0.579" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_new_producers_reject_unverified_callbacks[/telephony/outbound-answer]" time="0.599" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_producer_publication_failure_is_not_acknowledged[/telephony/ivr]" time="0.574" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_producer_publication_failure_is_not_acknowledged[/telephony/outbound-answer]" time="0.562" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_reconciliation_uses_the_same_customer_outbox" time="0.581" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_recording_ready_is_reference_only_and_replay_safe" time="0.621" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_legacy_failed_filter_never_receives_completed_calls" time="0.002" /><testcase classname="tests.webhooks.test_call_event_bridge" name="test_provider_callback_deduplication_cannot_expose_another_tenant" time="0.566" /></testsuite></testsuites>

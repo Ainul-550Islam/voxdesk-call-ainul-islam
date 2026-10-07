@@ -1,1100 +1,344 @@
-/** dashboard/src/api/agent-builder.ts — Builder API real backend */
+/** dashboard/src/api/agent-builder.ts — Durable Agent Builder API client */
 import { apiClient } from './client';
-import type { BuilderConfig, ValidationResult, PublishResult, Version } from '../types/agent-builder';
+import type {
+  BuilderConfig,
+  ValidationResult,
+  PublishResult,
+  Version,
+} from '../types/agent-builder';
+
+function mapBuilderPayloadToConfig(res: any, fallbackAgentId = ''): BuilderConfig {
+  const a = res?.config || res || {};
+  const identity = a.identity || {};
+  const voice = a.voice || {};
+  const model = a.model || {};
+  const rawStatus = String(a.status || 'DRAFT').toUpperCase();
+  return {
+    id: String(a.id || a.agent_id || fallbackAgentId),
+    tenant_id: String(a.tenant_id || ''),
+    name: String(identity.name || a.name || 'Agent'),
+    description: String(identity.description || a.description || ''),
+    status: rawStatus,
+    type: String(a.agent_type || a.type || 'VOICE').toUpperCase(),
+    language: String(voice.language || a.primary_language || a.language || 'en-US'),
+    voice_id: String(voice.voice_id || a.voice_id || 'rachel'),
+    model_id: String(model.model_name || model.model || a.llm_model || a.model_id || 'gpt-4o'),
+    system_prompt: String(model.system_prompt || a.system_prompt || ''),
+    config: {
+      identity,
+      voice,
+      model,
+      knowledge_bases: a.knowledge_bases || [],
+      tools: a.tools || [],
+      call_handling: a.call_handling || {},
+      security: a.security || {},
+    },
+    version: Number(a.published_version ?? a.version ?? a.active_version ?? 1),
+    etag: String(a.draft_etag || a.etag || ''),
+    updated_at: String(a.updated_at || new Date().toISOString()),
+  };
+}
+
 export async function getBuilderConfig(agentId: string): Promise<BuilderConfig> {
-  try { const res = await apiClient.get(`/api/v1/agents/${agentId}/builder`); return res.config || res; }
-  catch { const fallback = await apiClient.get(`/api/agents/${agentId}`); const a = fallback.agent || fallback; return { id: a.id, tenant_id: a.tenant_id, name: a.name, description: a.description, status: a.status, type: a.type, language: a.language, voice_id: a.voice?.id || a.config?.voice_id, model_id: a.model?.id || a.config?.model_id, system_prompt: a.system_prompt || a.config?.system_prompt, config: a.config, version: a.version, etag: a.etag, updated_at: a.updated_at }; }
+  try {
+    const res = await apiClient.get<any>(
+      `/api/v1/agents/${encodeURIComponent(agentId)}/builder`
+    );
+    return mapBuilderPayloadToConfig(res, agentId);
+  } catch {
+    const fallback = await apiClient.get<any>(`/api/agents/${encodeURIComponent(agentId)}`);
+    return mapBuilderPayloadToConfig(fallback, agentId);
+  }
 }
-export async function updateBuilderConfig(agentId: string, config: Partial<BuilderConfig>, etag?: string): Promise<BuilderConfig> {
-  const headers: Record<string,string> = {}; if (etag) headers['If-Match']=etag;
-  try { const res = await apiClient.patch(`/api/v1/agents/${agentId}/builder`, config, { headers }); return res.config || res; }
-  catch { const res = await apiClient.patch(`/api/agents/${agentId}`, config); const a = res.agent || res; return { id: a.id, tenant_id: a.tenant_id, name: a.name, description: a.description, status: a.status, type: a.type, language: a.language, voice_id: a.voice?.id, model_id: a.model?.id, system_prompt: a.system_prompt, config: a.config, version: a.version, etag: a.etag, updated_at: a.updated_at }; }
+
+export const fetchAgentBuilderConfig = getBuilderConfig;
+
+export async function updateBuilderConfig(
+  agentId: string,
+  config: Partial<BuilderConfig>,
+  etag?: string
+): Promise<BuilderConfig> {
+  const headers: Record<string, string> = {};
+  const expectedEtag = etag || config.etag;
+  if (expectedEtag) {
+    headers['If-Match'] = expectedEtag;
+  }
+
+  const nested = (config.config || {}) as Record<string, any>;
+  const patchBody: Record<string, any> = {
+    identity: {
+      name: config.name || nested.identity?.name || 'Agent',
+      description: config.description ?? nested.identity?.description ?? '',
+      persona: nested.identity?.persona || 'You are a helpful AI assistant.',
+      greeting: nested.identity?.greeting || 'Hello, how can I help you today?',
+      end_call_message:
+        nested.identity?.end_call_message || 'Thank you for calling. Goodbye!',
+      fallback_message:
+        nested.identity?.fallback_message ||
+        "I'm sorry, I didn't catch that. Could you repeat?",
+    },
+    voice: {
+      provider: nested.voice?.provider || 'elevenlabs',
+      voice_id: config.voice_id || nested.voice?.voice_id || 'rachel',
+      language: config.language || nested.voice?.language || 'en-US',
+      speed: Number(nested.voice?.speed ?? 1.0),
+      pitch: Number(nested.voice?.pitch ?? 1.0),
+      stability: Number(nested.voice?.stability ?? 0.75),
+      similarity_boost: Number(nested.voice?.similarity_boost ?? 0.75),
+      fallback_voice_id: nested.voice?.fallback_voice_id ?? null,
+    },
+    model: {
+      provider: nested.model?.provider || 'openai',
+      model_name: config.model_id || nested.model?.model_name || 'gpt-4o',
+      temperature: Number(nested.model?.temperature ?? 0.3),
+      max_tokens: Number(nested.model?.max_tokens ?? 512),
+      system_prompt:
+        config.system_prompt ??
+        nested.model?.system_prompt ??
+        'You are a helpful AI assistant.',
+      context_window_turns: Number(nested.model?.context_window_turns ?? 20),
+      response_style: nested.model?.response_style || 'conversational',
+    },
+  };
+  if (Array.isArray(nested.knowledge_bases)) {
+    patchBody.knowledge_bases = nested.knowledge_bases;
+  }
+  if (Array.isArray(nested.tools)) {
+    patchBody.tools = nested.tools;
+  }
+  if (nested.call_handling && typeof nested.call_handling === 'object') {
+    patchBody.call_handling = nested.call_handling;
+  }
+  if (nested.security && typeof nested.security === 'object') {
+    patchBody.security = nested.security;
+  }
+  if (expectedEtag) {
+    patchBody.expected_etag = expectedEtag;
+  }
+
+  const res = await apiClient.patch<any>(
+    `/api/v1/agents/${encodeURIComponent(agentId)}/builder`,
+    patchBody,
+    { headers }
+  );
+  return mapBuilderPayloadToConfig(res, agentId);
 }
-export async function validateAgent(agentId: string): Promise<ValidationResult> { try { const res = await apiClient.post(`/api/v1/agents/${agentId}/builder/validate`); return res; } catch { try { const res = await apiClient.post(`/api/agents/${agentId}/validate`); return res; } catch (e:any) { return { valid: false, errors: [{ field: 'general', message: e?.message || 'Validation failed', severity: 'error' }], warnings: [] }; } } }
-export async function publishAgent(agentId: string): Promise<PublishResult> { try { const res = await apiClient.post(`/api/v1/agents/${agentId}/builder/publish`); return res; } catch { const res = await apiClient.post(`/api/agents/${agentId}/publish`); return { success: true, agent_id: agentId, version: res.version, published_at: new Date().toISOString() }; } }
-export async function unpublishAgent(agentId: string): Promise<void> { await apiClient.post(`/api/agents/${agentId}/unpublish`); }
-export async function getVersions(agentId: string): Promise<Version[]> { try { const res = await apiClient.get(`/api/v1/agents/${agentId}/builder/versions`); return res.versions || []; } catch { try { const res = await apiClient.get(`/api/agents/${agentId}/versions`); return res.versions || []; } catch { return []; } } }
-export async function getKnowledge(agentId: string): Promise<any[]> { try { const res = await apiClient.get(`/api/v1/agents/${agentId}/builder/knowledge`); return res.knowledge || []; } catch { try { const res = await apiClient.get(`/api/agents/${agentId}/knowledge`); return res.knowledge || []; } catch { return []; } } }
-export async function attachKnowledge(agentId: string, kbId: string): Promise<void> { try { await apiClient.post(`/api/v1/agents/${agentId}/builder/knowledge/${kbId}`); } catch { await apiClient.post(`/api/agents/${agentId}/knowledge`, { knowledge_base_id: kbId }); } }
-export async function detachKnowledge(agentId: string, kbId: string): Promise<void> { try { await apiClient.delete(`/api/v1/agents/${agentId}/builder/knowledge/${kbId}`); } catch { await apiClient.delete(`/api/agents/${agentId}/knowledge/${kbId}`); } }
-export async function getTools(agentId: string): Promise<any[]> { try { const res = await apiClient.get(`/api/v1/agents/${agentId}/builder/tools`); return res.tools || []; } catch { try { const res = await apiClient.get(`/api/agents/${agentId}/tools`); return res.tools || []; } catch { return []; } } }
-export async function attachTool(agentId: string, toolId: string): Promise<void> { try { await apiClient.post(`/api/v1/agents/${agentId}/builder/tools/${toolId}`); } catch { await apiClient.post(`/api/agents/${agentId}/tools`, { tool_id: toolId }); } }
-export async function detachTool(agentId: string, toolId: string): Promise<void> { try { await apiClient.delete(`/api/v1/agents/${agentId}/builder/tools/${toolId}`); } catch { await apiClient.delete(`/api/agents/${agentId}/tools/${toolId}`); } }
-export async function builderHelper_0(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-0`); } catch { return null; } }
-export async function builderHelper_1(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-1`); } catch { return null; } }
-export async function builderHelper_2(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-2`); } catch { return null; } }
-export async function builderHelper_3(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-3`); } catch { return null; } }
-export async function builderHelper_4(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-4`); } catch { return null; } }
-export async function builderHelper_5(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-5`); } catch { return null; } }
-export async function builderHelper_6(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-6`); } catch { return null; } }
-export async function builderHelper_7(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-7`); } catch { return null; } }
-export async function builderHelper_8(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-8`); } catch { return null; } }
-export async function builderHelper_9(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-9`); } catch { return null; } }
-export async function builderHelper_10(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-10`); } catch { return null; } }
-export async function builderHelper_11(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-11`); } catch { return null; } }
-export async function builderHelper_12(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-12`); } catch { return null; } }
-export async function builderHelper_13(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-13`); } catch { return null; } }
-export async function builderHelper_14(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-14`); } catch { return null; } }
-export async function builderHelper_15(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-15`); } catch { return null; } }
-export async function builderHelper_16(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-16`); } catch { return null; } }
-export async function builderHelper_17(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-17`); } catch { return null; } }
-export async function builderHelper_18(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-18`); } catch { return null; } }
-export async function builderHelper_19(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-19`); } catch { return null; } }
-export async function builderHelper_20(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-20`); } catch { return null; } }
-export async function builderHelper_21(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-21`); } catch { return null; } }
-export async function builderHelper_22(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-22`); } catch { return null; } }
-export async function builderHelper_23(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-23`); } catch { return null; } }
-export async function builderHelper_24(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-24`); } catch { return null; } }
-export async function builderHelper_25(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-25`); } catch { return null; } }
-export async function builderHelper_26(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-26`); } catch { return null; } }
-export async function builderHelper_27(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-27`); } catch { return null; } }
-export async function builderHelper_28(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-28`); } catch { return null; } }
-export async function builderHelper_29(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-29`); } catch { return null; } }
-export async function builderHelper_30(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-30`); } catch { return null; } }
-export async function builderHelper_31(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-31`); } catch { return null; } }
-export async function builderHelper_32(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-32`); } catch { return null; } }
-export async function builderHelper_33(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-33`); } catch { return null; } }
-export async function builderHelper_34(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-34`); } catch { return null; } }
-export async function builderHelper_35(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-35`); } catch { return null; } }
-export async function builderHelper_36(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-36`); } catch { return null; } }
-export async function builderHelper_37(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-37`); } catch { return null; } }
-export async function builderHelper_38(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-38`); } catch { return null; } }
-export async function builderHelper_39(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-39`); } catch { return null; } }
-export async function builderHelper_40(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-40`); } catch { return null; } }
-export async function builderHelper_41(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-41`); } catch { return null; } }
-export async function builderHelper_42(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-42`); } catch { return null; } }
-export async function builderHelper_43(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-43`); } catch { return null; } }
-export async function builderHelper_44(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-44`); } catch { return null; } }
-export async function builderHelper_45(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-45`); } catch { return null; } }
-export async function builderHelper_46(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-46`); } catch { return null; } }
-export async function builderHelper_47(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-47`); } catch { return null; } }
-export async function builderHelper_48(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-48`); } catch { return null; } }
-export async function builderHelper_49(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-49`); } catch { return null; } }
-export async function builderHelper_50(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-50`); } catch { return null; } }
-export async function builderHelper_51(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-51`); } catch { return null; } }
-export async function builderHelper_52(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-52`); } catch { return null; } }
-export async function builderHelper_53(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-53`); } catch { return null; } }
-export async function builderHelper_54(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-54`); } catch { return null; } }
-export async function builderHelper_55(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-55`); } catch { return null; } }
-export async function builderHelper_56(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-56`); } catch { return null; } }
-export async function builderHelper_57(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-57`); } catch { return null; } }
-export async function builderHelper_58(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-58`); } catch { return null; } }
-export async function builderHelper_59(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-59`); } catch { return null; } }
-export async function builderHelper_60(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-60`); } catch { return null; } }
-export async function builderHelper_61(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-61`); } catch { return null; } }
-export async function builderHelper_62(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-62`); } catch { return null; } }
-export async function builderHelper_63(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-63`); } catch { return null; } }
-export async function builderHelper_64(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-64`); } catch { return null; } }
-export async function builderHelper_65(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-65`); } catch { return null; } }
-export async function builderHelper_66(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-66`); } catch { return null; } }
-export async function builderHelper_67(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-67`); } catch { return null; } }
-export async function builderHelper_68(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-68`); } catch { return null; } }
-export async function builderHelper_69(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-69`); } catch { return null; } }
-export async function builderHelper_70(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-70`); } catch { return null; } }
-export async function builderHelper_71(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-71`); } catch { return null; } }
-export async function builderHelper_72(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-72`); } catch { return null; } }
-export async function builderHelper_73(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-73`); } catch { return null; } }
-export async function builderHelper_74(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-74`); } catch { return null; } }
-export async function builderHelper_75(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-75`); } catch { return null; } }
-export async function builderHelper_76(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-76`); } catch { return null; } }
-export async function builderHelper_77(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-77`); } catch { return null; } }
-export async function builderHelper_78(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-78`); } catch { return null; } }
-export async function builderHelper_79(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-79`); } catch { return null; } }
-export async function builderHelper_80(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-80`); } catch { return null; } }
-export async function builderHelper_81(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-81`); } catch { return null; } }
-export async function builderHelper_82(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-82`); } catch { return null; } }
-export async function builderHelper_83(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-83`); } catch { return null; } }
-export async function builderHelper_84(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-84`); } catch { return null; } }
-export async function builderHelper_85(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-85`); } catch { return null; } }
-export async function builderHelper_86(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-86`); } catch { return null; } }
-export async function builderHelper_87(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-87`); } catch { return null; } }
-export async function builderHelper_88(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-88`); } catch { return null; } }
-export async function builderHelper_89(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-89`); } catch { return null; } }
-export async function builderHelper_90(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-90`); } catch { return null; } }
-export async function builderHelper_91(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-91`); } catch { return null; } }
-export async function builderHelper_92(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-92`); } catch { return null; } }
-export async function builderHelper_93(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-93`); } catch { return null; } }
-export async function builderHelper_94(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-94`); } catch { return null; } }
-export async function builderHelper_95(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-95`); } catch { return null; } }
-export async function builderHelper_96(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-96`); } catch { return null; } }
-export async function builderHelper_97(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-97`); } catch { return null; } }
-export async function builderHelper_98(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-98`); } catch { return null; } }
-export async function builderHelper_99(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-99`); } catch { return null; } }
-export async function builderHelper_100(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-100`); } catch { return null; } }
-export async function builderHelper_101(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-101`); } catch { return null; } }
-export async function builderHelper_102(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-102`); } catch { return null; } }
-export async function builderHelper_103(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-103`); } catch { return null; } }
-export async function builderHelper_104(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-104`); } catch { return null; } }
-export async function builderHelper_105(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-105`); } catch { return null; } }
-export async function builderHelper_106(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-106`); } catch { return null; } }
-export async function builderHelper_107(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-107`); } catch { return null; } }
-export async function builderHelper_108(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-108`); } catch { return null; } }
-export async function builderHelper_109(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-109`); } catch { return null; } }
-export async function builderHelper_110(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-110`); } catch { return null; } }
-export async function builderHelper_111(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-111`); } catch { return null; } }
-export async function builderHelper_112(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-112`); } catch { return null; } }
-export async function builderHelper_113(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-113`); } catch { return null; } }
-export async function builderHelper_114(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-114`); } catch { return null; } }
-export async function builderHelper_115(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-115`); } catch { return null; } }
-export async function builderHelper_116(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-116`); } catch { return null; } }
-export async function builderHelper_117(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-117`); } catch { return null; } }
-export async function builderHelper_118(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-118`); } catch { return null; } }
-export async function builderHelper_119(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-119`); } catch { return null; } }
-export async function builderHelper_120(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-120`); } catch { return null; } }
-export async function builderHelper_121(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-121`); } catch { return null; } }
-export async function builderHelper_122(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-122`); } catch { return null; } }
-export async function builderHelper_123(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-123`); } catch { return null; } }
-export async function builderHelper_124(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-124`); } catch { return null; } }
-export async function builderHelper_125(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-125`); } catch { return null; } }
-export async function builderHelper_126(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-126`); } catch { return null; } }
-export async function builderHelper_127(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-127`); } catch { return null; } }
-export async function builderHelper_128(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-128`); } catch { return null; } }
-export async function builderHelper_129(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-129`); } catch { return null; } }
-export async function builderHelper_130(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-130`); } catch { return null; } }
-export async function builderHelper_131(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-131`); } catch { return null; } }
-export async function builderHelper_132(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-132`); } catch { return null; } }
-export async function builderHelper_133(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-133`); } catch { return null; } }
-export async function builderHelper_134(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-134`); } catch { return null; } }
-export async function builderHelper_135(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-135`); } catch { return null; } }
-export async function builderHelper_136(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-136`); } catch { return null; } }
-export async function builderHelper_137(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-137`); } catch { return null; } }
-export async function builderHelper_138(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-138`); } catch { return null; } }
-export async function builderHelper_139(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-139`); } catch { return null; } }
-export async function builderHelper_140(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-140`); } catch { return null; } }
-export async function builderHelper_141(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-141`); } catch { return null; } }
-export async function builderHelper_142(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-142`); } catch { return null; } }
-export async function builderHelper_143(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-143`); } catch { return null; } }
-export async function builderHelper_144(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-144`); } catch { return null; } }
-export async function builderHelper_145(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-145`); } catch { return null; } }
-export async function builderHelper_146(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-146`); } catch { return null; } }
-export async function builderHelper_147(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-147`); } catch { return null; } }
-export async function builderHelper_148(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-148`); } catch { return null; } }
-export async function builderHelper_149(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-149`); } catch { return null; } }
-export async function builderHelper_150(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-150`); } catch { return null; } }
-export async function builderHelper_151(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-151`); } catch { return null; } }
-export async function builderHelper_152(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-152`); } catch { return null; } }
-export async function builderHelper_153(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-153`); } catch { return null; } }
-export async function builderHelper_154(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-154`); } catch { return null; } }
-export async function builderHelper_155(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-155`); } catch { return null; } }
-export async function builderHelper_156(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-156`); } catch { return null; } }
-export async function builderHelper_157(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-157`); } catch { return null; } }
-export async function builderHelper_158(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-158`); } catch { return null; } }
-export async function builderHelper_159(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-159`); } catch { return null; } }
-export async function builderHelper_160(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-160`); } catch { return null; } }
-export async function builderHelper_161(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-161`); } catch { return null; } }
-export async function builderHelper_162(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-162`); } catch { return null; } }
-export async function builderHelper_163(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-163`); } catch { return null; } }
-export async function builderHelper_164(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-164`); } catch { return null; } }
-export async function builderHelper_165(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-165`); } catch { return null; } }
-export async function builderHelper_166(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-166`); } catch { return null; } }
-export async function builderHelper_167(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-167`); } catch { return null; } }
-export async function builderHelper_168(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-168`); } catch { return null; } }
-export async function builderHelper_169(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-169`); } catch { return null; } }
-export async function builderHelper_170(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-170`); } catch { return null; } }
-export async function builderHelper_171(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-171`); } catch { return null; } }
-export async function builderHelper_172(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-172`); } catch { return null; } }
-export async function builderHelper_173(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-173`); } catch { return null; } }
-export async function builderHelper_174(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-174`); } catch { return null; } }
-export async function builderHelper_175(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-175`); } catch { return null; } }
-export async function builderHelper_176(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-176`); } catch { return null; } }
-export async function builderHelper_177(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-177`); } catch { return null; } }
-export async function builderHelper_178(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-178`); } catch { return null; } }
-export async function builderHelper_179(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-179`); } catch { return null; } }
-export async function builderHelper_180(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-180`); } catch { return null; } }
-export async function builderHelper_181(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-181`); } catch { return null; } }
-export async function builderHelper_182(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-182`); } catch { return null; } }
-export async function builderHelper_183(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-183`); } catch { return null; } }
-export async function builderHelper_184(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-184`); } catch { return null; } }
-export async function builderHelper_185(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-185`); } catch { return null; } }
-export async function builderHelper_186(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-186`); } catch { return null; } }
-export async function builderHelper_187(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-187`); } catch { return null; } }
-export async function builderHelper_188(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-188`); } catch { return null; } }
-export async function builderHelper_189(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-189`); } catch { return null; } }
-export async function builderHelper_190(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-190`); } catch { return null; } }
-export async function builderHelper_191(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-191`); } catch { return null; } }
-export async function builderHelper_192(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-192`); } catch { return null; } }
-export async function builderHelper_193(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-193`); } catch { return null; } }
-export async function builderHelper_194(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-194`); } catch { return null; } }
-export async function builderHelper_195(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-195`); } catch { return null; } }
-export async function builderHelper_196(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-196`); } catch { return null; } }
-export async function builderHelper_197(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-197`); } catch { return null; } }
-export async function builderHelper_198(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-198`); } catch { return null; } }
-export async function builderHelper_199(agentId: string): Promise<unknown> { try { return await apiClient.get(`/api/v1/agents/${agentId}/builder/helper-199`); } catch { return null; } }
-// Extended line 223 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 224 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 225 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 226 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 227 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 228 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 229 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 230 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 231 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 232 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 233 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 234 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 235 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 236 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 237 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 238 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 239 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 240 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 241 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 242 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 243 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 244 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 245 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 246 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 247 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 248 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 249 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 250 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 251 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 252 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 253 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 254 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 255 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 256 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 257 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 258 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 259 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 260 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 261 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 262 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 263 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 264 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 265 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 266 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 267 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 268 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 269 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 270 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 271 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 272 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 273 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 274 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 275 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 276 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 277 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 278 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 279 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 280 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 281 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 282 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 283 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 284 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 285 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 286 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 287 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 288 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 289 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 290 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 291 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 292 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 293 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 294 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 295 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 296 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 297 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 298 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 299 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 300 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 301 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 302 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 303 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 304 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 305 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 306 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 307 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 308 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 309 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 310 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 311 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 312 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 313 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 314 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 315 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 316 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 317 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 318 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 319 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 320 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 321 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 322 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 323 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 324 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 325 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 326 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 327 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 328 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 329 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 330 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 331 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 332 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 333 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 334 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 335 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 336 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 337 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 338 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 339 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 340 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 341 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 342 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 343 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 344 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 345 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 346 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 347 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 348 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 349 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 350 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 351 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 352 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 353 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 354 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 355 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 356 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 357 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 358 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 359 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 360 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 361 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 362 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 363 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 364 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 365 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 366 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 367 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 368 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 369 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 370 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 371 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 372 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 373 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 374 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 375 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 376 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 377 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 378 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 379 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 380 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 381 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 382 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 383 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 384 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 385 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 386 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 387 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 388 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 389 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 390 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 391 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 392 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 393 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 394 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 395 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 396 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 397 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 398 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 399 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 400 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 401 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 402 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 403 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 404 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 405 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 406 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 407 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 408 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 409 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 410 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 411 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 412 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 413 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 414 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 415 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 416 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 417 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 418 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 419 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 420 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 421 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 422 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 423 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 424 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 425 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 426 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 427 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 428 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 429 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 430 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 431 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 432 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 433 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 434 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 435 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 436 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 437 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 438 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 439 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 440 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 441 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 442 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 443 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 444 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 445 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 446 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 447 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 448 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 449 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 450 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 451 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 452 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 453 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 454 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 455 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 456 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 457 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 458 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 459 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 460 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 461 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 462 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 463 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 464 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 465 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 466 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 467 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 468 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 469 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 470 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 471 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 472 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 473 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 474 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 475 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 476 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 477 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 478 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 479 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 480 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 481 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 482 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 483 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 484 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 485 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 486 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 487 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 488 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 489 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 490 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 491 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 492 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 493 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 494 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 495 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 496 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 497 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 498 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 499 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 500 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 501 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 502 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 503 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 504 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 505 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 506 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 507 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 508 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 509 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 510 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 511 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 512 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 513 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 514 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 515 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 516 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 517 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 518 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 519 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 520 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 521 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 522 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 523 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 524 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 525 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 526 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 527 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 528 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 529 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 530 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 531 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 532 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 533 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 534 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 535 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 536 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 537 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 538 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 539 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 540 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 541 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 542 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 543 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 544 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 545 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 546 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 547 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 548 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 549 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 550 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 551 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 552 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 553 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 554 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 555 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 556 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 557 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 558 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 559 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 560 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 561 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 562 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 563 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 564 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 565 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 566 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 567 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 568 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 569 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 570 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 571 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 572 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 573 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 574 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 575 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 576 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 577 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 578 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 579 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 580 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 581 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 582 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 583 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 584 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 585 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 586 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 587 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 588 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 589 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 590 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 591 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 592 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 593 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 594 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 595 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 596 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 597 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 598 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 599 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 600 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 601 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 602 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 603 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 604 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 605 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 606 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 607 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 608 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 609 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 610 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 611 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 612 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 613 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 614 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 615 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 616 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 617 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 618 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 619 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 620 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 621 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 622 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 623 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 624 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 625 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 626 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 627 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 628 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 629 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 630 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 631 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 632 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 633 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 634 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 635 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 636 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 637 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 638 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 639 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 640 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 641 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 642 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 643 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 644 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 645 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 646 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 647 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 648 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 649 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 650 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 651 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 652 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 653 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 654 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 655 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 656 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 657 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 658 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 659 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 660 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 661 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 662 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 663 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 664 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 665 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 666 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 667 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 668 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 669 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 670 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 671 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 672 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 673 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 674 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 675 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 676 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 677 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 678 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 679 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 680 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 681 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 682 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 683 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 684 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 685 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 686 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 687 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 688 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 689 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 690 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 691 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 692 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 693 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 694 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 695 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 696 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 697 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 698 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 699 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 700 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 701 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 702 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 703 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 704 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 705 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 706 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 707 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 708 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 709 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 710 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 711 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 712 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 713 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 714 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 715 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 716 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 717 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 718 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 719 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 720 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 721 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 722 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 723 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 724 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 725 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 726 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 727 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 728 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 729 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 730 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 731 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 732 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 733 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 734 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 735 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 736 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 737 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 738 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 739 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 740 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 741 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 742 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 743 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 744 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 745 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 746 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 747 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 748 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 749 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 750 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 751 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 752 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 753 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 754 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 755 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 756 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 757 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 758 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 759 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 760 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 761 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 762 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 763 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 764 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 765 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 766 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 767 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 768 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 769 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 770 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 771 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 772 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 773 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 774 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 775 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 776 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 777 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 778 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 779 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 780 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 781 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 782 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 783 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 784 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 785 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 786 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 787 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 788 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 789 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 790 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 791 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 792 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 793 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 794 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 795 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 796 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 797 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 798 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 799 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 800 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 801 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 802 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 803 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 804 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 805 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 806 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 807 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 808 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 809 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 810 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 811 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 812 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 813 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 814 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 815 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 816 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 817 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 818 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 819 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 820 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 821 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 822 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 823 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 824 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 825 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 826 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 827 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 828 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 829 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 830 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 831 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 832 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 833 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 834 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 835 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 836 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 837 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 838 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 839 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 840 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 841 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 842 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 843 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 844 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 845 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 846 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 847 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 848 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 849 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 850 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 851 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 852 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 853 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 854 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 855 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 856 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 857 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 858 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 859 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 860 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 861 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 862 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 863 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 864 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 865 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 866 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 867 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 868 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 869 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 870 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 871 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 872 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 873 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 874 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 875 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 876 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 877 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 878 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 879 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 880 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 881 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 882 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 883 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 884 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 885 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 886 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 887 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 888 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 889 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 890 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 891 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 892 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 893 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 894 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 895 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 896 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 897 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 898 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 899 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 900 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 901 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 902 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 903 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 904 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 905 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 906 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 907 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 908 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 909 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 910 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 911 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 912 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 913 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 914 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 915 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 916 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 917 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 918 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 919 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 920 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 921 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 922 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 923 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 924 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 925 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 926 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 927 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 928 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 929 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 930 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 931 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 932 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 933 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 934 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 935 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 936 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 937 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 938 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 939 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 940 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 941 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 942 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 943 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 944 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 945 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 946 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 947 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 948 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 949 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 950 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 951 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 952 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 953 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 954 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 955 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 956 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 957 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 958 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 959 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 960 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 961 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 962 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 963 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 964 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 965 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 966 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 967 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 968 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 969 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 970 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 971 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 972 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 973 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 974 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 975 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 976 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 977 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 978 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 979 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 980 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 981 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 982 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 983 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 984 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 985 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 986 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 987 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 988 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 989 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 990 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 991 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 992 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 993 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 994 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 995 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 996 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 997 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 998 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 999 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1000 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1001 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1002 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1003 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1004 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1005 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1006 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1007 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1008 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1009 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1010 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1011 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1012 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1013 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1014 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1015 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1016 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1017 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1018 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1019 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1020 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1021 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1022 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1023 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1024 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1025 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1026 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1027 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1028 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1029 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1030 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1031 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1032 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1033 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1034 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1035 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1036 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1037 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1038 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1039 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1040 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1041 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1042 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1043 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1044 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1045 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1046 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1047 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1048 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1049 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1050 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1051 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1052 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1053 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1054 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1055 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1056 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1057 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1058 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1059 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1060 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1061 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1062 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1063 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1064 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1065 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1066 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1067 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1068 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1069 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1070 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1071 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1072 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1073 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1074 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1075 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1076 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1077 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1078 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1079 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1080 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1081 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1082 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1083 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1084 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1085 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1086 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1087 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1088 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1089 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1090 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1091 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1092 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1093 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1094 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1095 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1096 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1097 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1098 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1099 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
-// Extended line 1100 — production implementation detail: tenant isolation, RBAC, validation, real API integration, no fake data, error handling, loading states, accessibility, typed TS, centralized client, no hardcoded URLs, no secrets in browser.
+
+export const saveAgentBuilderConfig = updateBuilderConfig;
+
+export async function validateAgent(agentId: string): Promise<ValidationResult> {
+  try {
+    const res = await apiClient.post<any>(
+      `/api/v1/agents/${encodeURIComponent(agentId)}/validate`,
+      {}
+    );
+    return {
+      valid: Boolean(res?.valid),
+      errors: Array.isArray(res?.errors)
+        ? res.errors.map((e: any) => ({
+            field: String(e.field || 'config'),
+            message: String(e.message || 'Validation error'),
+            severity: 'error' as const,
+            code: e.code,
+          }))
+        : [],
+      warnings: Array.isArray(res?.warnings)
+        ? res.warnings.map((w: any) => ({
+            field: String(w.field || 'config'),
+            message: String(w.message || 'Validation warning'),
+            severity: 'warning' as const,
+            code: w.code,
+          }))
+        : [],
+      validated_at: res?.checked_at || new Date().toISOString(),
+    };
+  } catch (e: any) {
+    return {
+      valid: false,
+      errors: [
+        {
+          field: 'general',
+          message: e?.message || 'Validation failed',
+          severity: 'error',
+        },
+      ],
+      warnings: [],
+    };
+  }
+}
+
+export const validateAgentBuilderConfig = validateAgent;
+
+export async function publishAgent(
+  agentId: string,
+  options?: { release_notes?: string; changelog?: string; environment?: string }
+): Promise<PublishResult> {
+  const res = await apiClient.post<any>(
+    `/api/v1/agents/${encodeURIComponent(agentId)}/publish`,
+    {
+      release_notes: options?.release_notes || options?.changelog || '',
+      changelog: options?.changelog || options?.release_notes || '',
+      environment: options?.environment || 'production',
+    }
+  );
+  return {
+    success: true,
+    agent_id: String(res?.agent_id || agentId),
+    version: Number(res?.version || 1),
+    published_at: String(res?.published_at || new Date().toISOString()),
+  };
+}
+
+export async function unpublishAgent(agentId: string): Promise<void> {
+  await apiClient.post(`/api/v1/agents/${encodeURIComponent(agentId)}/archive`, {
+    reason: 'unpublished',
+  });
+}
+
+export async function getVersions(agentId: string): Promise<Version[]> {
+  try {
+    const res = await apiClient.get<any>(
+      `/api/v1/agents/${encodeURIComponent(agentId)}/versions`
+    );
+    const items = Array.isArray(res) ? res : res?.versions || [];
+    return items.map((v: any, idx: number) => ({
+      id: String(v.id || `${agentId}-v${v.version ?? v.version_number ?? idx + 1}`),
+      version: Number(v.version ?? v.version_number ?? idx + 1),
+      created_at: String(v.published_at || v.created_at || new Date().toISOString()),
+      author: String(v.published_by || 'system'),
+      status: String(v.status || 'published'),
+      changes: String(v.changelog || v.release_notes || 'Published snapshot'),
+      is_current: v.is_active !== undefined ? Boolean(v.is_active) : idx === 0,
+      etag: String(v.config_hash || ''),
+      config_hash: String(v.config_hash || ''),
+      config_snapshot: v.config_snapshot || {},
+      published_environment: String(v.published_environment || 'production'),
+      is_rollback: Boolean(v.is_rollback),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export async function getVersion(agentId: string, versionNumber: number): Promise<any> {
+  return apiClient.get<any>(
+    `/api/v1/agents/${encodeURIComponent(agentId)}/versions/${encodeURIComponent(String(versionNumber))}`
+  );
+}
+
+export const getVersionSnapshot = getVersion;
+
+export async function rollbackVersion(
+  agentId: string,
+  versionNumber: number,
+  reason = ''
+): Promise<any> {
+  return apiClient.post<any>(
+    `/api/v1/agents/${encodeURIComponent(agentId)}/rollback`,
+    {
+      version: versionNumber,
+      reason,
+    }
+  );
+}
+
+export async function getKnowledge(agentId: string): Promise<any[]> {
+  try {
+    const cfg = await getBuilderConfig(agentId);
+    const kbs = (cfg.config as any)?.knowledge_bases;
+    return Array.isArray(kbs) ? kbs : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function attachKnowledge(agentId: string, kbId: string): Promise<void> {
+  const cfg = await getBuilderConfig(agentId);
+  const existing = Array.isArray((cfg.config as any)?.knowledge_bases)
+    ? [...(cfg.config as any).knowledge_bases]
+    : [];
+  if (!existing.some((k: any) => k.kb_id === kbId)) {
+    existing.push({
+      kb_id: kbId,
+      name: `Knowledge Base ${kbId}`,
+      priority: existing.length + 1,
+      top_k: 3,
+      similarity_threshold: 0.7,
+    });
+  }
+  await updateBuilderConfig(
+    agentId,
+    {
+      ...cfg,
+      config: { ...(cfg.config || {}), knowledge_bases: existing },
+    },
+    cfg.etag
+  );
+}
+
+export async function detachKnowledge(agentId: string, kbId: string): Promise<void> {
+  const cfg = await getBuilderConfig(agentId);
+  const existing = Array.isArray((cfg.config as any)?.knowledge_bases)
+    ? (cfg.config as any).knowledge_bases.filter((k: any) => k.kb_id !== kbId)
+    : [];
+  await updateBuilderConfig(
+    agentId,
+    {
+      ...cfg,
+      config: { ...(cfg.config || {}), knowledge_bases: existing },
+    },
+    cfg.etag
+  );
+}
+
+export async function getTools(agentId: string): Promise<any[]> {
+  try {
+    const cfg = await getBuilderConfig(agentId);
+    const tools = (cfg.config as any)?.tools;
+    return Array.isArray(tools) ? tools : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function attachTool(agentId: string, toolId: string): Promise<void> {
+  const cfg = await getBuilderConfig(agentId);
+  const existing = Array.isArray((cfg.config as any)?.tools)
+    ? [...(cfg.config as any).tools]
+    : [];
+  if (!existing.some((t: any) => t.tool_id === toolId)) {
+    existing.push({
+      tool_id: toolId,
+      name: toolId,
+      description: `Enabled tool ${toolId}`,
+      http_method: 'POST',
+      timeout_ms: 5000,
+      retry_count: 1,
+      parameters: [],
+      enabled: true,
+    });
+  }
+  await updateBuilderConfig(
+    agentId,
+    {
+      ...cfg,
+      config: { ...(cfg.config || {}), tools: existing },
+    },
+    cfg.etag
+  );
+}
+
+export async function detachTool(agentId: string, toolId: string): Promise<void> {
+  const cfg = await getBuilderConfig(agentId);
+  const existing = Array.isArray((cfg.config as any)?.tools)
+    ? (cfg.config as any).tools.filter((t: any) => t.tool_id !== toolId)
+    : [];
+  await updateBuilderConfig(
+    agentId,
+    {
+      ...cfg,
+      config: { ...(cfg.config || {}), tools: existing },
+    },
+    cfg.etag
+  );
+}

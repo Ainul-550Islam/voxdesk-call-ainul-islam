@@ -1,0 +1,952 @@
+./.prompt8-validation-final/prompt8b-git-status.txt:1167: M realtime-engine/rust-engine/Dockerfile
+./.prompt8-validation-final/prompt8b-git-status.txt:1341:?? realtime-engine/rust-engine/Cargo.lock
+./.prompt8-validation-final/prompt8b-git-status.txt:1342:?? realtime-engine/rust-engine/config/
+./.prompt8-validation-final/prompt8b-git-status.txt:1370:?? voxdesk-concurrency-engine/src/tests/mod.rs
+./docs/archive/DOCKER_BUILD_SIMULATION.md:23:6. **go-realtime-engine** — Go — 55K lines — 10-25MB binary — 8085:8080, 8086:9090 — high-speed data stream
+./docs/archive/DOCKER_BUILD_SIMULATION.md:24:7. **rust-realtime-engine** — Rust — 52K lines — 10-25MB binary — 8087:8080, 8088:9090 — realtime WebSockets
+./docs/archive/DOCKER_BUILD_SIMULATION.md:43:cd voxdesk-concurrency-engine
+./docs/archive/DOCKER_BUILD_SIMULATION.md:55:cd voxdesk-native-audio-engine
+./docs/archive/DOCKER_BUILD_SIMULATION.md:70:cd realtime-engine/go-engine
+./docs/archive/DOCKER_BUILD_SIMULATION.md:83:cd realtime-engine/rust-engine
+./docs/archive/DOCKER_BUILD_SIMULATION.md:85:./target/release/voxdesk-realtime-engine --config config/default.toml
+./docs/archive/DOCKER_BUILD_SIMULATION.md:111:docker-compose -f docker-compose.full.yml logs -f go-realtime-engine
+./docs/archive/DOCKER_BUILD_SIMULATION.md:112:docker-compose -f docker-compose.full.yml logs -f rust-realtime-engine
+./docs/archive/DOCKER_BUILD_SIMULATION.md:136:cd voxdesk-concurrency-engine
+./docs/archive/DOCKER_BUILD_SIMULATION.md:140:cd voxdesk-native-audio-engine
+./docs/archive/DOCKER_BUILD_SIMULATION.md:144:cd realtime-engine/go-engine
+./docs/archive/DOCKER_BUILD_SIMULATION.md:148:cd realtime-engine/rust-engine
+./docs/archive/FILE_LIST.txt:1793:realtime-engine
+./docs/archive/FILE_LIST.txt:1794:realtime-engine/README.md
+./docs/archive/FILE_LIST.txt:1795:realtime-engine/go-engine
+./docs/archive/FILE_LIST.txt:1796:realtime-engine/go-engine/Dockerfile
+./docs/archive/FILE_LIST.txt:1797:realtime-engine/go-engine/cmd
+./docs/archive/FILE_LIST.txt:1798:realtime-engine/go-engine/cmd/server
+./docs/archive/FILE_LIST.txt:1799:realtime-engine/go-engine/cmd/server/main.go
+./docs/archive/FILE_LIST.txt:1800:realtime-engine/go-engine/go.mod
+./docs/archive/FILE_LIST.txt:1801:realtime-engine/go-engine/internal
+./docs/archive/FILE_LIST.txt:1802:realtime-engine/go-engine/internal/auth
+./docs/archive/FILE_LIST.txt:1803:realtime-engine/go-engine/internal/auth/jwt.go
+./docs/archive/FILE_LIST.txt:1804:realtime-engine/go-engine/internal/auth/middleware.go
+./docs/archive/FILE_LIST.txt:1805:realtime-engine/go-engine/internal/auth/permissions.go
+./docs/archive/FILE_LIST.txt:1806:realtime-engine/go-engine/internal/auth/validator.go
+./docs/archive/FILE_LIST.txt:1807:realtime-engine/go-engine/internal/concurrency
+./docs/archive/FILE_LIST.txt:1808:realtime-engine/go-engine/internal/concurrency/engine.go
+./docs/archive/FILE_LIST.txt:1809:realtime-engine/go-engine/internal/concurrency/limiter.go
+./docs/archive/FILE_LIST.txt:1810:realtime-engine/go-engine/internal/concurrency/pool.go
+./docs/archive/FILE_LIST.txt:1811:realtime-engine/go-engine/internal/concurrency/queue.go
+./docs/archive/FILE_LIST.txt:1812:realtime-engine/go-engine/internal/concurrency/scheduler.go
+./docs/archive/FILE_LIST.txt:1813:realtime-engine/go-engine/internal/concurrency/worker.go
+./docs/archive/FILE_LIST.txt:1814:realtime-engine/go-engine/internal/config
+./docs/archive/FILE_LIST.txt:1815:realtime-engine/go-engine/internal/config/config.go
+./docs/archive/FILE_LIST.txt:1816:realtime-engine/go-engine/internal/config/loader.go
+./docs/archive/FILE_LIST.txt:1817:realtime-engine/go-engine/internal/config/settings.go
+./docs/archive/FILE_LIST.txt:1818:realtime-engine/go-engine/internal/config/validation.go
+./docs/archive/FILE_LIST.txt:1819:realtime-engine/go-engine/internal/health
+./docs/archive/FILE_LIST.txt:1820:realtime-engine/go-engine/internal/health/checker.go
+./docs/archive/FILE_LIST.txt:1821:realtime-engine/go-engine/internal/health/probe.go
+./docs/archive/FILE_LIST.txt:1822:realtime-engine/go-engine/internal/health/server.go
+./docs/archive/FILE_LIST.txt:1823:realtime-engine/go-engine/internal/livekit
+./docs/archive/FILE_LIST.txt:1824:realtime-engine/go-engine/internal/livekit/client.go
+./docs/archive/FILE_LIST.txt:1825:realtime-engine/go-engine/internal/livekit/handler.go
+./docs/archive/FILE_LIST.txt:1826:realtime-engine/go-engine/internal/livekit/participant.go
+./docs/archive/FILE_LIST.txt:1827:realtime-engine/go-engine/internal/livekit/room.go
+./docs/archive/FILE_LIST.txt:1828:realtime-engine/go-engine/internal/livekit/track.go
+./docs/archive/FILE_LIST.txt:1829:realtime-engine/go-engine/internal/livekit/webhook.go
+./docs/archive/FILE_LIST.txt:1830:realtime-engine/go-engine/internal/metrics
+./docs/archive/FILE_LIST.txt:1831:realtime-engine/go-engine/internal/metrics/collector.go
+./docs/archive/FILE_LIST.txt:1832:realtime-engine/go-engine/internal/metrics/prometheus.go
+./docs/archive/FILE_LIST.txt:1833:realtime-engine/go-engine/internal/metrics/reporter.go
+./docs/archive/FILE_LIST.txt:1834:realtime-engine/go-engine/internal/metrics/tracing.go
+./docs/archive/FILE_LIST.txt:1835:realtime-engine/go-engine/internal/stream
+./docs/archive/FILE_LIST.txt:1836:realtime-engine/go-engine/internal/stream/broadcaster.go
+./docs/archive/FILE_LIST.txt:1837:realtime-engine/go-engine/internal/stream/buffer.go
+./docs/archive/FILE_LIST.txt:1838:realtime-engine/go-engine/internal/stream/codec.go
+./docs/archive/FILE_LIST.txt:1839:realtime-engine/go-engine/internal/stream/handler.go
+./docs/archive/FILE_LIST.txt:1840:realtime-engine/go-engine/internal/stream/relay.go
+./docs/archive/FILE_LIST.txt:1841:realtime-engine/go-engine/internal/stream/subscriber.go
+./docs/archive/FILE_LIST.txt:1842:realtime-engine/go-engine/internal/voice
+./docs/archive/FILE_LIST.txt:1843:realtime-engine/go-engine/internal/voice/call.go
+./docs/archive/FILE_LIST.txt:1844:realtime-engine/go-engine/internal/voice/handler.go
+./docs/archive/FILE_LIST.txt:1845:realtime-engine/go-engine/internal/voice/recording.go
+./docs/archive/FILE_LIST.txt:1846:realtime-engine/go-engine/internal/voice/router.go
+./docs/archive/FILE_LIST.txt:1847:realtime-engine/go-engine/internal/voice/session.go
+./docs/archive/FILE_LIST.txt:1848:realtime-engine/go-engine/internal/voice/signaling.go
+./docs/archive/FILE_LIST.txt:1849:realtime-engine/go-engine/internal/webrtc
+./docs/archive/FILE_LIST.txt:1850:realtime-engine/go-engine/internal/webrtc/handler.go
+./docs/archive/FILE_LIST.txt:1851:realtime-engine/go-engine/internal/webrtc/ice.go
+./docs/archive/FILE_LIST.txt:1852:realtime-engine/go-engine/internal/webrtc/peer.go
+./docs/archive/FILE_LIST.txt:1853:realtime-engine/go-engine/internal/webrtc/sdp.go
+./docs/archive/FILE_LIST.txt:1854:realtime-engine/go-engine/internal/webrtc/signaling.go
+./docs/archive/FILE_LIST.txt:1855:realtime-engine/go-engine/internal/webrtc/track.go
+./docs/archive/FILE_LIST.txt:1856:realtime-engine/go-engine/internal/websocket
+./docs/archive/FILE_LIST.txt:1857:realtime-engine/go-engine/internal/websocket/broadcaster.go
+./docs/archive/FILE_LIST.txt:1858:realtime-engine/go-engine/internal/websocket/connection.go
+./docs/archive/FILE_LIST.txt:1859:realtime-engine/go-engine/internal/websocket/handler.go
+./docs/archive/FILE_LIST.txt:1860:realtime-engine/go-engine/internal/websocket/manager.go
+./docs/archive/FILE_LIST.txt:1861:realtime-engine/go-engine/internal/websocket/protocol.go
+./docs/archive/FILE_LIST.txt:1862:realtime-engine/go-engine/internal/websocket/server.go
+./docs/archive/FILE_LIST.txt:1863:realtime-engine/go-engine/pkg
+./docs/archive/FILE_LIST.txt:1864:realtime-engine/go-engine/pkg/client
+./docs/archive/FILE_LIST.txt:1865:realtime-engine/go-engine/pkg/client/client.go
+./docs/archive/FILE_LIST.txt:1866:realtime-engine/go-engine/pkg/protocol
+./docs/archive/FILE_LIST.txt:1867:realtime-engine/go-engine/pkg/protocol/protocol.go
+./docs/archive/FILE_LIST.txt:1868:realtime-engine/go-engine/pkg/server
+./docs/archive/FILE_LIST.txt:1869:realtime-engine/go-engine/pkg/server/server.go
+./docs/archive/FILE_LIST.txt:1870:realtime-engine/rust-engine
+./docs/archive/FILE_LIST.txt:1871:realtime-engine/rust-engine/Cargo.lock
+./docs/archive/FILE_LIST.txt:1872:realtime-engine/rust-engine/Cargo.toml
+./docs/archive/FILE_LIST.txt:1873:realtime-engine/rust-engine/Dockerfile
+./docs/archive/FILE_LIST.txt:1874:realtime-engine/rust-engine/config
+./docs/archive/FILE_LIST.txt:1875:realtime-engine/rust-engine/config/default.toml
+./docs/archive/FILE_LIST.txt:1876:realtime-engine/rust-engine/config/production.toml
+./docs/archive/FILE_LIST.txt:1877:realtime-engine/rust-engine/src
+./docs/archive/FILE_LIST.txt:1878:realtime-engine/rust-engine/src/auth
+./docs/archive/FILE_LIST.txt:1879:realtime-engine/rust-engine/src/auth/jwt.rs
+./docs/archive/FILE_LIST.txt:1880:realtime-engine/rust-engine/src/auth/middleware.rs
+./docs/archive/FILE_LIST.txt:1881:realtime-engine/rust-engine/src/auth/mod.rs
+./docs/archive/FILE_LIST.txt:1882:realtime-engine/rust-engine/src/auth/permissions.rs
+./docs/archive/FILE_LIST.txt:1883:realtime-engine/rust-engine/src/concurrency
+./docs/archive/FILE_LIST.txt:1884:realtime-engine/rust-engine/src/concurrency/engine.rs
+./docs/archive/FILE_LIST.txt:1885:realtime-engine/rust-engine/src/concurrency/mod.rs
+./docs/archive/FILE_LIST.txt:1886:realtime-engine/rust-engine/src/concurrency/pool.rs
+./docs/archive/FILE_LIST.txt:1887:realtime-engine/rust-engine/src/concurrency/queue.rs
+./docs/archive/FILE_LIST.txt:1888:realtime-engine/rust-engine/src/concurrency/scheduler.rs
+./docs/archive/FILE_LIST.txt:1889:realtime-engine/rust-engine/src/concurrency/worker.rs
+./docs/archive/FILE_LIST.txt:1890:realtime-engine/rust-engine/src/config
+./docs/archive/FILE_LIST.txt:1891:realtime-engine/rust-engine/src/config/loader.rs
+./docs/archive/FILE_LIST.txt:1892:realtime-engine/rust-engine/src/config/mod.rs
+./docs/archive/FILE_LIST.txt:1893:realtime-engine/rust-engine/src/config/settings.rs
+./docs/archive/FILE_LIST.txt:1894:realtime-engine/rust-engine/src/config/validation.rs
+./docs/archive/FILE_LIST.txt:1895:realtime-engine/rust-engine/src/health
+./docs/archive/FILE_LIST.txt:1896:realtime-engine/rust-engine/src/health/checker.rs
+./docs/archive/FILE_LIST.txt:1897:realtime-engine/rust-engine/src/health/mod.rs
+./docs/archive/FILE_LIST.txt:1898:realtime-engine/rust-engine/src/health/probe.rs
+./docs/archive/FILE_LIST.txt:1899:realtime-engine/rust-engine/src/lib.rs
+./docs/archive/FILE_LIST.txt:1900:realtime-engine/rust-engine/src/livekit
+./docs/archive/FILE_LIST.txt:1901:realtime-engine/rust-engine/src/livekit/client.rs
+./docs/archive/FILE_LIST.txt:1902:realtime-engine/rust-engine/src/livekit/handler.rs
+./docs/archive/FILE_LIST.txt:1903:realtime-engine/rust-engine/src/livekit/mod.rs
+./docs/archive/FILE_LIST.txt:1904:realtime-engine/rust-engine/src/livekit/participant.rs
+./docs/archive/FILE_LIST.txt:1905:realtime-engine/rust-engine/src/livekit/room.rs
+./docs/archive/FILE_LIST.txt:1906:realtime-engine/rust-engine/src/livekit/track.rs
+./docs/archive/FILE_LIST.txt:1907:realtime-engine/rust-engine/src/main.rs
+./docs/archive/FILE_LIST.txt:1908:realtime-engine/rust-engine/src/metrics
+./docs/archive/FILE_LIST.txt:1909:realtime-engine/rust-engine/src/metrics/collector.rs
+./docs/archive/FILE_LIST.txt:1910:realtime-engine/rust-engine/src/metrics/mod.rs
+./docs/archive/FILE_LIST.txt:1911:realtime-engine/rust-engine/src/metrics/prometheus.rs
+./docs/archive/FILE_LIST.txt:1912:realtime-engine/rust-engine/src/metrics/tracing.rs
+./docs/archive/FILE_LIST.txt:1913:realtime-engine/rust-engine/src/stream
+./docs/archive/FILE_LIST.txt:1914:realtime-engine/rust-engine/src/stream/broadcaster.rs
+./docs/archive/FILE_LIST.txt:1915:realtime-engine/rust-engine/src/stream/buffer.rs
+./docs/archive/FILE_LIST.txt:1916:realtime-engine/rust-engine/src/stream/codec.rs
+./docs/archive/FILE_LIST.txt:1917:realtime-engine/rust-engine/src/stream/handler.rs
+./docs/archive/FILE_LIST.txt:1918:realtime-engine/rust-engine/src/stream/mod.rs
+./docs/archive/FILE_LIST.txt:1919:realtime-engine/rust-engine/src/stream/subscriber.rs
+./docs/archive/FILE_LIST.txt:1920:realtime-engine/rust-engine/src/voice
+./docs/archive/FILE_LIST.txt:1921:realtime-engine/rust-engine/src/voice/call.rs
+./docs/archive/FILE_LIST.txt:1922:realtime-engine/rust-engine/src/voice/handler.rs
+./docs/archive/FILE_LIST.txt:1923:realtime-engine/rust-engine/src/voice/mod.rs
+./docs/archive/FILE_LIST.txt:1924:realtime-engine/rust-engine/src/voice/router.rs
+./docs/archive/FILE_LIST.txt:1925:realtime-engine/rust-engine/src/voice/session.rs
+./docs/archive/FILE_LIST.txt:1926:realtime-engine/rust-engine/src/voice/signaling.rs
+./docs/archive/FILE_LIST.txt:1927:realtime-engine/rust-engine/src/webrtc
+./docs/archive/FILE_LIST.txt:1928:realtime-engine/rust-engine/src/webrtc/handler.rs
+./docs/archive/FILE_LIST.txt:1929:realtime-engine/rust-engine/src/webrtc/ice.rs
+./docs/archive/FILE_LIST.txt:1930:realtime-engine/rust-engine/src/webrtc/mod.rs
+./docs/archive/FILE_LIST.txt:1931:realtime-engine/rust-engine/src/webrtc/peer.rs
+./docs/archive/FILE_LIST.txt:1932:realtime-engine/rust-engine/src/webrtc/sdp.rs
+./docs/archive/FILE_LIST.txt:1933:realtime-engine/rust-engine/src/webrtc/signaling.rs
+./docs/archive/FILE_LIST.txt:1934:realtime-engine/rust-engine/src/websocket
+./docs/archive/FILE_LIST.txt:1935:realtime-engine/rust-engine/src/websocket/connection.rs
+./docs/archive/FILE_LIST.txt:1936:realtime-engine/rust-engine/src/websocket/handler.rs
+./docs/archive/FILE_LIST.txt:1937:realtime-engine/rust-engine/src/websocket/manager.rs
+./docs/archive/FILE_LIST.txt:1938:realtime-engine/rust-engine/src/websocket/mod.rs
+./docs/archive/FILE_LIST.txt:1939:realtime-engine/rust-engine/src/websocket/protocol.rs
+./docs/archive/FILE_LIST.txt:1940:realtime-engine/rust-engine/src/websocket/server.rs
+./docs/archive/FILE_LIST.txt:2596:voxdesk-concurrency-engine
+./docs/archive/FILE_LIST.txt:2597:voxdesk-concurrency-engine/Cargo.lock
+./docs/archive/FILE_LIST.txt:2598:voxdesk-concurrency-engine/Cargo.toml
+./docs/archive/FILE_LIST.txt:2599:voxdesk-concurrency-engine/Dockerfile
+./docs/archive/FILE_LIST.txt:2600:voxdesk-concurrency-engine/README.md
+./docs/archive/FILE_LIST.txt:2601:voxdesk-concurrency-engine/config
+./docs/archive/FILE_LIST.txt:2602:voxdesk-concurrency-engine/config/default.toml
+./docs/archive/FILE_LIST.txt:2603:voxdesk-concurrency-engine/config/production.toml
+./docs/archive/FILE_LIST.txt:2604:voxdesk-concurrency-engine/src
+./docs/archive/FILE_LIST.txt:2605:voxdesk-concurrency-engine/src/audio
+./docs/archive/FILE_LIST.txt:2606:voxdesk-concurrency-engine/src/audio/buffer.rs
+./docs/archive/FILE_LIST.txt:2607:voxdesk-concurrency-engine/src/audio/frame.rs
+./docs/archive/FILE_LIST.txt:2608:voxdesk-concurrency-engine/src/audio/mod.rs
+./docs/archive/FILE_LIST.txt:2609:voxdesk-concurrency-engine/src/audio/stream_bridge.rs
+./docs/archive/FILE_LIST.txt:2610:voxdesk-concurrency-engine/src/config
+./docs/archive/FILE_LIST.txt:2611:voxdesk-concurrency-engine/src/config/mod.rs
+./docs/archive/FILE_LIST.txt:2612:voxdesk-concurrency-engine/src/config/settings.rs
+./docs/archive/FILE_LIST.txt:2613:voxdesk-concurrency-engine/src/core
+./docs/archive/FILE_LIST.txt:2614:voxdesk-concurrency-engine/src/core/metrics.rs
+./docs/archive/FILE_LIST.txt:2615:voxdesk-concurrency-engine/src/core/mod.rs
+./docs/archive/FILE_LIST.txt:2616:voxdesk-concurrency-engine/src/core/router.rs
+./docs/archive/FILE_LIST.txt:2617:voxdesk-concurrency-engine/src/core/state.rs
+./docs/archive/FILE_LIST.txt:2618:voxdesk-concurrency-engine/src/lib.rs
+./docs/archive/FILE_LIST.txt:2619:voxdesk-concurrency-engine/src/main.rs
+./docs/archive/FILE_LIST.txt:2620:voxdesk-concurrency-engine/src/redis
+./docs/archive/FILE_LIST.txt:2621:voxdesk-concurrency-engine/src/redis/client.rs
+./docs/archive/FILE_LIST.txt:2622:voxdesk-concurrency-engine/src/redis/mod.rs
+./docs/archive/FILE_LIST.txt:2623:voxdesk-concurrency-engine/src/redis/pubsub.rs
+./docs/archive/FILE_LIST.txt:2624:voxdesk-concurrency-engine/src/redis/session_store.rs
+./docs/archive/FILE_LIST.txt:2625:voxdesk-concurrency-engine/src/signaling
+./docs/archive/FILE_LIST.txt:2626:voxdesk-concurrency-engine/src/signaling/ice.rs
+./docs/archive/FILE_LIST.txt:2627:voxdesk-concurrency-engine/src/signaling/livekit_client.rs
+./docs/archive/FILE_LIST.txt:2628:voxdesk-concurrency-engine/src/signaling/mod.rs
+./docs/archive/FILE_LIST.txt:2629:voxdesk-concurrency-engine/src/signaling/peer.rs
+./docs/archive/FILE_LIST.txt:2630:voxdesk-concurrency-engine/src/signaling/sdp.rs
+./docs/archive/FILE_LIST.txt:2631:voxdesk-concurrency-engine/src/tests
+./docs/archive/FILE_LIST.txt:2632:voxdesk-concurrency-engine/src/tests/integration_tests.rs
+./docs/archive/FILE_LIST.txt:2633:voxdesk-concurrency-engine/src/tests/mock_livekit.rs
+./docs/archive/FILE_LIST.txt:2634:voxdesk-concurrency-engine/src/tests/mod.rs
+./docs/archive/FILE_LIST.txt:2635:voxdesk-concurrency-engine/src/tests/websocket_stress_test.rs
+./docs/archive/FILE_LIST.txt:2636:voxdesk-concurrency-engine/src/utils
+./docs/archive/FILE_LIST.txt:2637:voxdesk-concurrency-engine/src/utils/crypto.rs
+./docs/archive/FILE_LIST.txt:2638:voxdesk-concurrency-engine/src/utils/error.rs
+./docs/archive/FILE_LIST.txt:2639:voxdesk-concurrency-engine/src/utils/logger.rs
+./docs/archive/FILE_LIST.txt:2640:voxdesk-concurrency-engine/src/utils/mod.rs
+./docs/archive/FILE_LIST.txt:2641:voxdesk-concurrency-engine/src/websocket
+./docs/archive/FILE_LIST.txt:2642:voxdesk-concurrency-engine/src/websocket/handler.rs
+./docs/archive/FILE_LIST.txt:2643:voxdesk-concurrency-engine/src/websocket/manager.rs
+./docs/archive/FILE_LIST.txt:2644:voxdesk-concurrency-engine/src/websocket/mod.rs
+./docs/archive/FILE_LIST.txt:2645:voxdesk-concurrency-engine/src/websocket/protocol.rs
+./docs/archive/FILE_LIST.txt:2646:voxdesk-concurrency-engine/src/websocket/session.rs
+./docs/archive/FILE_LIST.txt:2647:voxdesk-native-audio-engine
+./docs/archive/FILE_LIST.txt:2648:voxdesk-native-audio-engine/CMakeLists.txt
+./docs/archive/FILE_LIST.txt:2649:voxdesk-native-audio-engine/Dockerfile
+./docs/archive/FILE_LIST.txt:2650:voxdesk-native-audio-engine/README.md
+./docs/archive/FILE_LIST.txt:2651:voxdesk-native-audio-engine/include
+./docs/archive/FILE_LIST.txt:2652:voxdesk-native-audio-engine/include/audio_types.h
+./docs/archive/FILE_LIST.txt:2653:voxdesk-native-audio-engine/include/echo_canceller.h
+./docs/archive/FILE_LIST.txt:2654:voxdesk-native-audio-engine/include/gain_control.h
+./docs/archive/FILE_LIST.txt:2655:voxdesk-native-audio-engine/include/jitter_buffer.h
+./docs/archive/FILE_LIST.txt:2656:voxdesk-native-audio-engine/include/noise_suppressor.h
+./docs/archive/FILE_LIST.txt:2657:voxdesk-native-audio-engine/include/opus_codec.h
+./docs/archive/FILE_LIST.txt:2658:voxdesk-native-audio-engine/include/voxdesk_audio.h
+./docs/archive/FILE_LIST.txt:2659:voxdesk-native-audio-engine/include/webrtc_stream_interceptor.h
+./docs/archive/FILE_LIST.txt:2660:voxdesk-native-audio-engine/src
+./docs/archive/FILE_LIST.txt:2661:voxdesk-native-audio-engine/src/codec
+./docs/archive/FILE_LIST.txt:2662:voxdesk-native-audio-engine/src/codec/frame_validator.cpp
+./docs/archive/FILE_LIST.txt:2663:voxdesk-native-audio-engine/src/codec/opus_decoder.cpp
+./docs/archive/FILE_LIST.txt:2664:voxdesk-native-audio-engine/src/codec/opus_encoder.cpp
+./docs/archive/FILE_LIST.txt:2665:voxdesk-native-audio-engine/src/codec/packet_loss_concealer.cpp
+./docs/archive/FILE_LIST.txt:2666:voxdesk-native-audio-engine/src/dsp
+./docs/archive/FILE_LIST.txt:2667:voxdesk-native-audio-engine/src/dsp/VAD.cpp
+./docs/archive/FILE_LIST.txt:2668:voxdesk-native-audio-engine/src/dsp/echo_canceller.cpp
+./docs/archive/FILE_LIST.txt:2669:voxdesk-native-audio-engine/src/dsp/gain_control.cpp
+./docs/archive/FILE_LIST.txt:2670:voxdesk-native-audio-engine/src/dsp/noise_suppressor.cpp
+./docs/archive/FILE_LIST.txt:2671:voxdesk-native-audio-engine/src/dsp/resampler.cpp
+./docs/archive/FILE_LIST.txt:2672:voxdesk-native-audio-engine/src/ffi
+./docs/archive/FILE_LIST.txt:2673:voxdesk-native-audio-engine/src/ffi/c_api.cpp
+./docs/archive/FILE_LIST.txt:2674:voxdesk-native-audio-engine/src/ffi/python_module.cpp
+./docs/archive/FILE_LIST.txt:2675:voxdesk-native-audio-engine/src/ffi/rust_bindings.rs
+./docs/archive/FILE_LIST.txt:2676:voxdesk-native-audio-engine/src/main.cpp
+./docs/archive/FILE_LIST.txt:2677:voxdesk-native-audio-engine/src/memory
+./docs/archive/FILE_LIST.txt:2678:voxdesk-native-audio-engine/src/memory/lockfree_ring_buffer.cpp
+./docs/archive/FILE_LIST.txt:2679:voxdesk-native-audio-engine/src/memory/memory_pool.cpp
+./docs/archive/FILE_LIST.txt:2680:voxdesk-native-audio-engine/src/memory/simd_vectorizer.cpp
+./docs/archive/FILE_LIST.txt:2681:voxdesk-native-audio-engine/src/utils
+./docs/archive/FILE_LIST.txt:2682:voxdesk-native-audio-engine/src/utils/error_codes.cpp
+./docs/archive/FILE_LIST.txt:2683:voxdesk-native-audio-engine/src/utils/native_logger.cpp
+./docs/archive/FILE_LIST.txt:2684:voxdesk-native-audio-engine/src/utils/performance_profiler.cpp
+./docs/archive/FILE_LIST.txt:2685:voxdesk-native-audio-engine/src/webrtc
+./docs/archive/FILE_LIST.txt:2686:voxdesk-native-audio-engine/src/webrtc/audio_mixer.cpp
+./docs/archive/FILE_LIST.txt:2687:voxdesk-native-audio-engine/src/webrtc/jitter_buffer.cpp
+./docs/archive/FILE_LIST.txt:2688:voxdesk-native-audio-engine/src/webrtc/spatial_audio.cpp
+./docs/archive/FILE_LIST.txt:2689:voxdesk-native-audio-engine/src/webrtc/stream_interceptor.cpp
+./docs/archive/FILE_LIST.txt:2690:voxdesk-native-audio-engine/tests
+./docs/archive/FILE_LIST.txt:2691:voxdesk-native-audio-engine/tests/CMakeLists.txt
+./docs/archive/FILE_LIST.txt:2692:voxdesk-native-audio-engine/tests/benchmark_latency.cpp
+./docs/archive/FILE_LIST.txt:2693:voxdesk-native-audio-engine/tests/test_dsp_pipeline.cpp
+./docs/archive/FILE_LIST.txt:2694:voxdesk-native-audio-engine/tests/test_lockfree_buffer.cpp
+./docs/archive/FILE_LIST.txt:2695:voxdesk-native-audio-engine/tests/test_opus_roundtrip.cpp
+./docs/archive/FILE_LIST.txt:2696:voxdesk-native-audio-engine/third_party
+./docs/archive/FILE_LIST.txt:2697:voxdesk-native-audio-engine/third_party/googletest
+./docs/archive/FILE_LIST.txt:2698:voxdesk-native-audio-engine/third_party/googletest/README.md
+./docs/archive/FILE_LIST.txt:2699:voxdesk-native-audio-engine/third_party/opus
+./docs/archive/FILE_LIST.txt:2700:voxdesk-native-audio-engine/third_party/opus/README.md
+./docs/archive/FILE_LIST.txt:2701:voxdesk-native-audio-engine/third_party/pybind11
+./docs/archive/FILE_LIST.txt:2702:voxdesk-native-audio-engine/third_party/pybind11/README.md
+./docs/archive/FILE_LIST.txt:2703:voxdesk-native-audio-engine/third_party/rnnoise
+./docs/archive/FILE_LIST.txt:2704:voxdesk-native-audio-engine/third_party/rnnoise/README.md
+./docs/archive/FILE_LIST.txt:2705:voxdesk-native-audio-engine/third_party/speexdsp
+./docs/archive/FILE_LIST.txt:2706:voxdesk-native-audio-engine/third_party/speexdsp/README.md
+./docs/archive/FULL_AUDIT_REPORT.md:13:A full-stack forensic audit of `voxdesk-call` was conducted across the FastAPI backend (`app/`), Alembic migrations (`alembic/`), Vite + React 18 business website & Agent Studio (`dashboard/`), Next.js 14 console (`dashboard-next/`), static marketing pages (`marketing/`), polyglot realtime/audio engines (`realtime-engine/`, `voxdesk-concurrency-engine/`, `voxdesk-native-audio-engine/`), and automated test suites (`tests/`, `dashboard/tests/`, `dashboard/src/tests/`).
+./docs/archive/FULL_AUDIT_REPORT.md:34:- **Finding:** `python3 scripts/audit_missing_files.py` reported 4 findings in `voxdesk-concurrency-engine` and `realtime-engine/rust-engine`.
+./docs/archive/FULL_AUDIT_REPORT.md:35:- **Resolution:** Created `voxdesk-concurrency-engine/src/tests/mod.rs`, `realtime-engine/rust-engine/Cargo.lock`, `realtime-engine/rust-engine/config/default.toml`, and `realtime-engine/rust-engine/config/production.toml`, and aligned `realtime-engine/rust-engine/Dockerfile`. Re-running `python3 scripts/audit_missing_files.py` reports **0 findings**.
+./reports/PART_0_REPORT.md:112630:6. **go-realtime-engine** — Go — 55K lines — 10-25MB binary — 8085:8080, 8086:9090 — high-speed data stream
+./reports/PART_0_REPORT.md:112631:7. **rust-realtime-engine** — Rust — 52K lines — 10-25MB binary — 8087:8080, 8088:9090 — realtime WebSockets
+./reports/PART_0_REPORT.md:112650:cd voxdesk-concurrency-engine
+./reports/PART_0_REPORT.md:112662:cd voxdesk-native-audio-engine
+./reports/PART_0_REPORT.md:112677:cd realtime-engine/go-engine
+./reports/PART_0_REPORT.md:112690:cd realtime-engine/rust-engine
+./reports/PART_0_REPORT.md:112692:./target/release/voxdesk-realtime-engine --config config/default.toml
+./reports/PART_0_REPORT.md:112718:docker-compose -f docker-compose.full.yml logs -f go-realtime-engine
+./reports/PART_0_REPORT.md:112719:docker-compose -f docker-compose.full.yml logs -f rust-realtime-engine
+./reports/PART_0_REPORT.md:112743:cd voxdesk-concurrency-engine
+./reports/PART_0_REPORT.md:112747:cd voxdesk-native-audio-engine
+./reports/PART_0_REPORT.md:112751:cd realtime-engine/go-engine
+./reports/PART_0_REPORT.md:112755:cd realtime-engine/rust-engine
+./reports/PART_0_REPORT.md:114581:realtime-engine
+./reports/PART_0_REPORT.md:114582:realtime-engine/README.md
+./reports/PART_0_REPORT.md:114583:realtime-engine/go-engine
+./reports/PART_0_REPORT.md:114584:realtime-engine/go-engine/Dockerfile
+./reports/PART_0_REPORT.md:114585:realtime-engine/go-engine/cmd
+./reports/PART_0_REPORT.md:114586:realtime-engine/go-engine/cmd/server
+./reports/PART_0_REPORT.md:114587:realtime-engine/go-engine/cmd/server/main.go
+./reports/PART_0_REPORT.md:114588:realtime-engine/go-engine/go.mod
+./reports/PART_0_REPORT.md:114589:realtime-engine/go-engine/internal
+./reports/PART_0_REPORT.md:114590:realtime-engine/go-engine/internal/auth
+./reports/PART_0_REPORT.md:114591:realtime-engine/go-engine/internal/auth/jwt.go
+./reports/PART_0_REPORT.md:114592:realtime-engine/go-engine/internal/auth/middleware.go
+./reports/PART_0_REPORT.md:114593:realtime-engine/go-engine/internal/auth/permissions.go
+./reports/PART_0_REPORT.md:114594:realtime-engine/go-engine/internal/auth/validator.go
+./reports/PART_0_REPORT.md:114595:realtime-engine/go-engine/internal/concurrency
+./reports/PART_0_REPORT.md:114596:realtime-engine/go-engine/internal/concurrency/engine.go
+./reports/PART_0_REPORT.md:114597:realtime-engine/go-engine/internal/concurrency/limiter.go
+./reports/PART_0_REPORT.md:114598:realtime-engine/go-engine/internal/concurrency/pool.go
+./reports/PART_0_REPORT.md:114599:realtime-engine/go-engine/internal/concurrency/queue.go
+./reports/PART_0_REPORT.md:114600:realtime-engine/go-engine/internal/concurrency/scheduler.go
+./reports/PART_0_REPORT.md:114601:realtime-engine/go-engine/internal/concurrency/worker.go
+./reports/PART_0_REPORT.md:114602:realtime-engine/go-engine/internal/config
+./reports/PART_0_REPORT.md:114603:realtime-engine/go-engine/internal/config/config.go
+./reports/PART_0_REPORT.md:114604:realtime-engine/go-engine/internal/config/loader.go
+./reports/PART_0_REPORT.md:114605:realtime-engine/go-engine/internal/config/settings.go
+./reports/PART_0_REPORT.md:114606:realtime-engine/go-engine/internal/config/validation.go
+./reports/PART_0_REPORT.md:114607:realtime-engine/go-engine/internal/health
+./reports/PART_0_REPORT.md:114608:realtime-engine/go-engine/internal/health/checker.go
+./reports/PART_0_REPORT.md:114609:realtime-engine/go-engine/internal/health/probe.go
+./reports/PART_0_REPORT.md:114610:realtime-engine/go-engine/internal/health/server.go
+./reports/PART_0_REPORT.md:114611:realtime-engine/go-engine/internal/livekit
+./reports/PART_0_REPORT.md:114612:realtime-engine/go-engine/internal/livekit/client.go
+./reports/PART_0_REPORT.md:114613:realtime-engine/go-engine/internal/livekit/handler.go
+./reports/PART_0_REPORT.md:114614:realtime-engine/go-engine/internal/livekit/participant.go
+./reports/PART_0_REPORT.md:114615:realtime-engine/go-engine/internal/livekit/room.go
+./reports/PART_0_REPORT.md:114616:realtime-engine/go-engine/internal/livekit/track.go
+./reports/PART_0_REPORT.md:114617:realtime-engine/go-engine/internal/livekit/webhook.go
+./reports/PART_0_REPORT.md:114618:realtime-engine/go-engine/internal/metrics
+./reports/PART_0_REPORT.md:114619:realtime-engine/go-engine/internal/metrics/collector.go
+./reports/PART_0_REPORT.md:114620:realtime-engine/go-engine/internal/metrics/prometheus.go
+./reports/PART_0_REPORT.md:114621:realtime-engine/go-engine/internal/metrics/reporter.go
+./reports/PART_0_REPORT.md:114622:realtime-engine/go-engine/internal/metrics/tracing.go
+./reports/PART_0_REPORT.md:114623:realtime-engine/go-engine/internal/stream
+./reports/PART_0_REPORT.md:114624:realtime-engine/go-engine/internal/stream/broadcaster.go
+./reports/PART_0_REPORT.md:114625:realtime-engine/go-engine/internal/stream/buffer.go
+./reports/PART_0_REPORT.md:114626:realtime-engine/go-engine/internal/stream/codec.go
+./reports/PART_0_REPORT.md:114627:realtime-engine/go-engine/internal/stream/handler.go
+./reports/PART_0_REPORT.md:114628:realtime-engine/go-engine/internal/stream/relay.go
+./reports/PART_0_REPORT.md:114629:realtime-engine/go-engine/internal/stream/subscriber.go
+./reports/PART_0_REPORT.md:114630:realtime-engine/go-engine/internal/voice
+./reports/PART_0_REPORT.md:114631:realtime-engine/go-engine/internal/voice/call.go
+./reports/PART_0_REPORT.md:114632:realtime-engine/go-engine/internal/voice/handler.go
+./reports/PART_0_REPORT.md:114633:realtime-engine/go-engine/internal/voice/recording.go
+./reports/PART_0_REPORT.md:114634:realtime-engine/go-engine/internal/voice/router.go
+./reports/PART_0_REPORT.md:114635:realtime-engine/go-engine/internal/voice/session.go
+./reports/PART_0_REPORT.md:114636:realtime-engine/go-engine/internal/voice/signaling.go
+./reports/PART_0_REPORT.md:114637:realtime-engine/go-engine/internal/webrtc
+./reports/PART_0_REPORT.md:114638:realtime-engine/go-engine/internal/webrtc/handler.go
+./reports/PART_0_REPORT.md:114639:realtime-engine/go-engine/internal/webrtc/ice.go
+./reports/PART_0_REPORT.md:114640:realtime-engine/go-engine/internal/webrtc/peer.go
+./reports/PART_0_REPORT.md:114641:realtime-engine/go-engine/internal/webrtc/sdp.go
+./reports/PART_0_REPORT.md:114642:realtime-engine/go-engine/internal/webrtc/signaling.go
+./reports/PART_0_REPORT.md:114643:realtime-engine/go-engine/internal/webrtc/track.go
+./reports/PART_0_REPORT.md:114644:realtime-engine/go-engine/internal/websocket
+./reports/PART_0_REPORT.md:114645:realtime-engine/go-engine/internal/websocket/broadcaster.go
+./reports/PART_0_REPORT.md:114646:realtime-engine/go-engine/internal/websocket/connection.go
+./reports/PART_0_REPORT.md:114647:realtime-engine/go-engine/internal/websocket/handler.go
+./reports/PART_0_REPORT.md:114648:realtime-engine/go-engine/internal/websocket/manager.go
+./reports/PART_0_REPORT.md:114649:realtime-engine/go-engine/internal/websocket/protocol.go
+./reports/PART_0_REPORT.md:114650:realtime-engine/go-engine/internal/websocket/server.go
+./reports/PART_0_REPORT.md:114651:realtime-engine/go-engine/pkg
+./reports/PART_0_REPORT.md:114652:realtime-engine/go-engine/pkg/client
+./reports/PART_0_REPORT.md:114653:realtime-engine/go-engine/pkg/client/client.go
+./reports/PART_0_REPORT.md:114654:realtime-engine/go-engine/pkg/protocol
+./reports/PART_0_REPORT.md:114655:realtime-engine/go-engine/pkg/protocol/protocol.go
+./reports/PART_0_REPORT.md:114656:realtime-engine/go-engine/pkg/server
+./reports/PART_0_REPORT.md:114657:realtime-engine/go-engine/pkg/server/server.go
+./reports/PART_0_REPORT.md:114658:realtime-engine/rust-engine
+./reports/PART_0_REPORT.md:114659:realtime-engine/rust-engine/Cargo.lock
+./reports/PART_0_REPORT.md:114660:realtime-engine/rust-engine/Cargo.toml
+./reports/PART_0_REPORT.md:114661:realtime-engine/rust-engine/Dockerfile
+./reports/PART_0_REPORT.md:114662:realtime-engine/rust-engine/config
+./reports/PART_0_REPORT.md:114663:realtime-engine/rust-engine/config/default.toml
+./reports/PART_0_REPORT.md:114664:realtime-engine/rust-engine/config/production.toml
+./reports/PART_0_REPORT.md:114665:realtime-engine/rust-engine/src
+./reports/PART_0_REPORT.md:114666:realtime-engine/rust-engine/src/auth
+./reports/PART_0_REPORT.md:114667:realtime-engine/rust-engine/src/auth/jwt.rs
+./reports/PART_0_REPORT.md:114668:realtime-engine/rust-engine/src/auth/middleware.rs
+./reports/PART_0_REPORT.md:114669:realtime-engine/rust-engine/src/auth/mod.rs
+./reports/PART_0_REPORT.md:114670:realtime-engine/rust-engine/src/auth/permissions.rs
+./reports/PART_0_REPORT.md:114671:realtime-engine/rust-engine/src/concurrency
+./reports/PART_0_REPORT.md:114672:realtime-engine/rust-engine/src/concurrency/engine.rs
+./reports/PART_0_REPORT.md:114673:realtime-engine/rust-engine/src/concurrency/mod.rs
+./reports/PART_0_REPORT.md:114674:realtime-engine/rust-engine/src/concurrency/pool.rs
+./reports/PART_0_REPORT.md:114675:realtime-engine/rust-engine/src/concurrency/queue.rs
+./reports/PART_0_REPORT.md:114676:realtime-engine/rust-engine/src/concurrency/scheduler.rs
+./reports/PART_0_REPORT.md:114677:realtime-engine/rust-engine/src/concurrency/worker.rs
+./reports/PART_0_REPORT.md:114678:realtime-engine/rust-engine/src/config
+./reports/PART_0_REPORT.md:114679:realtime-engine/rust-engine/src/config/loader.rs
+./reports/PART_0_REPORT.md:114680:realtime-engine/rust-engine/src/config/mod.rs
+./reports/PART_0_REPORT.md:114681:realtime-engine/rust-engine/src/config/settings.rs
+./reports/PART_0_REPORT.md:114682:realtime-engine/rust-engine/src/config/validation.rs
+./reports/PART_0_REPORT.md:114683:realtime-engine/rust-engine/src/health
+./reports/PART_0_REPORT.md:114684:realtime-engine/rust-engine/src/health/checker.rs
+./reports/PART_0_REPORT.md:114685:realtime-engine/rust-engine/src/health/mod.rs
+./reports/PART_0_REPORT.md:114686:realtime-engine/rust-engine/src/health/probe.rs
+./reports/PART_0_REPORT.md:114687:realtime-engine/rust-engine/src/lib.rs
+./reports/PART_0_REPORT.md:114688:realtime-engine/rust-engine/src/livekit
+./reports/PART_0_REPORT.md:114689:realtime-engine/rust-engine/src/livekit/client.rs
+./reports/PART_0_REPORT.md:114690:realtime-engine/rust-engine/src/livekit/handler.rs
+./reports/PART_0_REPORT.md:114691:realtime-engine/rust-engine/src/livekit/mod.rs
+./reports/PART_0_REPORT.md:114692:realtime-engine/rust-engine/src/livekit/participant.rs
+./reports/PART_0_REPORT.md:114693:realtime-engine/rust-engine/src/livekit/room.rs
+./reports/PART_0_REPORT.md:114694:realtime-engine/rust-engine/src/livekit/track.rs
+./reports/PART_0_REPORT.md:114695:realtime-engine/rust-engine/src/main.rs
+./reports/PART_0_REPORT.md:114696:realtime-engine/rust-engine/src/metrics
+./reports/PART_0_REPORT.md:114697:realtime-engine/rust-engine/src/metrics/collector.rs
+./reports/PART_0_REPORT.md:114698:realtime-engine/rust-engine/src/metrics/mod.rs
+./reports/PART_0_REPORT.md:114699:realtime-engine/rust-engine/src/metrics/prometheus.rs
+./reports/PART_0_REPORT.md:114700:realtime-engine/rust-engine/src/metrics/tracing.rs
+./reports/PART_0_REPORT.md:114701:realtime-engine/rust-engine/src/stream
+./reports/PART_0_REPORT.md:114702:realtime-engine/rust-engine/src/stream/broadcaster.rs
+./reports/PART_0_REPORT.md:114703:realtime-engine/rust-engine/src/stream/buffer.rs
+./reports/PART_0_REPORT.md:114704:realtime-engine/rust-engine/src/stream/codec.rs
+./reports/PART_0_REPORT.md:114705:realtime-engine/rust-engine/src/stream/handler.rs
+./reports/PART_0_REPORT.md:114706:realtime-engine/rust-engine/src/stream/mod.rs
+./reports/PART_0_REPORT.md:114707:realtime-engine/rust-engine/src/stream/subscriber.rs
+./reports/PART_0_REPORT.md:114708:realtime-engine/rust-engine/src/voice
+./reports/PART_0_REPORT.md:114709:realtime-engine/rust-engine/src/voice/call.rs
+./reports/PART_0_REPORT.md:114710:realtime-engine/rust-engine/src/voice/handler.rs
+./reports/PART_0_REPORT.md:114711:realtime-engine/rust-engine/src/voice/mod.rs
+./reports/PART_0_REPORT.md:114712:realtime-engine/rust-engine/src/voice/router.rs
+./reports/PART_0_REPORT.md:114713:realtime-engine/rust-engine/src/voice/session.rs
+./reports/PART_0_REPORT.md:114714:realtime-engine/rust-engine/src/voice/signaling.rs
+./reports/PART_0_REPORT.md:114715:realtime-engine/rust-engine/src/webrtc
+./reports/PART_0_REPORT.md:114716:realtime-engine/rust-engine/src/webrtc/handler.rs
+./reports/PART_0_REPORT.md:114717:realtime-engine/rust-engine/src/webrtc/ice.rs
+./reports/PART_0_REPORT.md:114718:realtime-engine/rust-engine/src/webrtc/mod.rs
+./reports/PART_0_REPORT.md:114719:realtime-engine/rust-engine/src/webrtc/peer.rs
+./reports/PART_0_REPORT.md:114720:realtime-engine/rust-engine/src/webrtc/sdp.rs
+./reports/PART_0_REPORT.md:114721:realtime-engine/rust-engine/src/webrtc/signaling.rs
+./reports/PART_0_REPORT.md:114722:realtime-engine/rust-engine/src/websocket
+./reports/PART_0_REPORT.md:114723:realtime-engine/rust-engine/src/websocket/connection.rs
+./reports/PART_0_REPORT.md:114724:realtime-engine/rust-engine/src/websocket/handler.rs
+./reports/PART_0_REPORT.md:114725:realtime-engine/rust-engine/src/websocket/manager.rs
+./reports/PART_0_REPORT.md:114726:realtime-engine/rust-engine/src/websocket/mod.rs
+./reports/PART_0_REPORT.md:114727:realtime-engine/rust-engine/src/websocket/protocol.rs
+./reports/PART_0_REPORT.md:114728:realtime-engine/rust-engine/src/websocket/server.rs
+./reports/PART_0_REPORT.md:115384:voxdesk-concurrency-engine
+./reports/PART_0_REPORT.md:115385:voxdesk-concurrency-engine/Cargo.lock
+./reports/PART_0_REPORT.md:115386:voxdesk-concurrency-engine/Cargo.toml
+./reports/PART_0_REPORT.md:115387:voxdesk-concurrency-engine/Dockerfile
+./reports/PART_0_REPORT.md:115388:voxdesk-concurrency-engine/README.md
+./reports/PART_0_REPORT.md:115389:voxdesk-concurrency-engine/config
+./reports/PART_0_REPORT.md:115390:voxdesk-concurrency-engine/config/default.toml
+./reports/PART_0_REPORT.md:115391:voxdesk-concurrency-engine/config/production.toml
+./reports/PART_0_REPORT.md:115392:voxdesk-concurrency-engine/src
+./reports/PART_0_REPORT.md:115393:voxdesk-concurrency-engine/src/audio
+./reports/PART_0_REPORT.md:115394:voxdesk-concurrency-engine/src/audio/buffer.rs
+./reports/PART_0_REPORT.md:115395:voxdesk-concurrency-engine/src/audio/frame.rs
+./reports/PART_0_REPORT.md:115396:voxdesk-concurrency-engine/src/audio/mod.rs
+./reports/PART_0_REPORT.md:115397:voxdesk-concurrency-engine/src/audio/stream_bridge.rs
+./reports/PART_0_REPORT.md:115398:voxdesk-concurrency-engine/src/config
+./reports/PART_0_REPORT.md:115399:voxdesk-concurrency-engine/src/config/mod.rs
+./reports/PART_0_REPORT.md:115400:voxdesk-concurrency-engine/src/config/settings.rs
+./reports/PART_0_REPORT.md:115401:voxdesk-concurrency-engine/src/core
+./reports/PART_0_REPORT.md:115402:voxdesk-concurrency-engine/src/core/metrics.rs
+./reports/PART_0_REPORT.md:115403:voxdesk-concurrency-engine/src/core/mod.rs
+./reports/PART_0_REPORT.md:115404:voxdesk-concurrency-engine/src/core/router.rs
+./reports/PART_0_REPORT.md:115405:voxdesk-concurrency-engine/src/core/state.rs
+./reports/PART_0_REPORT.md:115406:voxdesk-concurrency-engine/src/lib.rs
+./reports/PART_0_REPORT.md:115407:voxdesk-concurrency-engine/src/main.rs
+./reports/PART_0_REPORT.md:115408:voxdesk-concurrency-engine/src/redis
+./reports/PART_0_REPORT.md:115409:voxdesk-concurrency-engine/src/redis/client.rs
+./reports/PART_0_REPORT.md:115410:voxdesk-concurrency-engine/src/redis/mod.rs
+./reports/PART_0_REPORT.md:115411:voxdesk-concurrency-engine/src/redis/pubsub.rs
+./reports/PART_0_REPORT.md:115412:voxdesk-concurrency-engine/src/redis/session_store.rs
+./reports/PART_0_REPORT.md:115413:voxdesk-concurrency-engine/src/signaling
+./reports/PART_0_REPORT.md:115414:voxdesk-concurrency-engine/src/signaling/ice.rs
+./reports/PART_0_REPORT.md:115415:voxdesk-concurrency-engine/src/signaling/livekit_client.rs
+./reports/PART_0_REPORT.md:115416:voxdesk-concurrency-engine/src/signaling/mod.rs
+./reports/PART_0_REPORT.md:115417:voxdesk-concurrency-engine/src/signaling/peer.rs
+./reports/PART_0_REPORT.md:115418:voxdesk-concurrency-engine/src/signaling/sdp.rs
+./reports/PART_0_REPORT.md:115419:voxdesk-concurrency-engine/src/tests
+./reports/PART_0_REPORT.md:115420:voxdesk-concurrency-engine/src/tests/integration_tests.rs
+./reports/PART_0_REPORT.md:115421:voxdesk-concurrency-engine/src/tests/mock_livekit.rs
+./reports/PART_0_REPORT.md:115422:voxdesk-concurrency-engine/src/tests/mod.rs
+./reports/PART_0_REPORT.md:115423:voxdesk-concurrency-engine/src/tests/websocket_stress_test.rs
+./reports/PART_0_REPORT.md:115424:voxdesk-concurrency-engine/src/utils
+./reports/PART_0_REPORT.md:115425:voxdesk-concurrency-engine/src/utils/crypto.rs
+./reports/PART_0_REPORT.md:115426:voxdesk-concurrency-engine/src/utils/error.rs
+./reports/PART_0_REPORT.md:115427:voxdesk-concurrency-engine/src/utils/logger.rs
+./reports/PART_0_REPORT.md:115428:voxdesk-concurrency-engine/src/utils/mod.rs
+./reports/PART_0_REPORT.md:115429:voxdesk-concurrency-engine/src/websocket
+./reports/PART_0_REPORT.md:115430:voxdesk-concurrency-engine/src/websocket/handler.rs
+./reports/PART_0_REPORT.md:115431:voxdesk-concurrency-engine/src/websocket/manager.rs
+./reports/PART_0_REPORT.md:115432:voxdesk-concurrency-engine/src/websocket/mod.rs
+./reports/PART_0_REPORT.md:115433:voxdesk-concurrency-engine/src/websocket/protocol.rs
+./reports/PART_0_REPORT.md:115434:voxdesk-concurrency-engine/src/websocket/session.rs
+./reports/PART_0_REPORT.md:115435:voxdesk-native-audio-engine
+./reports/PART_0_REPORT.md:115436:voxdesk-native-audio-engine/CMakeLists.txt
+./reports/PART_0_REPORT.md:115437:voxdesk-native-audio-engine/Dockerfile
+./reports/PART_0_REPORT.md:115438:voxdesk-native-audio-engine/README.md
+./reports/PART_0_REPORT.md:115439:voxdesk-native-audio-engine/include
+./reports/PART_0_REPORT.md:115440:voxdesk-native-audio-engine/include/audio_types.h
+./reports/PART_0_REPORT.md:115441:voxdesk-native-audio-engine/include/echo_canceller.h
+./reports/PART_0_REPORT.md:115442:voxdesk-native-audio-engine/include/gain_control.h
+./reports/PART_0_REPORT.md:115443:voxdesk-native-audio-engine/include/jitter_buffer.h
+./reports/PART_0_REPORT.md:115444:voxdesk-native-audio-engine/include/noise_suppressor.h
+./reports/PART_0_REPORT.md:115445:voxdesk-native-audio-engine/include/opus_codec.h
+./reports/PART_0_REPORT.md:115446:voxdesk-native-audio-engine/include/voxdesk_audio.h
+./reports/PART_0_REPORT.md:115447:voxdesk-native-audio-engine/include/webrtc_stream_interceptor.h
+./reports/PART_0_REPORT.md:115448:voxdesk-native-audio-engine/src
+./reports/PART_0_REPORT.md:115449:voxdesk-native-audio-engine/src/codec
+./reports/PART_0_REPORT.md:115450:voxdesk-native-audio-engine/src/codec/frame_validator.cpp
+./reports/PART_0_REPORT.md:115451:voxdesk-native-audio-engine/src/codec/opus_decoder.cpp
+./reports/PART_0_REPORT.md:115452:voxdesk-native-audio-engine/src/codec/opus_encoder.cpp
+./reports/PART_0_REPORT.md:115453:voxdesk-native-audio-engine/src/codec/packet_loss_concealer.cpp
+./reports/PART_0_REPORT.md:115454:voxdesk-native-audio-engine/src/dsp
+./reports/PART_0_REPORT.md:115455:voxdesk-native-audio-engine/src/dsp/VAD.cpp
+./reports/PART_0_REPORT.md:115456:voxdesk-native-audio-engine/src/dsp/echo_canceller.cpp
+./reports/PART_0_REPORT.md:115457:voxdesk-native-audio-engine/src/dsp/gain_control.cpp
+./reports/PART_0_REPORT.md:115458:voxdesk-native-audio-engine/src/dsp/noise_suppressor.cpp
+./reports/PART_0_REPORT.md:115459:voxdesk-native-audio-engine/src/dsp/resampler.cpp
+./reports/PART_0_REPORT.md:115460:voxdesk-native-audio-engine/src/ffi
+./reports/PART_0_REPORT.md:115461:voxdesk-native-audio-engine/src/ffi/c_api.cpp
+./reports/PART_0_REPORT.md:115462:voxdesk-native-audio-engine/src/ffi/python_module.cpp
+./reports/PART_0_REPORT.md:115463:voxdesk-native-audio-engine/src/ffi/rust_bindings.rs
+./reports/PART_0_REPORT.md:115464:voxdesk-native-audio-engine/src/main.cpp
+./reports/PART_0_REPORT.md:115465:voxdesk-native-audio-engine/src/memory
+./reports/PART_0_REPORT.md:115466:voxdesk-native-audio-engine/src/memory/lockfree_ring_buffer.cpp
+./reports/PART_0_REPORT.md:115467:voxdesk-native-audio-engine/src/memory/memory_pool.cpp
+./reports/PART_0_REPORT.md:115468:voxdesk-native-audio-engine/src/memory/simd_vectorizer.cpp
+./reports/PART_0_REPORT.md:115469:voxdesk-native-audio-engine/src/utils
+./reports/PART_0_REPORT.md:115470:voxdesk-native-audio-engine/src/utils/error_codes.cpp
+./reports/PART_0_REPORT.md:115471:voxdesk-native-audio-engine/src/utils/native_logger.cpp
+./reports/PART_0_REPORT.md:115472:voxdesk-native-audio-engine/src/utils/performance_profiler.cpp
+./reports/PART_0_REPORT.md:115473:voxdesk-native-audio-engine/src/webrtc
+./reports/PART_0_REPORT.md:115474:voxdesk-native-audio-engine/src/webrtc/audio_mixer.cpp
+./reports/PART_0_REPORT.md:115475:voxdesk-native-audio-engine/src/webrtc/jitter_buffer.cpp
+./reports/PART_0_REPORT.md:115476:voxdesk-native-audio-engine/src/webrtc/spatial_audio.cpp
+./reports/PART_0_REPORT.md:115477:voxdesk-native-audio-engine/src/webrtc/stream_interceptor.cpp
+./reports/PART_0_REPORT.md:115478:voxdesk-native-audio-engine/tests
+./reports/PART_0_REPORT.md:115479:voxdesk-native-audio-engine/tests/CMakeLists.txt
+./reports/PART_0_REPORT.md:115480:voxdesk-native-audio-engine/tests/benchmark_latency.cpp
+./reports/PART_0_REPORT.md:115481:voxdesk-native-audio-engine/tests/test_dsp_pipeline.cpp
+./reports/PART_0_REPORT.md:115482:voxdesk-native-audio-engine/tests/test_lockfree_buffer.cpp
+./reports/PART_0_REPORT.md:115483:voxdesk-native-audio-engine/tests/test_opus_roundtrip.cpp
+./reports/PART_0_REPORT.md:115484:voxdesk-native-audio-engine/third_party
+./reports/PART_0_REPORT.md:115485:voxdesk-native-audio-engine/third_party/googletest
+./reports/PART_0_REPORT.md:115486:voxdesk-native-audio-engine/third_party/googletest/README.md
+./reports/PART_0_REPORT.md:115487:voxdesk-native-audio-engine/third_party/opus
+./reports/PART_0_REPORT.md:115488:voxdesk-native-audio-engine/third_party/opus/README.md
+./reports/PART_0_REPORT.md:115489:voxdesk-native-audio-engine/third_party/pybind11
+./reports/PART_0_REPORT.md:115490:voxdesk-native-audio-engine/third_party/pybind11/README.md
+./reports/PART_0_REPORT.md:115491:voxdesk-native-audio-engine/third_party/rnnoise
+./reports/PART_0_REPORT.md:115492:voxdesk-native-audio-engine/third_party/rnnoise/README.md
+./reports/PART_0_REPORT.md:115493:voxdesk-native-audio-engine/third_party/speexdsp
+./reports/PART_0_REPORT.md:115494:voxdesk-native-audio-engine/third_party/speexdsp/README.md
+./reports/PART_0_REPORT.md:115709:A full-stack forensic audit of `voxdesk-call` was conducted across the FastAPI backend (`app/`), Alembic migrations (`alembic/`), Vite + React 18 business website & Agent Studio (`dashboard/`), Next.js 14 console (`dashboard-next/`), static marketing pages (`marketing/`), polyglot realtime/audio engines (`realtime-engine/`, `voxdesk-concurrency-engine/`, `voxdesk-native-audio-engine/`), and automated test suites (`tests/`, `dashboard/tests/`, `dashboard/src/tests/`).
+./reports/PART_0_REPORT.md:115730:- **Finding:** `python3 scripts/audit_missing_files.py` reported 4 findings in `voxdesk-concurrency-engine` and `realtime-engine/rust-engine`.
+./reports/PART_0_REPORT.md:115731:- **Resolution:** Created `voxdesk-concurrency-engine/src/tests/mod.rs`, `realtime-engine/rust-engine/Cargo.lock`, `realtime-engine/rust-engine/config/default.toml`, and `realtime-engine/rust-engine/config/production.toml`, and aligned `realtime-engine/rust-engine/Dockerfile`. Re-running `python3 scripts/audit_missing_files.py` reports **0 findings**.
+./reports/PART_0_REPORT.md:120862:    for name in ('realtime-engine', 'voxdesk-concurrency-engine', 'voxdesk-native-audio-engine'):
+./reports/PART_0_REPORT.md:120937:RETIRED = ('realtime-engine', 'voxdesk-concurrency-engine', 'voxdesk-native-audio-engine')
+./reports/part0/changed-files.json:155:    "realtime-engine/README.md",
+./reports/part0/changed-files.json:156:    "realtime-engine/go-engine/Dockerfile",
+./reports/part0/changed-files.json:157:    "realtime-engine/go-engine/cmd/server/main.go",
+./reports/part0/changed-files.json:158:    "realtime-engine/go-engine/go.mod",
+./reports/part0/changed-files.json:159:    "realtime-engine/go-engine/internal/auth/jwt.go",
+./reports/part0/changed-files.json:160:    "realtime-engine/go-engine/internal/auth/middleware.go",
+./reports/part0/changed-files.json:161:    "realtime-engine/go-engine/internal/auth/permissions.go",
+./reports/part0/changed-files.json:162:    "realtime-engine/go-engine/internal/auth/validator.go",
+./reports/part0/changed-files.json:163:    "realtime-engine/go-engine/internal/concurrency/engine.go",
+./reports/part0/changed-files.json:164:    "realtime-engine/go-engine/internal/concurrency/limiter.go",
+./reports/part0/changed-files.json:165:    "realtime-engine/go-engine/internal/concurrency/pool.go",
+./reports/part0/changed-files.json:166:    "realtime-engine/go-engine/internal/concurrency/queue.go",
+./reports/part0/changed-files.json:167:    "realtime-engine/go-engine/internal/concurrency/scheduler.go",
+./reports/part0/changed-files.json:168:    "realtime-engine/go-engine/internal/concurrency/worker.go",
+./reports/part0/changed-files.json:169:    "realtime-engine/go-engine/internal/config/config.go",
+./reports/part0/changed-files.json:170:    "realtime-engine/go-engine/internal/config/loader.go",
+./reports/part0/changed-files.json:171:    "realtime-engine/go-engine/internal/config/settings.go",
+./reports/part0/changed-files.json:172:    "realtime-engine/go-engine/internal/config/validation.go",
+./reports/part0/changed-files.json:173:    "realtime-engine/go-engine/internal/health/checker.go",
+./reports/part0/changed-files.json:174:    "realtime-engine/go-engine/internal/health/probe.go",
+./reports/part0/changed-files.json:175:    "realtime-engine/go-engine/internal/health/server.go",
+./reports/part0/changed-files.json:176:    "realtime-engine/go-engine/internal/livekit/client.go",
+./reports/part0/changed-files.json:177:    "realtime-engine/go-engine/internal/livekit/handler.go",
+./reports/part0/changed-files.json:178:    "realtime-engine/go-engine/internal/livekit/participant.go",
+./reports/part0/changed-files.json:179:    "realtime-engine/go-engine/internal/livekit/room.go",
+./reports/part0/changed-files.json:180:    "realtime-engine/go-engine/internal/livekit/track.go",
+./reports/part0/changed-files.json:181:    "realtime-engine/go-engine/internal/livekit/webhook.go",
+./reports/part0/changed-files.json:182:    "realtime-engine/go-engine/internal/metrics/collector.go",
+./reports/part0/changed-files.json:183:    "realtime-engine/go-engine/internal/metrics/prometheus.go",
+./reports/part0/changed-files.json:184:    "realtime-engine/go-engine/internal/metrics/reporter.go",
+./reports/part0/changed-files.json:185:    "realtime-engine/go-engine/internal/metrics/tracing.go",
+./reports/part0/changed-files.json:186:    "realtime-engine/go-engine/internal/stream/broadcaster.go",
+./reports/part0/changed-files.json:187:    "realtime-engine/go-engine/internal/stream/buffer.go",
+./reports/part0/changed-files.json:188:    "realtime-engine/go-engine/internal/stream/codec.go",
+./reports/part0/changed-files.json:189:    "realtime-engine/go-engine/internal/stream/handler.go",
+./reports/part0/changed-files.json:190:    "realtime-engine/go-engine/internal/stream/relay.go",
+./reports/part0/changed-files.json:191:    "realtime-engine/go-engine/internal/stream/subscriber.go",
+./reports/part0/changed-files.json:192:    "realtime-engine/go-engine/internal/voice/call.go",
+./reports/part0/changed-files.json:193:    "realtime-engine/go-engine/internal/voice/handler.go",
+./reports/part0/changed-files.json:194:    "realtime-engine/go-engine/internal/voice/recording.go",
+./reports/part0/changed-files.json:195:    "realtime-engine/go-engine/internal/voice/router.go",
+./reports/part0/changed-files.json:196:    "realtime-engine/go-engine/internal/voice/session.go",
+./reports/part0/changed-files.json:197:    "realtime-engine/go-engine/internal/voice/signaling.go",
+./reports/part0/changed-files.json:198:    "realtime-engine/go-engine/internal/webrtc/handler.go",
+./reports/part0/changed-files.json:199:    "realtime-engine/go-engine/internal/webrtc/ice.go",
+./reports/part0/changed-files.json:200:    "realtime-engine/go-engine/internal/webrtc/peer.go",
+./reports/part0/changed-files.json:201:    "realtime-engine/go-engine/internal/webrtc/sdp.go",
+./reports/part0/changed-files.json:202:    "realtime-engine/go-engine/internal/webrtc/signaling.go",
+./reports/part0/changed-files.json:203:    "realtime-engine/go-engine/internal/webrtc/track.go",
+./reports/part0/changed-files.json:204:    "realtime-engine/go-engine/internal/websocket/broadcaster.go",
+./reports/part0/changed-files.json:205:    "realtime-engine/go-engine/internal/websocket/connection.go",
+./reports/part0/changed-files.json:206:    "realtime-engine/go-engine/internal/websocket/handler.go",
+./reports/part0/changed-files.json:207:    "realtime-engine/go-engine/internal/websocket/manager.go",
+./reports/part0/changed-files.json:208:    "realtime-engine/go-engine/internal/websocket/protocol.go",
+./reports/part0/changed-files.json:209:    "realtime-engine/go-engine/internal/websocket/server.go",
+./reports/part0/changed-files.json:210:    "realtime-engine/go-engine/pkg/client/client.go",
+./reports/part0/changed-files.json:211:    "realtime-engine/go-engine/pkg/protocol/protocol.go",
+./reports/part0/changed-files.json:212:    "realtime-engine/go-engine/pkg/server/server.go",
+./reports/part0/changed-files.json:213:    "realtime-engine/rust-engine/Cargo.toml",
+./reports/part0/changed-files.json:214:    "realtime-engine/rust-engine/Dockerfile",
+./reports/part0/changed-files.json:215:    "realtime-engine/rust-engine/src/auth/jwt.rs",
+./reports/part0/changed-files.json:216:    "realtime-engine/rust-engine/src/auth/middleware.rs",
+./reports/part0/changed-files.json:217:    "realtime-engine/rust-engine/src/auth/mod.rs",
+./reports/part0/changed-files.json:218:    "realtime-engine/rust-engine/src/auth/permissions.rs",
+./reports/part0/changed-files.json:219:    "realtime-engine/rust-engine/src/concurrency/engine.rs",
+./reports/part0/changed-files.json:220:    "realtime-engine/rust-engine/src/concurrency/mod.rs",
+./reports/part0/changed-files.json:221:    "realtime-engine/rust-engine/src/concurrency/pool.rs",
+./reports/part0/changed-files.json:222:    "realtime-engine/rust-engine/src/concurrency/queue.rs",
+./reports/part0/changed-files.json:223:    "realtime-engine/rust-engine/src/concurrency/scheduler.rs",
+./reports/part0/changed-files.json:224:    "realtime-engine/rust-engine/src/concurrency/worker.rs",
+./reports/part0/changed-files.json:225:    "realtime-engine/rust-engine/src/config/loader.rs",
+./reports/part0/changed-files.json:226:    "realtime-engine/rust-engine/src/config/mod.rs",
+./reports/part0/changed-files.json:227:    "realtime-engine/rust-engine/src/config/settings.rs",
+./reports/part0/changed-files.json:228:    "realtime-engine/rust-engine/src/config/validation.rs",
+./reports/part0/changed-files.json:229:    "realtime-engine/rust-engine/src/health/checker.rs",
+./reports/part0/changed-files.json:230:    "realtime-engine/rust-engine/src/health/mod.rs",
+./reports/part0/changed-files.json:231:    "realtime-engine/rust-engine/src/health/probe.rs",
+./reports/part0/changed-files.json:232:    "realtime-engine/rust-engine/src/lib.rs",
+./reports/part0/changed-files.json:233:    "realtime-engine/rust-engine/src/livekit/client.rs",
+./reports/part0/changed-files.json:234:    "realtime-engine/rust-engine/src/livekit/handler.rs",
+./reports/part0/changed-files.json:235:    "realtime-engine/rust-engine/src/livekit/mod.rs",
+./reports/part0/changed-files.json:236:    "realtime-engine/rust-engine/src/livekit/participant.rs",
+./reports/part0/changed-files.json:237:    "realtime-engine/rust-engine/src/livekit/room.rs",
+./reports/part0/changed-files.json:238:    "realtime-engine/rust-engine/src/livekit/track.rs",
+./reports/part0/changed-files.json:239:    "realtime-engine/rust-engine/src/main.rs",
+./reports/part0/changed-files.json:240:    "realtime-engine/rust-engine/src/metrics/collector.rs",
+./reports/part0/changed-files.json:241:    "realtime-engine/rust-engine/src/metrics/mod.rs",
+./reports/part0/changed-files.json:242:    "realtime-engine/rust-engine/src/metrics/prometheus.rs",
+./reports/part0/changed-files.json:243:    "realtime-engine/rust-engine/src/metrics/tracing.rs",
+./reports/part0/changed-files.json:244:    "realtime-engine/rust-engine/src/stream/broadcaster.rs",
+./reports/part0/changed-files.json:245:    "realtime-engine/rust-engine/src/stream/buffer.rs",
+./reports/part0/changed-files.json:246:    "realtime-engine/rust-engine/src/stream/codec.rs",
+./reports/part0/changed-files.json:247:    "realtime-engine/rust-engine/src/stream/handler.rs",
+./reports/part0/changed-files.json:248:    "realtime-engine/rust-engine/src/stream/mod.rs",
+./reports/part0/changed-files.json:249:    "realtime-engine/rust-engine/src/stream/subscriber.rs",
+./reports/part0/changed-files.json:250:    "realtime-engine/rust-engine/src/voice/call.rs",
+./reports/part0/changed-files.json:251:    "realtime-engine/rust-engine/src/voice/handler.rs",
+./reports/part0/changed-files.json:252:    "realtime-engine/rust-engine/src/voice/mod.rs",
+./reports/part0/changed-files.json:253:    "realtime-engine/rust-engine/src/voice/router.rs",
+./reports/part0/changed-files.json:254:    "realtime-engine/rust-engine/src/voice/session.rs",
+./reports/part0/changed-files.json:255:    "realtime-engine/rust-engine/src/voice/signaling.rs",
+./reports/part0/changed-files.json:256:    "realtime-engine/rust-engine/src/webrtc/handler.rs",
+./reports/part0/changed-files.json:257:    "realtime-engine/rust-engine/src/webrtc/ice.rs",
+./reports/part0/changed-files.json:258:    "realtime-engine/rust-engine/src/webrtc/mod.rs",
+./reports/part0/changed-files.json:259:    "realtime-engine/rust-engine/src/webrtc/peer.rs",
+./reports/part0/changed-files.json:260:    "realtime-engine/rust-engine/src/webrtc/sdp.rs",
+./reports/part0/changed-files.json:261:    "realtime-engine/rust-engine/src/webrtc/signaling.rs",
+./reports/part0/changed-files.json:262:    "realtime-engine/rust-engine/src/websocket/connection.rs",
+./reports/part0/changed-files.json:263:    "realtime-engine/rust-engine/src/websocket/handler.rs",
+./reports/part0/changed-files.json:264:    "realtime-engine/rust-engine/src/websocket/manager.rs",
+./reports/part0/changed-files.json:265:    "realtime-engine/rust-engine/src/websocket/mod.rs",
+./reports/part0/changed-files.json:266:    "realtime-engine/rust-engine/src/websocket/protocol.rs",
+./reports/part0/changed-files.json:267:    "realtime-engine/rust-engine/src/websocket/server.rs",
+./reports/part0/changed-files.json:268:    "voxdesk-concurrency-engine/Cargo.lock",
+./reports/part0/changed-files.json:269:    "voxdesk-concurrency-engine/Cargo.toml",
+./reports/part0/changed-files.json:270:    "voxdesk-concurrency-engine/Dockerfile",
+./reports/part0/changed-files.json:271:    "voxdesk-concurrency-engine/README.md",
+./reports/part0/changed-files.json:272:    "voxdesk-concurrency-engine/config/default.toml",
+./reports/part0/changed-files.json:273:    "voxdesk-concurrency-engine/config/production.toml",
+./reports/part0/changed-files.json:274:    "voxdesk-concurrency-engine/src/audio/buffer.rs",
+./reports/part0/changed-files.json:275:    "voxdesk-concurrency-engine/src/audio/frame.rs",
+./reports/part0/changed-files.json:276:    "voxdesk-concurrency-engine/src/audio/mod.rs",
+./reports/part0/changed-files.json:277:    "voxdesk-concurrency-engine/src/audio/stream_bridge.rs",
+./reports/part0/changed-files.json:278:    "voxdesk-concurrency-engine/src/config/mod.rs",
+./reports/part0/changed-files.json:279:    "voxdesk-concurrency-engine/src/config/settings.rs",
+./reports/part0/changed-files.json:280:    "voxdesk-concurrency-engine/src/core/metrics.rs",
+./reports/part0/changed-files.json:281:    "voxdesk-concurrency-engine/src/core/mod.rs",
+./reports/part0/changed-files.json:282:    "voxdesk-concurrency-engine/src/core/router.rs",
+./reports/part0/changed-files.json:283:    "voxdesk-concurrency-engine/src/core/state.rs",
+./reports/part0/changed-files.json:284:    "voxdesk-concurrency-engine/src/lib.rs",
+./reports/part0/changed-files.json:285:    "voxdesk-concurrency-engine/src/main.rs",
+./reports/part0/changed-files.json:286:    "voxdesk-concurrency-engine/src/redis/client.rs",
+./reports/part0/changed-files.json:287:    "voxdesk-concurrency-engine/src/redis/mod.rs",
+./reports/part0/changed-files.json:288:    "voxdesk-concurrency-engine/src/redis/pubsub.rs",
+./reports/part0/changed-files.json:289:    "voxdesk-concurrency-engine/src/redis/session_store.rs",
+./reports/part0/changed-files.json:290:    "voxdesk-concurrency-engine/src/signaling/ice.rs",
+./reports/part0/changed-files.json:291:    "voxdesk-concurrency-engine/src/signaling/livekit_client.rs",
+./reports/part0/changed-files.json:292:    "voxdesk-concurrency-engine/src/signaling/mod.rs",
+./reports/part0/changed-files.json:293:    "voxdesk-concurrency-engine/src/signaling/peer.rs",
+./reports/part0/changed-files.json:294:    "voxdesk-concurrency-engine/src/signaling/sdp.rs",
+./reports/part0/changed-files.json:295:    "voxdesk-concurrency-engine/src/tests/integration_tests.rs",
+./reports/part0/changed-files.json:296:    "voxdesk-concurrency-engine/src/tests/mock_livekit.rs",
+./reports/part0/changed-files.json:297:    "voxdesk-concurrency-engine/src/tests/websocket_stress_test.rs",
+./reports/part0/changed-files.json:298:    "voxdesk-concurrency-engine/src/utils/crypto.rs",
+./reports/part0/changed-files.json:299:    "voxdesk-concurrency-engine/src/utils/error.rs",
+./reports/part0/changed-files.json:300:    "voxdesk-concurrency-engine/src/utils/logger.rs",
+./reports/part0/changed-files.json:301:    "voxdesk-concurrency-engine/src/utils/mod.rs",
+./reports/part0/changed-files.json:302:    "voxdesk-concurrency-engine/src/websocket/handler.rs",
+./reports/part0/changed-files.json:303:    "voxdesk-concurrency-engine/src/websocket/manager.rs",
+./reports/part0/changed-files.json:304:    "voxdesk-concurrency-engine/src/websocket/mod.rs",
+./reports/part0/changed-files.json:305:    "voxdesk-concurrency-engine/src/websocket/protocol.rs",
+./reports/part0/changed-files.json:306:    "voxdesk-concurrency-engine/src/websocket/session.rs",
+./reports/part0/changed-files.json:307:    "voxdesk-native-audio-engine/CMakeLists.txt",
+./reports/part0/changed-files.json:308:    "voxdesk-native-audio-engine/Dockerfile",
+./reports/part0/changed-files.json:309:    "voxdesk-native-audio-engine/README.md",
+./reports/part0/changed-files.json:310:    "voxdesk-native-audio-engine/include/audio_types.h",
+./reports/part0/changed-files.json:311:    "voxdesk-native-audio-engine/include/echo_canceller.h",
+./reports/part0/changed-files.json:312:    "voxdesk-native-audio-engine/include/gain_control.h",
+./reports/part0/changed-files.json:313:    "voxdesk-native-audio-engine/include/jitter_buffer.h",
+./reports/part0/changed-files.json:314:    "voxdesk-native-audio-engine/include/noise_suppressor.h",
+./reports/part0/changed-files.json:315:    "voxdesk-native-audio-engine/include/opus_codec.h",
+./reports/part0/changed-files.json:316:    "voxdesk-native-audio-engine/include/voxdesk_audio.h",
+./reports/part0/changed-files.json:317:    "voxdesk-native-audio-engine/include/webrtc_stream_interceptor.h",
+./reports/part0/changed-files.json:318:    "voxdesk-native-audio-engine/src/codec/frame_validator.cpp",
+./reports/part0/changed-files.json:319:    "voxdesk-native-audio-engine/src/codec/opus_decoder.cpp",
+./reports/part0/changed-files.json:320:    "voxdesk-native-audio-engine/src/codec/opus_encoder.cpp",
+./reports/part0/changed-files.json:321:    "voxdesk-native-audio-engine/src/codec/packet_loss_concealer.cpp",
+./reports/part0/changed-files.json:322:    "voxdesk-native-audio-engine/src/dsp/VAD.cpp",
+./reports/part0/changed-files.json:323:    "voxdesk-native-audio-engine/src/dsp/echo_canceller.cpp",
+./reports/part0/changed-files.json:324:    "voxdesk-native-audio-engine/src/dsp/gain_control.cpp",
+./reports/part0/changed-files.json:325:    "voxdesk-native-audio-engine/src/dsp/noise_suppressor.cpp",
+./reports/part0/changed-files.json:326:    "voxdesk-native-audio-engine/src/dsp/resampler.cpp",
+./reports/part0/changed-files.json:327:    "voxdesk-native-audio-engine/src/ffi/c_api.cpp",
+./reports/part0/changed-files.json:328:    "voxdesk-native-audio-engine/src/ffi/python_module.cpp",
+./reports/part0/changed-files.json:329:    "voxdesk-native-audio-engine/src/ffi/rust_bindings.rs",
+./reports/part0/changed-files.json:330:    "voxdesk-native-audio-engine/src/main.cpp",
+./reports/part0/changed-files.json:331:    "voxdesk-native-audio-engine/src/memory/lockfree_ring_buffer.cpp",
+./reports/part0/changed-files.json:332:    "voxdesk-native-audio-engine/src/memory/memory_pool.cpp",
+./reports/part0/changed-files.json:333:    "voxdesk-native-audio-engine/src/memory/simd_vectorizer.cpp",
+./reports/part0/changed-files.json:334:    "voxdesk-native-audio-engine/src/utils/error_codes.cpp",
+./reports/part0/changed-files.json:335:    "voxdesk-native-audio-engine/src/utils/native_logger.cpp",
+./reports/part0/changed-files.json:336:    "voxdesk-native-audio-engine/src/utils/performance_profiler.cpp",
+./reports/part0/changed-files.json:337:    "voxdesk-native-audio-engine/src/webrtc/audio_mixer.cpp",
+./reports/part0/changed-files.json:338:    "voxdesk-native-audio-engine/src/webrtc/jitter_buffer.cpp",
+./reports/part0/changed-files.json:339:    "voxdesk-native-audio-engine/src/webrtc/spatial_audio.cpp",
+./reports/part0/changed-files.json:340:    "voxdesk-native-audio-engine/src/webrtc/stream_interceptor.cpp",
+./reports/part0/changed-files.json:341:    "voxdesk-native-audio-engine/tests/CMakeLists.txt",
+./reports/part0/changed-files.json:342:    "voxdesk-native-audio-engine/tests/benchmark_latency.cpp",
+./reports/part0/changed-files.json:343:    "voxdesk-native-audio-engine/tests/test_dsp_pipeline.cpp",
+./reports/part0/changed-files.json:344:    "voxdesk-native-audio-engine/tests/test_lockfree_buffer.cpp",
+./reports/part0/changed-files.json:345:    "voxdesk-native-audio-engine/tests/test_opus_roundtrip.cpp",
+./reports/part0/changed-files.json:346:    "voxdesk-native-audio-engine/third_party/googletest/README.md",
+./reports/part0/changed-files.json:347:    "voxdesk-native-audio-engine/third_party/opus/README.md",
+./reports/part0/changed-files.json:348:    "voxdesk-native-audio-engine/third_party/pybind11/README.md",
+./reports/part0/changed-files.json:349:    "voxdesk-native-audio-engine/third_party/rnnoise/README.md",
+./reports/part0/changed-files.json:350:    "voxdesk-native-audio-engine/third_party/speexdsp/README.md"
+./reports/part0/references.log:1:$ grep -rEn "realtime-engine|voxdesk-concurrency-engine|voxdesk-native-audio-engine" . --include=* -l | grep -v docs/archive
+./reports/part0/task-commits.log:5: delete mode 100644 voxdesk-call/realtime-engine/README.md
+./reports/part0/task-commits.log:6: delete mode 100644 voxdesk-call/realtime-engine/go-engine/Dockerfile
+./reports/part0/task-commits.log:7: delete mode 100644 voxdesk-call/realtime-engine/go-engine/cmd/server/main.go
+./reports/part0/task-commits.log:8: delete mode 100644 voxdesk-call/realtime-engine/go-engine/go.mod
+./reports/part0/task-commits.log:9: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/auth/jwt.go
+./reports/part0/task-commits.log:10: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/auth/middleware.go
+./reports/part0/task-commits.log:11: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/auth/permissions.go
+./reports/part0/task-commits.log:12: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/auth/validator.go
+./reports/part0/task-commits.log:13: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/concurrency/engine.go
+./reports/part0/task-commits.log:14: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/concurrency/limiter.go
+./reports/part0/task-commits.log:15: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/concurrency/pool.go
+./reports/part0/task-commits.log:16: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/concurrency/queue.go
+./reports/part0/task-commits.log:17: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/concurrency/scheduler.go
+./reports/part0/task-commits.log:18: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/concurrency/worker.go
+./reports/part0/task-commits.log:19: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/config/config.go
+./reports/part0/task-commits.log:20: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/config/loader.go
+./reports/part0/task-commits.log:21: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/config/settings.go
+./reports/part0/task-commits.log:22: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/config/validation.go
+./reports/part0/task-commits.log:23: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/health/checker.go
+./reports/part0/task-commits.log:24: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/health/probe.go
+./reports/part0/task-commits.log:25: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/health/server.go
+./reports/part0/task-commits.log:26: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/livekit/client.go
+./reports/part0/task-commits.log:27: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/livekit/handler.go
+./reports/part0/task-commits.log:28: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/livekit/participant.go
+./reports/part0/task-commits.log:29: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/livekit/room.go
+./reports/part0/task-commits.log:30: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/livekit/track.go
+./reports/part0/task-commits.log:31: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/livekit/webhook.go
+./reports/part0/task-commits.log:32: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/metrics/collector.go
+./reports/part0/task-commits.log:33: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/metrics/prometheus.go
+./reports/part0/task-commits.log:34: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/metrics/reporter.go
+./reports/part0/task-commits.log:35: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/metrics/tracing.go
+./reports/part0/task-commits.log:36: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/stream/broadcaster.go
+./reports/part0/task-commits.log:37: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/stream/buffer.go
+./reports/part0/task-commits.log:38: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/stream/codec.go
+./reports/part0/task-commits.log:39: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/stream/handler.go
+./reports/part0/task-commits.log:40: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/stream/relay.go
+./reports/part0/task-commits.log:41: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/stream/subscriber.go
+./reports/part0/task-commits.log:42: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/voice/call.go
+./reports/part0/task-commits.log:43: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/voice/handler.go
+./reports/part0/task-commits.log:44: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/voice/recording.go
+./reports/part0/task-commits.log:45: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/voice/router.go
+./reports/part0/task-commits.log:46: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/voice/session.go
+./reports/part0/task-commits.log:47: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/voice/signaling.go
+./reports/part0/task-commits.log:48: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/webrtc/handler.go
+./reports/part0/task-commits.log:49: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/webrtc/ice.go
+./reports/part0/task-commits.log:50: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/webrtc/peer.go
+./reports/part0/task-commits.log:51: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/webrtc/sdp.go
+./reports/part0/task-commits.log:52: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/webrtc/signaling.go
+./reports/part0/task-commits.log:53: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/webrtc/track.go
+./reports/part0/task-commits.log:54: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/websocket/broadcaster.go
+./reports/part0/task-commits.log:55: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/websocket/connection.go
+./reports/part0/task-commits.log:56: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/websocket/handler.go
+./reports/part0/task-commits.log:57: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/websocket/manager.go
+./reports/part0/task-commits.log:58: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/websocket/protocol.go
+./reports/part0/task-commits.log:59: delete mode 100644 voxdesk-call/realtime-engine/go-engine/internal/websocket/server.go
+./reports/part0/task-commits.log:60: delete mode 100644 voxdesk-call/realtime-engine/go-engine/pkg/client/client.go
+./reports/part0/task-commits.log:61: delete mode 100644 voxdesk-call/realtime-engine/go-engine/pkg/protocol/protocol.go
+./reports/part0/task-commits.log:62: delete mode 100644 voxdesk-call/realtime-engine/go-engine/pkg/server/server.go
+./reports/part0/task-commits.log:63: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/Cargo.toml
+./reports/part0/task-commits.log:64: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/Dockerfile
+./reports/part0/task-commits.log:65: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/auth/jwt.rs
+./reports/part0/task-commits.log:66: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/auth/middleware.rs
+./reports/part0/task-commits.log:67: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/auth/mod.rs
+./reports/part0/task-commits.log:68: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/auth/permissions.rs
+./reports/part0/task-commits.log:69: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/concurrency/engine.rs
+./reports/part0/task-commits.log:70: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/concurrency/mod.rs
+./reports/part0/task-commits.log:71: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/concurrency/pool.rs
+./reports/part0/task-commits.log:72: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/concurrency/queue.rs
+./reports/part0/task-commits.log:73: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/concurrency/scheduler.rs
+./reports/part0/task-commits.log:74: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/concurrency/worker.rs
+./reports/part0/task-commits.log:75: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/config/loader.rs
+./reports/part0/task-commits.log:76: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/config/mod.rs
+./reports/part0/task-commits.log:77: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/config/settings.rs
+./reports/part0/task-commits.log:78: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/config/validation.rs
+./reports/part0/task-commits.log:79: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/health/checker.rs
+./reports/part0/task-commits.log:80: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/health/mod.rs
+./reports/part0/task-commits.log:81: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/health/probe.rs
+./reports/part0/task-commits.log:82: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/lib.rs
+./reports/part0/task-commits.log:83: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/livekit/client.rs
+./reports/part0/task-commits.log:84: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/livekit/handler.rs
+./reports/part0/task-commits.log:85: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/livekit/mod.rs
+./reports/part0/task-commits.log:86: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/livekit/participant.rs
+./reports/part0/task-commits.log:87: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/livekit/room.rs
+./reports/part0/task-commits.log:88: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/livekit/track.rs
+./reports/part0/task-commits.log:89: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/main.rs
+./reports/part0/task-commits.log:90: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/metrics/collector.rs
+./reports/part0/task-commits.log:91: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/metrics/mod.rs
+./reports/part0/task-commits.log:92: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/metrics/prometheus.rs
+./reports/part0/task-commits.log:93: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/metrics/tracing.rs
+./reports/part0/task-commits.log:94: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/stream/broadcaster.rs
+./reports/part0/task-commits.log:95: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/stream/buffer.rs
+./reports/part0/task-commits.log:96: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/stream/codec.rs
+./reports/part0/task-commits.log:97: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/stream/handler.rs
+./reports/part0/task-commits.log:98: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/stream/mod.rs
+./reports/part0/task-commits.log:99: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/stream/subscriber.rs
+./reports/part0/task-commits.log:100: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/voice/call.rs
+./reports/part0/task-commits.log:101: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/voice/handler.rs
+./reports/part0/task-commits.log:102: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/voice/mod.rs
+./reports/part0/task-commits.log:103: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/voice/router.rs
+./reports/part0/task-commits.log:104: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/voice/session.rs
+./reports/part0/task-commits.log:105: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/voice/signaling.rs
+./reports/part0/task-commits.log:106: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/webrtc/handler.rs
+./reports/part0/task-commits.log:107: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/webrtc/ice.rs
+./reports/part0/task-commits.log:108: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/webrtc/mod.rs
+./reports/part0/task-commits.log:109: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/webrtc/peer.rs
+./reports/part0/task-commits.log:110: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/webrtc/sdp.rs
+./reports/part0/task-commits.log:111: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/webrtc/signaling.rs
+./reports/part0/task-commits.log:112: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/websocket/connection.rs
+./reports/part0/task-commits.log:113: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/websocket/handler.rs
+./reports/part0/task-commits.log:114: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/websocket/manager.rs
+./reports/part0/task-commits.log:115: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/websocket/mod.rs
+./reports/part0/task-commits.log:116: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/websocket/protocol.rs
+./reports/part0/task-commits.log:117: delete mode 100644 voxdesk-call/realtime-engine/rust-engine/src/websocket/server.rs
+./reports/part0/task-commits.log:118: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/Cargo.lock
+./reports/part0/task-commits.log:119: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/Cargo.toml
+./reports/part0/task-commits.log:120: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/Dockerfile
+./reports/part0/task-commits.log:121: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/README.md
+./reports/part0/task-commits.log:122: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/config/default.toml
+./reports/part0/task-commits.log:123: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/config/production.toml
+./reports/part0/task-commits.log:124: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/src/audio/buffer.rs
+./reports/part0/task-commits.log:125: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/src/audio/frame.rs
+./reports/part0/task-commits.log:126: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/src/audio/mod.rs
+./reports/part0/task-commits.log:127: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/src/audio/stream_bridge.rs
+./reports/part0/task-commits.log:128: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/src/config/mod.rs
+./reports/part0/task-commits.log:129: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/src/config/settings.rs
+./reports/part0/task-commits.log:130: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/src/core/metrics.rs
+./reports/part0/task-commits.log:131: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/src/core/mod.rs
+./reports/part0/task-commits.log:132: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/src/core/router.rs
+./reports/part0/task-commits.log:133: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/src/core/state.rs
+./reports/part0/task-commits.log:134: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/src/lib.rs
+./reports/part0/task-commits.log:135: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/src/main.rs
+./reports/part0/task-commits.log:136: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/src/redis/client.rs
+./reports/part0/task-commits.log:137: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/src/redis/mod.rs
+./reports/part0/task-commits.log:138: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/src/redis/pubsub.rs
+./reports/part0/task-commits.log:139: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/src/redis/session_store.rs
+./reports/part0/task-commits.log:140: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/src/signaling/ice.rs
+./reports/part0/task-commits.log:141: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/src/signaling/livekit_client.rs
+./reports/part0/task-commits.log:142: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/src/signaling/mod.rs
+./reports/part0/task-commits.log:143: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/src/signaling/peer.rs
+./reports/part0/task-commits.log:144: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/src/signaling/sdp.rs
+./reports/part0/task-commits.log:145: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/src/tests/integration_tests.rs
+./reports/part0/task-commits.log:146: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/src/tests/mock_livekit.rs
+./reports/part0/task-commits.log:147: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/src/tests/websocket_stress_test.rs
+./reports/part0/task-commits.log:148: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/src/utils/crypto.rs
+./reports/part0/task-commits.log:149: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/src/utils/error.rs
+./reports/part0/task-commits.log:150: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/src/utils/logger.rs
+./reports/part0/task-commits.log:151: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/src/utils/mod.rs
+./reports/part0/task-commits.log:152: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/src/websocket/handler.rs
+./reports/part0/task-commits.log:153: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/src/websocket/manager.rs
+./reports/part0/task-commits.log:154: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/src/websocket/mod.rs
+./reports/part0/task-commits.log:155: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/src/websocket/protocol.rs
+./reports/part0/task-commits.log:156: delete mode 100644 voxdesk-call/voxdesk-concurrency-engine/src/websocket/session.rs
+./reports/part0/task-commits.log:157: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/CMakeLists.txt
+./reports/part0/task-commits.log:158: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/Dockerfile
+./reports/part0/task-commits.log:159: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/README.md
+./reports/part0/task-commits.log:160: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/include/audio_types.h
+./reports/part0/task-commits.log:161: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/include/echo_canceller.h
+./reports/part0/task-commits.log:162: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/include/gain_control.h
+./reports/part0/task-commits.log:163: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/include/jitter_buffer.h
+./reports/part0/task-commits.log:164: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/include/noise_suppressor.h
+./reports/part0/task-commits.log:165: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/include/opus_codec.h
+./reports/part0/task-commits.log:166: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/include/voxdesk_audio.h
+./reports/part0/task-commits.log:167: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/include/webrtc_stream_interceptor.h
+./reports/part0/task-commits.log:168: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/src/codec/frame_validator.cpp
+./reports/part0/task-commits.log:169: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/src/codec/opus_decoder.cpp
+./reports/part0/task-commits.log:170: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/src/codec/opus_encoder.cpp
+./reports/part0/task-commits.log:171: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/src/codec/packet_loss_concealer.cpp
+./reports/part0/task-commits.log:172: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/src/dsp/VAD.cpp
+./reports/part0/task-commits.log:173: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/src/dsp/echo_canceller.cpp
+./reports/part0/task-commits.log:174: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/src/dsp/gain_control.cpp
+./reports/part0/task-commits.log:175: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/src/dsp/noise_suppressor.cpp
+./reports/part0/task-commits.log:176: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/src/dsp/resampler.cpp
+./reports/part0/task-commits.log:177: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/src/ffi/c_api.cpp
+./reports/part0/task-commits.log:178: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/src/ffi/python_module.cpp
+./reports/part0/task-commits.log:179: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/src/ffi/rust_bindings.rs
+./reports/part0/task-commits.log:180: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/src/main.cpp
+./reports/part0/task-commits.log:181: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/src/memory/lockfree_ring_buffer.cpp
+./reports/part0/task-commits.log:182: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/src/memory/memory_pool.cpp
+./reports/part0/task-commits.log:183: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/src/memory/simd_vectorizer.cpp
+./reports/part0/task-commits.log:184: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/src/utils/error_codes.cpp
+./reports/part0/task-commits.log:185: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/src/utils/native_logger.cpp
+./reports/part0/task-commits.log:186: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/src/utils/performance_profiler.cpp
+./reports/part0/task-commits.log:187: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/src/webrtc/audio_mixer.cpp
+./reports/part0/task-commits.log:188: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/src/webrtc/jitter_buffer.cpp
+./reports/part0/task-commits.log:189: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/src/webrtc/spatial_audio.cpp
+./reports/part0/task-commits.log:190: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/src/webrtc/stream_interceptor.cpp
+./reports/part0/task-commits.log:191: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/tests/CMakeLists.txt
+./reports/part0/task-commits.log:192: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/tests/benchmark_latency.cpp
+./reports/part0/task-commits.log:193: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/tests/test_dsp_pipeline.cpp
+./reports/part0/task-commits.log:194: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/tests/test_lockfree_buffer.cpp
+./reports/part0/task-commits.log:195: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/tests/test_opus_roundtrip.cpp
+./reports/part0/task-commits.log:196: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/third_party/googletest/README.md
+./reports/part0/task-commits.log:197: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/third_party/opus/README.md
+./reports/part0/task-commits.log:198: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/third_party/pybind11/README.md
+./reports/part0/task-commits.log:199: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/third_party/rnnoise/README.md
+./reports/part0/task-commits.log:200: delete mode 100644 voxdesk-call/voxdesk-native-audio-engine/third_party/speexdsp/README.md
+./reports/part0-reaudit/before/scripts/verify_no_filler.py:44:    for name in ('realtime-engine', 'voxdesk-concurrency-engine', 'voxdesk-native-audio-engine'):
+./scripts/verify_no_filler.py:44:    for name in ('realtime-engine', 'voxdesk-concurrency-engine', 'voxdesk-native-audio-engine'):
+./scripts/verify_retired_references.py:8:RETIRED = ('realtime-engine', 'voxdesk-concurrency-engine', 'voxdesk-native-audio-engine')

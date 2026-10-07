@@ -1,0 +1,76 @@
+{
+  "collection_status": "PASS",
+  "collection_exit_code": 0,
+  "collection_elapsed_seconds": 2.888,
+  "collection_log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/repair-tail/lane-06/collection.log",
+  "collected": 10,
+  "selected": 10,
+  "chunk_size_max": 5,
+  "chunk_count": 2,
+  "execution_mode": "sequential_child_processes",
+  "executed": 10,
+  "passed": 10,
+  "failed": 0,
+  "errors": 0,
+  "skipped": 0,
+  "not_run": 0,
+  "unconfirmed": 0,
+  "resource_unconfirmed": 0,
+  "unconfirmed_nodeids": [],
+  "resource_termination": false,
+  "full_suite_complete": true,
+  "chunks": [
+    {
+      "chunk": 1,
+      "collected": 5,
+      "submitted_nodeids": [
+        "tests/test_workflow_lead_lifecycle.py::test_update_lead_status_executes_with_history",
+        "tests/test_workflow_lead_lifecycle.py::test_apply_dnc_executes_with_history",
+        "tests/test_workflow_lead_lifecycle.py::test_status_sequence_keeps_continuous_history",
+        "tests/test_workflow_lead_lifecycle.py::test_workflow_cannot_reverse_a_do_not_call",
+        "tests/test_workflow_lead_lifecycle.py::test_workflow_cannot_make_an_illegal_transition"
+      ],
+      "executed_from_explicit_summary": 5,
+      "unconfirmed_count": 0,
+      "counts": {
+        "passed": 5,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "xfailed": 0,
+        "xpassed": 0
+      },
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 6.77,
+      "log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/repair-tail/lane-06/chunk-0001.log",
+      "terminal_summary_present": true
+    },
+    {
+      "chunk": 2,
+      "collected": 5,
+      "submitted_nodeids": [
+        "tests/test_workflow_lead_lifecycle.py::test_unknown_status_string_fails_the_step",
+        "tests/test_workflow_lead_lifecycle.py::test_invalid_and_foreign_lead_ids_fail_closed",
+        "tests/test_workflow_lead_lifecycle.py::test_missing_lead_id_fails_closed",
+        "tests/test_workflow_lead_lifecycle.py::test_execution_idempotency_is_unchanged",
+        "tests/test_workflow_lead_lifecycle.py::test_workflow_service_tenant_isolation_is_unchanged"
+      ],
+      "executed_from_explicit_summary": 5,
+      "unconfirmed_count": 0,
+      "counts": {
+        "passed": 5,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "xfailed": 0,
+        "xpassed": 0
+      },
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 6.525,
+      "log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/repair-tail/lane-06/chunk-0002.log",
+      "terminal_summary_present": true
+    }
+  ]
+}

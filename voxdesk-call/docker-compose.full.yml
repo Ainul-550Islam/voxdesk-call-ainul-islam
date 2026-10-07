@@ -1,6 +1,4 @@
-# Full Production Compose — VoxDesk — 200 API files + Rust Concurrency Engine + C++ Native Audio + Go Realtime Engine
-# Includes: Python API (9041 routes), Rust Concurrency Engine (10-25MB), C++ Native Audio (5-15MB), Go Realtime Engine (10-25MB)
-# All done — docker-compose up --build
+# Development composition; production deployment uses docker-compose.prod.yml.
 
 services:
   db:
@@ -44,83 +42,6 @@ services:
       interval: 10s
       retries: 5
 
-  # Rust Concurrency Engine — 10-25MB, 38K lines, 1000+ concurrent WS, WebRTC/LiveKit signaling
-  concurrency-engine:
-    build:
-      context: ./voxdesk-concurrency-engine
-      dockerfile: Dockerfile
-    ports: ["8080:8080", "8082:9090", "8083:8081"]
-    env_file: .env
-    depends_on:
-      redis: {condition: service_healthy}
-      db: {condition: service_healthy}
-    environment:
-      - RUST_LOG=info
-      - APP_ENV=production
-      - REDIS_URL=redis://redis:6379
-      - LIVEKIT_HOST=${LIVEKIT_HOST:-http://livekit:7880}
-      - LIVEKIT_WS_URL=${LIVEKIT_WS_URL:-ws://livekit:7880}
-    command: ["voxdesk-concurrency-engine", "--config", "config/production.toml"]
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
-      interval: 10s
-      retries: 5
-    restart: unless-stopped
-
-  # C++ Native Audio Engine — 5-15MB, 36K lines, noise reduction, voice packet decoding, WebRTC media
-  native-audio-engine:
-    build:
-      context: ./voxdesk-native-audio-engine
-      dockerfile: Dockerfile
-    ports: ["8084:8080"]
-    depends_on:
-      - concurrency-engine
-    environment:
-      - RUST_LOG=info
-    command: ["voxdesk_audio_cli", "--benchmark"]
-    healthcheck:
-      test: ["CMD", "voxdesk_audio_cli", "--health"]
-      interval: 30s
-      retries: 3
-    restart: unless-stopped
-
-  # Go Realtime Engine — 10-25MB, 55K lines, high-speed data stream
-  go-realtime-engine:
-    build:
-      context: ./realtime-engine/go-engine
-      dockerfile: Dockerfile
-    ports: ["8085:8080", "8086:9090"]
-    env_file: .env
-    depends_on:
-      redis: {condition: service_healthy}
-    environment:
-      - REDIS_URL=redis://redis:6379
-    command: ["./engine", "--config", "config/default.toml"]
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
-      interval: 10s
-      retries: 5
-    restart: unless-stopped
-
-  # Rust Realtime Engine — 10-25MB, 52K lines
-  rust-realtime-engine:
-    build:
-      context: ./realtime-engine/rust-engine
-      dockerfile: Dockerfile
-    ports: ["8087:8080", "8088:9090"]
-    env_file: .env
-    depends_on:
-      redis: {condition: service_healthy}
-    environment:
-      - RUST_LOG=info
-      - REDIS_URL=redis://redis:6379
-    command: ["voxdesk-realtime-engine", "--config", "config/default.toml"]
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
-      interval: 10s
-      retries: 5
-    restart: unless-stopped
-
   scheduler:
     build: .
     env_file: .env
@@ -148,7 +69,7 @@ services:
     image: livekit/livekit-server:latest
     ports: ["7880:7880", "7881:7881", "7882:7882/udp"]
     environment:
-      - LIVEKIT_KEYS=${LIVEKIT_API_KEY:-devkey}: ${LIVEKIT_API_SECRET:-secret}
+      LIVEKIT_KEYS: "${LIVEKIT_API_KEY:-devkey}: ${LIVEKIT_API_SECRET:-secret}"
     command: --dev
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:7880/"]

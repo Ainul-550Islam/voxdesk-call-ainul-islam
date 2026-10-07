@@ -1,13 +1,7 @@
 """Batch 07: durable claim, ack, cancel, priority, tenant/env isolation.
 Tests each target line-by-line; nothing is skipped."""
-import uuid
-from datetime import datetime, timedelta, timezone
-import pytest
-from sqlalchemy import func, select
-from app.db.models import DurableJob, Environment
-from app.jobs.queue import enqueue, claim_next, ack, fail, cancel, retry_job, get
+from app.jobs.queue import enqueue, claim_next, ack, fail, cancel
 from app.jobs.types import JobPriority, FailureClass
-from tests.conftest import make_tenant
 
 async def test_enqueue_and_claim(db, tenant_a):
     job, created = await enqueue(db, tenant_id=tenant_a.id, job_type="automation", idempotency_key="k1")

@@ -1,10 +1,70 @@
-.gradient-blue-violet { background:linear-gradient(135deg,#3b82f6 0%,#8b5cf6 100%); }
-.gradient-mesh { background:radial-gradient(at 40% 20%,rgba(59,130,246,0.15) 0px,transparent 50%), radial-gradient(at 80% 0%,rgba(139,92,246,0.15) 0px,transparent 50%), radial-gradient(at 0% 50%,rgba(6,182,214,0.1) 0px,transparent 50%); }
-.glass { background:rgba(255,255,255,0.05); backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,0.1); }
-.glow-blue { box-shadow:0 0 40px rgba(59,130,246,0.2); }
-.glow-violet { box-shadow:0 0 40px rgba(139,92,246,0.2); }
-.grid-pattern { background-image:linear-gradient(to right,rgba(255,255,255,0.03) 1px,transparent 1px), linear-gradient(to bottom,rgba(255,255,255,0.03) 1px,transparent 1px); background-size:4rem 4rem; }
-@keyframes float { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-10px);} }
-@keyframes pulse-glow { 0%,100%{opacity:0.5;} 50%{opacity:1;} }
-.animate-float { animation:float 6s ease-in-out infinite; }
-.animate-pulse-glow { animation:pulse-glow 2s ease-in-out infinite; }
+/**
+ * dashboard/src/styles/effects.css
+ * Visual effects, gradients, ambient glows, grid patterns, and keyframe animations
+ */
+.gradient-blue-violet {
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+}
+.gradient-violet-cyan {
+  background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
+}
+.gradient-emerald-cyan {
+  background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+}
+.gradient-mesh {
+  background:
+    radial-gradient(at 40% 20%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+    radial-gradient(at 80% 0%, rgba(139, 92, 246, 0.15) 0px, transparent 50%),
+    radial-gradient(at 0% 50%, rgba(6, 182, 214, 0.1) 0px, transparent 50%);
+}
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.glass-elevated {
+  background: rgba(15, 17, 30, 0.72);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+}
+.glow-blue {
+  box-shadow: 0 0 40px rgba(59, 130, 246, 0.22);
+}
+.glow-violet {
+  box-shadow: 0 0 40px rgba(139, 92, 246, 0.22);
+}
+.glow-emerald {
+  box-shadow: 0 0 40px rgba(16, 185, 129, 0.2);
+}
+.grid-pattern {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 4rem 4rem;
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+.animate-shimmer {
+  background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2.5s infinite;
+}

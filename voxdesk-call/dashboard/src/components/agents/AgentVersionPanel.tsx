@@ -1,1100 +1,185 @@
-import React, { useEffect, useState } from 'react';
-import { getVersions } from '../../api/agent-builder';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  getVersions,
+  getVersionSnapshot,
+  rollbackVersion,
+} from '../../api/agent-builder';
 import type { Version } from '../../types/agent-builder';
-export function AgentVersionPanel({ agentId }: { agentId: string }){
-  const [versions,setVersions]=useState<Version[]>([]);
-  const [loading,setLoading]=useState(true);
-  useEffect(()=>{ (async()=>{ try{ const v=await getVersions(agentId); setVersions(v);} catch{} finally{ setLoading(false);} })(); },[agentId]);
-  if(loading) return <div className="h-32 animate-pulse rounded-xl bg-white/5" />;
+
+export function AgentVersionPanel({ agentId }: { agentId: string }) {
+  const [versions, setVersions] = useState<Version[]>([]);
+  const [selectedSnapshot, setSelectedSnapshot] = useState<Version | null>(
+    null
+  );
+  const [loading, setLoading] = useState(true);
+  const [busyVersion, setBusyVersion] = useState<number | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const loadVersions = useCallback(async () => {
+    if (!agentId) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    try {
+      const v = await getVersions(agentId);
+      setVersions(v);
+    } catch {
+      setVersions([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [agentId]);
+
+  useEffect(() => {
+    loadVersions();
+  }, [loadVersions]);
+
+  const handleInspect = async (ver: number) => {
+    try {
+      const snap = await getVersionSnapshot(agentId, ver);
+      setSelectedSnapshot(snap);
+    } catch {
+      const local = versions.find((v) => v.version === ver) || null;
+      setSelectedSnapshot(local);
+    }
+  };
+
+  const handleRollback = async (ver: number) => {
+    setBusyVersion(ver);
+    setNotice(null);
+    try {
+      const minted = await rollbackVersion(
+        agentId,
+        ver,
+        `Rolled back to v${ver} from Builder Version Panel`
+      );
+      setNotice(`Rolled back to v${ver} (active version is now v${minted.version}).`);
+      await loadVersions();
+    } catch (e: any) {
+      setNotice(e?.message || 'Rollback failed');
+    } finally {
+      setBusyVersion(null);
+    }
+  };
+
+  if (loading) {
+    return <div className="h-32 animate-pulse rounded-xl bg-white/5" />;
+  }
+
   return (
-    <div className="space-y-4"><h2 className="text-sm font-medium text-white">Versions</h2><p className="text-xs text-white/50">Backend transactions, no client-only history.</p>
-      <div className="space-y-2">{versions.length===0?<div className="text-xs text-white/40">No versions yet — backend empty, real data only.</div>:versions.map(v=>(<div key={v.id} className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3"><div><div className="text-sm text-white">v{v.version} {v.is_current && <span className="ml-2 rounded-full bg-white px-2 py-0.5 text-[10px] text-black">Current</span>}</div><div className="text-xs text-white/40">{new Date(v.created_at).toLocaleString()} {v.author?`• ${v.author}`:''}</div><div className="text-xs text-white/50">{v.changes}</div></div><div className="flex gap-2"><button className="text-xs text-white/60 hover:text-white">View</button><button className="text-xs text-white/60 hover:text-white">Compare</button><button className="text-xs text-white/60 hover:text-white">Restore</button></div></div>))}</div>
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-sm font-medium text-white">
+          Immutable Version History ({versions.length})
+        </h2>
+        <p className="text-xs text-white/50">
+          PostgreSQL append-only version snapshots. Inspect any snapshot or
+          roll back to mint a new active release.
+        </p>
+      </div>
+
+      {notice && (
+        <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-xs text-blue-200">
+          {notice}
+        </div>
+      )}
+
+      <div className="space-y-2">
+        {versions.length === 0 ? (
+          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-6 text-center text-xs text-white/40">
+            No published versions yet — publish this draft to mint v1.
+          </div>
+        ) : (
+          versions.map((v) => (
+            <div
+              key={v.id || `v-${v.version}`}
+              className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-3.5"
+            >
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2 text-sm text-white font-medium">
+                  <span>v{v.version}</span>
+                  {v.is_current && (
+                    <span className="rounded-full bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 text-[10px] text-emerald-300">
+                      Active
+                    </span>
+                  )}
+                  {v.is_rollback && (
+                    <span className="rounded-full bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 text-[10px] text-amber-300">
+                      Rollback
+                    </span>
+                  )}
+                  {v.published_environment && (
+                    <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-white/70">
+                      {v.published_environment}
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs text-white/40">
+                  {new Date(v.created_at).toLocaleString()}
+                  {v.author ? ` • ${v.author}` : ''}
+                </div>
+                <div className="text-xs text-white/60">
+                  {v.changes || 'Published configuration snapshot'}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleInspect(v.version)}
+                  className="rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-white/80 hover:text-white hover:bg-white/10"
+                >
+                  Inspect
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.location.href = `/dashboard/agents/${encodeURIComponent(
+                      agentId
+                    )}/versions/${v.version}`;
+                  }}
+                  className="rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-white/80 hover:text-white hover:bg-white/10"
+                >
+                  Full View
+                </button>
+                {!v.is_current && (
+                  <button
+                    type="button"
+                    disabled={busyVersion === v.version}
+                    onClick={() => handleRollback(v.version)}
+                    className="rounded-lg border border-blue-500/30 bg-blue-500/15 px-2.5 py-1 text-xs text-blue-200 hover:bg-blue-500/25 disabled:opacity-50"
+                  >
+                    {busyVersion === v.version ? 'Restoring...' : 'Rollback'}
+                  </button>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {selectedSnapshot && (
+        <div className="rounded-xl border border-white/10 bg-black/70 p-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-white">
+              Snapshot v{selectedSnapshot.version} (`config_snapshot`)
+            </span>
+            <button
+              type="button"
+              onClick={() => setSelectedSnapshot(null)}
+              className="text-xs text-white/50 hover:text-white"
+            >
+              Close
+            </button>
+          </div>
+          <pre className="max-h-64 overflow-auto rounded-lg bg-black p-3 text-[11px] text-emerald-200 font-mono">
+            {JSON.stringify(selectedSnapshot.config_snapshot || {}, null, 2)}
+          </pre>
+        </div>
+      )}
     </div>
   );
 }
+
 export default AgentVersionPanel;
-// AgentVersionPanel.tsx extended line 16 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 17 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 18 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 19 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 20 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 21 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 22 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 23 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 24 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 25 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 26 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 27 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 28 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 29 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 30 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 31 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 32 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 33 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 34 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 35 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 36 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 37 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 38 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 39 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 40 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 41 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 42 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 43 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 44 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 45 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 46 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 47 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 48 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 49 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 50 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 51 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 52 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 53 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 54 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 55 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 56 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 57 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 58 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 59 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 60 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 61 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 62 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 63 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 64 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 65 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 66 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 67 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 68 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 69 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 70 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 71 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 72 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 73 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 74 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 75 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 76 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 77 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 78 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 79 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 80 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 81 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 82 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 83 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 84 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 85 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 86 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 87 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 88 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 89 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 90 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 91 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 92 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 93 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 94 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 95 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 96 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 97 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 98 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 99 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 100 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 101 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 102 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 103 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 104 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 105 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 106 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 107 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 108 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 109 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 110 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 111 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 112 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 113 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 114 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 115 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 116 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 117 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 118 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 119 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 120 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 121 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 122 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 123 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 124 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 125 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 126 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 127 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 128 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 129 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 130 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 131 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 132 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 133 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 134 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 135 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 136 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 137 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 138 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 139 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 140 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 141 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 142 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 143 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 144 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 145 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 146 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 147 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 148 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 149 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 150 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 151 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 152 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 153 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 154 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 155 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 156 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 157 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 158 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 159 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 160 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 161 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 162 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 163 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 164 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 165 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 166 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 167 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 168 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 169 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 170 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 171 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 172 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 173 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 174 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 175 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 176 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 177 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 178 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 179 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 180 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 181 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 182 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 183 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 184 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 185 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 186 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 187 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 188 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 189 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 190 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 191 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 192 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 193 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 194 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 195 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 196 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 197 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 198 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 199 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 200 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 201 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 202 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 203 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 204 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 205 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 206 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 207 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 208 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 209 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 210 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 211 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 212 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 213 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 214 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 215 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 216 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 217 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 218 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 219 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 220 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 221 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 222 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 223 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 224 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 225 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 226 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 227 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 228 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 229 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 230 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 231 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 232 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 233 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 234 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 235 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 236 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 237 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 238 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 239 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 240 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 241 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 242 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 243 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 244 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 245 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 246 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 247 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 248 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 249 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 250 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 251 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 252 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 253 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 254 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 255 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 256 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 257 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 258 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 259 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 260 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 261 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 262 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 263 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 264 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 265 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 266 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 267 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 268 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 269 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 270 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 271 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 272 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 273 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 274 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 275 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 276 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 277 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 278 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 279 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 280 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 281 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 282 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 283 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 284 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 285 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 286 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 287 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 288 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 289 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 290 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 291 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 292 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 293 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 294 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 295 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 296 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 297 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 298 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 299 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 300 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 301 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 302 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 303 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 304 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 305 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 306 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 307 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 308 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 309 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 310 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 311 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 312 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 313 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 314 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 315 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 316 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 317 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 318 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 319 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 320 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 321 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 322 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 323 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 324 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 325 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 326 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 327 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 328 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 329 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 330 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 331 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 332 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 333 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 334 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 335 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 336 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 337 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 338 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 339 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 340 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 341 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 342 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 343 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 344 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 345 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 346 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 347 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 348 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 349 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 350 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 351 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 352 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 353 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 354 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 355 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 356 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 357 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 358 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 359 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 360 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 361 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 362 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 363 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 364 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 365 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 366 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 367 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 368 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 369 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 370 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 371 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 372 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 373 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 374 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 375 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 376 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 377 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 378 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 379 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 380 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 381 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 382 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 383 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 384 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 385 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 386 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 387 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 388 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 389 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 390 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 391 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 392 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 393 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 394 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 395 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 396 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 397 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 398 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 399 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 400 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 401 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 402 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 403 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 404 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 405 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 406 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 407 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 408 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 409 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 410 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 411 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 412 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 413 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 414 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 415 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 416 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 417 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 418 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 419 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 420 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 421 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 422 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 423 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 424 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 425 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 426 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 427 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 428 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 429 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 430 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 431 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 432 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 433 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 434 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 435 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 436 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 437 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 438 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 439 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 440 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 441 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 442 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 443 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 444 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 445 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 446 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 447 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 448 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 449 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 450 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 451 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 452 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 453 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 454 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 455 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 456 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 457 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 458 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 459 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 460 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 461 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 462 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 463 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 464 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 465 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 466 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 467 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 468 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 469 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 470 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 471 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 472 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 473 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 474 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 475 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 476 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 477 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 478 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 479 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 480 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 481 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 482 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 483 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 484 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 485 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 486 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 487 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 488 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 489 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 490 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 491 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 492 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 493 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 494 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 495 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 496 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 497 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 498 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 499 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 500 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 501 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 502 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 503 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 504 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 505 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 506 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 507 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 508 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 509 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 510 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 511 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 512 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 513 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 514 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 515 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 516 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 517 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 518 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 519 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 520 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 521 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 522 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 523 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 524 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 525 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 526 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 527 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 528 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 529 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 530 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 531 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 532 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 533 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 534 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 535 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 536 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 537 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 538 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 539 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 540 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 541 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 542 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 543 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 544 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 545 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 546 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 547 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 548 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 549 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 550 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 551 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 552 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 553 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 554 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 555 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 556 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 557 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 558 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 559 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 560 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 561 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 562 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 563 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 564 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 565 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 566 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 567 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 568 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 569 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 570 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 571 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 572 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 573 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 574 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 575 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 576 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 577 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 578 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 579 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 580 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 581 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 582 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 583 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 584 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 585 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 586 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 587 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 588 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 589 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 590 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 591 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 592 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 593 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 594 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 595 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 596 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 597 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 598 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 599 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 600 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 601 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 602 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 603 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 604 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 605 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 606 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 607 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 608 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 609 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 610 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 611 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 612 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 613 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 614 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 615 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 616 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 617 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 618 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 619 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 620 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 621 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 622 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 623 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 624 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 625 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 626 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 627 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 628 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 629 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 630 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 631 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 632 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 633 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 634 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 635 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 636 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 637 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 638 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 639 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 640 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 641 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 642 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 643 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 644 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 645 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 646 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 647 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 648 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 649 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 650 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 651 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 652 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 653 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 654 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 655 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 656 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 657 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 658 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 659 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 660 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 661 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 662 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 663 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 664 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 665 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 666 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 667 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 668 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 669 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 670 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 671 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 672 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 673 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 674 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 675 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 676 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 677 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 678 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 679 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 680 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 681 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 682 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 683 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 684 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 685 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 686 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 687 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 688 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 689 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 690 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 691 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 692 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 693 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 694 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 695 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 696 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 697 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 698 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 699 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 700 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 701 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 702 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 703 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 704 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 705 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 706 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 707 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 708 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 709 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 710 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 711 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 712 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 713 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 714 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 715 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 716 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 717 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 718 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 719 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 720 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 721 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 722 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 723 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 724 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 725 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 726 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 727 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 728 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 729 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 730 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 731 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 732 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 733 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 734 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 735 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 736 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 737 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 738 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 739 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 740 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 741 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 742 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 743 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 744 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 745 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 746 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 747 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 748 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 749 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 750 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 751 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 752 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 753 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 754 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 755 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 756 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 757 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 758 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 759 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 760 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 761 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 762 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 763 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 764 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 765 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 766 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 767 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 768 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 769 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 770 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 771 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 772 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 773 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 774 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 775 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 776 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 777 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 778 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 779 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 780 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 781 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 782 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 783 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 784 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 785 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 786 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 787 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 788 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 789 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 790 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 791 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 792 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 793 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 794 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 795 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 796 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 797 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 798 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 799 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 800 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 801 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 802 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 803 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 804 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 805 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 806 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 807 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 808 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 809 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 810 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 811 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 812 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 813 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 814 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 815 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 816 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 817 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 818 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 819 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 820 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 821 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 822 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 823 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 824 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 825 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 826 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 827 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 828 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 829 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 830 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 831 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 832 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 833 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 834 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 835 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 836 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 837 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 838 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 839 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 840 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 841 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 842 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 843 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 844 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 845 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 846 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 847 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 848 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 849 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 850 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 851 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 852 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 853 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 854 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 855 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 856 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 857 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 858 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 859 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 860 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 861 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 862 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 863 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 864 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 865 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 866 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 867 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 868 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 869 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 870 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 871 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 872 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 873 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 874 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 875 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 876 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 877 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 878 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 879 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 880 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 881 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 882 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 883 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 884 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 885 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 886 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 887 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 888 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 889 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 890 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 891 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 892 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 893 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 894 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 895 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 896 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 897 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 898 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 899 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 900 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 901 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 902 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 903 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 904 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 905 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 906 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 907 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 908 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 909 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 910 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 911 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 912 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 913 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 914 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 915 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 916 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 917 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 918 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 919 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 920 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 921 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 922 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 923 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 924 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 925 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 926 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 927 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 928 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 929 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 930 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 931 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 932 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 933 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 934 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 935 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 936 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 937 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 938 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 939 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 940 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 941 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 942 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 943 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 944 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 945 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 946 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 947 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 948 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 949 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 950 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 951 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 952 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 953 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 954 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 955 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 956 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 957 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 958 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 959 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 960 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 961 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 962 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 963 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 964 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 965 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 966 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 967 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 968 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 969 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 970 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 971 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 972 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 973 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 974 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 975 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 976 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 977 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 978 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 979 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 980 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 981 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 982 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 983 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 984 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 985 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 986 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 987 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 988 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 989 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 990 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 991 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 992 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 993 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 994 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 995 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 996 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 997 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 998 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 999 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1000 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1001 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1002 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1003 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1004 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1005 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1006 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1007 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1008 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1009 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1010 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1011 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1012 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1013 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1014 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1015 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1016 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1017 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1018 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1019 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1020 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1021 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1022 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1023 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1024 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1025 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1026 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1027 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1028 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1029 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1030 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1031 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1032 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1033 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1034 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1035 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1036 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1037 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1038 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1039 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1040 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1041 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1042 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1043 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1044 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1045 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1046 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1047 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1048 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1049 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1050 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1051 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1052 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1053 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1054 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1055 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1056 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1057 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1058 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1059 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1060 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1061 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1062 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1063 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1064 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1065 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1066 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1067 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1068 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1069 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1070 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1071 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1072 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1073 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1074 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1075 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1076 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1077 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1078 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1079 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1080 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1081 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1082 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1083 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1084 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1085 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1086 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1087 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1088 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1089 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1090 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1091 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1092 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1093 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1094 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1095 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1096 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1097 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1098 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1099 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.
-// AgentVersionPanel.tsx extended line 1100 — production UI: GlassCard, accessibility, real backend, no fake, loading/empty/error, tenant scoped.

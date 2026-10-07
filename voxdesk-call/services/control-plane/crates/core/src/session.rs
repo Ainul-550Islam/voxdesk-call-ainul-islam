@@ -29,6 +29,7 @@ pub enum CallStatus {
     Failed,
     NoAnswer,
     Transferred,
+    Cancelled,
 }
 
 /// Mirrors `app.db.models.TransferState`.
@@ -54,6 +55,7 @@ pub fn allowed_transitions(status: CallStatus) -> &'static [CallStatus] {
             CallStatus::InProgress,
             CallStatus::NoAnswer,
             CallStatus::Failed,
+            CallStatus::Cancelled,
             CallStatus::Completed,
         ],
         CallStatus::InProgress => &[
@@ -63,7 +65,10 @@ pub fn allowed_transitions(status: CallStatus) -> &'static [CallStatus] {
         ],
         CallStatus::Transferred => &[CallStatus::Completed, CallStatus::Failed],
         // Terminal.
-        CallStatus::Completed | CallStatus::Failed | CallStatus::NoAnswer => &[],
+        CallStatus::Completed
+        | CallStatus::Failed
+        | CallStatus::NoAnswer
+        | CallStatus::Cancelled => &[],
     }
 }
 
@@ -71,7 +76,7 @@ pub fn allowed_transitions(status: CallStatus) -> &'static [CallStatus] {
 pub fn is_terminal(status: CallStatus) -> bool {
     matches!(
         status,
-        CallStatus::Completed | CallStatus::Failed | CallStatus::NoAnswer
+        CallStatus::Completed | CallStatus::Failed | CallStatus::NoAnswer | CallStatus::Cancelled
     )
 }
 
@@ -444,6 +449,7 @@ mod tests {
             CallStatus::Completed,
             CallStatus::Failed,
             CallStatus::NoAnswer,
+            CallStatus::Cancelled,
         ] {
             assert!(is_terminal(terminal));
             assert!(allowed_transitions(terminal).is_empty());
@@ -685,12 +691,13 @@ mod tests {
     /// `call_state.provider status map` — never report TRANSFERRED; the only
     /// way to reach TRANSFERRED is `on_redirect_ok`, mirroring the Python
     /// transfer service.
-    const PROVIDER_STATUSES: [CallStatus; 5] = [
+    const PROVIDER_STATUSES: [CallStatus; 6] = [
         CallStatus::Ringing,
         CallStatus::InProgress,
         CallStatus::Completed,
         CallStatus::Failed,
         CallStatus::NoAnswer,
+        CallStatus::Cancelled,
     ];
 
     #[test]
@@ -702,7 +709,7 @@ mod tests {
             for _step in 0..80 {
                 match rng.below(7) {
                     0 | 1 => {
-                        let target = PROVIDER_STATUSES[rng.below(5)];
+                        let target = PROVIDER_STATUSES[rng.below(PROVIDER_STATUSES.len() as u64)];
                         let before = s.status;
                         let r = s.apply_status(target);
                         if r.applied {

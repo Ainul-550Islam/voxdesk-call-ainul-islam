@@ -3,7 +3,7 @@
 ## Scope and evidence
 
 - Renewed mandatory targets: **30**; present before edits: **30/30**; re-read after edits: **30/30**; skipped targets: **0**.
-- This is backend-only. No dashboard, React, JSX, TSX, or frontend functionality was changed.
+- This inventory is the backend-only 30-target subreview; it does not account for the separate Prompt 7 dashboard integration. The overall Prompt 7 report records that UI work and its tests.
 - The Lumay product page was reviewed on 2026-09-28 as vendor marketing only; it is not independent technical evidence, parity evidence, or a verification of live behavior.
 - Source review does not certify production reachability, a deployed service, legal/regulatory compliance, or certification.
 - The repository contains **702** Python modules under `app/`. The table below covers the renewed Prompt 7 integration/dependency/runtime scope; the remaining list is an inventory of paths not covered by this renewed target review, not a defect list.
@@ -16,7 +16,7 @@
 | 1 | `app/main.py` | Reviewed; health/dependency/deployment routes remain mounted and startup configuration validation is retained. |
 | 2 | `app/agent/stt.py` | Reviewed; typed fail-fast provider configuration and pinned Deepgram/Pipecat surface are retained. |
 | 3 | `app/agent/stt_stream.py` | Reviewed; provider-neutral streaming contract, cancellation and typed failures are retained. |
-| 4 | `app/providers/compatibility.py` | Reviewed; installed/configured/capable are separate from reachability/authentication. |
+| 4 | `app/providers/compatibility.py` | Reviewed; the health inventory is import-free; installed/configured are separate from API-surface capability, reachability, and authentication. Unchecked capability is reported as unknown, not success. |
 | 5 | `app/providers/errors.py` | Reviewed; typed compatibility and dependency errors are available. |
 | 6 | `app/core/config_validation.py` | Reviewed; secret-safe runtime validation includes adapters, prices, and provider SDK capability checks. |
 | 7 | `app/core/dependency_health.py` | Reviewed; health response reports probe/config state without claiming provider authentication or worker presence. |
@@ -39,7 +39,7 @@
 | 24 | `app/api/deployment_runtime_routes.py` | Reviewed; tenant/environment scoped readiness, queue apply, status, and persisted-observation verification endpoints. |
 | 25 | `requirements.txt` | Reviewed; 42 pinned distributions; clean install succeeded in current Python 3.13.14 sandbox. |
 | 26 | `pyproject.toml` | Reviewed; Ruff and mypy tool configuration; pytest configuration canonically remains in pytest.ini. |
-| 27 | `alembic/versions/0036_runtime_deployment_observability.py` | Reviewed; revision ID matches filename; parent is 0036_durable_call_outcomes; single Alembic head confirmed. |
+| 27 | `alembic/versions/0036_runtime_deployment_observability.py` | Reviewed; canonical target filename is present; revision ID is the 30-character `0036_runtime_deployment_observ` to fit Alembic's default version column; parent is `0036_durable_call_outcomes`. |
 | 28 | `tests/deployment/test_runtime_adapters.py` | Reviewed and extended for malformed digest-suffix and wrong-repository rejection. |
 | 29 | `tests/deployment/test_readiness_verification.py` | Reviewed; readiness and freshness/scope/state-transition checks retained. |
 | 30 | `tests/test_backend_runtime_closure.py` | Reviewed; route, job-context, capability, secret-safety, and no-fake-verification checks retained. |
@@ -48,7 +48,7 @@
 
 - Dependency installation is canonical in `requirements.txt`; 42 pinned distributions were imported and version-matched by `scripts/verify_dependencies.py`. `pip check` reported no broken requirements.
 - `pyproject.toml` is the tool manifest; `pytest.ini` remains the canonical asyncio/test discovery configuration and was not substituted for it.
-- The migration identity does not have the alleged 0037/0036 filename-revision mismatch: filename and `revision` are both `0036_runtime_deployment_observability`; its parent is the distinct existing `0036_durable_call_outcomes` revision. `alembic heads` reports this as the single head. No duplicate migration was added and no revision identity was rewritten.
+- The canonical target file is `0036_runtime_deployment_observability.py`; its current `revision` is the shorter `0036_runtime_deployment_observ` because Alembic's default `version_num` is `VARCHAR(32)`. The parent is the distinct existing `0036_durable_call_outcomes` revision. A descriptive filename need not equal the revision ID. `alembic heads` reports one head; no duplicate migration was added.
 - Offline SQL generation for the target edge `0036_durable_call_outcomes:head` succeeded and includes RLS/FORCE RLS and the append-only trigger. Whole-chain offline generation is blocked by legacy data-dependent migration `0017_organization_environment_foundation` (`bind.execute` returns `None` in offline mode); this does not establish a live migration result.
 - `pytest.ini` is noted here as the canonical test configuration but is not one of the renewed 30 targets.
 
@@ -929,3 +929,11 @@
 
 - `/home/user/Prompt7_Backend_Files.zip` is regenerated from exactly the 30 mandatory target paths.
 - The full backend-module inventory is this document; all files outside the required target set remain unreviewed in this renewal unless separately recorded in prior review notes.
+
+## Continuation status as of 2026-10-05
+
+- The exact target accounting above remains **30 present / 30 reread / 0 skipped**. It is a backend/runtime subreview, not a claim that the remaining 666 `app/` modules or all deployment environments were audited.
+- The full `tests/test_backend_runtime_closure.py` file now passes **9/9** after removing provider SDK imports from the health/inventory `capability_matrix()`. Installed/configured state is reported separately; API capability is `null` when it has not been checked, and reachability/authentication remain `not_checked`. The earlier combined-file timeout is superseded by this later full-file run.
+- The two newly identified 33-character Alembic IDs are now canonicalized to `0038_agent_chat_conductor` and `0045_request_idem_receipts` (both fit the default `VARCHAR(32)`). The compatibility helper also maps ten previously shortened overlength IDs (0017, 0018, 0019, 0020, 0024, 0031, 0032, 0034, 0035 and 0036) to their current canonical IDs. It fails closed on an ambiguous old+new state. All alias mappings have SQLite/source-graph tests; no live PostgreSQL migration has been applied.
+- Migrations 0038–0040 now support offline SQL rendering by assuming the target schema is absent for `upgrade --sql` and present for `downgrade --sql`. Targeted offline SQL generation succeeded for 0038→0039, its reverse downgrade, 0044→head, and the current downstream edge `0036_durable_call_outcomes:head` (1,616 lines, including deployment-observation RLS and append-only SQL). These are generated SQL artifacts, not a database migration run; the full historical base-to-head SQL path remains blocked by data-dependent migration 0017.
+- The broader Prompt 7 dashboard integration and its test/build evidence are recorded in `docs/PROMPT7_SECURITY_HARDENING_REPORT.md`; they are intentionally outside this backend-only 30-target inventory.

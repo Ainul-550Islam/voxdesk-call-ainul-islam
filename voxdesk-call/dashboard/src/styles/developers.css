@@ -1,2 +1,46 @@
-/* developers.css — premium dark SaaS — deep black #050507 electric blue violet cyan glassmorphism 20-32px */
-.pricing-root { background: #050507; }
+/**
+ * dashboard/src/styles/developers.css
+ * Developer Portal, API Reference, SDKs, Webhooks & Changelog styling
+ */
+.developers-root {
+  background: #050507;
+  color: #ffffff;
+  min-height: 100vh;
+}
+.dev-code-window {
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #08090f;
+  overflow: hidden;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+}
+.dev-code-window__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+.dev-code-window__body {
+  padding: 1.25rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.8125rem;
+  line-height: 1.65;
+  color: #cbd5e1;
+  overflow-x: auto;
+}
+.dev-endpoint-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.dev-endpoint-badge--get { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; }
+.dev-endpoint-badge--post { background: rgba(59, 130, 246, 0.15); color: #93c5fd; }
+.dev-endpoint-badge--patch { background: rgba(245, 158, 11, 0.15); color: #fcd34d; }
+.dev-endpoint-badge--delete { background: rgba(239, 68, 68, 0.15); color: #fca5a5; }

@@ -1,0 +1,48 @@
+{
+  "collection_status": "PASS",
+  "collection_exit_code": 0,
+  "collection_elapsed_seconds": 2.714,
+  "collection_log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/repair-tail/lane-10/collection.log",
+  "collected": 3,
+  "selected": 3,
+  "chunk_size_max": 5,
+  "chunk_count": 1,
+  "execution_mode": "sequential_child_processes",
+  "executed": 3,
+  "passed": 3,
+  "failed": 0,
+  "errors": 0,
+  "skipped": 0,
+  "not_run": 0,
+  "unconfirmed": 0,
+  "resource_unconfirmed": 0,
+  "unconfirmed_nodeids": [],
+  "resource_termination": false,
+  "full_suite_complete": true,
+  "chunks": [
+    {
+      "chunk": 1,
+      "collected": 3,
+      "submitted_nodeids": [
+        "tests/workflow/test_workflow_persistence.py::test_state_machine",
+        "tests/workflow/test_workflow_persistence.py::test_workflow_schemas_strict_validation",
+        "tests/workflow/test_workflow_persistence.py::test_workflow_store_protocol_surface"
+      ],
+      "executed_from_explicit_summary": 3,
+      "unconfirmed_count": 0,
+      "counts": {
+        "passed": 3,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "xfailed": 0,
+        "xpassed": 0
+      },
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 2.709,
+      "log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/repair-tail/lane-10/chunk-0001.log",
+      "terminal_summary_present": true
+    }
+  ]
+}

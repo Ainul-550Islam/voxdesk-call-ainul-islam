@@ -127,23 +127,38 @@ class TestSchema:
         from alembic.script import ScriptDirectory
 
         script = ScriptDirectory.from_config(Config("alembic.ini"))
-        # The chain is linear by design; the current head includes deployment
-        # runtime observations, call outcomes, and enterprise governance.
+        # The chain is linear by design; the current head includes the
+        # deployment, governance, transfer-context, and Boolean-default fixes.
         heads = script.get_heads()
-        assert heads == ["0036_runtime_deployment_observability"]
-        head = script.get_revision("0036_runtime_deployment_observability")
+        assert heads == ["0049_runtime_schema_alignment"]
+        head = script.get_revision("0049_runtime_schema_alignment")
+        assert head.down_revision == "0048_boolean_defaults"
+        # Prompt 6 — Telephony / Voice Runtime head.
+        telephony_head = script.get_revision("0041_telephony_voice_runtime")
+        assert telephony_head.down_revision == "0040_public_widget_keys"
+        widget_keys = script.get_revision("0040_public_widget_keys")
+        assert widget_keys.down_revision == "0039_conductor_control_plane"
+        conductor_control = script.get_revision("0039_conductor_control_plane")
+        assert conductor_control.down_revision == "0038_agent_chat_conductor"
+        agent_head = script.get_revision("0038_agent_chat_conductor")
+        assert agent_head.down_revision == "0038_retell_parity_foundation"
+        retell_head = script.get_revision("0038_retell_parity_foundation")
+        assert retell_head.down_revision == "0037_enterprise_missing_apis"
+        missing_apis = script.get_revision("0037_enterprise_missing_apis")
+        assert missing_apis.down_revision == "0036_runtime_deployment_observ"
+        head = script.get_revision("0036_runtime_deployment_observ")
         assert head.down_revision == "0036_durable_call_outcomes"
         outcomes = script.get_revision("0036_durable_call_outcomes")
-        assert outcomes.down_revision == "0035_enterprise_compliance_roi_deployment"
-        compliance = script.get_revision("0035_enterprise_compliance_roi_deployment")
-        assert compliance.down_revision == "0034_review_and_specialized_persistence"
-        review = script.get_revision("0034_review_and_specialized_persistence")
+        assert outcomes.down_revision == "0035_compliance_roi_deployment"
+        compliance = script.get_revision("0035_compliance_roi_deployment")
+        assert compliance.down_revision == "0034_review_specialized_persist"
+        review = script.get_revision("0034_review_specialized_persist")
         assert review.down_revision == "0033_specialized_agent_execution"
         specialized = script.get_revision("0033_specialized_agent_execution")
-        assert specialized.down_revision == "0032_enterprise_governance_foundation"
-        governance = script.get_revision("0032_enterprise_governance_foundation")
-        assert governance.down_revision == "0031_workflow_persistence_hardening"
-        head = script.get_revision("0031_workflow_persistence_hardening")
+        assert specialized.down_revision == "0032_enterprise_governance_found"
+        governance = script.get_revision("0032_enterprise_governance_found")
+        assert governance.down_revision == "0031_workflow_persistence_hard"
+        head = script.get_revision("0031_workflow_persistence_hard")
         assert head.down_revision == "0030_voice_runtime"
         voice = script.get_revision("0030_voice_runtime")
         assert voice.down_revision == "0029_prompt3_surfaces"
@@ -156,22 +171,22 @@ class TestSchema:
         campaign = script.get_revision("0026_campaign_environment_scope")
         assert campaign.down_revision == "0025_enterprise_leads"
         leads = script.get_revision("0025_enterprise_leads")
-        assert leads.down_revision == "0024_qa_conversation_intelligence"
-        qa = script.get_revision("0024_qa_conversation_intelligence")
+        assert leads.down_revision == "0024_qa_conversation_intel"
+        qa = script.get_revision("0024_qa_conversation_intel")
         assert qa.down_revision == "0023_contact_center_acd"
         acd = script.get_revision("0023_contact_center_acd")
         assert acd.down_revision == "0022_telephony_media_platform"
         media = script.get_revision("0022_telephony_media_platform")
         assert media.down_revision == "0021_ai_governance"
         previous_ai = script.get_revision("0021_ai_governance")
-        assert previous_ai.down_revision == "0020_durable_enterprise_operations"
-        previous_head = script.get_revision("0020_durable_enterprise_operations")
-        assert previous_head.down_revision == "0019_environment_scope_business_resources"
-        scoped = script.get_revision("0019_environment_scope_business_resources")
-        assert scoped.down_revision == "0018_organization_memberships_quotas"
-        previous = script.get_revision("0018_organization_memberships_quotas")
-        assert previous.down_revision == "0017_organization_environment_foundation"
-        revision = script.get_revision("0017_organization_environment_foundation")
+        assert previous_ai.down_revision == "0020_durable_enterprise_ops"
+        previous_head = script.get_revision("0020_durable_enterprise_ops")
+        assert previous_head.down_revision == "0019_env_scope_business_res"
+        scoped = script.get_revision("0019_env_scope_business_res")
+        assert scoped.down_revision == "0018_org_memberships_quotas"
+        previous = script.get_revision("0018_org_memberships_quotas")
+        assert previous.down_revision == "0017_org_environment_foundation"
+        revision = script.get_revision("0017_org_environment_foundation")
         assert revision.down_revision == "0016_sso_account_unlinked"
         unlinked = script.get_revision("0016_sso_account_unlinked")
         assert unlinked.down_revision == "0015_credential_auth_rejected"

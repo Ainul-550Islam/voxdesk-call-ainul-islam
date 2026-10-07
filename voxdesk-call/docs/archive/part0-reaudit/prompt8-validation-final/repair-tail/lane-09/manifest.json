@@ -1,0 +1,49 @@
+{
+  "collection_status": "PASS",
+  "collection_exit_code": 0,
+  "collection_elapsed_seconds": 2.644,
+  "collection_log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/repair-tail/lane-09/collection.log",
+  "collected": 4,
+  "selected": 4,
+  "chunk_size_max": 5,
+  "chunk_count": 1,
+  "execution_mode": "sequential_child_processes",
+  "executed": 4,
+  "passed": 4,
+  "failed": 0,
+  "errors": 0,
+  "skipped": 0,
+  "not_run": 0,
+  "unconfirmed": 0,
+  "resource_unconfirmed": 0,
+  "unconfirmed_nodeids": [],
+  "resource_termination": false,
+  "full_suite_complete": true,
+  "chunks": [
+    {
+      "chunk": 1,
+      "collected": 4,
+      "submitted_nodeids": [
+        "tests/workflow/test_workflow_execution_recovery.py::test_executor_execute_and_resume",
+        "tests/workflow/test_workflow_execution_recovery.py::test_executor_checkpoint_and_recovery_progress",
+        "tests/workflow/test_workflow_execution_recovery.py::test_executor_rejects_empty_checkpoint_identifiers",
+        "tests/workflow/test_workflow_execution_recovery.py::test_flow_graph_and_node_validation"
+      ],
+      "executed_from_explicit_summary": 4,
+      "unconfirmed_count": 0,
+      "counts": {
+        "passed": 4,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "xfailed": 0,
+        "xpassed": 0
+      },
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 2.71,
+      "log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/repair-tail/lane-09/chunk-0001.log",
+      "terminal_summary_present": true
+    }
+  ]
+}

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+from tests.webhooks.conftest import webhook_crypto  # noqa: F401 - explicit AES fixture
 import httpx
 from sqlalchemy import select
 
@@ -148,18 +149,22 @@ async def test_webhook_scope_and_replay_authorization(db, tenant_a, tenant_b):
     assert (
         await get_subscription(db, tenant_id=tenant_b.id, subscription_id=subscription.id) is None
     )
+    from app.outbox.publisher import publish
+    event, _ = await publish(db, tenant_id=tenant_a.id, environment_id=production.id,
+                             event_type="lead.created", idempotency_key="replay-contract")
+    event.status = "dead_letter"
     delivery, created = await create_delivery(
         db,
         tenant_id=tenant_a.id,
         subscription_id=subscription.id,
-        event_id="evt-1",
+        event_id=str(event.id),
         environment_id=production.id,
     )
     again, second = await create_delivery(
         db,
         tenant_id=tenant_a.id,
         subscription_id=subscription.id,
-        event_id="evt-1",
+        event_id=str(event.id),
         environment_id=production.id,
     )
     assert created is True and second is False and again.id == delivery.id

@@ -1,14 +1,30 @@
 import React from 'react'
-import ReactDOM from 'react-dom/client'
-
-import App from './App'
-// The audit found `styles/app.css` (402 lines) imported from nowhere, so every
-// `className` in Shell, ui, charts and the pages rendered unstyled. This is
-// the only place it belongs: the real entry path, before the tree mounts.
+import { createRoot } from 'react-dom/client'
+import App from './app/app'
+import './styles/globals.css'
+import './styles/components.css'
+import './styles/effects.css'
 import './styles/app.css'
+import './styles/voice-agents.css'
+import './styles/use-cases.css'
+import './styles/customer-service.css'
+import './styles/answering-service.css'
+import './styles/appointment-setter.css'
+import './styles/telemarketing.css'
+import './styles/industries.css'
+import './styles/integrations.css'
+import './styles/pricing.css'
+import './styles/developers.css'
+import './styles/solutions.css'
+import './styles/security.css'
+import './styles/compliance.css'
+import './styles/resources.css'
+import './styles/blog.css'
+import './styles/company.css'
+import './styles/legal.css'
+import './styles/auth.css'
+import './styles/contact.css'
+import './styles/docs.css'
+import './styles/trust.css'
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-)
+createRoot(document.getElementById('root')).render(<App />)

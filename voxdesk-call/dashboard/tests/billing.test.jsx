@@ -203,6 +203,7 @@ describe('route', () => {
 describe('current subscription', () => {
   it('renders the plan, status and period from the API', async () => {
     await open()
+    await ready()
     const card = await screen.findByRole('region', { name: /current subscription/i })
 
     expect(within(card).getByText('Active')).toBeInTheDocument()

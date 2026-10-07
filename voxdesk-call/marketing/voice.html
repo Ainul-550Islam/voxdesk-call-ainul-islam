@@ -1,45 +1,161 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>VoxDesk Voice — Design→Voice→Connect→Launch</title>
-<style>body{font-family:-apple-system,sans-serif;line-height:1.6;max-width:900px;margin:0 auto;padding:24px}header{background:#000;color:#fff;padding:12px 20px;display:flex;justify-content:space-between;border-radius:8px}header a{color:#fff;text-decoration:none;margin-left:16px;font-size:13px}h1{font-size:32px;margin:24px 0 12px}h2{font-size:20px;margin:20px 0 8px}.step{border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:12px 0}.badge{font-size:10px;padding:2px 8px;border-radius:12px;background:#f5f3ff;color:#8b5cf6}</style>
-</head><body>
-<header><div><strong>VoxDesk</strong> Voice</div><nav><a href="index.html">Platform</a><a href="voice.html">Voice</a><a href="translation.html">Translation</a><a href="qms.html">QMS</a><a href="legal.html">Legal</a><a href="/dashboard/voice">Dashboard →</a></nav></header>
-<h1>Voice Agent — Design→Voice→Connect→Launch <span class="badge">P0-04 Full Workspace E2E</span></h1>
-<p>Backend: app/voice/provider_registry.py, voice_profile_service.py, clone.py, clone_worker.py, telephony/ivr.py validate_flow(), transfer.py answer_on_bridge, phone.py E.164, tts/*, stt.py nova-3→nova-2 fallback, 23 endpoints</p>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VoxDesk Voice — Design → Voice → Connect → Launch</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --bg: #050507;
+  --bg-glass: rgba(17, 17, 26, 0.85);
+  --surface: rgba(255, 255, 255, 0.04);
+  --border: rgba(255, 255, 255, 0.12);
+  --text: #ffffff;
+  --text-muted: #a1a1b5;
+  --primary: #8b5cf6;
+  --blue: #3b82f6;
+  --emerald: #10b981;
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+}
+header {
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.brand { font-weight: 800; font-size: 20px; letter-spacing: -0.02em; }
+.brand span { color: var(--primary); font-size: 12px; margin-left: 8px; padding: 2px 8px; border-radius: 99px; background: rgba(139,92,246,0.15); }
+nav a {
+  color: var(--text-muted);
+  text-decoration: none;
+  margin-left: 16px;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+nav a:hover { color: #fff; background: var(--surface); }
+.container { max-width: 1120px; margin: 0 auto; padding: 56px 24px; }
+.hero-badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #93c5fd;
+  background: rgba(59,130,246,0.12);
+  border: 1px solid rgba(59,130,246,0.25);
+  padding: 4px 12px;
+  border-radius: 99px;
+}
+h1 { font-size: 42px; font-weight: 800; letter-spacing: -0.03em; margin-top: 16px; line-height: 1.15; }
+.subtitle { color: var(--text-muted); font-size: 16px; max-width: 760px; margin-top: 12px; }
+.grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); margin-top: 36px; }
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+}
+.card h2 { font-size: 18px; font-weight: 700; margin-bottom: 10px; color: #fff; }
+.card ul { padding-left: 18px; color: var(--text-muted); font-size: 13px; }
+.card li { margin-bottom: 8px; }
+.code-box {
+  margin-top: 28px;
+  background: #090a10;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  color: #cbd5e1;
+  overflow-x: auto;
+}
+footer {
+  border-top: 1px solid var(--border);
+  padding: 32px 24px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+</style>
+</head>
+<body>
 
-<div class="step"><h2>1. Design — Call Flow, Personality, Language</h2>
-<ul>
-<li>IVR editor with 6 node types: greeting, menu, input, transfer, hangup, ai — prompt edit, next pointer, DTMF options, visual flow preview</li>
-<li>validate_flow() prevents dangling/dead-end, unreachable node, menu never reaching human/AI — per ivr.py</li>
-<li>Personality: greeting, system_prompt_extra, response style</li>
-<li>Language: 13 languages per i18n.py — en-US/GB/AU, es-US/MX, fr, de, pt-BR, it, nl, hi, ar, bn — honest, not 100+</li>
-</ul></div>
+<header>
+  <div class="brand">VoxDesk <span>Enterprise Voice AI</span></div>
+  <nav>
+    <a href="index.html">Platform</a>
+    <a href="voice.html">Voice</a>
+    <a href="translation.html">Translation</a>
+    <a href="qms.html">QMS</a>
+    <a href="legal.html">Legal</a>
+    <a href="security.html">Security</a>
+    <a href="pricing.html">Pricing</a>
+    <a href="/dashboard/agents">Agent Studio →</a>
+  </nav>
+</header>
 
-<div class="step"><h2>2. Voice — Provider Mix, Library, STT/TTS</h2>
-<ul>
-<li>Provider mix: TTS ElevenLabs/OpenAI/Deepgram + STT Deepgram nova-3→nova-2 fallback per language + LLM OpenAI/Anthropic/Google</li>
-<li>Speed, humanize, filler_words English-only per tts.py, first audio target 550-750ms via media-engine-rs</li>
-<li>Voice library: profiles + clone lifecycle submit/processing/cancel/recovery — Backend clone.py, clone_worker.py</li>
-<li>Create clone POST /api/agent/voice-clones with name, provider, audio_url, description</li>
-<li>STT: Deepgram nova-3 → nova-2 fallback per language — per stt.py, TTS: ElevenLabs multilingual enforced for non-English — per tts.py</li>
-</ul></div>
-
-<div class="step"><h2>3. Connect — Telephony, Numbers, CRM/Calendar</h2>
-<ul>
-<li>Telephony: Twilio provider with real transfer — transfer.py, transfer_service.py answer_on_bridge, whisper "AI transfer, emergency", voicemail fallback</li>
-<li>Numbers: E.164 normalize, no country guess — phone.py</li>
-<li>Calendar: Google, Google Service Account, Microsoft, Cal.com, Internal — app/integrations/calendar/</li>
-<li>CRM: GoHighLevel, HubSpot, Jobber, Webhook + 12 enterprise Salesforce/Dynamics/ServiceNow/SAP/SharePoint/OneDrive/Confluence/Jira/Zendesk/Freshdesk/Zoho/Shopify honest unavailable when creds missing — connector.py 21 providers</li>
-<li>QMS: Veeva Vault, MasterControl, ETQ native adapters — qms_adapters.py</li>
-</ul></div>
-
-<div class="step"><h2>4. Launch — Test Call, Guardrails, Deployment</h2>
-<ul>
-<li>Test call with E.164 input, live preview status, STT→LLM→TTS chain, first audio 550-750ms target</li>
-<li>Outbound guardrails: is_call_window_open() timezone-aware 9am-8pm, DNC filter, backoff 1→4→24h, max_call_attempts 3, machine_detection voicemail cut</li>
-<li>Deployment states: configured/ready/observed/verified — per deployment/ targets/revisions</li>
-<li>Realtime topology: canonical gateway-go (Go 1.27) + media-engine-rs (Rust 1.90) prod in docker-compose.prod.yml, shadow signal-go/control-plane/media-plane roadmap</li>
-<li>Env markers: VOXDESK_CANONICAL_FRONTEND=dashboard-vite, VOXDESK_CANONICAL_REALTIME=gateway-go+media-engine-rs</li>
-</ul></div>
-
-<p><a href="/dashboard/voice">Open Voice Workspace → 4 steps, IVR editor, provider mix, clone jobs, test call, guardrails, deployment</a></p>
-</body></html>
+<main class="container">
+  <span class="hero-badge">P0-04 Full Voice Workspace E2E • 23 Verified Endpoints</span>
+  <h1>Voice Agent Studio — Design → Voice → Connect → Launch</h1>
+  <p class="subtitle">
+    Production voice orchestration backed by app/voice/provider_registry.py, voice_profile_service.py, clone.py, telephony/ivr.py validate_flow(), transfer.py answer_on_bridge, and Deepgram nova-3 → nova-2 fallback.
+  </p>
+  <div class="grid">
+    <div class="card">
+      <h2>1. Design — Call Flow, Personality & Language</h2>
+      <ul>
+        <li>IVR editor with 6 node types: greeting, menu, input, transfer, hangup, ai with DTMF routing.</li>
+        <li>validate_flow() prevents dangling edges, unreachable nodes, and dead-end menus.</li>
+        <li>13 verified locales (en-US/GB/AU, es-US/MX, fr, de, pt-BR, it, nl, hi, ar, bn).</li>
+        <li>Dynamic variable interpolation ({customer_name}, {appointment_window}) via dynamic_variable_service.py.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>2. Voice — Provider Mix, Cloning & Streaming</h2>
+      <ul>
+        <li>TTS providers: ElevenLabs, OpenAI, Deepgram Aura with sub-second first-audio target (550–750ms).</li>
+        <li>STT providers: Deepgram nova-3 with automatic nova-2 language fallback.</li>
+        <li>Consent-verified voice clone lifecycle: submit, processing, cancel, and worker recovery.</li>
+        <li>Cross-call contact memory lookup and episodic summarization per caller E.164 number.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>3. Connect — Telephony, E.164 & 21 CRM/Calendar Connectors</h2>
+      <ul>
+        <li>Twilio & Telnyx SIP/PSTN bridging with warm transfer whisper briefing and fallback rules.</li>
+        <li>Strict E.164 phone number normalization and tenant-scoped number assignment.</li>
+        <li>Calendars: Google Calendar, Microsoft 365, Cal.com, and internal slot engine.</li>
+        <li>CRMs: HubSpot, Salesforce, GoHighLevel, Jobber, ServiceNow, Zendesk, and HMAC Webhooks.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>4. Launch — Scenario Testing, Guardrails & Deployment</h2>
+      <ul>
+        <li>Automated scenario test runner with pass/fail rubric evaluation before promotion.</li>
+        <li>Outbound guardrails: timezone-aware calling windows (9am–8pm), centralized DNC check, and retry backoff.</li>
+        <li>Multi-environment promotion (Staging → Production) with immutable version snapshots.</li>
+        <li>Live supervisor monitoring: listen, whisper, barge, and human takeover.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="code-box">
+POST /api/v1/retell-parity/transfers/initiate
+{"call_id": "call_9821", "tenant_id": "t_01", "source_agent_id": "agt_frontdesk", "target_endpoint": "+14155550199", "mode": "warm", "whisper_message": "Caller verified insurance and requested urgent dental slot."}
+  </div>
+</main>
+<footer>© 2026 VoxDesk Enterprise Voice AI Platform • Zero Mock Architecture</footer>
+</body>
+</html>

@@ -14,7 +14,12 @@ from tests.specialized_agents.test_executor import _scope_and_user
 
 class Control:
  def __init__(self,key,rules,source="policy://controlled/v1",required=None,severity="medium"):
-  self.id=uuid.uuid4();self.control_key=key;self.rules=rules;self.source_reference=source;self.required_evidence=required or [];self.severity=severity
+  self.id=uuid.uuid4()
+  self.control_key=key
+  self.rules=rules
+  self.source_reference=source
+  self.required_evidence=required or []
+  self.severity=severity
 
 def test_qms_document_status_revision_evidence_and_source_are_explainable():
  control=Control("document_release",{"controlled_document":True,"document_requirements":{"revision":"3","owner":"records-team","effective_date":"2026-01-01"},"approved_states":["approved"],"require_revision":True,"require_owner":True,"require_effective_date":True},required=["evidence://approval/42"])
@@ -58,7 +63,8 @@ async def test_compliance_findings_remediation_review_and_scope_isolation(db):
  finding=await db.get(ComplianceFinding,uuid.UUID(output[0]["finding_id"]))
  assert finding and finding.tenant_id==tenant.id and finding.environment_id==env.id and finding.review_required
  remediation=await svc.create_remediation(finding.id,owner_id=user.id)
- await db.flush(); assert remediation.status=="open"
+ await db.flush()
+ assert remediation.status=="open"
  tenant_b,_org_b,_env_b,_user_b,scope_b=await _scope_and_user(db,"compliance-other")
  with pytest.raises(BoundaryDenied):
   from app.compliance.repository import get_finding

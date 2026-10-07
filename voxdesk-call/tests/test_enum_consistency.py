@@ -48,7 +48,7 @@ BASELINE = ALEMBIC_DIR / "0001_baseline.py"
 ENUM_FIX = ALEMBIC_DIR / "0002_enum_consistency.py"
 
 EXPECTED_CALL_STATUS = {
-    "RINGING", "IN_PROGRESS", "COMPLETED", "FAILED", "NO_ANSWER", "TRANSFERRED",
+    "RINGING", "IN_PROGRESS", "COMPLETED", "FAILED", "NO_ANSWER", "TRANSFERRED", "CANCELLED",
 }
 EXPECTED_SPEAKER = {"USER", "ASSISTANT", "SYSTEM"}
 
@@ -113,6 +113,11 @@ def test_enum_names_are_unique_and_have_no_duplicate_values():
 
 def test_migration_declares_the_same_call_status_values():
     declared = _string_literals_in_assignment(ENUM_FIX, "CALL_STATUS_VALUES")
+    import re
+
+    # Historical migrations remain immutable. Include additive enum migrations.
+    for path in ALEMBIC_DIR.glob("*.py"):
+        declared.update(re.findall(r"ALTER TYPE callstatus ADD VALUE IF NOT EXISTS '([A-Z_]+)'", path.read_text()))
     assert declared == {e.name for e in CallStatus}
 
 
@@ -390,31 +395,30 @@ def test_migration_0004_adds_every_new_call_column():
         if c.name.startswith("transfer_") or c.name == "failure_reason"
     ]
     assert new_columns
+    additive_source = pathlib.Path("alembic/versions/0047_call_transfer_context.py").read_text()
     for column in new_columns:
-        assert f'"{column}"' in source, f"{column} is missing from migration 0004"
+        migration_source = additive_source if column == "transfer_context" else source
+        assert f'"{column}"' in migration_source, f"{column} is missing from its transfer migration"
 
 
 def test_migration_chain_is_linear_and_unbroken():
-    import pathlib
-    import re
+    from alembic.config import Config
+    from alembic.script import ScriptDirectory
 
-    versions = pathlib.Path("alembic/versions")
-    revisions, downs = {}, {}
-    for path in versions.glob("*.py"):
-        text = path.read_text()
-        rev = re.search(r'^revision = "([^"]+)"', text, re.M)
-        down = re.search(r"^down_revision = (?:\"([^\"]+)\"|None)", text, re.M)
-        if rev:
-            revisions[rev.group(1)] = path.name
-            downs[rev.group(1)] = down.group(1) if down and down.group(1) else None
-
-    assert "0004_call_transfer_lifecycle" in revisions
-    assert downs["0004_call_transfer_lifecycle"] == "0003_auth_rbac"
-    # Exactly one root, and every parent exists.
-    roots = [r for r, d in downs.items() if d is None]
-    assert len(roots) == 1, f"expected one baseline, found {roots}"
-    for rev, down in downs.items():
-        assert down is None or down in revisions, f"{rev} points at missing {down}"
+    scripts = ScriptDirectory.from_config(Config("alembic.ini"))
+    revisions = list(scripts.walk_revisions())
+    assert len(scripts.get_heads()) == 1
+    assert len(scripts.get_bases()) == 1
+    assert len({item.revision for item in revisions}) == len(revisions)
+    assert scripts.get_revision("0004_call_transfer_lifecycle").down_revision == "0003_auth_rbac"
+    children = {}
+    for item in revisions:
+        parent = item.down_revision
+        assert parent is None or isinstance(parent, str), "unexpected merge in linear history"
+        if parent is not None:
+            assert scripts.get_revision(parent) is not None
+            children[parent] = children.get(parent, 0) + 1
+    assert all(count == 1 for count in children.values())
 
 
 # ---------------------------------------------------------------------------
@@ -427,7 +431,7 @@ def test_migration_chain_is_linear_and_unbroken():
 # ---------------------------------------------------------------------------
 
 MIGRATION_0005 = "alembic/versions/0005_knowledge_rag.py"
-MIGRATION_0019 = "alembic/versions/0019_environment_scope_business_resources.py"
+MIGRATION_0019 = "alembic/versions/0019_env_scope_business_res.py"
 
 
 def _declared_enum(path: str, type_name: str) -> set[str]:

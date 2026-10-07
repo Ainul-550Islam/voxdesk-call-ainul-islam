@@ -6,14 +6,15 @@
  * change, a deactivation, an authz denial) and reading the endpoint back.
  * Details that matter:
  *
- *   - the response is a **bare array**, newest first, with **no total count**
- *     and no cursor;
- *   - `created_at` is **naive** (no `Z`) and must be read as UTC;
- *   - `detail` is `{}` for many actions, and shape-varies by action:
- *     `{reason}`, `{role}`, `{from,to}`, `{missing:[...], path}`;
- *   - `ip_address` is `''` for server-side actions, populated for HTTP ones;
- *   - `target_user_id` is null except for team actions;
- *   - `limit` is the only parameter; `?limit=501` is a **422**.
+ *   - the canonical response is a tenant-scoped page with `items`, `total`,
+ *     `limit`, `offset`, `has_more`, and the event-type catalogue;
+ *   - legacy bare-array responses remain readable for compatibility;
+ *   - `created_at` may be **naive** (no `Z`) and is interpreted as UTC;
+ *   - `detail` is `{}` for many actions, and shape-varies by action;
+ *   - filters and pagination are sent to the server; free-text search scans
+ *     only the page already returned;
+ *   - secrets are redacted before rendering, and no external audit status is
+ *     inferred from the application event stream.
  */
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -70,7 +71,41 @@ function backend(me, extra = {}) {
   return {
     ...sessionRoutes(me),
     'GET /api/analytics/overview': { body: EMPTY_OVERVIEW },
-    'GET /api/team/audit': { body: EVENTS },
+    'GET /api/v1/audit/events': ({ path }) => {
+      const url = new URL(path, 'http://dashboard.test')
+      const params = url.searchParams
+      const eventType = params.get('event_type')
+      const actorId = params.get('actor_id')
+      const from = params.get('start')
+      const to = params.get('end')
+      const environmentId = params.get('environment_id')
+      const resourceType = params.get('resource_type')
+      const resourceId = params.get('resource_id')
+      const allRows = EVENTS.filter((row) => {
+        if (eventType && (row.event_type || row.action) !== eventType) return false
+        if (actorId && row.actor_id !== actorId) return false
+        if (from && new Date(row.created_at) < new Date(from)) return false
+        if (to && new Date(row.created_at) >= new Date(to)) return false
+        if (environmentId && row.environment_id !== environmentId) return false
+        if (resourceType && row.resource_type !== resourceType) return false
+        if (resourceId && row.resource_id !== resourceId) return false
+        return true
+      })
+      const limit = Number(params.get('limit') || 100)
+      const offset = Number(params.get('offset') || 0)
+      const items = allRows.slice(offset, offset + limit)
+      const eventTypes = [...new Set(EVENTS.map((row) => row.event_type || row.action))].sort()
+      return {
+        body: {
+          items,
+          total: allRows.length,
+          limit,
+          offset,
+          has_more: offset + items.length < allRows.length,
+          event_types: eventTypes,
+        },
+      }
+    },
     'GET /api/team/users': { body: USERS },
     ...extra,
   }
@@ -133,10 +168,18 @@ describe('permission gating', () => {
 })
 
 describe('event rendering', () => {
-  it('renders every event from the bare-array response', async () => {
+  it('renders every event from the paginated response', async () => {
     await open()
     const table = screen.getByRole('table')
     expect(within(table).getAllByRole('row')).toHaveLength(EVENTS.length + 1)
+  })
+
+  it('still accepts the legacy bare-array response', async () => {
+    await open(makeMe(OWNER_PERMISSIONS), {
+      'GET /api/v1/audit/events': { body: EVENTS },
+    })
+    expect(within(screen.getByRole('table')).getAllByRole('row'))
+      .toHaveLength(EVENTS.length + 1)
   })
 
   it('renders the real action vocabulary, humanised', async () => {
@@ -178,17 +221,16 @@ describe('event rendering', () => {
       .toBeInTheDocument()
   })
 
-  it('counts only what it can actually count', async () => {
+  it('renders authoritative page totals and clearly labels page-only counts', async () => {
     await open()
-    // No total is available, so the label must not claim one.
-    const shown = screen.getByText('Events shown').closest('.card')
-    expect(shown).toHaveTextContent('5')
-    expect(shown).toHaveTextContent(/most recent 100/i)
-    expect(document.body.textContent).not.toMatch(/total events/i)
+    const matching = screen.getByText('Events matching filters').closest('.card')
+    expect(matching).toHaveTextContent('5')
+    expect(matching).toHaveTextContent('Showing 5 on this page')
+    expect(screen.getByText(/Showing 1–5 of 5 · page 1/)).toBeInTheDocument()
 
-    expect(screen.getByText('Sign-in failures').closest('.card'))
+    expect(screen.getByText('Sign-in failures on page').closest('.card'))
       .toHaveTextContent('1')
-    expect(screen.getByText('Permission denials').closest('.card'))
+    expect(screen.getByText('Permission denials on page').closest('.card'))
       .toHaveTextContent('1')
   })
 
@@ -287,7 +329,7 @@ describe('redaction', () => {
   it('never paints a leaked secret into the DOM', async () => {
     const user = userEvent.setup()
     await open(makeMe(OWNER_PERMISSIONS), {
-      'GET /api/team/audit': {
+      'GET /api/v1/audit/events': {
         body: [{
           ...EVENTS[3],
           detail: {
@@ -315,31 +357,33 @@ describe('redaction', () => {
 })
 
 describe('filters', () => {
-  it('says plainly that filtering is client-side', async () => {
+  it('states which filters are server-side and which search is page-local', async () => {
     await open()
-    expect(screen.getByText(/filtering happen in your browser/i))
+    expect(screen.getByText(/filters are applied by the server/i))
+      .toBeInTheDocument()
+    expect(screen.getByText(/free-text search scans only the currently loaded page/i))
       .toBeInTheDocument()
   })
 
-  it('filters by action without calling the server again', async () => {
+  it('filters by event type through the canonical server query', async () => {
     const user = userEvent.setup()
     const { calls } = await open()
-    const before = calls.filter((c) => c.path.includes('/team/audit')).length
+    const before = calls.filter((c) => c.path.includes('/api/v1/audit/events')).length
 
     await user.selectOptions(screen.getByLabelText(/filter by event/i), 'login_failure')
 
     const table = screen.getByRole('table')
-    expect(within(table).getAllByRole('row')).toHaveLength(2)  // header + 1
+    expect(within(table).getAllByRole('row')).toHaveLength(2)
     expect(within(table).getByText('Login Failure')).toBeInTheDocument()
-    // Client-side: no extra request.
-    expect(calls.filter((c) => c.path.includes('/team/audit')).length)
-      .toBe(before)
+    await waitFor(() => expect(calls.some((c) => c.path.includes('event_type=login_failure'))).toBe(true))
+    expect(calls.filter((c) => c.path.includes('/api/v1/audit/events')).length)
+      .toBeGreaterThan(before)
   })
 
   it('searches across actor, action, ip and redacted detail', async () => {
     const user = userEvent.setup()
     await open()
-    const box = screen.getByLabelText(/search events/i)
+    const box = screen.getByLabelText(/search this page/i)
 
     await user.type(box, 'bad_password')
     expect(within(screen.getByRole('table')).getAllByRole('row')).toHaveLength(2)
@@ -354,21 +398,31 @@ describe('filters', () => {
   it('shows a distinct empty state when a filter matches nothing', async () => {
     const user = userEvent.setup()
     await open()
-    await user.type(screen.getByLabelText(/search events/i), 'zzzznomatch')
+    await user.type(screen.getByLabelText(/search this page/i), 'zzzznomatch')
 
     expect(await screen.findByText(/no matching events/i)).toBeInTheDocument()
-    expect(screen.queryByText(/no audit events yet/i)).toBeNull()
+    expect(screen.queryByText(/no events match these filters/i)).toBeNull()
   })
 
-  it('never sends an invented query parameter', async () => {
+  it('sends only documented server filters and never sends browser search or tenant identity', async () => {
     const user = userEvent.setup()
     const { calls } = await open()
-    await user.type(screen.getByLabelText(/search events/i), 'owner')
+    await user.type(screen.getByLabelText(/search this page/i), 'owner')
     await user.selectOptions(screen.getByLabelText(/filter by event/i), 'role_changed')
 
-    for (const call of calls.filter((c) => c.path.includes('/team/audit'))) {
-      // `limit` is the endpoint's only parameter.
-      expect(call.path).not.toMatch(/[?&](action|actor|from|to|q|search|offset|page|cursor)=/)
+    const auditCalls = calls.filter((call) => call.path.includes('/api/v1/audit/events'))
+    expect(auditCalls.length).toBeGreaterThan(1)
+    const allowed = new Set([
+      'limit', 'offset', 'start', 'end', 'event_type', 'actor_id',
+      'target_user_id', 'environment_id', 'resource_type', 'resource_id', 'result',
+    ])
+    for (const call of auditCalls) {
+      const url = new URL(call.path, 'http://dashboard.test')
+      for (const key of url.searchParams.keys()) expect(allowed.has(key)).toBe(true)
+      expect(url.searchParams.has('search')).toBe(false)
+      expect(url.searchParams.has('q')).toBe(false)
+      expect(url.searchParams.has('tenant_id')).toBe(false)
+      expect(call.method).toBe('GET')
     }
   })
 })
@@ -376,7 +430,7 @@ describe('filters', () => {
 describe('limit', () => {
   it('requests the default 100 on first load', async () => {
     const { calls } = await open()
-    const call = calls.find((c) => c.path.includes('/team/audit'))
+    const call = calls.find((c) => c.path.includes('/api/v1/audit/events'))
     expect(call.path).toContain('limit=100')
   })
 
@@ -384,7 +438,7 @@ describe('limit', () => {
     const user = userEvent.setup()
     const { calls } = await open()
 
-    const select = screen.getByLabelText(/events to load/i)
+    const select = screen.getByLabelText(/events per page/i)
     const values = within(select).getAllByRole('option').map((o) => Number(o.value))
     // `Query(100, le=500)`: 501 is a 422, so 500 is the highest offered.
     expect(Math.max(...values)).toBe(500)
@@ -395,25 +449,32 @@ describe('limit', () => {
     ).toBe(true))
   })
 
-  it('warns that older events may exist when the page looks full', async () => {
-    // A full page is a hint of truncation, not proof -- there is no count.
+  it('reports a server-confirmed next page when more results exist', async () => {
     const full = Array.from({ length: 100 }, (_, i) => ({
       ...EVENTS[3], id: `f-${i}`,
     }))
-    // Not via open(): its readiness probe matches 100 identical rows.
     window.location.hash = '#/audit'
     installFetch(backend(makeMe(OWNER_PERMISSIONS), {
-      'GET /api/team/audit': { body: full },
+      'GET /api/v1/audit/events': {
+        body: {
+          items: full,
+          total: 175,
+          limit: 100,
+          offset: 0,
+          has_more: true,
+          event_types: ['role_changed'],
+        },
+      },
     }))
     render(<App />)
 
-    expect(await screen.findByText(/there may be older events/i))
+    expect(await screen.findByText(/more matching events are available/i))
       .toBeInTheDocument()
   })
 
-  it('does not warn when the page is not full', async () => {
+  it('does not claim more results when the server says there are none', async () => {
     await open()
-    expect(screen.queryByText(/there may be older events/i)).toBeNull()
+    expect(screen.queryByText(/more matching events are available/i)).toBeNull()
   })
 })
 
@@ -424,7 +485,7 @@ describe('view-only', () => {
       /clear log/i]) {
       expect(screen.queryByRole('button', { name })).toBeNull()
     }
-    expect(screen.getByText(/cannot be edited or removed/i)).toBeInTheDocument()
+    expect(screen.getByText(/read-only access/i)).toBeInTheDocument()
   })
 })
 
@@ -434,7 +495,7 @@ describe('states', () => {
     let release
     const gate = new Promise((resolve) => { release = resolve })
     installFetch(backend(makeMe(OWNER_PERMISSIONS), {
-      'GET /api/team/audit': async () => {
+      'GET /api/v1/audit/events': async () => {
         await gate
         return { body: EVENTS }
       },
@@ -453,7 +514,7 @@ describe('states', () => {
     window.location.hash = '#/audit'
     let fail = true
     const { calls } = installFetch(backend(makeMe(OWNER_PERMISSIONS), {
-      'GET /api/team/audit': async () => (fail
+      'GET /api/v1/audit/events': async () => (fail
         ? { status: 500, body: { detail: 'boom' } }
         : { body: EVENTS }),
     }))
@@ -465,18 +526,18 @@ describe('states', () => {
     fail = false
     await user.click(screen.getAllByRole('button', { name: /try again/i })[0])
     expect(await screen.findByText('Role Changed')).toBeInTheDocument()
-    expect(calls.filter((c) => c.path.includes('/team/audit')).length)
+    expect(calls.filter((c) => c.path.includes('/api/v1/audit/events')).length)
       .toBeGreaterThan(1)
   })
 
   it('shows an empty state for a workspace with no events', async () => {
     window.location.hash = '#/audit'
     installFetch(backend(makeMe(OWNER_PERMISSIONS), {
-      'GET /api/team/audit': { body: [] },
+      'GET /api/v1/audit/events': { body: [] },
     }))
     render(<App />)
 
-    expect(await screen.findByText(/no audit events yet/i)).toBeInTheDocument()
+    expect(await screen.findByText(/no events match these filters/i)).toBeInTheDocument()
   })
 })
 
@@ -498,7 +559,7 @@ describe('dates', () => {
 describe('security', () => {
   it('never sends a client-controlled tenant id', async () => {
     const { calls } = await open()
-    const audit = calls.filter((c) => c.path.includes('/team/audit'))
+    const audit = calls.filter((c) => c.path.includes('/api/v1/audit/events'))
     expect(audit.length).toBeGreaterThan(0)
     for (const call of audit) {
       expect(call.path).not.toContain('tenant_id')
@@ -520,7 +581,7 @@ describe('security', () => {
     const user = userEvent.setup()
     const hostile = '<img src=x onerror="window.__auditPwned=1">'
     const { container } = await open(makeMe(OWNER_PERMISSIONS), {
-      'GET /api/team/audit': {
+      'GET /api/v1/audit/events': {
         body: [{
           ...EVENTS[3],
           actor_email: `${hostile}@x.com`,

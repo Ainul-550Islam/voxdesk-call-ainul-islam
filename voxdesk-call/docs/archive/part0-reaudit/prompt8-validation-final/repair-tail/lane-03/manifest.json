@@ -1,0 +1,48 @@
+{
+  "collection_status": "PASS",
+  "collection_exit_code": 0,
+  "collection_elapsed_seconds": 2.887,
+  "collection_log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/repair-tail/lane-03/collection.log",
+  "collected": 3,
+  "selected": 3,
+  "chunk_size_max": 5,
+  "chunk_count": 1,
+  "execution_mode": "sequential_child_processes",
+  "executed": 3,
+  "passed": 3,
+  "failed": 0,
+  "errors": 0,
+  "skipped": 0,
+  "not_run": 0,
+  "unconfirmed": 0,
+  "resource_unconfirmed": 0,
+  "unconfirmed_nodeids": [],
+  "resource_termination": false,
+  "full_suite_complete": true,
+  "chunks": [
+    {
+      "chunk": 1,
+      "collected": 3,
+      "submitted_nodeids": [
+        "tests/test_voice_clone.py::test_clone_audio_validation_accepts_pcm_wav",
+        "tests/test_voice_clone.py::test_clone_fingerprint_is_tenant_and_input_bound",
+        "tests/test_voice_clone.py::test_clone_audio_rejects_untrusted_format"
+      ],
+      "executed_from_explicit_summary": 3,
+      "unconfirmed_count": 0,
+      "counts": {
+        "passed": 3,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "xfailed": 0,
+        "xpassed": 0
+      },
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 2.948,
+      "log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/repair-tail/lane-03/chunk-0001.log",
+      "terminal_summary_present": true
+    }
+  ]
+}

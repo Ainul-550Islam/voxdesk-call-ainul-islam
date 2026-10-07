@@ -505,8 +505,9 @@ class TestCalendarIntegrationApi:
         everything = json.dumps([r.detail for r in rows])
 
         assert "ya29-AUDIT-LEAK" not in everything
-        # The field *names* are recorded, which is what makes the trail useful
-        # without making it dangerous.
+        # The field *names* are recorded under a neutral metadata key so the
+        # audit redactor does not suppress the safe list of submitted names.
+        assert "provided_field_names" in everything
         assert "access_token" in everything
 
 

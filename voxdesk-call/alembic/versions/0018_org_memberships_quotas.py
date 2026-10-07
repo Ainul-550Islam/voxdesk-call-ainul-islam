@@ -20,6 +20,7 @@ from datetime import datetime
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects import postgresql
 
 # FIX: revision id shortened from the 38-80 char string
 # "0018_organization_memberships_quotas" (originally 36 chars) because Alembic's
@@ -52,11 +53,10 @@ _STATUS = "status IN ('invited', 'active', 'suspended', 'revoked', 'expired')"
 
 
 def _role_type():
-    return sa.Enum(
-        "OWNER", "ADMIN", "MANAGER", "AGENT", "VIEWER",
-        name="userrole",
-        create_type=False,
-    )
+    values = ("OWNER", "ADMIN", "MANAGER", "AGENT", "VIEWER")
+    if op.get_bind().dialect.name == "postgresql":
+        return postgresql.ENUM(*values, name="userrole", create_type=False)
+    return sa.Enum(*values, name="userrole", create_constraint=False)
 
 
 def _uuid_col():

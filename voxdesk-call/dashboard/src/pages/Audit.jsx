@@ -1,39 +1,11 @@
 /**
- * Audit log.
+ * Tenant/environment audit explorer.
  *
- * One endpoint backs this page:
- *
- *   GET /api/team/audit?limit=(1..500, default 100)   ->  bare array
- *
- * `limit` is its **only** parameter. There is no `action`, `actor`, `from`,
- * `to`, `cursor` or `offset` filter, and no total count -- unknown query
- * parameters are silently ignored by FastAPI, so inventing one would not
- * error, it would just quietly do nothing. Every filter on this page is
- * therefore **client-side over the rows already fetched**, and the UI says so
- * rather than implying the server is filtering.
- *
- * Because there is no count and no cursor, "showing N events" is stated as
- * exactly that -- the number of rows returned -- never as a total. When the
- * response length equals the requested limit the list is probably truncated,
- * so the page says it may be and offers a larger limit.
- *
- * ## View-only
- *
- * An audit log you can edit is not an audit log. There is no mutation route
- * and this page adds no control that could imply one -- no delete, no
- * annotate, and no Export button, because no export endpoint exists.
- *
- * ## Redaction
- *
- * `AuditLog.detail` is free-form JSON. Every writer in the codebase is
- * disciplined (`{"reason": "bad_password"}`, `{"from": "viewer", "to":
- * "agent"}`, `{"missing": [...], "path": "..."}`, `{"provider": "stripe"}`),
- * and the model docstring promises no secrets. But "the column is free-form"
- * plus "a future writer could be careless" is exactly the case for
- * defence in depth, so `redact()` masks by key before rendering. It is
- * conservative and key-based: operational context survives, anything whose
- * key looks credential-shaped is replaced with a marker. The frontend cannot
- * fix a backend leak -- it can only avoid painting it on screen.
+ * The server enforces audit:read, tenant ownership, environment membership,
+ * filtering, pagination and redaction. Free-text search remains explicitly
+ * local to the returned page; it is never presented as a server-wide search.
+ * The log is view-only. Export and mutation controls are not shown because
+ * there is no verified export or edit contract for this page.
  */
 import { useMemo, useState } from 'react'
 
@@ -45,8 +17,6 @@ import { formatDateTime, formatNumber, humanise } from '../lib/format'
 import { useApi } from '../lib/hooks'
 import { PERMISSIONS as P } from '../lib/permissions'
 
-/** The server's own ceiling: `Query(100, le=500)`. Asking for more is a 422. */
-const MAX_LIMIT = 500
 const LIMITS = [50, 100, 250, 500]
 
 /**
@@ -138,46 +108,68 @@ function categoryOf(action) {
 export default function Audit({ me, can }) {
   const timezone = me.tenant.timezone
   const [limit, setLimit] = useState(100)
+  const [offset, setOffset] = useState(0)
   const [search, setSearch] = useState('')
   const [action, setAction] = useState('')
+  const [actorId, setActorId] = useState('')
+  const [environmentId, setEnvironmentId] = useState('')
+  const [resourceType, setResourceType] = useState('')
+  const [resourceId, setResourceId] = useState('')
+  const [from, setFrom] = useState('')
+  const [to, setTo] = useState('')
   const [expanded, setExpanded] = useState(() => new Set())
 
-  const events = useApi(() => listAudit({ limit }), [limit])
+  const toIso = (value) => {
+    if (!value) return undefined
+    const parsed = new Date(value)
+    return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString()
+  }
 
-  // Everyone with audit:read also has user:read in the real RBAC table, so
-  // the target UUID can be shown as a person. If the call is ever denied the
-  // page still works -- it just shows the raw id.
+  const events = useApi(() => listAudit({
+    limit,
+    offset,
+    event_type: action,
+    actor_id: actorId,
+    environment_id: environmentId,
+    resource_type: resourceType,
+    resource_id: resourceId,
+    start: toIso(from),
+    end: toIso(to),
+  }), [limit, offset, action, actorId, environmentId, resourceType, resourceId, from, to])
+
   const mayReadUsers = can(P.USER_READ)
-  const users = useApi(() => (mayReadUsers ? listUsers() : Promise.resolve([])), [])
-
+  const users = useApi(() => (mayReadUsers ? listUsers() : Promise.resolve([])), [mayReadUsers])
   const emailById = useMemo(() => {
     const map = new Map()
     for (const user of users.data ?? []) map.set(user.id, user.email)
     return map
   }, [users.data])
 
-  const rows = events.data ?? []
-
-  // The response carries no total, so a full page is a hint of truncation,
-  // not proof of it. Say exactly that.
-  const maybeTruncated = rows.length === limit
-
+  const page = events.data && !Array.isArray(events.data) ? events.data : null
+  const rows = page?.items ?? (Array.isArray(events.data) ? events.data : [])
+  const total = Number(page?.total ?? rows.length)
+  const hasMore = Boolean(page?.has_more)
   const actions = useMemo(
-    () => [...new Set(rows.map((row) => row.action))].sort(),
-    [rows]
+    () => page?.event_types ?? [...new Set(rows.map((row) => row.event_type || row.action).filter(Boolean))].sort(),
+    [page?.event_types, rows]
   )
 
   const visible = useMemo(() => {
     const needle = search.trim().toLowerCase()
     return rows.filter((row) => {
-      if (action && row.action !== action) return false
       if (!needle) return true
       const target = emailById.get(row.target_user_id) ?? row.target_user_id ?? ''
-      return [row.action, row.actor_email, row.ip_address, target,
+      return [row.event_type, row.action, row.actor_type, row.actor_email, row.ip_address, target,
+        row.environment_id, row.resource_type, row.resource_id, row.request_id, row.result,
         JSON.stringify(redact(row.detail))]
         .join(' ').toLowerCase().includes(needle)
     })
-  }, [rows, action, search, emailById])
+  }, [rows, search, emailById])
+
+  const resetPage = (setter) => (value) => {
+    setter(value)
+    setOffset(0)
+  }
 
   const toggle = (id) => setExpanded((previous) => {
     const next = new Set(previous)
@@ -197,19 +189,25 @@ export default function Audit({ me, can }) {
     },
     {
       key: 'action', header: 'Event',
-      render: (row) => (
-        <span className={`badge badge--${ACTION_TONE[row.action] ?? 'muted'}`}>
-          {humanise(row.action)}
-        </span>
-      ),
+      render: (row) => {
+        const eventName = row.event_type || row.action
+        return (
+          <span className={`badge badge--${ACTION_TONE[row.action] ?? 'muted'}`}>
+            {humanise(eventName)}
+          </span>
+        )
+      },
     },
     {
       key: 'actor', header: 'Who',
-      render: (row) => (row.actor_email
-        // Recorded even for a failed login, so it is an attempted identity,
-        // not a proven one.
-        ? <span style={{ overflowWrap: 'anywhere' }}>{row.actor_email}</span>
-        : <span className="muted">System</span>),
+      render: (row) => (
+        <div>
+          {row.actor_email
+            ? <span style={{ overflowWrap: 'anywhere' }}>{row.actor_email}</span>
+            : <span className="muted">{humanise(row.actor_type || 'system')}</span>}
+          {row.actor_email && <div className="muted" style={{ fontSize: 11 }}>{humanise(row.actor_type || 'human')}</div>}
+        </div>
+      ),
     },
     {
       key: 'target', header: 'Affected',
@@ -225,6 +223,24 @@ export default function Audit({ me, can }) {
             </span>
           )
       },
+    },
+    {
+      key: 'scope', header: 'Environment / resource',
+      render: (row) => (
+        <div style={{ minWidth: 180 }}>
+          {row.environment_id && <div><span className="muted">Environment </span><code style={{ fontSize: 11 }}>{row.environment_id}</code></div>}
+          {row.resource_type && <div><span className="muted">{humanise(row.resource_type)} </span>{row.resource_id ? <code style={{ fontSize: 11 }}>{row.resource_id}</code> : null}</div>}
+          {!row.environment_id && !row.resource_type && <span className="muted">—</span>}
+        </div>
+      ),
+    },
+    {
+      key: 'result', header: 'Result',
+      render: (row) => <span className={`badge badge--${row.result === 'success' ? 'ok' : row.result === 'denied' || row.result === 'failure' ? 'warn' : 'muted'}`}>{humanise(row.result || 'success')}</span>,
+    },
+    {
+      key: 'request', header: 'Request ID',
+      render: (row) => row.request_id ? <code style={{ fontSize: 11 }}>{row.request_id}</code> : <span className="muted">—</span>,
     },
     {
       key: 'ip', header: 'IP address',
@@ -264,29 +280,28 @@ export default function Audit({ me, can }) {
         <div>
           <h1>Audit log</h1>
           <p className="page__description">
-            Security-relevant events for this workspace: sign-ins, permission
-            denials, team changes and billing actions. Records are written by
-            the server and cannot be edited or removed.
+            Tenant-scoped security and operational events. Application users
+            have read-only access; database administrators retain their normal
+            infrastructure-level authority.
           </p>
         </div>
       </div>
 
       <div className="grid grid--stats">
-        {/* Never called a total: the endpoint returns no count. */}
         <StatCard
-          label="Events shown"
-          value={formatNumber(rows.length)}
-          hint={`Most recent ${limit}`}
+          label="Events matching filters"
+          value={formatNumber(total)}
+          hint={`Showing ${formatNumber(rows.length)} on this page`}
         />
         <StatCard
-          label="Sign-in failures"
-          value={formatNumber(rows.filter((r) => r.action === 'login_failure').length)}
-          hint="In the events shown"
+          label="Sign-in failures on page"
+          value={formatNumber(rows.filter((r) => r.action === 'login_failure' || r.event_type === 'failed_login').length)}
+          hint="Current page only"
         />
         <StatCard
-          label="Permission denials"
-          value={formatNumber(rows.filter((r) => r.action === 'authz_denied').length)}
-          hint="In the events shown"
+          label="Permission denials on page"
+          value={formatNumber(rows.filter((r) => r.action === 'authz_denied' || r.event_type === 'authorization_denied').length)}
+          hint="Current page only"
         />
       </div>
 
@@ -299,12 +314,12 @@ export default function Audit({ me, can }) {
             </p>
           </div>
           <div className="row" style={{ gap: 12, flexWrap: 'wrap' }}>
-            <label className="sr-only" htmlFor="audit-search">Search events</label>
+            <label className="sr-only" htmlFor="audit-search">Search this page</label>
             <input
               id="audit-search"
               className="input"
               type="search"
-              placeholder="Search events"
+              placeholder="Search this page"
               style={{ width: 'auto' }}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
@@ -316,7 +331,7 @@ export default function Audit({ me, can }) {
               className="select"
               style={{ width: 'auto' }}
               value={action}
-              onChange={(event) => setAction(event.target.value)}
+              onChange={(event) => resetPage(setAction)(event.target.value)}
             >
               <option value="">All events</option>
               {actions.map((value) => (
@@ -326,32 +341,100 @@ export default function Audit({ me, can }) {
               ))}
             </select>
 
-            <label className="sr-only" htmlFor="audit-limit">Events to load</label>
+            {mayReadUsers && (
+              <>
+                <label className="sr-only" htmlFor="audit-actor">Filter by actor</label>
+                <select
+                  id="audit-actor"
+                  className="select"
+                  style={{ width: 'auto' }}
+                  value={actorId}
+                  onChange={(event) => resetPage(setActorId)(event.target.value)}
+                >
+                  <option value="">All actors</option>
+                  {(users.data ?? []).map((user) => (
+                    <option key={user.id} value={user.id}>{user.email}</option>
+                  ))}
+                </select>
+              </>
+            )}
+
+            <label className="sr-only" htmlFor="audit-from">From date and time</label>
+            <input
+              id="audit-from"
+              className="input"
+              type="datetime-local"
+              aria-label="From date and time"
+              value={from}
+              onChange={(event) => resetPage(setFrom)(event.target.value)}
+            />
+            <label className="sr-only" htmlFor="audit-to">To date and time</label>
+            <input
+              id="audit-to"
+              className="input"
+              type="datetime-local"
+              aria-label="To date and time"
+              value={to}
+              onChange={(event) => resetPage(setTo)(event.target.value)}
+            />
+            <label className="sr-only" htmlFor="audit-environment">Environment ID</label>
+            <input
+              id="audit-environment"
+              className="input"
+              type="text"
+              placeholder="Environment UUID"
+              aria-label="Environment UUID"
+              style={{ width: 180 }}
+              value={environmentId}
+              onChange={(event) => resetPage(setEnvironmentId)(event.target.value.trim())}
+            />
+            <label className="sr-only" htmlFor="audit-resource-type">Resource type</label>
+            <input
+              id="audit-resource-type"
+              className="input"
+              type="search"
+              placeholder="Resource type"
+              aria-label="Resource type"
+              style={{ width: 140 }}
+              value={resourceType}
+              onChange={(event) => resetPage(setResourceType)(event.target.value)}
+            />
+            <label className="sr-only" htmlFor="audit-resource-id">Resource ID</label>
+            <input
+              id="audit-resource-id"
+              className="input"
+              type="search"
+              placeholder="Resource ID"
+              aria-label="Resource ID"
+              style={{ width: 160 }}
+              value={resourceId}
+              onChange={(event) => resetPage(setResourceId)(event.target.value)}
+            />
+            <label className="sr-only" htmlFor="audit-limit">Events per page</label>
             <select
               id="audit-limit"
               className="select"
               style={{ width: 'auto' }}
               value={limit}
-              onChange={(event) => setLimit(Number(event.target.value))}
+              onChange={(event) => { setLimit(Number(event.target.value)); setOffset(0) }}
             >
               {LIMITS.map((value) => (
-                <option key={value} value={value}>Load {value}</option>
+                <option key={value} value={value}>{value} per page</option>
               ))}
             </select>
           </div>
         </div>
 
         <div className="card__body">
-          {/* Honest about where the work happens. */}
           <p className="muted" style={{ fontSize: 12, marginTop: 0 }}>
-            The server returns the most recent {limit} events; searching and
-            filtering happen in your browser across those events only.
+            Event, actor, time, environment and resource filters are applied by
+            the server. Free-text search scans only the currently loaded page.
           </p>
 
-          {maybeTruncated && limit < MAX_LIMIT && (
+          {hasMore && (
             <Alert tone="info">
-              There may be older events than the {limit} shown. Load more to
-              look further back.
+              More matching events are available. Use Next to continue through
+              the server-paginated results.
             </Alert>
           )}
 
@@ -364,8 +447,8 @@ export default function Audit({ me, can }) {
             empty={
               <EmptyState
                 icon="?"
-                title="No audit events yet"
-                description="Sign-ins, team changes and billing actions will appear here as they happen."
+                title="No events match these filters"
+                description="Try a wider time range or clear one of the server-side filters."
               />
             }
           >
@@ -386,6 +469,32 @@ export default function Audit({ me, can }) {
               )
             )}
           </AsyncSection>
+          {rows.length > 0 && (
+            <div className="row" style={{ justifyContent: 'space-between', marginTop: 16 }}>
+              <span className="muted" aria-live="polite">
+                Showing {formatNumber(offset + 1)}–{formatNumber(offset + rows.length)} of {formatNumber(total)}
+                {' · '}page {Math.floor(offset / limit) + 1}
+              </span>
+              <div className="row" style={{ gap: 8 }}>
+                <button
+                  type="button"
+                  className="btn btn--small"
+                  disabled={offset === 0 || events.loading}
+                  onClick={() => setOffset((value) => Math.max(0, value - limit))}
+                >
+                  Previous
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--small"
+                  disabled={!hasMore || events.loading}
+                  onClick={() => setOffset((value) => value + limit)}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </section>
     </>

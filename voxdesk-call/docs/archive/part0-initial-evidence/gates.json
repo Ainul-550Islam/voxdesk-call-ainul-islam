@@ -1,0 +1,16 @@
+{
+  "filler": 1,
+  "fake-success": 1,
+  "null-bytes": 0,
+  "padding": 0,
+  "heads-after": 0,
+  "contracts": 0,
+  "compose": 0,
+  "make-verify-truth": 2,
+  "truth-tests": 1,
+  "padding-count": 0,
+  "references": 0,
+  "collection-after": 0,
+  "ruff": 0,
+  "compile": 0
+}

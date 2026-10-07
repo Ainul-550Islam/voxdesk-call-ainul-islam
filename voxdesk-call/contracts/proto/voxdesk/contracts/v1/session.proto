@@ -27,6 +27,7 @@ enum CallStatus {
   CALL_STATUS_FAILED = 4;
   CALL_STATUS_NO_ANSWER = 5;
   CALL_STATUS_TRANSFERRED = 6;
+  CALL_STATUS_CANCELLED = 7;
 }
 
 // Mirrors app.db.models.TransferState. Transfer state is tracked separately

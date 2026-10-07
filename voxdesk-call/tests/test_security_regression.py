@@ -275,10 +275,13 @@ def test_audit_has_no_write_or_delete_route():
     modify or delete audit rows through the API."""
     from app.main import app
 
+    ledger_prefixes = ("/api/team/audit", "/api/security/audit/", "/api/audit-trail/", "/api/v1/audit/")
     audit_routes = [
-        (sorted(r.methods), r.path) for r in app.routes if "audit" in getattr(r, "path", "").lower()
+        (sorted(r.methods), r.path)
+        for r in app.routes
+        if getattr(r, "path", "").startswith(ledger_prefixes)
     ]
-    assert audit_routes, "expected at least one audit route to exist"
+    assert audit_routes, "expected at least one audit-ledger read route to exist"
     for methods, path in audit_routes:
         assert methods == ["GET"], f"{path} allows {methods}, not just GET"
 

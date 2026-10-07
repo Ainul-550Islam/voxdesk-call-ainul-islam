@@ -1,0 +1,6 @@
+[
+  {
+    "file": "reports/part0/null-findings.json",
+    "reason": "unexpected empty text file"
+  }
+]

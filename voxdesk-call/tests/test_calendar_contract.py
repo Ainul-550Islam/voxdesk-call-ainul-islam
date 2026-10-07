@@ -160,16 +160,22 @@ def test_declared_capabilities_are_actually_implemented(provider):
 
 
 @pytest.mark.parametrize("provider", ALL_PROVIDERS)
-def test_reschedule_is_served_by_something_real(provider):
+async def test_reschedule_is_served_by_something_real(provider):
     """
     RESCHEDULE may be an `update_event` or a dedicated `reschedule` method —
     Cal.com has a real endpoint for it. Either satisfies the capability;
     neither means the service would route a move into nothing.
     """
+    adapter = make_provider(provider)
     if CalendarCapability.RESCHEDULE not in capabilities_of(provider):
-        pytest.skip(f"{provider.value} does not offer reschedule")
+        assert not hasattr(adapter, "reschedule")
+        if CalendarCapability.UPDATE_EVENT not in capabilities_of(provider):
+            with pytest.raises(CalendarUnsupportedError):
+                await adapter.update_event("ext-1", REQUEST)
+        else:
+            assert type(adapter).update_event is not CalendarProvider.update_event
+        return
 
-    adapter = PROVIDERS[provider]
     has_dedicated = hasattr(adapter, "reschedule")
     has_update = getattr(adapter, "update_event") is not CalendarProvider.update_event
     assert has_dedicated or has_update
@@ -231,9 +237,6 @@ STATUS_EXPECTATIONS = [
 async def test_http_status_maps_identically_for_every_provider(
     provider, status, expected, retryable, monkeypatch
 ):
-    if provider is CalendarProviderType.INTERNAL:
-        pytest.skip("the internal provider makes no HTTP calls")
-
     FakeTransport((status, {"message": "nope"})).install(monkeypatch)
     adapter = make_provider(provider)
 
@@ -256,9 +259,6 @@ async def test_a_403_that_is_really_a_throttle_becomes_retryable(
     those as permission errors would strand a tenant whose only problem was
     going too fast.
     """
-    if provider is CalendarProviderType.INTERNAL:
-        pytest.skip("no HTTP")
-
     FakeTransport(
         (403, {"error": {"errors": [{"reason": "rateLimitExceeded"}]}})
     ).install(monkeypatch)
@@ -272,9 +272,6 @@ async def test_a_403_that_is_really_a_throttle_becomes_retryable(
 
 @pytest.mark.parametrize("provider", ALL_PROVIDERS)
 async def test_timeouts_become_retryable_calendar_timeouts(provider, monkeypatch):
-    if provider is CalendarProviderType.INTERNAL:
-        pytest.skip("no HTTP")
-
     FakeTransport(httpx.ReadTimeout("too slow")).install(monkeypatch)
     with pytest.raises(CalendarTimeout) as caught:
         await make_provider(provider).request("POST", "https://example.test/x")
@@ -288,9 +285,6 @@ async def test_no_httpx_exception_ever_escapes(provider, monkeypatch):
     classification entirely and land in the generic handler, turning a
     transient blip into a permanently failed booking.
     """
-    if provider is CalendarProviderType.INTERNAL:
-        pytest.skip("no HTTP")
-
     for failure in (
         httpx.ConnectError("x"), httpx.ReadTimeout("x"),
         httpx.PoolTimeout("x"), httpx.RemoteProtocolError("x"),
@@ -305,25 +299,49 @@ async def test_no_httpx_exception_ever_escapes(provider, monkeypatch):
 
 
 @pytest.mark.parametrize("provider", ALL_PROVIDERS)
-async def test_free_busy_raises_rather_than_returning_empty_on_failure(
+async def test_free_busy_behavior_is_explicit_on_failure_or_non_support(
     provider, monkeypatch
 ):
+    """Providers either propagate read failures, or fail closed as unsupported.
+
+    The service-account branch executes the legacy client's failure path
+    against a local failing transport and requires failure rather than an
+    empty calendar or a successful health result.
     """
-    **The audit's F2, as a contract.** The pre-STEP-6 client returned `[]` on
-    any exception, so an outage was indistinguishable from an empty calendar —
-    and therefore looked like total availability. Emptiness must mean
-    emptiness.
-    """
+    adapter = make_provider(provider)
     if CalendarCapability.FREE_BUSY not in capabilities_of(provider):
-        pytest.skip(f"{provider.value} has no free/busy")
+        with pytest.raises(CalendarUnsupportedError):
+            await adapter.get_busy(WINDOW)
+        return
+
     if provider is CalendarProviderType.GOOGLE_SERVICE_ACCOUNT:
-        pytest.skip(
-            "documented limitation: the legacy client swallows its own errors"
-        )
+        from app.integrations import google_calendar
+
+        class FailingQuery:
+            def execute(self):
+                raise RuntimeError("local test provider failure")
+
+        class FailingFreeBusy:
+            def query(self, *, body):
+                assert body["items"][0]["id"] == "shared@example.com"
+                return FailingQuery()
+
+        class FailingService:
+            def freebusy(self):
+                return FailingFreeBusy()
+
+        client = google_calendar.CalendarClient("shared@example.com")
+        monkeypatch.setattr(google_calendar, "_GOOGLE_AVAILABLE", True)
+        monkeypatch.setattr(client, "_get_service", lambda: FailingService())
+        monkeypatch.setattr(adapter, "_client", lambda: client)
+        with pytest.raises(CalendarError):
+            await adapter.get_busy(WINDOW)
+        assert (await adapter.health_check()).connected is False
+        return
 
     FakeTransport((500, {"error": "boom"})).install(monkeypatch)
     with pytest.raises(CalendarError):
-        await make_provider(provider).get_busy(WINDOW)
+        await adapter.get_busy(WINDOW)
 
 
 # ================================================================= timeout ===
@@ -335,9 +353,6 @@ async def test_the_configured_timeout_reaches_the_http_client(provider, monkeypa
     passes to `AsyncClient`, because a timeout that is configured but never
     applied looks identical from the outside until a provider stops answering.
     """
-    if provider is CalendarProviderType.INTERNAL:
-        pytest.skip("no HTTP")
-
     seen = {}
     original_init = httpx.AsyncClient.__init__
 
@@ -367,15 +382,21 @@ def test_the_context_repr_hides_credentials(provider):
 
 
 @pytest.mark.parametrize("provider", ALL_PROVIDERS)
-async def test_credentials_never_appear_in_a_raised_error(provider, monkeypatch):
-    """
-    A provider echoing the submitted token in an error body — which
-    misconfigured auth endpoints genuinely do — must not have it echoed into
-    an exception the service then writes to the database.
-    """
+async def test_raised_errors_do_not_expose_configured_credentials(provider, monkeypatch):
+    """Credential-bearing errors are scrubbed; credentialless adapters stay empty."""
+    adapter = make_provider(provider)
     secrets = secrets_for(provider)
     if not secrets:
-        pytest.skip(f"{provider.value} stores no credentials")
+        assert adapter.context.credentials == {}
+        if provider is CalendarProviderType.INTERNAL:
+            unsupported = adapter.get_busy(WINDOW)
+        else:
+            assert provider is CalendarProviderType.GOOGLE_SERVICE_ACCOUNT
+            unsupported = adapter.update_event("ext-1", REQUEST)
+        with pytest.raises(CalendarUnsupportedError) as caught:
+            await unsupported
+        assert "access_token" not in str(caught.value)
+        return
 
     secret = secrets[0]
     FakeTransport(
@@ -383,7 +404,7 @@ async def test_credentials_never_appear_in_a_raised_error(provider, monkeypatch)
     ).install(monkeypatch)
 
     with pytest.raises(CalendarError) as caught:
-        await make_provider(provider).request("POST", "https://example.test/x")
+        await adapter.request("POST", "https://example.test/x")
 
     assert secret not in str(caught.value)
     assert secret not in caught.value.safe_message
@@ -396,9 +417,6 @@ async def test_a_401_body_is_never_included_in_the_message(provider, monkeypatch
     excluded entirely rather than merely scrubbed. The scrubber is a regex,
     and regexes miss things.
     """
-    if provider is CalendarProviderType.INTERNAL:
-        pytest.skip("no HTTP")
-
     FakeTransport(
         (401, {"detail": "token abcdef0123456789 is invalid"})
     ).install(monkeypatch)
@@ -423,15 +441,13 @@ async def test_a_health_check_never_raises_and_never_leaks(provider, monkeypatch
 
 
 @pytest.mark.parametrize("provider", ALL_PROVIDERS)
-async def test_no_secret_reaches_the_log_during_a_failure(provider, monkeypatch):
+async def test_provider_failure_logging_does_not_expose_credentials(provider, monkeypatch):
     import json
 
     from app.core import logging as app_logging
 
+    adapter = make_provider(provider)
     secrets = secrets_for(provider)
-    if not secrets:
-        pytest.skip(f"{provider.value} stores no credentials")
-
     captured: list = []
     for level in ("info", "warning", "error"):
         original = getattr(app_logging.log, level)
@@ -442,8 +458,23 @@ async def test_no_secret_reaches_the_log_during_a_failure(provider, monkeypatch)
 
         monkeypatch.setattr(app_logging.log, level, spy)
 
+    if not secrets:
+        assert adapter.context.credentials == {}
+        result = await adapter.health_check()
+        assert result.provider == provider.value
+        if provider is CalendarProviderType.INTERNAL:
+            assert result.connected is True
+            assert captured == []
+        else:
+            assert provider is CalendarProviderType.GOOGLE_SERVICE_ACCOUNT
+            assert not any(
+                marker in json.dumps(captured, default=str).lower()
+                for marker in ("access_token", "refresh_token", "private_key", "bearer ")
+            )
+        return
+
     FakeTransport((500, {"echo": secrets[0]})).install(monkeypatch)
-    await make_provider(provider).health_check()
+    await adapter.health_check()
 
     assert secrets[0] not in json.dumps(captured, default=str)
 
@@ -493,7 +524,8 @@ def test_the_idempotency_key_reaches_the_provider_payload(provider):
     """
     adapter = make_provider(provider)
     if not adapter.supports(CalendarCapability.CREATE_EVENT):
-        pytest.skip(f"{provider.value} cannot create events")
+        assert type(adapter).create_event is CalendarProvider.create_event
+        return
 
     if hasattr(adapter, "event_payload"):
         import json
@@ -572,11 +604,22 @@ async def test_a_created_event_always_carries_an_external_id(provider, monkeypat
 
     adapter = make_provider(provider)
     if not adapter.supports(CalendarCapability.CREATE_EVENT):
-        pytest.skip(f"{provider.value} cannot create events")
+        assert type(adapter).create_event is CalendarProvider.create_event
+        return
     if success is None:
-        # internal / service account: no HTTP, deterministic id.
+        # Internal creates a deterministic local reference; service-account
+        # Google delegates to the legacy client and is verified with a stub.
         if provider is CalendarProviderType.GOOGLE_SERVICE_ACCOUNT:
-            pytest.skip("wraps the legacy client; covered in its own test")
+            from app.integrations import google_calendar
+
+            async def created_legacy_event(self, **kwargs):
+                assert kwargs["start"].utcoffset().total_seconds() == 0
+                assert kwargs["end"].utcoffset().total_seconds() == 0
+                return "legacy-event-1"
+
+            monkeypatch.setattr(
+                google_calendar.CalendarClient, "create_event", created_legacy_event
+            )
         event = await adapter.create_event(REQUEST)
         assert event.external_id
         return
@@ -588,19 +631,30 @@ async def test_a_created_event_always_carries_an_external_id(provider, monkeypat
 
 
 @pytest.mark.parametrize("provider", ALL_PROVIDERS)
-async def test_a_success_response_with_no_id_is_a_failure(provider, monkeypatch):
-    """
-    The trap: a provider returning 200 with an empty body. Silence is not
-    acknowledgement, and recording CONFIRMED here would claim a calendar entry
-    nobody can point to.
-    """
+async def test_missing_remote_acknowledgement_never_confirms_an_event(provider, monkeypatch):
+    """Remote adapters reject an empty success; local/legacy paths are explicit."""
     adapter = make_provider(provider)
     if not adapter.supports(CalendarCapability.CREATE_EVENT):
-        pytest.skip(f"{provider.value} cannot create events")
-    if provider in (
-        CalendarProviderType.INTERNAL, CalendarProviderType.GOOGLE_SERVICE_ACCOUNT
-    ):
-        pytest.skip("no remote response to be empty")
+        assert type(adapter).create_event is CalendarProvider.create_event
+        return
+
+    if provider is CalendarProviderType.INTERNAL:
+        event = await adapter.create_event(REQUEST)
+        assert event.external_id == f"internal-{REQUEST.idempotency_key[:40]}"
+        return
+
+    if provider is CalendarProviderType.GOOGLE_SERVICE_ACCOUNT:
+        from app.integrations import google_calendar
+
+        async def legacy_created_without_id(self, **kwargs):
+            return None
+
+        monkeypatch.setattr(
+            google_calendar.CalendarClient, "create_event", legacy_created_without_id
+        )
+        with pytest.raises(CalendarError):
+            await adapter.create_event(REQUEST)
+        return
 
     FakeTransport((200, {})).install(monkeypatch)
     with pytest.raises(CalendarError):
@@ -615,10 +669,12 @@ async def test_cancelling_a_missing_event_is_not_an_error(provider, monkeypatch)
     """
     adapter = make_provider(provider)
     if not adapter.supports(CalendarCapability.CANCEL_EVENT):
-        pytest.skip(f"{provider.value} cannot cancel")
+        with pytest.raises(CalendarUnsupportedError):
+            await adapter.cancel_event("gone-1")
+        return
 
     FakeTransport((404, {"error": "not found"})).install(monkeypatch)
-    await adapter.cancel_event("gone-1")        # must not raise
+    await adapter.cancel_event("gone-1")
 
 
 # =============================================================== datetimes ===
@@ -639,17 +695,54 @@ def test_naive_datetimes_are_refused_at_construction(provider):
 
 
 @pytest.mark.parametrize("provider", ALL_PROVIDERS)
-def test_a_payload_transmits_an_unambiguous_instant(provider):
-    """
-    Every adapter must send something that pins the moment — either a UTC
-    offset or an explicit `timeZone`. A bare local wall clock is what breaks
-    across DST.
-    """
+async def test_a_payload_transmits_an_unambiguous_instant(provider, monkeypatch):
+    """Each outbound path pins an instant; local providers create no payload."""
     adapter = make_provider(provider)
-    if not hasattr(adapter, "event_payload"):
-        pytest.skip(f"{provider.value} builds no event payload")
+    if hasattr(adapter, "event_payload"):
+        import json
 
-    import json
+        body = json.dumps(adapter.event_payload(REQUEST))
+        assert ("timeZone" in body) or ("+00:00" in body) or ("Z\"" in body), body
+        return
 
-    body = json.dumps(adapter.event_payload(REQUEST))
-    assert ("timeZone" in body) or ("+00:00" in body) or ("Z\"" in body), body
+    if provider is CalendarProviderType.CALCOM:
+        response = {
+            "status": "success",
+            "data": {
+                "uid": "cal-1",
+                "status": "accepted",
+                "start": "2026-06-16T14:00:00Z",
+                "end": "2026-06-16T14:30:00Z",
+            },
+        }
+        transport = FakeTransport((200, response)).install(monkeypatch)
+        event = await adapter.create_event(REQUEST)
+        assert event.external_id == "cal-1"
+        assert transport.last()["json"]["start"] == REQUEST.start.astimezone(UTC).isoformat()
+        assert "+00:00" in transport.last()["json"]["start"]
+        return
+
+    if provider is CalendarProviderType.INTERNAL:
+        event = await adapter.create_event(REQUEST)
+        assert event.start == REQUEST.start
+        assert event.end == REQUEST.end
+        assert event.start.utcoffset() is not None
+        assert event.end.utcoffset() is not None
+        return
+
+    assert provider is CalendarProviderType.GOOGLE_SERVICE_ACCOUNT
+    from app.integrations import google_calendar
+
+    seen = {}
+
+    async def capture_legacy_event(self, **kwargs):
+        seen.update(kwargs)
+        return "legacy-event-1"
+
+    monkeypatch.setattr(
+        google_calendar.CalendarClient, "create_event", capture_legacy_event
+    )
+    event = await adapter.create_event(REQUEST)
+    assert event.external_id == "legacy-event-1"
+    assert seen["start"].utcoffset().total_seconds() == 0
+    assert seen["end"].utcoffset().total_seconds() == 0

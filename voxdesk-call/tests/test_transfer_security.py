@@ -7,9 +7,11 @@ that surface, so the same guarantees are re-asserted here rather than assumed.
 """
 from __future__ import annotations
 
+import uuid
+
 import pytest
 
-from app.db.models import CallStatus, TransferState, UserRole
+from app.db.models import CallStatus, Environment, TransferState, UserRole
 from app.telephony import transfer_service
 from app.telephony.provider import FakeTelephonyProvider
 from tests.conftest import auth_headers, make_user
@@ -179,3 +181,44 @@ async def test_transfer_logs_carry_correlation_ids_and_no_secrets(db):
     from app.core.config import settings
     assert settings.jwt_secret not in blob
     assert settings.twilio_auth_token not in blob or not settings.twilio_auth_token
+
+@pytest.mark.asyncio
+async def test_selected_environment_hides_calls_and_transfer_metadata_in_other_environment(
+    client, db
+):
+    """Tenant equality alone is insufficient when the user selected staging."""
+    tenant = await tenant_with_human(db)
+    owner = await make_user(db, tenant, UserRole.OWNER)
+    production_call = await seed_call(db, tenant)
+    staging = Environment(
+        tenant_id=tenant.id,
+        name="Transfer security staging",
+        slug=f"transfer-security-{uuid.uuid4().hex[:8]}",
+        kind="staging",
+        is_default=False,
+    )
+    db.add(staging)
+    await db.commit()
+
+    headers = await auth_headers(client, owner)
+    selected = await client.post(
+        f"/api/tenants/{tenant.id}/access/current",
+        json={"environment_id": str(staging.id)},
+        headers=headers,
+    )
+    assert selected.status_code == 200, selected.text
+
+    transfer_detail = await client.get(
+        f"/api/calls/{production_call.id}/transfer", headers=headers
+    )
+    call_detail = await client.get(f"/api/calls/{production_call.id}", headers=headers)
+    transcript = await client.get(
+        f"/api/calls/{production_call.id}/transcript", headers=headers
+    )
+    call_list = await client.get(f"/api/tenants/{tenant.id}/calls", headers=headers)
+
+    assert transfer_detail.status_code == 404
+    assert call_detail.status_code == 404
+    assert transcript.status_code == 404
+    assert call_list.status_code == 200, call_list.text
+    assert call_list.json()["total"] == 0

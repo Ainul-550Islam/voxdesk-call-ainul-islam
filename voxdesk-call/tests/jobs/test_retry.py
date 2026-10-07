@@ -1,8 +1,9 @@
 """Batch 07: retry classification, backoff, jitter, exhaustion."""
-from app.jobs.retry import backoff_seconds, classify_exception, next_attempt_at, decide_retry, should_retry
+from app.jobs.retry import backoff_seconds, classify_exception, decide_retry
 from app.jobs.types import FailureClass
 
-class FakeExc(Exception): pass
+class FakeExc(Exception):
+    pass
 
 def test_backoff_grows():
     assert backoff_seconds(1) == 30

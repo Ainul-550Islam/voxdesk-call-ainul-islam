@@ -1,2 +1,35 @@
-/* resources.css — premium dark SaaS — deep black #050507 electric blue violet cyan glassmorphism 20-32px */
-.pricing-root { background: #050507; }
+/**
+ * dashboard/src/styles/resources.css
+ * Resource Center, Architecture Guides, Case Studies & Operational Playbooks
+ */
+.resources-root {
+  background: #050507;
+  color: #ffffff;
+  min-height: 100vh;
+}
+.resource-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 1.5rem;
+  transition: all 0.25s ease;
+}
+.resource-card:hover {
+  border-color: rgba(59, 130, 246, 0.35);
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-2px);
+}
+.resource-tag {
+  display: inline-block;
+  border-radius: 9999px;
+  padding: 0.2rem 0.65rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(139, 92, 246, 0.14);
+  color: #c4b5fd;
+}

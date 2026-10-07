@@ -3,10 +3,8 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta, timezone
 
 import pytest
-from sqlalchemy import select
 
 from app.auth.jwt import create_access_token
 from app.contact_center.queues import add_member, create_queue

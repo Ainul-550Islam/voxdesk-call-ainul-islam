@@ -1,5 +1,14 @@
 # VoxDesk — Security architecture, threat model & controls (Step 9)
 
+> **Historical snapshot, not the current Prompt 7 status report.** This Step 9/10
+> document records an earlier code and test state. In particular, its statements
+> about missing MFA/email features, accepted risks, dependency versions, full-suite
+> results, and “SOC 2-ready” posture must not be treated as current verification.
+> The current scope, evidence, test status, open gaps, and explicit no-certification
+> boundary are recorded in [`PROMPT7_SECURITY_HARDENING_REPORT.md`](PROMPT7_SECURITY_HARDENING_REPORT.md).
+> No certification, external audit, or production security outcome is claimed by
+> that newer report either.
+
 This is the consolidated security reference for VoxDesk, written as the
 deliverable of the **Step 9 deep security / privacy / abuse-prevention /
 compliance-readiness / pentest-readiness audit**. It states what exists, where

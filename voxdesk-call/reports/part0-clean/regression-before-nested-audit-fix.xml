@@ -1,0 +1,826 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="346" time="215.588" timestamp="2026-10-07T02:14:06.004280+00:00" hostname="e2b.local"><testcase classname="tests.truth.test_no_default_secrets" name="test_unconfigured_media_signing_cannot_issue_or_verify[]" time="0.005" /><testcase classname="tests.truth.test_no_default_secrets" name="test_unconfigured_media_signing_cannot_issue_or_verify[   ]" time="0.002" /><testcase classname="tests.truth.test_no_default_secrets" name="test_signature_binds_call_tenant_and_key" time="0.001" /><testcase classname="tests.truth.test_no_default_secrets" name="test_production_validation_rejects_default_identity_secrets" time="0.003" /><testcase classname="tests.truth.test_no_default_secrets" name="test_no_constant_secret_fallback_in_any_production_module" time="2.305" /><testcase classname="tests.truth.test_no_fake_success_markers" name="test_production_fake_success_guard" time="2.110" /><testcase classname="tests.truth.test_no_fake_success_markers" name="test_phrase_and_swallowed_audit_detection" time="0.002" /><testcase classname="tests.truth.test_no_fake_success_markers" name="test_allowlist_is_shrink_only_and_stale_entries_fail" time="0.001" /><testcase classname="tests.truth.test_no_fake_success_markers" name="test_feature_missing_failed_or_skipped_evidence_cannot_be_live" time="0.001" /><testcase classname="tests.truth.test_no_fake_success_markers" name="test_junit_uses_exact_node_identity_and_failure_dominates_retries" time="0.001" /><testcase classname="tests.truth.test_no_fake_success_markers" name="test_manifest_has_all_features_and_no_unsupported_live_claim" time="0.011" /><testcase classname="tests.truth.test_no_fake_success_markers" name="test_deleted_allowlist_cannot_reset_shrink_history" time="0.035" /><testcase classname="tests.truth.test_no_filler" name="test_repository_has_no_filler" time="1.514" /><testcase classname="tests.truth.test_no_filler" name="test_forbidden_patterns_cannot_return[/endpoint-12]" time="0.001" /><testcase classname="tests.truth.test_no_filler" name="test_forbidden_patterns_cannot_return[class Class52:]" time="0.001" /><testcase classname="tests.truth.test_no_filler" name="test_forbidden_patterns_cannot_return[thing_function_27()]" time="0.001" /><testcase classname="tests.truth.test_no_filler" name="test_forbidden_patterns_cannot_return[// Padding module line 200]" time="0.001" /><testcase classname="tests.truth.test_no_filler" name="test_forbidden_patterns_cannot_return[NO SKIP FULL CODE]" time="0.001" /><testcase classname="tests.truth.test_no_filler" name="test_normalization_detects_numbered_repetition" time="0.002" /><testcase classname="tests.truth.test_no_filler" name="test_padding_removal_is_idempotent_and_preserves_code" time="0.001" /><testcase classname="tests.truth.test_no_filler" name="test_null_bytes_and_accidental_empty_source_fail" time="0.001" /><testcase classname="tests.truth.test_no_filler" name="test_broad_filler_exemption_is_rejected" time="0.001" /><testcase classname="tests.truth.test_no_template_routes" name="test_no_template_routes_and_preserved_real_modules" time="0.004" /><testcase classname="tests.truth.test_no_template_routes" name="test_no_api_line_count_banners" time="0.051" /><testcase classname="tests.truth.test_part0_authorized_repairs" name="test_qms_never_confuses_credentials_with_connection[False-veeva_vault]" time="0.002" /><testcase classname="tests.truth.test_part0_authorized_repairs" name="test_qms_never_confuses_credentials_with_connection[False-mastercontrol]" time="0.001" /><testcase classname="tests.truth.test_part0_authorized_repairs" name="test_qms_never_confuses_credentials_with_connection[False-etq]" time="0.002" /><testcase classname="tests.truth.test_part0_authorized_repairs" name="test_qms_never_confuses_credentials_with_connection[True-veeva_vault]" time="0.001" /><testcase classname="tests.truth.test_part0_authorized_repairs" name="test_qms_never_confuses_credentials_with_connection[True-mastercontrol]" time="0.001" /><testcase classname="tests.truth.test_part0_authorized_repairs" name="test_qms_never_confuses_credentials_with_connection[True-etq]" time="0.001" /><testcase classname="tests.truth.test_part0_authorized_repairs" name="test_legacy_test_creation_is_scoped_and_cannot_issue_fake_session" time="0.969" /><testcase classname="tests.truth.test_part0_authorized_repairs" name="test_dnc_and_audit_commit_together" time="0.741" /><testcase classname="tests.truth.test_part0_authorized_repairs" name="test_failed_audit_cannot_commit_dnc" time="0.672" /><testcase classname="tests.truth.test_part0_authorized_repairs" name="test_export_defaults_are_stable" time="0.002" /><testcase classname="tests.truth.test_part0_authorized_repairs" name="test_unreferenced_template_extensions_are_not_mounted" time="0.003" /><testcase classname="tests.truth.test_part0_authorized_repairs" name="test_qms_http_unavailable_is_not_empty_success_and_is_tenant_scoped" time="0.764" /><testcase classname="tests.truth.test_retired_references" name="test_active_surface_has_no_retired_dependencies" time="0.804" /><testcase classname="tests.truth.test_retired_references" name="test_archives_do_not_mask_a_live_compose_reference" time="0.002" /><testcase classname="tests.truth.test_retired_references" name="test_denylist_declaration_exemption_is_not_a_whole_file_exemption" time="0.002" /><testcase classname="tests.leads.test_concurrency" name="test_two_sessions_cannot_both_claim" time="0.701" /><testcase classname="tests.leads.test_concurrency" name="test_stale_status_transition_loses" time="0.682" /><testcase classname="tests.leads.test_dedup" name="test_formatted_phone_and_email_case_match_inside_one_environment" time="1.404" /><testcase classname="tests.leads.test_dedup" name="test_same_phone_in_another_environment_is_not_a_duplicate" time="0.673" /><testcase classname="tests.leads.test_dedup" name="test_fuzzy_name_is_informational_and_does_not_merge" time="0.719" /><testcase classname="tests.leads.test_dedup" name="test_explicit_merge_keeps_history_and_propagates_dnc" time="0.730" /><testcase classname="tests.leads.test_dedup" name="test_cross_tenant_merge_is_rejected" time="0.697" /><testcase classname="tests.leads.test_dedup" name="test_self_merge_is_rejected" time="0.632" /><testcase classname="tests.leads.test_environment_scope" name="test_lead_is_invisible_from_another_environment" time="0.686" /><testcase classname="tests.leads.test_environment_scope" name="test_lead_is_invisible_from_another_tenant" time="0.666" /><testcase classname="tests.leads.test_environment_scope" name="test_update_from_the_wrong_environment_is_not_found" time="0.668" /><testcase classname="tests.leads.test_environment_scope" name="test_status_change_from_the_wrong_environment_is_not_found" time="0.662" /><testcase classname="tests.leads.test_environment_scope" name="test_activity_attachment_from_the_wrong_environment_is_denied" time="0.644" /><testcase classname="tests.leads.test_environment_scope" name="test_task_from_the_wrong_environment_is_not_found" time="0.773" /><testcase classname="tests.leads.test_environment_scope" name="test_score_from_the_wrong_environment_is_not_found" time="0.628" /><testcase classname="tests.leads.test_environment_scope" name="test_consent_from_the_wrong_environment_is_not_found" time="0.701" /><testcase classname="tests.leads.test_environment_scope" name="test_campaign_binding_must_share_the_leads_environment" time="0.638" /><testcase classname="tests.leads.test_environment_scope" name="test_update_cannot_rebind_to_a_cross_environment_campaign" time="0.648" /><testcase classname="tests.leads.test_environment_scope" name="test_update_rejects_environment_id_as_a_field" time="0.719" /><testcase classname="tests.leads.test_environment_scope" name="test_orm_level_environment_move_is_frozen" time="0.679" /><testcase classname="tests.leads.test_environment_scope" name="test_create_lead_defaults_to_production_and_stamps_history" time="0.752" /><testcase classname="tests.leads.test_environment_scope" name="test_supplied_foreign_environment_is_boundary_denied" time="0.677" /><testcase classname="tests.leads.test_import" name="test_csv_import_is_idempotent" time="0.668" /><testcase classname="tests.leads.test_import" name="test_invalid_row_is_reported_and_oversized_body_is_rejected" time="0.662" /><testcase classname="tests.leads.test_isolation" name="test_other_tenant_cannot_read_or_retarget" time="0.784" /><testcase classname="tests.leads.test_isolation" name="test_export_drops_secrets" time="0.655" /><testcase classname="tests.leads.test_lifecycle" name="test_every_valid_transition_is_accepted[called-do_not_call]" time="0.699" /><testcase classname="tests.leads.test_lifecycle" name="test_every_valid_transition_is_accepted[called-failed]" time="0.679" /><testcase classname="tests.leads.test_lifecycle" name="test_every_valid_transition_is_accepted[called-qualified]" time="0.736" /><testcase classname="tests.leads.test_lifecycle" name="test_every_valid_transition_is_accepted[called-queued]" time="0.753" /><testcase classname="tests.leads.test_lifecycle" name="test_every_valid_transition_is_accepted[called-unqualified]" time="0.729" /><testcase classname="tests.leads.test_lifecycle" name="test_every_valid_transition_is_accepted[failed-do_not_call]" time="0.671" /><testcase classname="tests.leads.test_lifecycle" name="test_every_valid_transition_is_accepted[failed-queued]" time="0.662" /><testcase classname="tests.leads.test_lifecycle" name="test_every_valid_transition_is_accepted[failed-unqualified]" time="0.707" /><testcase classname="tests.leads.test_lifecycle" name="test_every_valid_transition_is_accepted[new-called]" time="0.635" /><testcase classname="tests.leads.test_lifecycle" name="test_every_valid_transition_is_accepted[new-do_not_call]" time="0.722" /><testcase classname="tests.leads.test_lifecycle" name="test_every_valid_transition_is_accepted[new-failed]" time="0.853" /><testcase classname="tests.leads.test_lifecycle" name="test_every_valid_transition_is_accepted[new-qualified]" time="0.689" /><testcase classname="tests.leads.test_lifecycle" name="test_every_valid_transition_is_accepted[new-queued]" time="0.672" /><testcase classname="tests.leads.test_lifecycle" name="test_every_valid_transition_is_accepted[new-unqualified]" time="0.672" /><testcase classname="tests.leads.test_lifecycle" name="test_every_valid_transition_is_accepted[qualified-called]" time="0.714" /><testcase classname="tests.leads.test_lifecycle" name="test_every_valid_transition_is_accepted[qualified-do_not_call]" time="0.689" /><testcase classname="tests.leads.test_lifecycle" name="test_every_valid_transition_is_accepted[qualified-unqualified]" time="0.649" /><testcase classname="tests.leads.test_lifecycle" name="test_every_valid_transition_is_accepted[queued-called]" time="0.664" /><testcase classname="tests.leads.test_lifecycle" name="test_every_valid_transition_is_accepted[queued-do_not_call]" time="0.652" /><testcase classname="tests.leads.test_lifecycle" name="test_every_valid_transition_is_accepted[queued-failed]" time="0.733" /><testcase classname="tests.leads.test_lifecycle" name="test_every_valid_transition_is_accepted[queued-new]" time="0.689" /><testcase classname="tests.leads.test_lifecycle" name="test_every_valid_transition_is_accepted[queued-qualified]" time="0.692" /><testcase classname="tests.leads.test_lifecycle" name="test_every_valid_transition_is_accepted[queued-unqualified]" time="0.645" /><testcase classname="tests.leads.test_lifecycle" name="test_every_valid_transition_is_accepted[unqualified-do_not_call]" time="0.731" /><testcase classname="tests.leads.test_lifecycle" name="test_every_valid_transition_is_accepted[unqualified-qualified]" time="0.756" /><testcase classname="tests.leads.test_lifecycle" name="test_every_valid_transition_is_accepted[unqualified-queued]" time="0.658" /><testcase classname="tests.leads.test_lifecycle" name="test_every_invalid_transition_is_refused[called-called]" time="0.614" /><testcase classname="tests.leads.test_lifecycle" name="test_every_invalid_transition_is_refused[called-new]" time="0.640" /><testcase classname="tests.leads.test_lifecycle" name="test_every_invalid_transition_is_refused[do_not_call-called]" time="0.676" /><testcase classname="tests.leads.test_lifecycle" name="test_every_invalid_transition_is_refused[do_not_call-do_not_call]" time="0.729" /><testcase classname="tests.leads.test_lifecycle" name="test_every_invalid_transition_is_refused[do_not_call-failed]" time="0.659" /><testcase classname="tests.leads.test_lifecycle" name="test_every_invalid_transition_is_refused[do_not_call-new]" time="0.750" /><testcase classname="tests.leads.test_lifecycle" name="test_every_invalid_transition_is_refused[do_not_call-qualified]" time="0.706" /><testcase classname="tests.leads.test_lifecycle" name="test_every_invalid_transition_is_refused[do_not_call-queued]" time="0.772" /><testcase classname="tests.leads.test_lifecycle" name="test_every_invalid_transition_is_refused[do_not_call-unqualified]" time="0.672" /><testcase classname="tests.leads.test_lifecycle" name="test_every_invalid_transition_is_refused[failed-called]" time="0.692" /><testcase classname="tests.leads.test_lifecycle" name="test_every_invalid_transition_is_refused[failed-failed]" time="0.768" /><testcase classname="tests.leads.test_lifecycle" name="test_every_invalid_transition_is_refused[failed-new]" time="0.673" /><testcase classname="tests.leads.test_lifecycle" name="test_every_invalid_transition_is_refused[failed-qualified]" time="0.635" /><testcase classname="tests.leads.test_lifecycle" name="test_every_invalid_transition_is_refused[new-new]" time="0.596" /><testcase classname="tests.leads.test_lifecycle" name="test_every_invalid_transition_is_refused[qualified-failed]" time="0.634" /><testcase classname="tests.leads.test_lifecycle" name="test_every_invalid_transition_is_refused[qualified-new]" time="0.623" /><testcase classname="tests.leads.test_lifecycle" name="test_every_invalid_transition_is_refused[qualified-qualified]" time="0.651" /><testcase classname="tests.leads.test_lifecycle" name="test_every_invalid_transition_is_refused[qualified-queued]" time="0.736" /><testcase classname="tests.leads.test_lifecycle" name="test_every_invalid_transition_is_refused[queued-queued]" time="0.720" /><testcase classname="tests.leads.test_lifecycle" name="test_every_invalid_transition_is_refused[unqualified-called]" time="0.694" /><testcase classname="tests.leads.test_lifecycle" name="test_every_invalid_transition_is_refused[unqualified-failed]" time="0.654" /><testcase classname="tests.leads.test_lifecycle" name="test_every_invalid_transition_is_refused[unqualified-new]" time="0.666" /><testcase classname="tests.leads.test_lifecycle" name="test_every_invalid_transition_is_refused[unqualified-unqualified]" time="0.644" /><testcase classname="tests.leads.test_lifecycle" name="test_do_not_call_is_terminal" time="0.637" /><testcase classname="tests.leads.test_lifecycle" name="test_aliases_store_the_canonical_value" time="0.586" /><testcase classname="tests.leads.test_lifecycle" name="test_compare_and_set_rejects_a_stale_belief" time="0.657" /><testcase classname="tests.leads.test_lifecycle" name="test_api_status_change_writes_history" time="0.617" /><testcase classname="tests.leads.test_lifecycle" name="test_workflow_status_action_writes_history" time="0.749" /><testcase classname="tests.leads.test_lifecycle" name="test_workflow_cannot_reverse_do_not_call" time="0.711" /><testcase classname="tests.leads.test_lifecycle" name="test_ai_tool_dnc_goes_through_consent_and_history" time="0.663" /><testcase classname="tests.leads.test_lifecycle" name="test_messaging_stop_sets_dnc_and_start_never_reverses" time="0.634" /><testcase classname="tests.leads.test_lifecycle" name="test_no_direct_lead_status_assignments_outside_the_lifecycle" time="0.099" /><testcase classname="tests.leads.test_lifecycle" name="test_only_the_lifecycle_mirrors_status_onto_the_model" time="0.071" /><testcase classname="tests.leads.test_scoring" name="test_score_is_stable_and_versioned" time="0.625" /><testcase classname="tests.leads.test_scoring" name="test_scoring_does_not_clear_do_not_call" time="0.707" /><testcase classname="tests.leads.test_segments" name="test_segment_returns_only_matching_leads_in_scope" time="0.813" /><testcase classname="tests.leads.test_segments" name="test_raw_sql_and_unknown_fields_are_rejected" time="0.002" /><testcase classname="tests.leads.test_segments" name="test_member_pagination" time="0.816" /><testcase classname="tests.leads.test_service" name="test_create_stamps_tenant_and_environment" time="0.756" /><testcase classname="tests.leads.test_service" name="test_client_tenant_claim_is_rejected" time="0.666" /><testcase classname="tests.leads.test_service" name="test_transition_appends_history_and_dnc_is_terminal" time="1.808" /><testcase classname="tests.leads.test_service" name="test_voice_denial_sets_dnc_and_grant_cannot_clear_it" time="0.705" /><testcase classname="tests.leads.test_service" name="test_owner_assignment_uses_the_user_table" time="0.685" /><testcase classname="tests.leads.test_service" name="test_timeline_references_a_call_without_copying_the_transcript" time="0.637" /><testcase classname="tests.leads.test_service" name="test_enrichment_is_not_configured" time="0.625" /><testcase classname="tests.leads.test_service" name="test_legacy_collection_still_creates" time="0.687" /><testcase classname="tests.security.test_conductor_security" name="test_conductor_cross_tenant_isolation_and_context_scope" time="0.840" /><testcase classname="tests.security.test_conductor_security" name="test_conductor_rejects_forbidden_paths_secrets_and_unapproved_apply" time="0.899" /><testcase classname="tests.integration.test_conductor_workflow" name="test_conductor_full_workflow_partial_approve_simulate_and_immutable_apply" time="0.997" /><testcase classname="tests.integration.test_conductor_workflow" name="test_conductor_stale_base_version_conflict_blocks_overwrite" time="0.909" /><testcase classname="tests.e2e.test_agent_builder_to_call_flow" name="test_builder_publishes_persisted_snapshot_then_simulated_call_uses_it" time="1.074" /><testcase classname="tests.e2e.test_calls_analytics_flow" name="test_persisted_call_transcript_replay_and_analytics_read_paths" time="0.820"><failure message="TypeError: _audit() missing 2 required positional arguments: 'ctx' and 'event'">+ Exception Group Traceback (most recent call last):
+  |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/_utils.py", line 85, in create_collapsing_task_group
+  |     async with anyio.create_task_group() as tg:
+  |                ^^^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 847, in __aexit__
+  |     raise BaseExceptionGroup(
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/_pytest/runner.py", line 341, in from_call
+    |     result: TResult | None = func()
+    |                              ^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/_pytest/runner.py", line 242, in &lt;lambda&gt;
+    |     lambda: runtest_hook(item=item, **kwds), when=when, reraise=reraise
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pluggy/_hooks.py", line 512, in __call__
+    |     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    |     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 167, in _multicall
+    |     raise exception
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 139, in _multicall
+    |     teardown.throw(exception)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/_pytest/threadexception.py", line 92, in pytest_runtest_call
+    |     yield from thread_exception_runtest_hook()
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/_pytest/threadexception.py", line 68, in thread_exception_runtest_hook
+    |     yield
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 139, in _multicall
+    |     teardown.throw(exception)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/_pytest/unraisableexception.py", line 95, in pytest_runtest_call
+    |     yield from unraisable_exception_runtest_hook()
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/_pytest/unraisableexception.py", line 70, in unraisable_exception_runtest_hook
+    |     yield
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 139, in _multicall
+    |     teardown.throw(exception)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/_pytest/logging.py", line 846, in pytest_runtest_call
+    |     yield from self._runtest_for(item, "call")
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/_pytest/logging.py", line 829, in _runtest_for
+    |     yield
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 139, in _multicall
+    |     teardown.throw(exception)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/_pytest/capture.py", line 880, in pytest_runtest_call
+    |     return (yield)
+    |             ^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 139, in _multicall
+    |     teardown.throw(exception)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/_pytest/skipping.py", line 257, in pytest_runtest_call
+    |     return (yield)
+    |             ^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 121, in _multicall
+    |     res = hook_impl.function(*args)
+    |           ^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/_pytest/runner.py", line 174, in pytest_runtest_call
+    |     item.runtest()
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py", line 533, in runtest
+    |     super().runtest()
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/_pytest/python.py", line 1627, in runtest
+    |     self.ihook.pytest_pyfunc_call(pyfuncitem=self)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pluggy/_hooks.py", line 512, in __call__
+    |     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    |     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 167, in _multicall
+    |     raise exception
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 139, in _multicall
+    |     teardown.throw(exception)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 53, in run_old_style_hookwrapper
+    |     return result.get_result()
+    |            ^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pluggy/_result.py", line 103, in get_result
+    |     raise exc.with_traceback(tb)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 38, in run_old_style_hookwrapper
+    |     res = yield
+    |           ^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 121, in _multicall
+    |     res = hook_impl.function(*args)
+    |           ^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/_pytest/python.py", line 159, in pytest_pyfunc_call
+    |     result = testfunction(**testargs)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py", line 1026, in inner
+    |     _loop.run_until_complete(task)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.cache/python/cpython-3.12.15-linux-x86_64-gnu/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    |     return future.result()
+    |            ^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/e2e/test_calls_analytics_flow.py", line 53, in test_persisted_call_transcript_replay_and_analytics_read_paths
+    |     search = await client.post(
+    |              ^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/httpx/_client.py", line 1859, in post
+    |     return await self.request(
+    |            ^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/httpx/_client.py", line 1540, in request
+    |     return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/httpx/_client.py", line 1629, in send
+    |     response = await self._send_handling_auth(
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/httpx/_client.py", line 1657, in _send_handling_auth
+    |     response = await self._send_handling_redirects(
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/httpx/_client.py", line 1694, in _send_handling_redirects
+    |     response = await self._send_single_request(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/httpx/_client.py", line 1730, in _send_single_request
+    |     response = await transport.handle_async_request(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/httpx/_transports/asgi.py", line 170, in handle_async_request
+    |     await self.app(scope, receive, send)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/fastapi/applications.py", line 1159, in __call__
+    |     await super().__call__(scope, receive, send)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/applications.py", line 96, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    |     raise exc
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    |     await self.app(scope, receive, _send)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/middleware/public_boundary.py", line 60, in _public_boundary_middleware
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/middleware/security_middleware.py", line 98, in __call__
+    |     await self.app(scope, limited_receive, limited_send)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/core/security_headers.py", line 79, in _security_headers_middleware
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/core/errors.py", line 289, in _request_id_middleware
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    |     await self.app(scope, receive, send)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     raise exc
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    |     await self.app(scope, receive, send)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/routing.py", line 670, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/routing.py", line 690, in app
+    |     await route.handle(scope, receive, send)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/routing.py", line 280, in handle
+    |     await self.app(scope, receive, send)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 134, in app
+    |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     raise exc
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 120, in app
+    |     response = await f(request)
+    |                ^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 674, in app
+    |     raw_response = await run_endpoint_function(
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 328, in run_endpoint_function
+    |     return await dependant.call(**values)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/api/call_search_export_routes.py", line 346, in search_calls
+    |     _audit("calls.search", tenant_id=str(ctx.tenant_id), total=total, filters=payload.model_dump())
+    | TypeError: _audit() missing 2 required positional arguments: 'ctx' and 'event'
+    +------------------------------------
+
+The above exception was the direct cause of the following exception:
+
+client = &lt;httpx.AsyncClient object at 0x7f135217ac30&gt;
+db = &lt;sqlalchemy.ext.asyncio.session.AsyncSession object at 0x7f1351bc2420&gt;
+tenant_a = &lt;app.db.models.Tenant object at 0x7f1351b84d70&gt;
+owner_a = &lt;app.db.models.User object at 0x7f1352014350&gt;
+
+    @pytest.mark.asyncio
+    async def test_persisted_call_transcript_replay_and_analytics_read_paths(
+        client, db, tenant_a, owner_a
+    ):
+        environment = await production(db, tenant_a)
+        now = datetime.now(timezone.utc)
+        call = Call(
+            tenant_id=tenant_a.id,
+            environment_id=environment.id,
+            call_sid=f"PROMPT8-{uuid.uuid4().hex}",
+            from_number="+14155550198",
+            to_number=tenant_a.twilio_number,
+            status=CallStatus.COMPLETED,
+            direction=CallDirection.INBOUND,
+            started_at=now - timedelta(minutes=2),
+            ended_at=now,
+            duration_seconds=120,
+            summary="Caller received a billing explanation.",
+            intent="billing_question",
+            booked=False,
+            escalated=False,
+        )
+        db.add(call)
+        await db.flush()
+        db.add_all(
+            [
+                Turn(call_id=call.id, speaker=Speaker.USER, text="I need help understanding my invoice."),
+                Turn(call_id=call.id, speaker=Speaker.ASSISTANT, text="I can help explain the invoice details."),
+            ]
+        )
+        await db.commit()
+        await db.refresh(call)
+    
+        headers = await auth_headers(client, owner_a)
+        replay = await client.get(f"/api/calls/{call.id}/replay", headers=headers)
+        assert replay.status_code == 200, replay.text
+        transcript = replay.json()["transcript"] or ""
+        assert "understanding my invoice" in transcript.lower()
+        assert "explain the invoice" in transcript.lower()
+    
+&gt;       search = await client.post(
+            "/api/calls/search",
+            headers=headers,
+            json={"status": "COMPLETED", "direction": "inbound", "limit": 10},
+        )
+
+tests/e2e/test_calls_analytics_flow.py:53: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/httpx/_client.py:1859: in post
+    return await self.request(
+.venv/lib/python3.12/site-packages/httpx/_client.py:1540: in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+.venv/lib/python3.12/site-packages/httpx/_client.py:1629: in send
+    response = await self._send_handling_auth(
+.venv/lib/python3.12/site-packages/httpx/_client.py:1657: in _send_handling_auth
+    response = await self._send_handling_redirects(
+.venv/lib/python3.12/site-packages/httpx/_client.py:1694: in _send_handling_redirects
+    response = await self._send_single_request(request)
+.venv/lib/python3.12/site-packages/httpx/_client.py:1730: in _send_single_request
+    response = await transport.handle_async_request(request)
+.venv/lib/python3.12/site-packages/httpx/_transports/asgi.py:170: in handle_async_request
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/fastapi/applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/applications.py:96: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+.venv/lib/python3.12/site-packages/starlette/middleware/base.py:193: in __call__
+    response = await self.dispatch_func(request, call_next)
+app/middleware/public_boundary.py:60: in _public_boundary_middleware
+    response = await call_next(request)
+.venv/lib/python3.12/site-packages/starlette/middleware/base.py:168: in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+.venv/lib/python3.12/site-packages/starlette/middleware/base.py:144: in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+app/middleware/security_middleware.py:98: in __call__
+    await self.app(scope, limited_receive, limited_send)
+.venv/lib/python3.12/site-packages/starlette/middleware/base.py:193: in __call__
+    response = await self.dispatch_func(request, call_next)
+app/core/security_headers.py:79: in _security_headers_middleware
+    response = await call_next(request)
+.venv/lib/python3.12/site-packages/starlette/middleware/base.py:168: in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+.venv/lib/python3.12/site-packages/starlette/middleware/base.py:144: in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+.venv/lib/python3.12/site-packages/starlette/middleware/base.py:193: in __call__
+    response = await self.dispatch_func(request, call_next)
+app/core/errors.py:289: in _request_id_middleware
+    response = await call_next(request)
+.venv/lib/python3.12/site-packages/starlette/middleware/base.py:168: in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+.venv/lib/python3.12/site-packages/starlette/middleware/base.py:144: in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+.venv/lib/python3.12/site-packages/starlette/middleware/cors.py:88: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:670: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:690: in app
+    await route.handle(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:280: in handle
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:120: in app
+    response = await f(request)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:674: in app
+    raw_response = await run_endpoint_function(
+.venv/lib/python3.12/site-packages/fastapi/routing.py:328: in run_endpoint_function
+    return await dependant.call(**values)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = CallSearchRequest(agent_id=None, provider=None, phone=None, outcome=None, has_analysis=None, transfer_state=None, dire...ion_max=None, start_date=None, end_date=None, search=None, limit=10, offset=0, sort_by='started_at', sort_order='desc')
+ctx = TenantContext(user=&lt;app.db.models.User object at 0x7f134acf7f20&gt;, tenant=&lt;app.db.models.Tenant object at 0x7f134acf6e1...d=UUID('403bb0ba-5f1a-4a0c-a524-91cdd4309b69'), environment_id=None, environment_role=None, membership_status='active')
+session = &lt;sqlalchemy.ext.asyncio.session.AsyncSession object at 0x7f134acf7770&gt;
+
+    @router.post("/search", response_model=CallSearchResponse)
+    async def search_calls(
+        payload: CallSearchRequest,
+        ctx: TenantContext = Depends(require_permission(Permission.CALL_READ)),
+        session: AsyncSession = Depends(get_session),
+    ):
+        """
+        POST /api/calls/search — Expanded filters phone fragment/status/direction/outcome/transfer_state/campaign/lead/date/booked/escalated/duration/agent/has_analysis with total envelope + pagination guarantees.
+        """
+        try:
+            _check_rate(ctx.tenant_id, "call_search", 60)
+    
+            filters = _build_search_filters(ctx.tenant_id, payload)
+    
+            # Duration filter requires post-processing or computed column
+            # We'll apply in memory if needed for simplicity, but also attempt DB filter if duration column exists
+            # For now, handle after fetch if needed
+    
+            total_q = await session.execute(select(func.count(Call.id)).where(*filters))
+            total = total_q.scalar() or 0
+    
+            order_col = getattr(Call, "started_at", Call.id)
+            if payload.sort_by == "ended_at" and hasattr(Call, "ended_at"):
+                order_col = Call.ended_at
+            elif payload.sort_by == "created_at" and hasattr(Call, "started_at"):
+                order_col = Call.started_at
+    
+            if payload.sort_order == "desc":
+                order_col = order_col.desc()
+            else:
+                order_col = order_col.asc()
+    
+            rows_q = await session.execute(
+                select(Call).where(*filters).order_by(order_col).offset(payload.offset).limit(payload.limit)
+            )
+            rows = rows_q.scalars().all()
+    
+            # Duration post-filter
+            filtered_rows = []
+            for r in rows:
+                d = _call_to_dict(r)
+                dur = d.get("duration_seconds")
+                if payload.duration_min is not None and dur is not None and dur &lt; payload.duration_min:
+                    continue
+                if payload.duration_max is not None and dur is not None and dur &gt; payload.duration_max:
+                    continue
+                filtered_rows.append(d)
+    
+            has_more = (payload.offset + payload.limit) &lt; total
+    
+&gt;           _audit("calls.search", tenant_id=str(ctx.tenant_id), total=total, filters=payload.model_dump())
+E           TypeError: _audit() missing 2 required positional arguments: 'ctx' and 'event'
+
+app/api/call_search_export_routes.py:346: TypeError</failure></testcase><testcase classname="tests.e2e.test_campaign_workflow_flow" name="test_campaign_audience_plan_and_controlled_workflow_lead_action" time="0.941" /><testcase classname="tests.e2e.test_chat_sms_flow" name="test_persisted_chat_message_memory_and_sms_provider_fail_closed" time="0.830" /><testcase classname="tests.e2e.test_conductor_flow" name="test_conductor_full_workflow_partial_approve_simulate_and_immutable_apply" time="1.048" /><testcase classname="tests.e2e.test_conductor_flow" name="test_prompt8_conductor_failure_reproduction_review_and_immutable_apply" time="1.019" /><testcase classname="tests.e2e.test_enterprise_cross_module_auth" name="test_tenant_environment_rbac_api_key_and_module_isolation" time="1.034"><failure message="TypeError: _audit() missing 2 required positional arguments: 'ctx' and 'event'">+ Exception Group Traceback (most recent call last):
+  |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/_utils.py", line 85, in create_collapsing_task_group
+  |     async with anyio.create_task_group() as tg:
+  |                ^^^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 847, in __aexit__
+  |     raise BaseExceptionGroup(
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/_pytest/runner.py", line 341, in from_call
+    |     result: TResult | None = func()
+    |                              ^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/_pytest/runner.py", line 242, in &lt;lambda&gt;
+    |     lambda: runtest_hook(item=item, **kwds), when=when, reraise=reraise
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pluggy/_hooks.py", line 512, in __call__
+    |     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    |     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 167, in _multicall
+    |     raise exception
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 139, in _multicall
+    |     teardown.throw(exception)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/_pytest/threadexception.py", line 92, in pytest_runtest_call
+    |     yield from thread_exception_runtest_hook()
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/_pytest/threadexception.py", line 68, in thread_exception_runtest_hook
+    |     yield
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 139, in _multicall
+    |     teardown.throw(exception)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/_pytest/unraisableexception.py", line 95, in pytest_runtest_call
+    |     yield from unraisable_exception_runtest_hook()
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/_pytest/unraisableexception.py", line 70, in unraisable_exception_runtest_hook
+    |     yield
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 139, in _multicall
+    |     teardown.throw(exception)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/_pytest/logging.py", line 846, in pytest_runtest_call
+    |     yield from self._runtest_for(item, "call")
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/_pytest/logging.py", line 829, in _runtest_for
+    |     yield
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 139, in _multicall
+    |     teardown.throw(exception)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/_pytest/capture.py", line 880, in pytest_runtest_call
+    |     return (yield)
+    |             ^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 139, in _multicall
+    |     teardown.throw(exception)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/_pytest/skipping.py", line 257, in pytest_runtest_call
+    |     return (yield)
+    |             ^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 121, in _multicall
+    |     res = hook_impl.function(*args)
+    |           ^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/_pytest/runner.py", line 174, in pytest_runtest_call
+    |     item.runtest()
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py", line 533, in runtest
+    |     super().runtest()
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/_pytest/python.py", line 1627, in runtest
+    |     self.ihook.pytest_pyfunc_call(pyfuncitem=self)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pluggy/_hooks.py", line 512, in __call__
+    |     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    |     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 167, in _multicall
+    |     raise exception
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 139, in _multicall
+    |     teardown.throw(exception)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 53, in run_old_style_hookwrapper
+    |     return result.get_result()
+    |            ^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pluggy/_result.py", line 103, in get_result
+    |     raise exc.with_traceback(tb)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 38, in run_old_style_hookwrapper
+    |     res = yield
+    |           ^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 121, in _multicall
+    |     res = hook_impl.function(*args)
+    |           ^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/_pytest/python.py", line 159, in pytest_pyfunc_call
+    |     result = testfunction(**testargs)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py", line 1026, in inner
+    |     _loop.run_until_complete(task)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.cache/python/cpython-3.12.15-linux-x86_64-gnu/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    |     return future.result()
+    |            ^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/e2e/test_enterprise_cross_module_auth.py", line 119, in test_tenant_environment_rbac_api_key_and_module_isolation
+    |     foreign_search = await client.post(
+    |                      ^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/httpx/_client.py", line 1859, in post
+    |     return await self.request(
+    |            ^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/httpx/_client.py", line 1540, in request
+    |     return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/httpx/_client.py", line 1629, in send
+    |     response = await self._send_handling_auth(
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/httpx/_client.py", line 1657, in _send_handling_auth
+    |     response = await self._send_handling_redirects(
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/httpx/_client.py", line 1694, in _send_handling_redirects
+    |     response = await self._send_single_request(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/httpx/_client.py", line 1730, in _send_single_request
+    |     response = await transport.handle_async_request(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/httpx/_transports/asgi.py", line 170, in handle_async_request
+    |     await self.app(scope, receive, send)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/fastapi/applications.py", line 1159, in __call__
+    |     await super().__call__(scope, receive, send)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/applications.py", line 96, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    |     raise exc
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    |     await self.app(scope, receive, _send)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/middleware/public_boundary.py", line 60, in _public_boundary_middleware
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/middleware/security_middleware.py", line 98, in __call__
+    |     await self.app(scope, limited_receive, limited_send)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/core/security_headers.py", line 79, in _security_headers_middleware
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/core/errors.py", line 289, in _request_id_middleware
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    |     await self.app(scope, receive, send)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     raise exc
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    |     await self.app(scope, receive, send)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/routing.py", line 670, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/routing.py", line 690, in app
+    |     await route.handle(scope, receive, send)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/routing.py", line 280, in handle
+    |     await self.app(scope, receive, send)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 134, in app
+    |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     raise exc
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 120, in app
+    |     response = await f(request)
+    |                ^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 674, in app
+    |     raw_response = await run_endpoint_function(
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 328, in run_endpoint_function
+    |     return await dependant.call(**values)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/api/call_search_export_routes.py", line 346, in search_calls
+    |     _audit("calls.search", tenant_id=str(ctx.tenant_id), total=total, filters=payload.model_dump())
+    | TypeError: _audit() missing 2 required positional arguments: 'ctx' and 'event'
+    +------------------------------------
+
+The above exception was the direct cause of the following exception:
+
+client = &lt;httpx.AsyncClient object at 0x7f1349e78fb0&gt;
+db = &lt;sqlalchemy.ext.asyncio.session.AsyncSession object at 0x7f1349e076e0&gt;
+tenant_a = &lt;app.db.models.Tenant object at 0x7f1349e078c0&gt;
+tenant_b = &lt;app.db.models.Tenant object at 0x7f1349e048c0&gt;
+owner_a = &lt;app.db.models.User object at 0x7f134a74bec0&gt;
+owner_b = &lt;app.db.models.User object at 0x7f1349b5f560&gt;
+viewer_a = &lt;app.db.models.User object at 0x7f1349e1d280&gt;, billing_plans = None
+
+    @pytest.mark.asyncio
+    async def test_tenant_environment_rbac_api_key_and_module_isolation(
+        client,
+        db,
+        tenant_a,
+        tenant_b,
+        owner_a,
+        owner_b,
+        viewer_a,
+        billing_plans,
+    ):
+        owner_a_headers = await auth_headers(client, owner_a)
+        owner_b_headers = await auth_headers(client, owner_b)
+        viewer_a_headers = await auth_headers(client, viewer_a)
+    
+        environments_a = await client.get(
+            f"/api/tenants/{tenant_a.id}/environments", headers=owner_a_headers
+        )
+        assert environments_a.status_code == 200, environments_a.text
+        production = next(row for row in environments_a.json() if row["kind"] == "production")
+        current = await client.get(
+            f"/api/tenants/{tenant_a.id}/access/current", headers=owner_a_headers
+        )
+        assert current.status_code == 200, current.text
+        assert current.json()["id"] == production["id"]
+    
+        agent_a, published_a, _version_a = await create_published_voice_agent(
+            client,
+            owner_a_headers,
+            name="Cross-module production agent A",
+            environment_id=production["id"],
+            environment="production",
+        )
+        agent_a_id = agent_a["agent_id"]
+        assert published_a["version"] == 1
+    
+        # Tenant B cannot read or mutate Tenant A's agent by knowing its identifier.
+        foreign_agent = await client.get(
+            f"/api/v1/agents/{agent_a_id}/builder", headers=owner_b_headers
+        )
+        assert foreign_agent.status_code == 404, foreign_agent.text
+        viewer_write = await client.post(
+            "/api/v1/agents",
+            headers=viewer_a_headers,
+            json={"name": "Viewer must not create", "agent_type": "voice"},
+        )
+        assert viewer_write.status_code == 403, viewer_write.text
+    
+        simulated_call = await client.post(
+            "/api/v1/telephony/calls/outbound",
+            headers=owner_a_headers,
+            json={
+                "to_number": "+14155550176",
+                "from_number": "+14155550105",
+                "agent_id": agent_a_id,
+                "agent_version_number": published_a["version"],
+                "provider": "SIMULATED",
+                "is_simulation": True,
+                "environment_id": production["id"],
+                "idempotency_key": "prompt8-cross-module-call-a",
+            },
+        )
+        assert simulated_call.status_code == 201, simulated_call.text
+        telephony_call_id = simulated_call.json()["id"]
+        assert simulated_call.json()["is_simulation"] is True
+        assert simulated_call.json()["environment_id"] == production["id"]
+        assert simulated_call.json()["agent_version_number"] == 1
+    
+        own_telephony_call = await client.get(
+            f"/api/v1/telephony/calls/{telephony_call_id}", headers=owner_a_headers
+        )
+        foreign_telephony_call = await client.get(
+            f"/api/v1/telephony/calls/{telephony_call_id}", headers=owner_b_headers
+        )
+        assert own_telephony_call.status_code == 200, own_telephony_call.text
+        assert foreign_telephony_call.status_code == 404, foreign_telephony_call.text
+    
+        viewer_call_write = await client.post(
+            "/api/v1/telephony/calls/outbound",
+            headers=viewer_a_headers,
+            json={
+                "to_number": "+14155550177",
+                "from_number": "+14155550106",
+                "agent_id": agent_a_id,
+                "agent_version_number": 1,
+                "provider": "SIMULATED",
+                "is_simulation": True,
+                "environment_id": production["id"],
+                "idempotency_key": "prompt8-cross-module-viewer-denied",
+            },
+        )
+        assert viewer_call_write.status_code == 403, viewer_call_write.text
+    
+        # The established legacy Call/analytics/billing read models are tenant
+        # scoped independently of the versioned telephony-session model above.
+        legacy_call_a = await make_call(db, tenant_a)
+        legacy_call_b = await make_call(db, tenant_b)
+        legacy_a_visible_to_b = await client.get(
+            f"/api/calls/{legacy_call_a.id}", headers=owner_b_headers
+        )
+        assert legacy_a_visible_to_b.status_code == 404, legacy_a_visible_to_b.text
+        own_legacy_call = await client.get(
+            f"/api/calls/{legacy_call_a.id}", headers=owner_a_headers
+        )
+        assert own_legacy_call.status_code == 200, own_legacy_call.text
+    
+&gt;       foreign_search = await client.post(
+            "/api/calls/search",
+            headers=owner_b_headers,
+            json={"search": legacy_call_a.call_sid, "limit": 10},
+        )
+
+tests/e2e/test_enterprise_cross_module_auth.py:119: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/httpx/_client.py:1859: in post
+    return await self.request(
+.venv/lib/python3.12/site-packages/httpx/_client.py:1540: in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+.venv/lib/python3.12/site-packages/httpx/_client.py:1629: in send
+    response = await self._send_handling_auth(
+.venv/lib/python3.12/site-packages/httpx/_client.py:1657: in _send_handling_auth
+    response = await self._send_handling_redirects(
+.venv/lib/python3.12/site-packages/httpx/_client.py:1694: in _send_handling_redirects
+    response = await self._send_single_request(request)
+.venv/lib/python3.12/site-packages/httpx/_client.py:1730: in _send_single_request
+    response = await transport.handle_async_request(request)
+.venv/lib/python3.12/site-packages/httpx/_transports/asgi.py:170: in handle_async_request
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/fastapi/applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/applications.py:96: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+.venv/lib/python3.12/site-packages/starlette/middleware/base.py:193: in __call__
+    response = await self.dispatch_func(request, call_next)
+app/middleware/public_boundary.py:60: in _public_boundary_middleware
+    response = await call_next(request)
+.venv/lib/python3.12/site-packages/starlette/middleware/base.py:168: in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+.venv/lib/python3.12/site-packages/starlette/middleware/base.py:144: in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+app/middleware/security_middleware.py:98: in __call__
+    await self.app(scope, limited_receive, limited_send)
+.venv/lib/python3.12/site-packages/starlette/middleware/base.py:193: in __call__
+    response = await self.dispatch_func(request, call_next)
+app/core/security_headers.py:79: in _security_headers_middleware
+    response = await call_next(request)
+.venv/lib/python3.12/site-packages/starlette/middleware/base.py:168: in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+.venv/lib/python3.12/site-packages/starlette/middleware/base.py:144: in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+.venv/lib/python3.12/site-packages/starlette/middleware/base.py:193: in __call__
+    response = await self.dispatch_func(request, call_next)
+app/core/errors.py:289: in _request_id_middleware
+    response = await call_next(request)
+.venv/lib/python3.12/site-packages/starlette/middleware/base.py:168: in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+.venv/lib/python3.12/site-packages/starlette/middleware/base.py:144: in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+.venv/lib/python3.12/site-packages/starlette/middleware/cors.py:88: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:670: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:690: in app
+    await route.handle(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:280: in handle
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:120: in app
+    response = await f(request)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:674: in app
+    raw_response = await run_endpoint_function(
+.venv/lib/python3.12/site-packages/fastapi/routing.py:328: in run_endpoint_function
+    return await dependant.call(**values)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = CallSearchRequest(agent_id=None, provider=None, phone=None, outcome=None, has_analysis=None, transfer_state=None, dire...nd_date=None, search='CA6a779e05e5f043318b95f7b612cde93e', limit=10, offset=0, sort_by='started_at', sort_order='desc')
+ctx = TenantContext(user=&lt;app.db.models.User object at 0x7f134a8619d0&gt;, tenant=&lt;app.db.models.Tenant object at 0x7f134a86170...d=UUID('a10e8be0-cdf9-4096-a1c5-6af7200d084e'), environment_id=None, environment_role=None, membership_status='active')
+session = &lt;sqlalchemy.ext.asyncio.session.AsyncSession object at 0x7f134a860a70&gt;
+
+    @router.post("/search", response_model=CallSearchResponse)
+    async def search_calls(
+        payload: CallSearchRequest,
+        ctx: TenantContext = Depends(require_permission(Permission.CALL_READ)),
+        session: AsyncSession = Depends(get_session),
+    ):
+        """
+        POST /api/calls/search — Expanded filters phone fragment/status/direction/outcome/transfer_state/campaign/lead/date/booked/escalated/duration/agent/has_analysis with total envelope + pagination guarantees.
+        """
+        try:
+            _check_rate(ctx.tenant_id, "call_search", 60)
+    
+            filters = _build_search_filters(ctx.tenant_id, payload)
+    
+            # Duration filter requires post-processing or computed column
+            # We'll apply in memory if needed for simplicity, but also attempt DB filter if duration column exists
+            # For now, handle after fetch if needed
+    
+            total_q = await session.execute(select(func.count(Call.id)).where(*filters))
+            total = total_q.scalar() or 0
+    
+            order_col = getattr(Call, "started_at", Call.id)
+            if payload.sort_by == "ended_at" and hasattr(Call, "ended_at"):
+                order_col = Call.ended_at
+            elif payload.sort_by == "created_at" and hasattr(Call, "started_at"):
+                order_col = Call.started_at
+    
+            if payload.sort_order == "desc":
+                order_col = order_col.desc()
+            else:
+                order_col = order_col.asc()
+    
+            rows_q = await session.execute(
+                select(Call).where(*filters).order_by(order_col).offset(payload.offset).limit(payload.limit)
+            )
+            rows = rows_q.scalars().all()
+    
+            # Duration post-filter
+            filtered_rows = []
+            for r in rows:
+                d = _call_to_dict(r)
+                dur = d.get("duration_seconds")
+                if payload.duration_min is not None and dur is not None and dur &lt; payload.duration_min:
+                    continue
+                if payload.duration_max is not None and dur is not None and dur &gt; payload.duration_max:
+                    continue
+                filtered_rows.append(d)
+    
+            has_more = (payload.offset + payload.limit) &lt; total
+    
+&gt;           _audit("calls.search", tenant_id=str(ctx.tenant_id), total=total, filters=payload.model_dump())
+E           TypeError: _audit() missing 2 required positional arguments: 'ctx' and 'event'
+
+app/api/call_search_export_routes.py:346: TypeError</failure></testcase><testcase classname="tests.e2e.test_full_platform_e2e" name="test_master_new_customer_to_simulated_call_and_truthful_cross_module_state" time="1.163" /><testcase classname="tests.e2e.test_full_platform_e2e" name="test_call_pin_keeps_superseded_snapshot_and_unpinned_call_uses_persisted_pointer" time="1.169" /><testcase classname="tests.e2e.test_guardrails_pii_flow" name="test_guardrails_pii_redaction_and_raw_export_authorization" time="1.961" /><testcase classname="tests.e2e.test_knowledge_crm_flow" name="test_ingested_knowledge_builder_association_contact_memory_and_crm_readiness" time="0.895" /><testcase classname="tests.e2e.test_live_monitor_takeover_flow" name="test_live_monitor_and_takeover_actions_are_audited_and_not_faked" time="0.826" /><testcase classname="tests.e2e.test_public_to_dashboard_flow" name="test_public_catalog_signup_environment_and_authenticated_dashboard_api" time="0.784" /><testcase classname="tests.e2e.test_settings_billing_flow" name="test_settings_security_and_billing_read_write_state_are_persisted" time="0.913" /><testcase classname="tests.e2e.test_testing_simulation_flow" name="test_version_pinned_playground_and_failed_scenario_are_persisted_truthfully" time="1.012" /><testcase classname="tests.e2e.test_voice_telephony_flow" name="test_phone_sip_inbound_live_fail_closed_and_simulation_version_binding" time="0.978" /><testcase classname="tests.compliance.test_qms_ocg" name="test_qms_document_status_revision_evidence_and_source_are_explainable" time="0.002" /><testcase classname="tests.compliance.test_qms_ocg" name="test_ocg_rule_states_are_deterministic_and_source_bound" time="0.001" /><testcase classname="tests.compliance.test_qms_ocg" name="test_requested_agent_catalog_and_industry_checks_are_registered_and_non_clinical" time="0.002" /><testcase classname="tests.compliance.test_qms_ocg" name="test_compliance_findings_remediation_review_and_scope_isolation" time="0.712" /><testcase classname="tests.telephony.test_callback_reconciliation" name="test_duplicate_and_out_of_order_do_not_double_apply" time="0.622" /><testcase classname="tests.telephony.test_callback_reconciliation" name="test_missing_local_record_is_unmatched" time="0.664" /><testcase classname="tests.telephony.test_callback_reconciliation" name="test_stale_snapshot_does_not_overwrite_a_newer_terminal_call" time="0.645" /><testcase classname="tests.telephony.test_callback_reconciliation" name="test_dlq_retry_exhaustion_and_replay" time="0.685" /><testcase classname="tests.telephony.test_callback_reconciliation" name="test_permanent_error_dead_letters_without_five_retries" time="0.709" /><testcase classname="tests.telephony.test_callback_reconciliation" name="test_scrub_drops_secrets" time="0.002" /><testcase classname="tests.telephony.test_lead_lifecycle_callbacks" name="test_completed_high_score_qualifies_with_history" time="0.683" /><testcase classname="tests.telephony.test_lead_lifecycle_callbacks" name="test_completed_low_score_marks_called" time="0.713" /><testcase classname="tests.telephony.test_lead_lifecycle_callbacks" name="test_short_completed_call_does_not_grade" time="0.692" /><testcase classname="tests.telephony.test_lead_lifecycle_callbacks" name="test_failed_at_attempt_cap_marks_failed" time="0.704" /><testcase classname="tests.telephony.test_lead_lifecycle_callbacks" name="test_no_answer_under_the_cap_leaves_the_lead_alone" time="0.651" /><testcase classname="tests.telephony.test_lead_lifecycle_callbacks" name="test_repeated_callback_never_double_grades" time="0.672" /><testcase classname="tests.telephony.test_lead_lifecycle_callbacks" name="test_cross_environment_lead_is_never_graded" time="0.759" /><testcase classname="tests.telephony.test_lead_lifecycle_callbacks" name="test_dnc_lead_is_never_touched_or_reversed" time="0.781" /><testcase classname="tests.telephony.test_number_provisioning" name="test_purchase_requires_billing_and_then_assigns_once" time="0.731" /><testcase classname="tests.telephony.test_number_provisioning" name="test_provider_failure_releases_the_reservation" time="0.640" /><testcase classname="tests.telephony.test_number_provisioning" name="test_cross_tenant_assign_and_release_are_not_found" time="0.691" /><testcase classname="tests.telephony.test_number_provisioning" name="test_release_calls_provider_once_and_is_idempotent" time="0.702" /><testcase classname="tests.telephony.test_number_provisioning" name="test_stale_provider_snapshot_does_not_revive_a_release" time="0.667" /><testcase classname="tests.telephony.test_number_provisioning" name="test_http_inventory_is_tenant_scoped" time="0.860" /><testcase classname="tests.telephony.test_outbound_environment_scope" name="test_selection_is_restricted_to_the_campaign_environment" time="0.665" /><testcase classname="tests.telephony.test_outbound_environment_scope" name="test_staging_campaign_selects_only_staging_leads" time="0.648" /><testcase classname="tests.telephony.test_outbound_environment_scope" name="test_dnc_and_attempt_cap_still_exclude_leads" time="0.661" /><testcase classname="tests.telephony.test_outbound_environment_scope" name="test_same_environment_pair_dials" time="0.713" /><testcase classname="tests.telephony.test_outbound_environment_scope" name="test_cross_environment_lead_is_refused_even_when_directly_handed" time="0.751" /><testcase classname="tests.telephony.test_outbound_environment_scope" name="test_cross_environment_campaign_is_refused" time="0.641" /><testcase classname="tests.telephony.test_outbound_environment_scope" name="test_foreign_tenant_lead_is_refused" time="0.627" /><testcase classname="tests.telephony.test_outbound_environment_scope" name="test_dnc_lead_is_refused_inside_the_same_environment" time="0.666" /><testcase classname="tests.telephony.test_outbound_environment_scope" name="test_parallel_ticks_claim_each_lead_once" time="0.772" /><testcase classname="tests.telephony.test_provider_contract" name="test_each_adapter_rejects_missing_credentials" time="0.002" /><testcase classname="tests.telephony.test_provider_contract" name="test_unknown_provider_and_secret_are_not_returned" time="0.002" /><testcase classname="tests.telephony.test_provider_contract" name="test_disabled_provider_is_rejected" time="0.660" /><testcase classname="tests.telephony.test_provider_contract" name="test_telnyx_maps_http_errors" time="0.002" /><testcase classname="tests.telephony.test_provider_contract" name="test_telnyx_does_not_invent_a_call_or_whatsapp" time="0.002" /><testcase classname="tests.telephony.test_provider_contract" name="test_telnyx_search_uses_only_returned_features" time="0.002" /><testcase classname="tests.telephony.test_provider_contract" name="test_vonage_voice_and_recording_fail_clearly" time="0.002" /><testcase classname="tests.telephony.test_provider_contract" name="test_vonage_number_search_parses_features_and_hides_secret" time="0.002" /><testcase classname="tests.telephony.test_provider_contract" name="test_twilio_webhook_fail_closed_and_other_providers_reject" time="0.011" /><testcase classname="tests.telephony.test_provider_contract" name="test_vonage_jwt_accepts_only_a_fresh_signature" time="0.002" /><testcase classname="tests.telephony.test_provider_contract" name="test_twilio_capabilities_follow_configuration" time="0.663" /><testcase classname="tests.telephony.test_qos" name="test_valid_metrics_and_missing_metric" time="0.002" /><testcase classname="tests.telephony.test_qos" name="test_negative_and_unit_and_mos_are_rejected" time="0.002" /><testcase classname="tests.telephony.test_qos" name="test_aggregation_is_tenant_scoped" time="0.620" /><testcase classname="tests.telephony.test_recording" name="test_state_machine_and_duplicate_do_not_regress" time="0.625" /><testcase classname="tests.telephony.test_recording" name="test_consent_and_policy_block_capture" time="0.591" /><testcase classname="tests.telephony.test_recording" name="test_access_is_permissioned_audited_and_expires" time="0.605" /><testcase classname="tests.telephony.test_recording" name="test_other_tenant_cannot_change_policy" time="0.588" /><testcase classname="tests.telephony.test_recording" name="test_missing_provider_id_and_callback_duplicate" time="0.610" /><testcase classname="tests.telephony.test_recording" name="test_retention_deletes_recording_unless_held" time="0.645" /><testcase classname="tests.test_telephony_runtime_e2e" name="test_phone_number_lifecycle_e164_validation_and_agent_binding" time="0.697" /><testcase classname="tests.test_telephony_runtime_e2e" name="test_sip_connection_validation_secret_hashing_and_test_probe" time="0.674" /><testcase classname="tests.test_telephony_runtime_e2e" name="test_inbound_webhook_call_routing_and_unconfigured_agent_failure" time="0.766" /><testcase classname="tests.test_telephony_runtime_e2e" name="test_outbound_call_lifecycle_and_provider_readiness_honesty" time="0.740" /><testcase classname="tests.test_telephony_runtime_e2e" name="test_call_state_machine_valid_and_illegal_transitions" time="0.590" /><testcase classname="tests.test_telephony_runtime_e2e" name="test_realtime_media_gateway_barge_in_dtmf_and_transfers" time="0.865" /><testcase classname="tests.security.test_telephony_media_isolation" name="test_tenant_a_cannot_touch_tenant_b_media" time="0.722" /><testcase classname="tests.test_contracts" name="test_contracts_exist" time="0.002" /><testcase classname="tests.test_contracts" name="test_enum_vocabulary_matches_models" time="0.003" /><testcase classname="tests.test_contracts" name="test_every_operational_message_is_tenant_scoped" time="0.003" /><testcase classname="tests.test_contracts" name="test_shared_primitives_are_exactly_the_allowlist" time="0.001" /><testcase classname="tests.test_api_contract" name="test_registered_api_method_path_pairs_are_unique" time="0.006" /><testcase classname="tests.test_api_contract" name="test_no_route_returns_500_when_probed" time="6.309" /><testcase classname="tests.test_external_success_honesty" name="test_webhook_records_only_transport_observed_success[204-delivered]" time="0.627" /><testcase classname="tests.test_external_success_honesty" name="test_webhook_records_only_transport_observed_success[302-dlq]" time="0.645" /><testcase classname="tests.test_external_success_honesty" name="test_webhook_records_only_transport_observed_success[401-dlq]" time="0.619" /><testcase classname="tests.test_external_success_honesty" name="test_webhook_records_only_transport_observed_success[503-failed]" time="0.659" /><testcase classname="tests.test_external_success_honesty" name="test_unsafe_or_disabled_webhook_never_opens_transport[https://127.0.0.1/private-True]" time="0.623" /><testcase classname="tests.test_external_success_honesty" name="test_unsafe_or_disabled_webhook_never_opens_transport[https://8.8.8.8/hooks-False]" time="0.621" /><testcase classname="tests.test_external_success_honesty" name="test_webhook_configuration_rejects_private_destination" time="0.002" /><testcase classname="tests.test_external_success_honesty" name="test_unimplemented_remote_operations_do_not_fabricate_completion[connect_salesforce]" time="0.623" /><testcase classname="tests.test_external_success_honesty" name="test_unimplemented_remote_operations_do_not_fabricate_completion[oauth_authorize]" time="0.642" /><testcase classname="tests.test_external_success_honesty" name="test_unimplemented_remote_operations_do_not_fabricate_completion[oauth_callback]" time="0.639" /><testcase classname="tests.test_external_success_honesty" name="test_unimplemented_remote_operations_do_not_fabricate_completion[refresh_token]" time="0.619" /><testcase classname="tests.test_external_success_honesty" name="test_unimplemented_remote_operations_do_not_fabricate_completion[salesforce_writeback]" time="0.640" /><testcase classname="tests.test_external_success_honesty" name="test_unimplemented_remote_operations_do_not_fabricate_completion[sync_salesforce]" time="0.614" /><testcase classname="tests.test_external_success_honesty" name="test_unimplemented_remote_operations_do_not_fabricate_completion[api_limits]" time="0.612" /><testcase classname="tests.test_external_success_honesty" name="test_unimplemented_remote_operations_do_not_fabricate_completion[describe_objects]" time="0.675" /><testcase classname="tests.test_external_success_honesty" name="test_unimplemented_remote_operations_do_not_fabricate_completion[bulk_writeback]" time="0.631" /><testcase classname="tests.test_external_success_honesty" name="test_unimplemented_remote_operations_do_not_fabricate_completion[writeback_disposition]" time="0.620" /><testcase classname="tests.test_external_success_honesty" name="test_unimplemented_remote_operations_do_not_fabricate_completion[writeback_task_note]" time="0.733" /><testcase classname="tests.test_external_success_honesty" name="test_unimplemented_remote_operations_do_not_fabricate_completion[writeback_extracted_fields]" time="0.680" /><testcase classname="tests.test_external_success_honesty" name="test_unimplemented_remote_operations_do_not_fabricate_completion[create_mapping]" time="0.662" /><testcase classname="tests.test_external_success_honesty" name="test_unimplemented_remote_operations_do_not_fabricate_completion[list_mappings]" time="0.631" /><testcase classname="tests.test_external_success_honesty" name="test_unimplemented_remote_operations_do_not_fabricate_completion[backfill_crm]" time="0.646" /><testcase classname="tests.test_external_success_honesty" name="test_workflow_preserves_local_context_but_does_not_fake_remote_writeback" time="0.681" /><testcase classname="tests.test_placeholder_security_regressions" name="test_trigger_requires_existing_tenant_workflow[malformed]" time="0.646" /><testcase classname="tests.test_placeholder_security_regressions" name="test_trigger_requires_existing_tenant_workflow[missing]" time="0.693" /><testcase classname="tests.test_placeholder_security_regressions" name="test_trigger_requires_existing_tenant_workflow[foreign]" time="0.661" /><testcase classname="tests.test_placeholder_security_regressions" name="test_trigger_requires_existing_tenant_workflow[owned]" time="0.629" /><testcase classname="tests.test_placeholder_security_regressions" name="test_monitor_end_enforces_owner_or_effective_admin[manager-False-False]" time="0.633" /><testcase classname="tests.test_placeholder_security_regressions" name="test_monitor_end_enforces_owner_or_effective_admin[manager-True-True]" time="0.717" /><testcase classname="tests.test_placeholder_security_regressions" name="test_monitor_end_enforces_owner_or_effective_admin[admin-False-True]" time="0.652" /><testcase classname="tests.test_placeholder_security_regressions" name="test_monitor_end_enforces_owner_or_effective_admin[owner-False-True]" time="0.664" /><testcase classname="tests.test_enterprise_batch01.TestAgentDomain" name="test_validation_rejects_unknown_provider" time="0.003" /><testcase classname="tests.test_enterprise_batch01.TestAgentDomain" name="test_validation_rejects_out_of_range_speed" time="0.002" /><testcase classname="tests.test_enterprise_batch01.TestAgentDomain" name="test_id_stable_across_content_edits" time="0.002" /><testcase classname="tests.test_enterprise_batch01.TestAgentDomain" name="test_publish_transition_rules" time="0.002" /><testcase classname="tests.test_enterprise_batch01.TestAgentService" name="test_draft_tenant_isolation" time="0.695" /><testcase classname="tests.test_enterprise_batch01.TestAgentService" name="test_publish_mints_immutable_version" time="0.697" /><testcase classname="tests.test_enterprise_batch01.TestAgentService" name="test_publish_persists_tenant_columns" time="0.694" /><testcase classname="tests.test_enterprise_batch01.TestAgentService" name="test_rollback_reapplies_history" time="0.662" /><testcase classname="tests.test_enterprise_batch01.TestAgentService" name="test_configure_tools_validation" time="0.634" /><testcase classname="tests.test_enterprise_batch01.TestAgentService" name="test_test_configuration_offline" time="0.601" /><testcase classname="tests.test_enterprise_batch01.TestConversationDomain" name="test_transition_table" time="0.002" /><testcase classname="tests.test_enterprise_batch01.TestConversationDomain" name="test_invalid_transition_raises" time="0.002" /><testcase classname="tests.test_enterprise_batch01.TestConversationService" name="test_start_and_project" time="0.626" /><testcase classname="tests.test_enterprise_batch01.TestConversationService" name="test_append_turn_and_classify" time="0.644" /><testcase classname="tests.test_enterprise_batch01.TestConversationService" name="test_escalate_records_intent_without_dialing" time="0.667" /><testcase classname="tests.test_enterprise_batch01.TestConversationService" name="test_close_and_reopen_policy" time="0.655" /><testcase classname="tests.test_enterprise_batch01.TestConversationService" name="test_reopen_outside_window_rejected" time="0.725" /><testcase classname="tests.test_enterprise_batch01.TestConversationService" name="test_summarize_persists" time="0.570" /><testcase classname="tests.test_enterprise_batch01.TestConversationService" name="test_search_tenant_scoped" time="0.574" /><testcase classname="tests.test_enterprise_batch01.TestWorkflowDomain" name="test_controlled_actions_are_bounded" time="0.002" /><testcase classname="tests.test_enterprise_batch01.TestWorkflowDomain" name="test_evaluate_condition_operators" time="0.001" /><testcase classname="tests.test_enterprise_batch01.TestWorkflowDomain" name="test_validation_rejects_unknown_action" time="0.001" /><testcase classname="tests.test_enterprise_batch01.TestWorkflowDomain" name="test_validation_rejects_code_markers" time="0.001" /><testcase classname="tests.test_enterprise_batch01.TestWorkflowDomain" name="test_validation_requires_terminal" time="0.001" /><testcase classname="tests.test_enterprise_batch01.TestWorkflowService" name="test_publish_required_before_execute" time="0.589" /><testcase classname="tests.test_enterprise_batch01.TestWorkflowService" name="test_execution_deterministic_and_idempotent" time="0.620" /><testcase classname="tests.test_enterprise_batch01.TestWorkflowService" name="test_condition_branching" time="0.644" /><testcase classname="tests.test_enterprise_batch01.TestWorkflowService" name="test_approval_gate_waits_then_cancel" time="1.630" /><testcase classname="tests.test_enterprise_batch01.TestWorkflowService" name="test_retry_after_failure" time="0.654" /><testcase classname="tests.test_enterprise_batch01.TestWorkflowService" name="test_tenant_isolation" time="0.591" /><testcase classname="tests.test_enterprise_batch01.TestWorkflowService" name="test_lead_status_action_persists" time="0.652" /><testcase classname="tests.test_enterprise_batch01.TestAutomationService" name="test_filter_matching" time="0.604" /><testcase classname="tests.test_enterprise_batch01.TestAutomationService" name="test_disabled_not_evaluated" time="0.565" /><testcase classname="tests.test_enterprise_batch01.TestAutomationService" name="test_deduplication_idempotency" time="0.566" /><testcase classname="tests.test_enterprise_batch01.TestAutomationService" name="test_cooldown_suppresses" time="0.588" /><testcase classname="tests.test_enterprise_batch01.TestAutomationService" name="test_run_idempotency_key_deterministic" time="0.002" /><testcase classname="tests.test_enterprise_batch01.TestCampaignDomain" name="test_state_transitions" time="0.002" /><testcase classname="tests.test_enterprise_batch01.TestCampaignDomain" name="test_compliance_gate_cannot_be_weakened" time="0.001" /><testcase classname="tests.test_enterprise_batch01.TestCampaignService" name="test_create_and_state_lifecycle" time="0.622" /><testcase classname="tests.test_enterprise_batch01.TestCampaignService" name="test_dnc_lead_skipped" time="0.624" /><testcase classname="tests.test_enterprise_batch01.TestCampaignService" name="test_window_check_respects_tenant" time="0.603" /><testcase classname="tests.test_enterprise_batch01.TestCampaignService" name="test_attempt_limit" time="0.603" /><testcase classname="tests.test_enterprise_batch01.TestCampaignService" name="test_execution_plan_never_dials" time="0.602" /><testcase classname="tests.test_enterprise_batch01.TestCampaignService" name="test_progress_counts_leads" time="0.646" /><testcase classname="tests.test_enterprise_batch01.TestAnalyticsService" name="test_aggregate_correctness" time="0.694" /><testcase classname="tests.test_enterprise_batch01.TestAnalyticsService" name="test_tenant_isolation" time="0.634" /><testcase classname="tests.test_enterprise_batch01.TestAnalyticsService" name="test_range_validation" time="0.605" /><testcase classname="tests.test_enterprise_batch01.TestAnalyticsService" name="test_empty_results" time="0.682" /><testcase classname="tests.test_enterprise_batch01.TestAnalyticsService" name="test_snapshot_has_no_pii" time="0.725" /><testcase classname="tests.test_enterprise_batch01.TestAnalyticsService" name="test_cost_estimate_from_usage" time="0.665" /><testcase classname="tests.test_enterprise_batch01.TestNotificationService" name="test_strict_rendering" time="0.002" /><testcase classname="tests.test_enterprise_batch01.TestNotificationService" name="test_undeclared_variable_flagged" time="0.002" /><testcase classname="tests.test_enterprise_batch01.TestNotificationService" name="test_preference_quiet_hours" time="0.002" /><testcase classname="tests.test_enterprise_batch01.TestNotificationService" name="test_deduplication" time="0.620" /><testcase classname="tests.test_enterprise_batch01.TestNotificationService" name="test_retry_backoff_advances" time="0.642" /><testcase classname="tests.test_enterprise_batch01.TestNotificationService" name="test_in_app_delivery" time="0.712" /><testcase classname="tests.test_enterprise_batch01.TestNotificationService" name="test_email_channel_suppressed_honestly" time="0.685" /><testcase classname="tests.test_enterprise_batch01.TestInboxService" name="test_thread_isolation" time="0.633" /><testcase classname="tests.test_enterprise_batch01.TestInboxService" name="test_message_ordering" time="0.668" /><testcase classname="tests.test_enterprise_batch01.TestInboxService" name="test_read_unread" time="0.641" /><testcase classname="tests.test_enterprise_batch01.TestInboxService" name="test_assignment" time="0.635" /><testcase classname="tests.test_enterprise_batch01.TestInboxService" name="test_escalation" time="0.653" /><testcase classname="tests.test_enterprise_batch01.TestInboxService" name="test_close_and_reopen_policy" time="0.624" /><testcase classname="tests.test_enterprise_batch01.TestInboxService" name="test_reopen_window_rule" time="0.002" /><testcase classname="tests.test_enterprise_batch01.TestAgentApi" name="test_owner_can_create_and_list" time="0.733" /><testcase classname="tests.test_enterprise_batch01.TestAgentApi" name="test_viewer_forbidden" time="0.738" /><testcase classname="tests.test_enterprise_batch01.TestAgentApi" name="test_mass_assignment_protected" time="0.726" /><testcase classname="tests.test_enterprise_batch01.TestAgentApi" name="test_no_secret_leakage" time="0.723" /><testcase classname="tests.test_enterprise_batch01.TestAgentApi" name="test_publish_flow" time="0.765" /><testcase classname="tests.test_enterprise_batch01.TestWorkflowApi" name="test_create_and_execute" time="0.840" /><testcase classname="tests.test_enterprise_batch01.TestWorkflowApi" name="test_approval_route_resumes_persisted_execution" time="0.883" /><testcase classname="tests.test_enterprise_batch01.TestWorkflowApi" name="test_rejects_arbitrary_action" time="0.804" /><testcase classname="tests.test_enterprise_batch01.TestWorkflowApi" name="test_tenant_isolation" time="0.753" /><testcase classname="tests.test_enterprise_batch01.TestCampaignApi" name="test_create_requires_write_permission" time="0.720" /><testcase classname="tests.test_enterprise_batch01.TestCampaignApi" name="test_create_and_plan" time="0.731" /><testcase classname="tests.test_enterprise_batch01.TestCampaignApi" name="test_mass_assignment_protected" time="0.680" /><testcase classname="tests.test_enterprise_batch01.TestSecurityGuarantees" name="test_workflow_cannot_execute_arbitrary_code" time="0.607" /><testcase classname="tests.test_enterprise_batch01.TestSecurityGuarantees" name="test_automation_never_duplicates_side_effects" time="0.595" /><testcase classname="tests.test_enterprise_batch01.TestSecurityGuarantees" name="test_no_cross_tenant_conversation_visibility" time="0.593" /><testcase classname="tests.test_enterprise_batch01.TestSecurityGuarantees" name="test_analytics_never_exposes_phone_numbers" time="0.598" /><testcase classname="tests.test_enterprise_batch01.TestSecurityGuarantees" name="test_api_requires_authentication" time="0.713" /><testcase classname="tests.test_legacy_lead_routes" name="test_bulk_import_url_and_response_shape_unchanged" time="0.703" /><testcase classname="tests.test_legacy_lead_routes" name="test_bulk_import_skips_duplicates_within_the_environment" time="0.665" /><testcase classname="tests.test_legacy_lead_routes" name="test_same_phone_may_exist_in_two_environments" time="0.687" /><testcase classname="tests.test_legacy_lead_routes" name="test_bulk_import_refuses_a_cross_environment_campaign" time="0.689" /><testcase classname="tests.test_legacy_lead_routes" name="test_bulk_import_refuses_a_foreign_environment" time="0.651" /><testcase classname="tests.test_legacy_lead_routes" name="test_list_url_shape_and_environment_scope" time="0.694" /><testcase classname="tests.test_legacy_lead_routes" name="test_do_not_call_route_goes_through_consent_and_history" time="0.708" /><testcase classname="tests.test_legacy_lead_routes" name="test_do_not_call_from_the_wrong_environment_is_404" time="0.753" /><testcase classname="tests.test_legacy_lead_routes" name="test_legacy_campaign_urls_still_work" time="0.765" /><testcase classname="tests.test_legacy_lead_routes" name="test_foreign_tenant_manager_gets_404_on_every_legacy_url" time="0.751" /><testcase classname="tests.test_legacy_lead_routes" name="test_viewer_cannot_write_legacy_lead_routes" time="2.097" /></testsuite></testsuites>

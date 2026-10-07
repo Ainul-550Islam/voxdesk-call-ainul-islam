@@ -1,0 +1,13 @@
+{"terminal": "succeeded", "replay": "same receipt", "changed_body": "conflict"}
+TIMESTAMP_DHAKA=2026-10-05T17:47:19.205291+06:00
+DATABASE=voxdesk_prompt8; SERVER=PostgreSQL 17.11; processes=independent Python subprocesses
+IDEMPOTENCY_PROCESS_PIDS=6637,6638
+IDEMPOTENCY_CLAIMS=[{"pid": 6637, "result": "in_progress"}, {"key_digest": "c74c40e0a415a5b6194d4e51a5367df8fc6575b15c8e6d4c3e55690969ee702f", "pid": 6638, "receipt_id": "1c587074-dec6-4aac-86bc-2f6ed4ac1314", "result": "created", "status": "in_progress"}]
+IDEMPOTENCY_RESULT=PASS one durable claim; concurrent duplicate rejected as in_progress; only SHA-256 key digest stored.
+
+OUTBOX_PUBLISH_PROCESS_PIDS=6644,6645
+OUTBOX_PUBLISH_RESULTS=[{"created": true, "event_id": "5f10c7c3-7509-4dff-a9f8-a47d57b38b04", "pid": 6644, "tenant_id": "99f2c518-629a-4eb9-ab92-8ce21c9c286b"}, {"created": false, "event_id": "5f10c7c3-7509-4dff-a9f8-a47d57b38b04", "pid": 6645, "tenant_id": "99f2c518-629a-4eb9-ab92-8ce21c9c286b"}]
+OUTBOX_PUBLISH_RESULT=PASS one tenant-idempotent event row returned to both processes.
+OUTBOX_DISPATCH_PROCESS_PIDS=6648,6649
+OUTBOX_DISPATCH_RESULTS=[{"pid": 6648, "result": {"due": 1, "exhausted": 0, "in_flight": 0, "scheduled": 1}}, {"pid": 6649, "result": {"due": 1, "exhausted": 0, "in_flight": 1, "scheduled": 0}}]
+OUTBOX_DISPATCH_RESULT=PASS compare-and-set scheduled exactly one durable round; event=(1, 'pending'); jobs_for_event=1.

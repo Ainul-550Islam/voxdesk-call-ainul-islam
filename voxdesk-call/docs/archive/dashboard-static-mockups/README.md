@@ -1,0 +1,3 @@
+# Archived, unreferenced dashboard HTML mockups
+
+These 15 `.html` files were under `dashboard/src` but were not referenced by a source import, route, entrypoint, or shipped build output. Each consisted of repeated static section/helper markup and unsupported “Verified” labels. The live routed surfaces are the imported React/TypeScript pages with the same page names. The original complete bytes are preserved here as historical evidence; this directory is not an application source or a current UI claim. `reports/part0-reaudit/unreferenced-html-audit.json` records the before-move hashes and reference/build checks.

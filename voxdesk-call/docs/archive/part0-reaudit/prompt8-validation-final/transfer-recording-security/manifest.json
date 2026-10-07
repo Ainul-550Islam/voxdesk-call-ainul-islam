@@ -1,0 +1,111 @@
+{
+  "collection_status": "PASS",
+  "collection_exit_code": 0,
+  "collection_elapsed_seconds": 4.256,
+  "collection_log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/transfer-recording-security/collection.log",
+  "collected": 24,
+  "selected": 24,
+  "chunk_size_max": 10,
+  "chunk_count": 3,
+  "execution_mode": "sequential_child_processes",
+  "executed": 24,
+  "passed": 23,
+  "failed": 1,
+  "errors": 0,
+  "skipped": 0,
+  "not_run": 0,
+  "unconfirmed": 0,
+  "resource_unconfirmed": 0,
+  "unconfirmed_nodeids": [],
+  "resource_termination": false,
+  "full_suite_complete": false,
+  "chunks": [
+    {
+      "chunk": 1,
+      "collected": 10,
+      "submitted_nodeids": [
+        "tests/test_transfer_control_hardening.py::test_transfer_request_accepts_only_valid_e164_destinations",
+        "tests/test_transfer_control_hardening.py::test_warm_context_rejects_secret_named_fields",
+        "tests/test_transfer_control_hardening.py::test_warm_context_rejects_credential_material_in_text_values",
+        "tests/test_transfer_control_hardening.py::test_existing_transfer_text_is_redacted_before_response",
+        "tests/test_transfer_control_hardening.py::test_whisper_sanitizer_removes_credential_assignments_and_phone_digits",
+        "tests/test_transfer_control_hardening.py::test_transfer_twiml_uses_requested_timeout_and_bridge_behavior",
+        "tests/test_transfer_control_hardening.py::test_client_authored_transfer_outcomes_and_unverified_bulk_fail_closed",
+        "tests/test_transfer_security.py::test_tenant_a_cannot_trigger_a_transfer_on_tenant_b_call",
+        "tests/test_transfer_security.py::test_tenant_a_cannot_use_tenant_b_destination",
+        "tests/test_transfer_security.py::test_tenant_a_cannot_read_tenant_b_transfer_metadata"
+      ],
+      "executed_from_explicit_summary": 10,
+      "unconfirmed_count": 0,
+      "counts": {
+        "passed": 10,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "xfailed": 0,
+        "xpassed": 0
+      },
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 92.872,
+      "log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/transfer-recording-security/chunk-0001.log",
+      "terminal_summary_present": true
+    },
+    {
+      "chunk": 2,
+      "collected": 10,
+      "submitted_nodeids": [
+        "tests/test_transfer_security.py::test_owner_can_read_their_own_transfer_metadata",
+        "tests/test_transfer_security.py::test_transfer_endpoint_redacts_the_destination_number",
+        "tests/test_transfer_security.py::test_transfer_endpoint_requires_authentication",
+        "tests/test_transfer_security.py::test_viewer_may_read_transfer_metadata_but_agent_scoping_holds",
+        "tests/test_transfer_security.py::test_call_list_exposes_transfer_state_only_for_own_tenant",
+        "tests/test_transfer_security.py::test_transfer_logs_carry_correlation_ids_and_no_secrets",
+        "tests/test_transfer_security.py::test_selected_environment_hides_calls_and_transfer_metadata_in_other_environment",
+        "tests/telephony/test_recording.py::test_state_machine_and_duplicate_do_not_regress",
+        "tests/telephony/test_recording.py::test_consent_and_policy_block_capture",
+        "tests/telephony/test_recording.py::test_access_is_permissioned_audited_and_expires"
+      ],
+      "executed_from_explicit_summary": 10,
+      "unconfirmed_count": 0,
+      "counts": {
+        "passed": 10,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "xfailed": 0,
+        "xpassed": 0
+      },
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 95.605,
+      "log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/transfer-recording-security/chunk-0002.log",
+      "terminal_summary_present": true
+    },
+    {
+      "chunk": 3,
+      "collected": 4,
+      "submitted_nodeids": [
+        "tests/telephony/test_recording.py::test_other_tenant_cannot_change_policy",
+        "tests/telephony/test_recording.py::test_missing_provider_id_and_callback_duplicate",
+        "tests/telephony/test_recording.py::test_retention_deletes_recording_unless_held",
+        "tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers"
+      ],
+      "executed_from_explicit_summary": 4,
+      "unconfirmed_count": 0,
+      "counts": {
+        "passed": 3,
+        "failed": 1,
+        "errors": 0,
+        "skipped": 0,
+        "xfailed": 0,
+        "xpassed": 0
+      },
+      "exit_code": 1,
+      "status": "FAIL",
+      "elapsed_seconds": 87.644,
+      "log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/transfer-recording-security/chunk-0003.log",
+      "terminal_summary_present": true
+    }
+  ]
+}

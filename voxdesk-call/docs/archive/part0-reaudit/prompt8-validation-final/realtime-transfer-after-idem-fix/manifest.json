@@ -1,0 +1,46 @@
+{
+  "collection_status": "PASS",
+  "collection_exit_code": 0,
+  "collection_elapsed_seconds": 4.188,
+  "collection_log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/realtime-transfer-after-idem-fix/collection.log",
+  "collected": 1,
+  "selected": 1,
+  "chunk_size_max": 1,
+  "chunk_count": 1,
+  "execution_mode": "sequential_child_processes",
+  "executed": 1,
+  "passed": 0,
+  "failed": 1,
+  "errors": 0,
+  "skipped": 0,
+  "not_run": 0,
+  "unconfirmed": 0,
+  "resource_unconfirmed": 0,
+  "unconfirmed_nodeids": [],
+  "resource_termination": false,
+  "full_suite_complete": false,
+  "chunks": [
+    {
+      "chunk": 1,
+      "collected": 1,
+      "submitted_nodeids": [
+        "tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers"
+      ],
+      "executed_from_explicit_summary": 1,
+      "unconfirmed_count": 0,
+      "counts": {
+        "passed": 0,
+        "failed": 1,
+        "errors": 0,
+        "skipped": 0,
+        "xfailed": 0,
+        "xpassed": 0
+      },
+      "exit_code": 1,
+      "status": "FAIL",
+      "elapsed_seconds": 86.106,
+      "log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/realtime-transfer-after-idem-fix/chunk-0001.log",
+      "terminal_summary_present": true
+    }
+  ]
+}

@@ -38,6 +38,7 @@ def make_call(status: CallStatus = CallStatus.RINGING, **kw) -> Call:
     (CallStatus.RINGING, CallStatus.IN_PROGRESS),
     (CallStatus.RINGING, CallStatus.NO_ANSWER),
     (CallStatus.RINGING, CallStatus.FAILED),
+    (CallStatus.RINGING, CallStatus.CANCELLED),
     (CallStatus.IN_PROGRESS, CallStatus.COMPLETED),
     (CallStatus.IN_PROGRESS, CallStatus.TRANSFERRED),
     (CallStatus.IN_PROGRESS, CallStatus.FAILED),
@@ -58,6 +59,7 @@ def test_legal_transitions_are_applied(start, target):
     (CallStatus.FAILED, CallStatus.IN_PROGRESS),
     (CallStatus.FAILED, CallStatus.COMPLETED),
     (CallStatus.NO_ANSWER, CallStatus.IN_PROGRESS),
+    (CallStatus.CANCELLED, CallStatus.IN_PROGRESS),
     (CallStatus.IN_PROGRESS, CallStatus.RINGING),
     (CallStatus.TRANSFERRED, CallStatus.IN_PROGRESS),
     (CallStatus.TRANSFERRED, CallStatus.RINGING),
@@ -73,6 +75,7 @@ def test_terminal_states_are_terminal():
     assert call_state.is_terminal(CallStatus.COMPLETED)
     assert call_state.is_terminal(CallStatus.FAILED)
     assert call_state.is_terminal(CallStatus.NO_ANSWER)
+    assert call_state.is_terminal(CallStatus.CANCELLED)
     # A transferred call is still live -- a human is on it.
     assert not call_state.is_terminal(CallStatus.TRANSFERRED)
     assert not call_state.is_terminal(CallStatus.IN_PROGRESS)
@@ -144,8 +147,8 @@ def test_non_terminal_transition_does_not_set_ended_at():
     ("no-answer", CallStatus.NO_ANSWER),
     ("busy", CallStatus.FAILED),
     ("failed", CallStatus.FAILED),
-    ("canceled", CallStatus.FAILED),
-    ("cancelled", CallStatus.FAILED),
+    ("canceled", CallStatus.CANCELLED),
+    ("cancelled", CallStatus.CANCELLED),
     ("in-progress", CallStatus.IN_PROGRESS),
     ("ringing", CallStatus.RINGING),
     ("queued", CallStatus.RINGING),

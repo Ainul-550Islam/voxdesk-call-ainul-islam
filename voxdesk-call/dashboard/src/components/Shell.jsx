@@ -53,6 +53,7 @@ const NAV = [
     items: [
       { path: '/billing', label: 'Billing', icon: '$', permission: P.BILLING_READ },
       { path: '/team', label: 'Team', icon: '☰', permission: P.USER_READ },
+      { path: '/security-settings', label: 'Security & sessions', icon: '🔒', permission: P.TENANT_READ },
       { path: '/audit', label: 'Audit log', icon: '⎙', permission: P.AUDIT_READ },
     ],
   },

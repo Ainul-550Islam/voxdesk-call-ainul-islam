@@ -1,0 +1,21 @@
+TIMESTAMP_DHAKA=2026-10-05T17:48:47.427093+06:00
+DATABASE=voxdesk_prompt8_migrations (disposable local)
+SERVER_VERSION=PostgreSQL 17.11 (Debian 17.11-0+deb13u1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit
+ALEMBIC_VERSION_TYPE=character varying(32)
+ALEMBIC_HEAD=0048_boolean_defaults
+BOOLEAN_DEFAULTS:
+  ('public_widget_keys', 'require_published_agent', 'true')
+  ('telephony_call_sessions', 'is_simulation', 'false')
+  ('telephony_call_sessions', 'usage_finalized', 'false')
+  ('telephony_phone_numbers', 'inbound_enabled', 'true')
+  ('telephony_phone_numbers', 'outbound_enabled', 'true')
+  ('telephony_phone_numbers', 'sip_enabled', 'false')
+  ('telephony_usage_ledger', 'is_simulation', 'false')
+DEPLOYMENT_RUNTIME_OBSERVATIONS_RLS=(True, True)
+DEPLOYMENT_RUNTIME_OBSERVATIONS_POLICIES=[('deployment_runtime_observations_tenant_isolation', 'ALL', "((tenant_id)::text = current_setting('app.tenant_id'::text, true))", "((tenant_id)::text = current_setting('app.tenant_id'::text, true))")]
+DEPLOYMENT_RUNTIME_OBSERVATIONS_NONINTERNAL_TRIGGERS=[('trg_deployment_runtime_observations_append_only', 'O')]
+AUDIT_LOGS_RLS=(False, False)
+AUDIT_LOGS_POLICIES=[]
+AUDIT_LOGS_NONINTERNAL_TRIGGERS=[]
+POSTGRES_ENUM_TYPES=['agentlifecyclestatus', 'agentvalidationstatus', 'agentversionstatus', 'appointmentstatus', 'auditaction', 'billinginterval', 'billingprovidertype', 'calendarprovidertype', 'calldirection', 'callstatus', 'crmentitytype', 'crmeventtype', 'crmprovidertype', 'crmsyncstatus', 'documentsourcetype', 'documentstatus', 'invoicestatus', 'leadstatus', 'speaker', 'subscriptionstatus', 'transferstate', 'usageeventtype', 'usagemetric', 'userrole']
+AUDIT_LOGS_BOUNDARY=application-level tenant/reference validation only; no PostgreSQL RLS/FORCE RLS or append-only trigger in this schema.

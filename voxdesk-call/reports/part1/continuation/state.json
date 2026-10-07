@@ -1,0 +1,8 @@
+{
+  "restored_1a_commit": "2ed87d0a66cc1c903cb0f576046ef3f20ee0f4c4",
+  "ab3_staged_patch_unchanged": true,
+  "ab3_patch_sha256": "d6381eee5322f484ca1ebfdb3a1ff42450ca7a29ba970f1b2eee98a650d65b10",
+  "supporting_changes_authorized": true,
+  "current_scope": "remaining PART1 only; PART2 deferred",
+  "status_1c": "partial: structured provider inference and tests; no pipeline completion claim"
+}

@@ -1,0 +1,166 @@
+features:
+- id: 1
+  name: End-to-end latency
+  status: PLANNED
+  evidence_tests: []
+- id: 2
+  name: Turn-taking & interruption controls
+  status: API_ONLY
+  evidence_tests: []
+- id: 3
+  name: LLMs and speech-to-speech
+  status: API_ONLY
+  evidence_tests: []
+- id: 4
+  name: STT / TTS provider choice
+  status: API_ONLY
+  evidence_tests: []
+- id: 5
+  name: Voice cloning / voice library
+  status: PLANNED
+  evidence_tests: []
+- id: 6
+  name: Voice controls (speed, volume, pronunciation, boosted keywords, ambient sound,
+    denoise)
+  status: API_ONLY
+  evidence_tests: []
+- id: 7
+  name: Multilingual / language switching
+  status: API_ONLY
+  evidence_tests: []
+- id: 8
+  name: Visual conversation-flow builder
+  status: PLANNED
+  evidence_tests: []
+- id: 9
+  name: Agent versions / publish / rollback
+  status: API_ONLY
+  evidence_tests: []
+- id: 10
+  name: Agent bound to phone number
+  status: PLANNED
+  evidence_tests: []
+- id: 11
+  name: Custom functions (HTTP tools)
+  status: API_ONLY
+  evidence_tests: []
+- id: 12
+  name: MCP tools
+  status: PLANNED
+  evidence_tests: []
+- id: 13
+  name: Cold/warm transfer + AI briefing to human
+  status: API_ONLY
+  evidence_tests: []
+- id: 14
+  name: Agent-to-agent transfer
+  status: API_ONLY
+  evidence_tests: []
+- id: 15
+  name: IVR navigation (press digits on external phone trees)
+  status: PLANNED
+  evidence_tests: []
+- id: 16
+  name: DTMF
+  status: API_ONLY
+  evidence_tests: []
+- id: 17
+  name: Voicemail detection + message
+  status: API_ONLY
+  evidence_tests: []
+- id: 18
+  name: 'Numbers: buy / import / SIP trunk'
+  status: API_ONLY
+  evidence_tests: []
+- id: 19
+  name: Multi-carrier live media
+  status: API_ONLY
+  evidence_tests: []
+- id: 20
+  name: Branded caller ID / verified numbers
+  status: PLANNED
+  evidence_tests: []
+- id: 21
+  name: Batch calls / power dialer
+  status: API_ONLY
+  evidence_tests: []
+- id: 22
+  name: Web calls, widget, web SDK
+  status: PLANNED
+  evidence_tests: []
+- id: 23
+  name: Chat / SMS agents
+  status: PLANNED
+  evidence_tests: []
+- id: 24
+  name: Knowledge base (RAG)
+  status: API_ONLY
+  evidence_tests: []
+- id: 25
+  name: Webhooks (call started/ended/analyzed)
+  status: API_ONLY
+  evidence_tests: []
+- id: 26
+  name: Post-call analysis (summary, sentiment, custom fields)
+  status: PLANNED
+  evidence_tests: []
+- id: 27
+  name: Automated QA on all calls
+  status: API_ONLY
+  evidence_tests: []
+- id: 28
+  name: Simulation testing & regression from production calls
+  status: API_ONLY
+  evidence_tests: []
+- id: 29
+  name: A/B test agent versions
+  status: API_ONLY
+  evidence_tests: []
+- id: 30
+  name: Analytics & custom dashboards
+  status: API_ONLY
+  evidence_tests: []
+- id: 31
+  name: Live call monitoring / takeover
+  status: API_ONLY
+  evidence_tests: []
+- id: 32
+  name: AI copilot (Conductor)
+  status: PLANNED
+  evidence_tests: []
+- id: 33
+  name: CRM (Salesforce/HubSpot)
+  status: API_ONLY
+  evidence_tests: []
+- id: 34
+  name: Calendar booking
+  status: API_ONLY
+  evidence_tests: []
+- id: 35
+  name: HIPAA / SOC 2 Type II / GDPR / ISO 27001
+  status: PLANNED
+  evidence_tests: []
+- id: 36
+  name: SSO / SCIM / RBAC / PII redaction
+  status: API_ONLY
+  evidence_tests: []
+- id: 37
+  name: SDKs
+  status: PLANNED
+  evidence_tests: []
+- id: 38
+  name: Automation connectors
+  status: PLANNED
+  evidence_tests: []
+- id: 39
+  name: Scale & reliability evidence
+  status: PLANNED
+  evidence_tests: []
+- id: 40
+  name: Billing & metering
+  status: API_ONLY
+  evidence_tests: []
+- id: 41
+  name: Contact memory & dynamic variables
+  status: API_ONLY
+  evidence_tests: []

@@ -33,6 +33,10 @@ def _valid_prod(**overrides) -> Settings:
         public_base_url="https://app.example.com",
         cors_origins="https://app.example.com",
         rate_limit_enabled=True,
+        redis_url="redis://127.0.0.1:6379/0",
+        forwarded_allow_ips="127.0.0.1,::1",
+        trusted_hosts="app.example.com",
+        conductor_webhook_secret="g" * 32,
         log_level="INFO",
         secret_key="a" * 48,
         jwt_secret="b" * 48,
@@ -188,13 +192,23 @@ def test_migration_chain_is_linear_with_no_gaps():
     ids: dict[str, str | None] = {}
     for path in versions:
         text = path.read_text()
-        rev = re.search(r'^revision = "(.+)"', text, re.M).group(1)
-        down = re.search(r"^down_revision = (.+)$", text, re.M).group(1).strip()
-        ids[rev] = None if down == "None" else down.strip('"')
+        # Migrations declare their identity in two ways: the plain form
+        # (`revision = "0001_baseline"`) and the type-annotated form used by
+        # newer revisions (`revision: str = "0039_conductor_control_plane"`).
+        # The parser must accept both, or the chain check silently only ever
+        # sees the older half of the chain.
+        rev = re.search(
+            r'^revision(?:\s*:\s*[^=]+)?\s*=\s*"(.+)"',
+            text,
+            re.M,
+        ).group(1)
+        down = re.search(r"^down_revision(?:\s*:\s*[^=]+)?\s*=\s*(.+)$", text, re.M).group(1).strip()
+        down = down.strip("'\"").split("#")[0].strip().rstrip(",")
+        ids[rev] = None if down in ("None", "") else down
     assert ids, "no migrations found"
     # Exactly one head: the revision nobody points down_revision at.
     heads = [r for r in ids if r not in {d for d in ids.values() if d}]
-    assert heads == ["0036_runtime_deployment_observability"]
+    assert heads == ["0049_runtime_schema_alignment"]
     # Exactly one base (down_revision None), and a single linear walk.
     bases = [r for r, d in ids.items() if d is None]
     assert bases == ["0001_baseline"]

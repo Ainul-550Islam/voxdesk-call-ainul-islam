@@ -1206,7 +1206,15 @@ class TestBillingProviderContract:
     async def test_secrets_never_appear_in_a_raised_error(self, provider, monkeypatch):
         secrets = secrets_for(provider)
         if not secrets:
-            pytest.skip(f"{provider.value} holds no secrets")
+            adapter = make_provider(provider)
+            assert adapter.config.secret_key == ""
+            assert adapter.config.webhook_secret == ""
+            transport = FakeTransport((401, {"detail": "sk_live_LEAKED_KEY_12345"})).install(monkeypatch)
+            with pytest.raises(BillingAuthError) as caught:
+                await adapter.request("POST", "https://provider.test/x")
+            assert transport.call_count == 1
+            assert "sk_live_LEAKED_KEY_12345" not in str(caught.value)
+            return
 
         secret = secrets[0]
         FakeTransport(

@@ -1,0 +1,4385 @@
+{
+  "scope": "PART 0 authorized repairs: targeted backend regression, not full-suite execution",
+  "unique_passed": 348,
+  "failed": 0,
+  "error": 0,
+  "skipped": 0,
+  "tests": [
+    {
+      "nodeid": "tests/truth/test_no_default_secrets.py::test_unconfigured_media_signing_cannot_issue_or_verify[]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.003
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.003
+        }
+      ],
+      "status": "passed",
+      "duration": 0.003
+    },
+    {
+      "nodeid": "tests/truth/test_no_default_secrets.py::test_unconfigured_media_signing_cannot_issue_or_verify[   ]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.001
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.001
+        }
+      ],
+      "status": "passed",
+      "duration": 0.001
+    },
+    {
+      "nodeid": "tests/truth/test_no_default_secrets.py::test_signature_binds_call_tenant_and_key",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.001
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.001
+        }
+      ],
+      "status": "passed",
+      "duration": 0.001
+    },
+    {
+      "nodeid": "tests/truth/test_no_default_secrets.py::test_production_validation_rejects_default_identity_secrets",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.003
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.003
+        }
+      ],
+      "status": "passed",
+      "duration": 0.003
+    },
+    {
+      "nodeid": "tests/truth/test_no_default_secrets.py::test_no_constant_secret_fallback_in_any_production_module",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 1.564
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 1.683
+        }
+      ],
+      "status": "passed",
+      "duration": 1.683
+    },
+    {
+      "nodeid": "tests/truth/test_no_fake_success_markers.py::test_production_fake_success_guard",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 2.467
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 2.566
+        }
+      ],
+      "status": "passed",
+      "duration": 2.566
+    },
+    {
+      "nodeid": "tests/truth/test_no_fake_success_markers.py::test_phrase_and_swallowed_audit_detection",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.002
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.001
+        }
+      ],
+      "status": "passed",
+      "duration": 0.001
+    },
+    {
+      "nodeid": "tests/truth/test_no_fake_success_markers.py::test_allowlist_is_shrink_only_and_stale_entries_fail",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.001
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.001
+        }
+      ],
+      "status": "passed",
+      "duration": 0.001
+    },
+    {
+      "nodeid": "tests/truth/test_no_fake_success_markers.py::test_feature_missing_failed_or_skipped_evidence_cannot_be_live",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.001
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.001
+        }
+      ],
+      "status": "passed",
+      "duration": 0.001
+    },
+    {
+      "nodeid": "tests/truth/test_no_fake_success_markers.py::test_junit_uses_exact_node_identity_and_failure_dominates_retries",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.001
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.001
+        }
+      ],
+      "status": "passed",
+      "duration": 0.001
+    },
+    {
+      "nodeid": "tests/truth/test_no_fake_success_markers.py::test_manifest_has_all_features_and_no_unsupported_live_claim",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.011
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.01
+        }
+      ],
+      "status": "passed",
+      "duration": 0.01
+    },
+    {
+      "nodeid": "tests/truth/test_no_fake_success_markers.py::test_deleted_allowlist_cannot_reset_shrink_history",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.036
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.028
+        }
+      ],
+      "status": "passed",
+      "duration": 0.028
+    },
+    {
+      "nodeid": "tests/truth/test_no_filler.py::test_repository_has_no_filler",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 1.451
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 1.381
+        }
+      ],
+      "status": "passed",
+      "duration": 1.381
+    },
+    {
+      "nodeid": "tests/truth/test_no_filler.py::test_forbidden_patterns_cannot_return[/endpoint-12]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.001
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.002
+        }
+      ],
+      "status": "passed",
+      "duration": 0.002
+    },
+    {
+      "nodeid": "tests/truth/test_no_filler.py::test_forbidden_patterns_cannot_return[class Class52:]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.001
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.001
+        }
+      ],
+      "status": "passed",
+      "duration": 0.001
+    },
+    {
+      "nodeid": "tests/truth/test_no_filler.py::test_forbidden_patterns_cannot_return[thing_function_27()]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.001
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.001
+        }
+      ],
+      "status": "passed",
+      "duration": 0.001
+    },
+    {
+      "nodeid": "tests/truth/test_no_filler.py::test_forbidden_patterns_cannot_return[// Padding module line 200]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.001
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.001
+        }
+      ],
+      "status": "passed",
+      "duration": 0.001
+    },
+    {
+      "nodeid": "tests/truth/test_no_filler.py::test_forbidden_patterns_cannot_return[NO SKIP FULL CODE]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.001
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.001
+        }
+      ],
+      "status": "passed",
+      "duration": 0.001
+    },
+    {
+      "nodeid": "tests/truth/test_no_filler.py::test_normalization_detects_numbered_repetition",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.002
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.002
+        }
+      ],
+      "status": "passed",
+      "duration": 0.002
+    },
+    {
+      "nodeid": "tests/truth/test_no_filler.py::test_padding_removal_is_idempotent_and_preserves_code",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.001
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.001
+        }
+      ],
+      "status": "passed",
+      "duration": 0.001
+    },
+    {
+      "nodeid": "tests/truth/test_no_filler.py::test_null_bytes_and_accidental_empty_source_fail",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.001
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.001
+        }
+      ],
+      "status": "passed",
+      "duration": 0.001
+    },
+    {
+      "nodeid": "tests/truth/test_no_filler.py::test_broad_filler_exemption_is_rejected",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.001
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.001
+        }
+      ],
+      "status": "passed",
+      "duration": 0.001
+    },
+    {
+      "nodeid": "tests/truth/test_no_template_routes.py::test_no_template_routes_and_preserved_real_modules",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.003
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.003
+        }
+      ],
+      "status": "passed",
+      "duration": 0.003
+    },
+    {
+      "nodeid": "tests/truth/test_no_template_routes.py::test_no_api_line_count_banners",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.051
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.051
+        }
+      ],
+      "status": "passed",
+      "duration": 0.051
+    },
+    {
+      "nodeid": "tests/truth/test_part0_authorized_repairs.py::test_qms_never_confuses_credentials_with_connection[False-veeva_vault]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.002
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.002
+        }
+      ],
+      "status": "passed",
+      "duration": 0.002
+    },
+    {
+      "nodeid": "tests/truth/test_part0_authorized_repairs.py::test_qms_never_confuses_credentials_with_connection[False-mastercontrol]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.001
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.002
+        }
+      ],
+      "status": "passed",
+      "duration": 0.002
+    },
+    {
+      "nodeid": "tests/truth/test_part0_authorized_repairs.py::test_qms_never_confuses_credentials_with_connection[False-etq]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.002
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.001
+        }
+      ],
+      "status": "passed",
+      "duration": 0.001
+    },
+    {
+      "nodeid": "tests/truth/test_part0_authorized_repairs.py::test_qms_never_confuses_credentials_with_connection[True-veeva_vault]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.001
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.001
+        }
+      ],
+      "status": "passed",
+      "duration": 0.001
+    },
+    {
+      "nodeid": "tests/truth/test_part0_authorized_repairs.py::test_qms_never_confuses_credentials_with_connection[True-mastercontrol]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.001
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.001
+        }
+      ],
+      "status": "passed",
+      "duration": 0.001
+    },
+    {
+      "nodeid": "tests/truth/test_part0_authorized_repairs.py::test_qms_never_confuses_credentials_with_connection[True-etq]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.001
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.002
+        }
+      ],
+      "status": "passed",
+      "duration": 0.002
+    },
+    {
+      "nodeid": "tests/truth/test_part0_authorized_repairs.py::test_legacy_test_creation_is_scoped_and_cannot_issue_fake_session",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.845
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.806
+        }
+      ],
+      "status": "passed",
+      "duration": 0.806
+    },
+    {
+      "nodeid": "tests/truth/test_part0_authorized_repairs.py::test_dnc_and_audit_commit_together",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.63
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 1.228
+        }
+      ],
+      "status": "passed",
+      "duration": 1.228
+    },
+    {
+      "nodeid": "tests/truth/test_part0_authorized_repairs.py::test_failed_audit_cannot_commit_dnc",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.625
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.598
+        }
+      ],
+      "status": "passed",
+      "duration": 0.598
+    },
+    {
+      "nodeid": "tests/truth/test_part0_authorized_repairs.py::test_export_defaults_are_stable",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.001
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.002
+        }
+      ],
+      "status": "passed",
+      "duration": 0.002
+    },
+    {
+      "nodeid": "tests/truth/test_part0_authorized_repairs.py::test_unreferenced_template_extensions_are_not_mounted",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.002
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.002
+        }
+      ],
+      "status": "passed",
+      "duration": 0.002
+    },
+    {
+      "nodeid": "tests/truth/test_part0_authorized_repairs.py::test_qms_http_unavailable_is_not_empty_success_and_is_tenant_scoped",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.774
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.677
+        }
+      ],
+      "status": "passed",
+      "duration": 0.677
+    },
+    {
+      "nodeid": "tests/truth/test_part0_authorized_repairs.py::test_replay_does_not_manufacture_a_signed_recording_link",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.729
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.589
+        }
+      ],
+      "status": "passed",
+      "duration": 0.589
+    },
+    {
+      "nodeid": "tests/truth/test_retired_references.py::test_active_surface_has_no_retired_dependencies",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.814
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.808
+        }
+      ],
+      "status": "passed",
+      "duration": 0.808
+    },
+    {
+      "nodeid": "tests/truth/test_retired_references.py::test_archives_do_not_mask_a_live_compose_reference",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.002
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.002
+        }
+      ],
+      "status": "passed",
+      "duration": 0.002
+    },
+    {
+      "nodeid": "tests/truth/test_retired_references.py::test_denylist_declaration_exemption_is_not_a_whole_file_exemption",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.002
+        },
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 0.002
+        }
+      ],
+      "status": "passed",
+      "duration": 0.002
+    },
+    {
+      "nodeid": "tests/leads/test_concurrency.py::test_two_sessions_cannot_both_claim",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.665
+        }
+      ],
+      "status": "passed",
+      "duration": 0.665
+    },
+    {
+      "nodeid": "tests/leads/test_concurrency.py::test_stale_status_transition_loses",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.679
+        }
+      ],
+      "status": "passed",
+      "duration": 0.679
+    },
+    {
+      "nodeid": "tests/leads/test_dedup.py::test_formatted_phone_and_email_case_match_inside_one_environment",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.649
+        }
+      ],
+      "status": "passed",
+      "duration": 0.649
+    },
+    {
+      "nodeid": "tests/leads/test_dedup.py::test_same_phone_in_another_environment_is_not_a_duplicate",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.597
+        }
+      ],
+      "status": "passed",
+      "duration": 0.597
+    },
+    {
+      "nodeid": "tests/leads/test_dedup.py::test_fuzzy_name_is_informational_and_does_not_merge",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.602
+        }
+      ],
+      "status": "passed",
+      "duration": 0.602
+    },
+    {
+      "nodeid": "tests/leads/test_dedup.py::test_explicit_merge_keeps_history_and_propagates_dnc",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.591
+        }
+      ],
+      "status": "passed",
+      "duration": 0.591
+    },
+    {
+      "nodeid": "tests/leads/test_dedup.py::test_cross_tenant_merge_is_rejected",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.616
+        }
+      ],
+      "status": "passed",
+      "duration": 0.616
+    },
+    {
+      "nodeid": "tests/leads/test_dedup.py::test_self_merge_is_rejected",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.624
+        }
+      ],
+      "status": "passed",
+      "duration": 0.624
+    },
+    {
+      "nodeid": "tests/leads/test_environment_scope.py::test_lead_is_invisible_from_another_environment",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.604
+        }
+      ],
+      "status": "passed",
+      "duration": 0.604
+    },
+    {
+      "nodeid": "tests/leads/test_environment_scope.py::test_lead_is_invisible_from_another_tenant",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.637
+        }
+      ],
+      "status": "passed",
+      "duration": 0.637
+    },
+    {
+      "nodeid": "tests/leads/test_environment_scope.py::test_update_from_the_wrong_environment_is_not_found",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.643
+        }
+      ],
+      "status": "passed",
+      "duration": 0.643
+    },
+    {
+      "nodeid": "tests/leads/test_environment_scope.py::test_status_change_from_the_wrong_environment_is_not_found",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.671
+        }
+      ],
+      "status": "passed",
+      "duration": 0.671
+    },
+    {
+      "nodeid": "tests/leads/test_environment_scope.py::test_activity_attachment_from_the_wrong_environment_is_denied",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.667
+        }
+      ],
+      "status": "passed",
+      "duration": 0.667
+    },
+    {
+      "nodeid": "tests/leads/test_environment_scope.py::test_task_from_the_wrong_environment_is_not_found",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.656
+        }
+      ],
+      "status": "passed",
+      "duration": 0.656
+    },
+    {
+      "nodeid": "tests/leads/test_environment_scope.py::test_score_from_the_wrong_environment_is_not_found",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.648
+        }
+      ],
+      "status": "passed",
+      "duration": 0.648
+    },
+    {
+      "nodeid": "tests/leads/test_environment_scope.py::test_consent_from_the_wrong_environment_is_not_found",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.621
+        }
+      ],
+      "status": "passed",
+      "duration": 0.621
+    },
+    {
+      "nodeid": "tests/leads/test_environment_scope.py::test_campaign_binding_must_share_the_leads_environment",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.69
+        }
+      ],
+      "status": "passed",
+      "duration": 0.69
+    },
+    {
+      "nodeid": "tests/leads/test_environment_scope.py::test_update_cannot_rebind_to_a_cross_environment_campaign",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.649
+        }
+      ],
+      "status": "passed",
+      "duration": 0.649
+    },
+    {
+      "nodeid": "tests/leads/test_environment_scope.py::test_update_rejects_environment_id_as_a_field",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.63
+        }
+      ],
+      "status": "passed",
+      "duration": 0.63
+    },
+    {
+      "nodeid": "tests/leads/test_environment_scope.py::test_orm_level_environment_move_is_frozen",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.68
+        }
+      ],
+      "status": "passed",
+      "duration": 0.68
+    },
+    {
+      "nodeid": "tests/leads/test_environment_scope.py::test_create_lead_defaults_to_production_and_stamps_history",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.683
+        }
+      ],
+      "status": "passed",
+      "duration": 0.683
+    },
+    {
+      "nodeid": "tests/leads/test_environment_scope.py::test_supplied_foreign_environment_is_boundary_denied",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.65
+        }
+      ],
+      "status": "passed",
+      "duration": 0.65
+    },
+    {
+      "nodeid": "tests/leads/test_import.py::test_csv_import_is_idempotent",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.595
+        }
+      ],
+      "status": "passed",
+      "duration": 0.595
+    },
+    {
+      "nodeid": "tests/leads/test_import.py::test_invalid_row_is_reported_and_oversized_body_is_rejected",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.64
+        }
+      ],
+      "status": "passed",
+      "duration": 0.64
+    },
+    {
+      "nodeid": "tests/leads/test_isolation.py::test_other_tenant_cannot_read_or_retarget",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.709
+        }
+      ],
+      "status": "passed",
+      "duration": 0.709
+    },
+    {
+      "nodeid": "tests/leads/test_isolation.py::test_export_drops_secrets",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.61
+        }
+      ],
+      "status": "passed",
+      "duration": 0.61
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[called-do_not_call]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.687
+        }
+      ],
+      "status": "passed",
+      "duration": 0.687
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[called-failed]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.632
+        }
+      ],
+      "status": "passed",
+      "duration": 0.632
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[called-qualified]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.68
+        }
+      ],
+      "status": "passed",
+      "duration": 0.68
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[called-queued]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.66
+        }
+      ],
+      "status": "passed",
+      "duration": 0.66
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[called-unqualified]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.631
+        }
+      ],
+      "status": "passed",
+      "duration": 0.631
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[failed-do_not_call]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.629
+        }
+      ],
+      "status": "passed",
+      "duration": 0.629
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[failed-queued]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.667
+        }
+      ],
+      "status": "passed",
+      "duration": 0.667
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[failed-unqualified]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.671
+        }
+      ],
+      "status": "passed",
+      "duration": 0.671
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[new-called]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.676
+        }
+      ],
+      "status": "passed",
+      "duration": 0.676
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[new-do_not_call]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.664
+        }
+      ],
+      "status": "passed",
+      "duration": 0.664
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[new-failed]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.664
+        }
+      ],
+      "status": "passed",
+      "duration": 0.664
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[new-qualified]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.678
+        }
+      ],
+      "status": "passed",
+      "duration": 0.678
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[new-queued]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.693
+        }
+      ],
+      "status": "passed",
+      "duration": 0.693
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[new-unqualified]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.625
+        }
+      ],
+      "status": "passed",
+      "duration": 0.625
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[qualified-called]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.634
+        }
+      ],
+      "status": "passed",
+      "duration": 0.634
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[qualified-do_not_call]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.67
+        }
+      ],
+      "status": "passed",
+      "duration": 0.67
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[qualified-unqualified]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.689
+        }
+      ],
+      "status": "passed",
+      "duration": 0.689
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[queued-called]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.643
+        }
+      ],
+      "status": "passed",
+      "duration": 0.643
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[queued-do_not_call]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 1.284
+        }
+      ],
+      "status": "passed",
+      "duration": 1.284
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[queued-failed]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.737
+        }
+      ],
+      "status": "passed",
+      "duration": 0.737
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[queued-new]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.737
+        }
+      ],
+      "status": "passed",
+      "duration": 0.737
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[queued-qualified]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.675
+        }
+      ],
+      "status": "passed",
+      "duration": 0.675
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[queued-unqualified]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.654
+        }
+      ],
+      "status": "passed",
+      "duration": 0.654
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[unqualified-do_not_call]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.688
+        }
+      ],
+      "status": "passed",
+      "duration": 0.688
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[unqualified-qualified]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.712
+        }
+      ],
+      "status": "passed",
+      "duration": 0.712
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[unqualified-queued]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.635
+        }
+      ],
+      "status": "passed",
+      "duration": 0.635
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[called-called]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.716
+        }
+      ],
+      "status": "passed",
+      "duration": 0.716
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[called-new]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.699
+        }
+      ],
+      "status": "passed",
+      "duration": 0.699
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[do_not_call-called]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.647
+        }
+      ],
+      "status": "passed",
+      "duration": 0.647
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[do_not_call-do_not_call]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.697
+        }
+      ],
+      "status": "passed",
+      "duration": 0.697
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[do_not_call-failed]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.666
+        }
+      ],
+      "status": "passed",
+      "duration": 0.666
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[do_not_call-new]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.657
+        }
+      ],
+      "status": "passed",
+      "duration": 0.657
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[do_not_call-qualified]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.648
+        }
+      ],
+      "status": "passed",
+      "duration": 0.648
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[do_not_call-queued]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.645
+        }
+      ],
+      "status": "passed",
+      "duration": 0.645
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[do_not_call-unqualified]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.654
+        }
+      ],
+      "status": "passed",
+      "duration": 0.654
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[failed-called]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.708
+        }
+      ],
+      "status": "passed",
+      "duration": 0.708
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[failed-failed]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.642
+        }
+      ],
+      "status": "passed",
+      "duration": 0.642
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[failed-new]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.747
+        }
+      ],
+      "status": "passed",
+      "duration": 0.747
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[failed-qualified]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.664
+        }
+      ],
+      "status": "passed",
+      "duration": 0.664
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[new-new]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.681
+        }
+      ],
+      "status": "passed",
+      "duration": 0.681
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[qualified-failed]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.676
+        }
+      ],
+      "status": "passed",
+      "duration": 0.676
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[qualified-new]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.651
+        }
+      ],
+      "status": "passed",
+      "duration": 0.651
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[qualified-qualified]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.65
+        }
+      ],
+      "status": "passed",
+      "duration": 0.65
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[qualified-queued]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.672
+        }
+      ],
+      "status": "passed",
+      "duration": 0.672
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[queued-queued]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.715
+        }
+      ],
+      "status": "passed",
+      "duration": 0.715
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[unqualified-called]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.715
+        }
+      ],
+      "status": "passed",
+      "duration": 0.715
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[unqualified-failed]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.704
+        }
+      ],
+      "status": "passed",
+      "duration": 0.704
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[unqualified-new]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.669
+        }
+      ],
+      "status": "passed",
+      "duration": 0.669
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[unqualified-unqualified]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.681
+        }
+      ],
+      "status": "passed",
+      "duration": 0.681
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_do_not_call_is_terminal",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.649
+        }
+      ],
+      "status": "passed",
+      "duration": 0.649
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_aliases_store_the_canonical_value",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.674
+        }
+      ],
+      "status": "passed",
+      "duration": 0.674
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_compare_and_set_rejects_a_stale_belief",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.657
+        }
+      ],
+      "status": "passed",
+      "duration": 0.657
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_api_status_change_writes_history",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.656
+        }
+      ],
+      "status": "passed",
+      "duration": 0.656
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_workflow_status_action_writes_history",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.702
+        }
+      ],
+      "status": "passed",
+      "duration": 0.702
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_workflow_cannot_reverse_do_not_call",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.62
+        }
+      ],
+      "status": "passed",
+      "duration": 0.62
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_ai_tool_dnc_goes_through_consent_and_history",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.603
+        }
+      ],
+      "status": "passed",
+      "duration": 0.603
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_messaging_stop_sets_dnc_and_start_never_reverses",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.611
+        }
+      ],
+      "status": "passed",
+      "duration": 0.611
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_no_direct_lead_status_assignments_outside_the_lifecycle",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.101
+        }
+      ],
+      "status": "passed",
+      "duration": 0.101
+    },
+    {
+      "nodeid": "tests/leads/test_lifecycle.py::test_only_the_lifecycle_mirrors_status_onto_the_model",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.07
+        }
+      ],
+      "status": "passed",
+      "duration": 0.07
+    },
+    {
+      "nodeid": "tests/leads/test_scoring.py::test_score_is_stable_and_versioned",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.563
+        }
+      ],
+      "status": "passed",
+      "duration": 0.563
+    },
+    {
+      "nodeid": "tests/leads/test_scoring.py::test_scoring_does_not_clear_do_not_call",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.589
+        }
+      ],
+      "status": "passed",
+      "duration": 0.589
+    },
+    {
+      "nodeid": "tests/leads/test_segments.py::test_segment_returns_only_matching_leads_in_scope",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.633
+        }
+      ],
+      "status": "passed",
+      "duration": 0.633
+    },
+    {
+      "nodeid": "tests/leads/test_segments.py::test_raw_sql_and_unknown_fields_are_rejected",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.002
+        }
+      ],
+      "status": "passed",
+      "duration": 0.002
+    },
+    {
+      "nodeid": "tests/leads/test_segments.py::test_member_pagination",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.621
+        }
+      ],
+      "status": "passed",
+      "duration": 0.621
+    },
+    {
+      "nodeid": "tests/leads/test_service.py::test_create_stamps_tenant_and_environment",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.617
+        }
+      ],
+      "status": "passed",
+      "duration": 0.617
+    },
+    {
+      "nodeid": "tests/leads/test_service.py::test_client_tenant_claim_is_rejected",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.594
+        }
+      ],
+      "status": "passed",
+      "duration": 0.594
+    },
+    {
+      "nodeid": "tests/leads/test_service.py::test_transition_appends_history_and_dnc_is_terminal",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.604
+        }
+      ],
+      "status": "passed",
+      "duration": 0.604
+    },
+    {
+      "nodeid": "tests/leads/test_service.py::test_voice_denial_sets_dnc_and_grant_cannot_clear_it",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.597
+        }
+      ],
+      "status": "passed",
+      "duration": 0.597
+    },
+    {
+      "nodeid": "tests/leads/test_service.py::test_owner_assignment_uses_the_user_table",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.594
+        }
+      ],
+      "status": "passed",
+      "duration": 0.594
+    },
+    {
+      "nodeid": "tests/leads/test_service.py::test_timeline_references_a_call_without_copying_the_transcript",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.663
+        }
+      ],
+      "status": "passed",
+      "duration": 0.663
+    },
+    {
+      "nodeid": "tests/leads/test_service.py::test_enrichment_is_not_configured",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.645
+        }
+      ],
+      "status": "passed",
+      "duration": 0.645
+    },
+    {
+      "nodeid": "tests/leads/test_service.py::test_legacy_collection_still_creates",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.667
+        }
+      ],
+      "status": "passed",
+      "duration": 0.667
+    },
+    {
+      "nodeid": "tests/security/test_conductor_security.py::test_conductor_cross_tenant_isolation_and_context_scope",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.795
+        }
+      ],
+      "status": "passed",
+      "duration": 0.795
+    },
+    {
+      "nodeid": "tests/security/test_conductor_security.py::test_conductor_rejects_forbidden_paths_secrets_and_unapproved_apply",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.838
+        }
+      ],
+      "status": "passed",
+      "duration": 0.838
+    },
+    {
+      "nodeid": "tests/integration/test_conductor_workflow.py::test_conductor_full_workflow_partial_approve_simulate_and_immutable_apply",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.924
+        }
+      ],
+      "status": "passed",
+      "duration": 0.924
+    },
+    {
+      "nodeid": "tests/integration/test_conductor_workflow.py::test_conductor_stale_base_version_conflict_blocks_overwrite",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.776
+        }
+      ],
+      "status": "passed",
+      "duration": 0.776
+    },
+    {
+      "nodeid": "tests/e2e/test_agent_builder_to_call_flow.py::test_builder_publishes_persisted_snapshot_then_simulated_call_uses_it",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.848
+        }
+      ],
+      "status": "passed",
+      "duration": 0.848
+    },
+    {
+      "nodeid": "tests/e2e/test_calls_analytics_flow.py::test_persisted_call_transcript_replay_and_analytics_read_paths",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.762
+        }
+      ],
+      "status": "passed",
+      "duration": 0.762
+    },
+    {
+      "nodeid": "tests/e2e/test_campaign_workflow_flow.py::test_campaign_audience_plan_and_controlled_workflow_lead_action",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.847
+        }
+      ],
+      "status": "passed",
+      "duration": 0.847
+    },
+    {
+      "nodeid": "tests/e2e/test_chat_sms_flow.py::test_persisted_chat_message_memory_and_sms_provider_fail_closed",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.865
+        }
+      ],
+      "status": "passed",
+      "duration": 0.865
+    },
+    {
+      "nodeid": "tests/e2e/test_conductor_flow.py::test_conductor_full_workflow_partial_approve_simulate_and_immutable_apply",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 1.922
+        }
+      ],
+      "status": "passed",
+      "duration": 1.922
+    },
+    {
+      "nodeid": "tests/e2e/test_conductor_flow.py::test_prompt8_conductor_failure_reproduction_review_and_immutable_apply",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 1.058
+        }
+      ],
+      "status": "passed",
+      "duration": 1.058
+    },
+    {
+      "nodeid": "tests/e2e/test_enterprise_cross_module_auth.py::test_tenant_environment_rbac_api_key_and_module_isolation",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 1.329
+        }
+      ],
+      "status": "passed",
+      "duration": 1.329
+    },
+    {
+      "nodeid": "tests/e2e/test_full_platform_e2e.py::test_master_new_customer_to_simulated_call_and_truthful_cross_module_state",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 1.018
+        }
+      ],
+      "status": "passed",
+      "duration": 1.018
+    },
+    {
+      "nodeid": "tests/e2e/test_full_platform_e2e.py::test_call_pin_keeps_superseded_snapshot_and_unpinned_call_uses_persisted_pointer",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.927
+        }
+      ],
+      "status": "passed",
+      "duration": 0.927
+    },
+    {
+      "nodeid": "tests/e2e/test_guardrails_pii_flow.py::test_guardrails_pii_redaction_and_raw_export_authorization",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.73
+        }
+      ],
+      "status": "passed",
+      "duration": 0.73
+    },
+    {
+      "nodeid": "tests/e2e/test_knowledge_crm_flow.py::test_ingested_knowledge_builder_association_contact_memory_and_crm_readiness",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.931
+        }
+      ],
+      "status": "passed",
+      "duration": 0.931
+    },
+    {
+      "nodeid": "tests/e2e/test_live_monitor_takeover_flow.py::test_live_monitor_and_takeover_actions_are_audited_and_not_faked",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.844
+        }
+      ],
+      "status": "passed",
+      "duration": 0.844
+    },
+    {
+      "nodeid": "tests/e2e/test_public_to_dashboard_flow.py::test_public_catalog_signup_environment_and_authenticated_dashboard_api",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.741
+        }
+      ],
+      "status": "passed",
+      "duration": 0.741
+    },
+    {
+      "nodeid": "tests/e2e/test_settings_billing_flow.py::test_settings_security_and_billing_read_write_state_are_persisted",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.817
+        }
+      ],
+      "status": "passed",
+      "duration": 0.817
+    },
+    {
+      "nodeid": "tests/e2e/test_testing_simulation_flow.py::test_version_pinned_playground_and_failed_scenario_are_persisted_truthfully",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.952
+        }
+      ],
+      "status": "passed",
+      "duration": 0.952
+    },
+    {
+      "nodeid": "tests/e2e/test_voice_telephony_flow.py::test_phone_sip_inbound_live_fail_closed_and_simulation_version_binding",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 1.06
+        }
+      ],
+      "status": "passed",
+      "duration": 1.06
+    },
+    {
+      "nodeid": "tests/compliance/test_qms_ocg.py::test_qms_document_status_revision_evidence_and_source_are_explainable",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.003
+        }
+      ],
+      "status": "passed",
+      "duration": 0.003
+    },
+    {
+      "nodeid": "tests/compliance/test_qms_ocg.py::test_ocg_rule_states_are_deterministic_and_source_bound",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.002
+        }
+      ],
+      "status": "passed",
+      "duration": 0.002
+    },
+    {
+      "nodeid": "tests/compliance/test_qms_ocg.py::test_requested_agent_catalog_and_industry_checks_are_registered_and_non_clinical",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.002
+        }
+      ],
+      "status": "passed",
+      "duration": 0.002
+    },
+    {
+      "nodeid": "tests/compliance/test_qms_ocg.py::test_compliance_findings_remediation_review_and_scope_isolation",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.846
+        }
+      ],
+      "status": "passed",
+      "duration": 0.846
+    },
+    {
+      "nodeid": "tests/telephony/test_callback_reconciliation.py::test_duplicate_and_out_of_order_do_not_double_apply",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.693
+        }
+      ],
+      "status": "passed",
+      "duration": 0.693
+    },
+    {
+      "nodeid": "tests/telephony/test_callback_reconciliation.py::test_missing_local_record_is_unmatched",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.641
+        }
+      ],
+      "status": "passed",
+      "duration": 0.641
+    },
+    {
+      "nodeid": "tests/telephony/test_callback_reconciliation.py::test_stale_snapshot_does_not_overwrite_a_newer_terminal_call",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.665
+        }
+      ],
+      "status": "passed",
+      "duration": 0.665
+    },
+    {
+      "nodeid": "tests/telephony/test_callback_reconciliation.py::test_dlq_retry_exhaustion_and_replay",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.652
+        }
+      ],
+      "status": "passed",
+      "duration": 0.652
+    },
+    {
+      "nodeid": "tests/telephony/test_callback_reconciliation.py::test_permanent_error_dead_letters_without_five_retries",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.624
+        }
+      ],
+      "status": "passed",
+      "duration": 0.624
+    },
+    {
+      "nodeid": "tests/telephony/test_callback_reconciliation.py::test_scrub_drops_secrets",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.002
+        }
+      ],
+      "status": "passed",
+      "duration": 0.002
+    },
+    {
+      "nodeid": "tests/telephony/test_lead_lifecycle_callbacks.py::test_completed_high_score_qualifies_with_history",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.703
+        }
+      ],
+      "status": "passed",
+      "duration": 0.703
+    },
+    {
+      "nodeid": "tests/telephony/test_lead_lifecycle_callbacks.py::test_completed_low_score_marks_called",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.704
+        }
+      ],
+      "status": "passed",
+      "duration": 0.704
+    },
+    {
+      "nodeid": "tests/telephony/test_lead_lifecycle_callbacks.py::test_short_completed_call_does_not_grade",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.725
+        }
+      ],
+      "status": "passed",
+      "duration": 0.725
+    },
+    {
+      "nodeid": "tests/telephony/test_lead_lifecycle_callbacks.py::test_failed_at_attempt_cap_marks_failed",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.647
+        }
+      ],
+      "status": "passed",
+      "duration": 0.647
+    },
+    {
+      "nodeid": "tests/telephony/test_lead_lifecycle_callbacks.py::test_no_answer_under_the_cap_leaves_the_lead_alone",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.708
+        }
+      ],
+      "status": "passed",
+      "duration": 0.708
+    },
+    {
+      "nodeid": "tests/telephony/test_lead_lifecycle_callbacks.py::test_repeated_callback_never_double_grades",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.736
+        }
+      ],
+      "status": "passed",
+      "duration": 0.736
+    },
+    {
+      "nodeid": "tests/telephony/test_lead_lifecycle_callbacks.py::test_cross_environment_lead_is_never_graded",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.734
+        }
+      ],
+      "status": "passed",
+      "duration": 0.734
+    },
+    {
+      "nodeid": "tests/telephony/test_lead_lifecycle_callbacks.py::test_dnc_lead_is_never_touched_or_reversed",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.708
+        }
+      ],
+      "status": "passed",
+      "duration": 0.708
+    },
+    {
+      "nodeid": "tests/telephony/test_number_provisioning.py::test_purchase_requires_billing_and_then_assigns_once",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.639
+        }
+      ],
+      "status": "passed",
+      "duration": 0.639
+    },
+    {
+      "nodeid": "tests/telephony/test_number_provisioning.py::test_provider_failure_releases_the_reservation",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.641
+        }
+      ],
+      "status": "passed",
+      "duration": 0.641
+    },
+    {
+      "nodeid": "tests/telephony/test_number_provisioning.py::test_cross_tenant_assign_and_release_are_not_found",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.626
+        }
+      ],
+      "status": "passed",
+      "duration": 0.626
+    },
+    {
+      "nodeid": "tests/telephony/test_number_provisioning.py::test_release_calls_provider_once_and_is_idempotent",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.657
+        }
+      ],
+      "status": "passed",
+      "duration": 0.657
+    },
+    {
+      "nodeid": "tests/telephony/test_number_provisioning.py::test_stale_provider_snapshot_does_not_revive_a_release",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.778
+        }
+      ],
+      "status": "passed",
+      "duration": 0.778
+    },
+    {
+      "nodeid": "tests/telephony/test_number_provisioning.py::test_http_inventory_is_tenant_scoped",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.89
+        }
+      ],
+      "status": "passed",
+      "duration": 0.89
+    },
+    {
+      "nodeid": "tests/telephony/test_outbound_environment_scope.py::test_selection_is_restricted_to_the_campaign_environment",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.657
+        }
+      ],
+      "status": "passed",
+      "duration": 0.657
+    },
+    {
+      "nodeid": "tests/telephony/test_outbound_environment_scope.py::test_staging_campaign_selects_only_staging_leads",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.638
+        }
+      ],
+      "status": "passed",
+      "duration": 0.638
+    },
+    {
+      "nodeid": "tests/telephony/test_outbound_environment_scope.py::test_dnc_and_attempt_cap_still_exclude_leads",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.624
+        }
+      ],
+      "status": "passed",
+      "duration": 0.624
+    },
+    {
+      "nodeid": "tests/telephony/test_outbound_environment_scope.py::test_same_environment_pair_dials",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.647
+        }
+      ],
+      "status": "passed",
+      "duration": 0.647
+    },
+    {
+      "nodeid": "tests/telephony/test_outbound_environment_scope.py::test_cross_environment_lead_is_refused_even_when_directly_handed",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.645
+        }
+      ],
+      "status": "passed",
+      "duration": 0.645
+    },
+    {
+      "nodeid": "tests/telephony/test_outbound_environment_scope.py::test_cross_environment_campaign_is_refused",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.658
+        }
+      ],
+      "status": "passed",
+      "duration": 0.658
+    },
+    {
+      "nodeid": "tests/telephony/test_outbound_environment_scope.py::test_foreign_tenant_lead_is_refused",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.583
+        }
+      ],
+      "status": "passed",
+      "duration": 0.583
+    },
+    {
+      "nodeid": "tests/telephony/test_outbound_environment_scope.py::test_dnc_lead_is_refused_inside_the_same_environment",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.592
+        }
+      ],
+      "status": "passed",
+      "duration": 0.592
+    },
+    {
+      "nodeid": "tests/telephony/test_outbound_environment_scope.py::test_parallel_ticks_claim_each_lead_once",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.758
+        }
+      ],
+      "status": "passed",
+      "duration": 0.758
+    },
+    {
+      "nodeid": "tests/telephony/test_provider_contract.py::test_each_adapter_rejects_missing_credentials",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.002
+        }
+      ],
+      "status": "passed",
+      "duration": 0.002
+    },
+    {
+      "nodeid": "tests/telephony/test_provider_contract.py::test_unknown_provider_and_secret_are_not_returned",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.002
+        }
+      ],
+      "status": "passed",
+      "duration": 0.002
+    },
+    {
+      "nodeid": "tests/telephony/test_provider_contract.py::test_disabled_provider_is_rejected",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.664
+        }
+      ],
+      "status": "passed",
+      "duration": 0.664
+    },
+    {
+      "nodeid": "tests/telephony/test_provider_contract.py::test_telnyx_maps_http_errors",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.004
+        }
+      ],
+      "status": "passed",
+      "duration": 0.004
+    },
+    {
+      "nodeid": "tests/telephony/test_provider_contract.py::test_telnyx_does_not_invent_a_call_or_whatsapp",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.004
+        }
+      ],
+      "status": "passed",
+      "duration": 0.004
+    },
+    {
+      "nodeid": "tests/telephony/test_provider_contract.py::test_telnyx_search_uses_only_returned_features",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.004
+        }
+      ],
+      "status": "passed",
+      "duration": 0.004
+    },
+    {
+      "nodeid": "tests/telephony/test_provider_contract.py::test_vonage_voice_and_recording_fail_clearly",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.004
+        }
+      ],
+      "status": "passed",
+      "duration": 0.004
+    },
+    {
+      "nodeid": "tests/telephony/test_provider_contract.py::test_vonage_number_search_parses_features_and_hides_secret",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.004
+        }
+      ],
+      "status": "passed",
+      "duration": 0.004
+    },
+    {
+      "nodeid": "tests/telephony/test_provider_contract.py::test_twilio_webhook_fail_closed_and_other_providers_reject",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.004
+        }
+      ],
+      "status": "passed",
+      "duration": 0.004
+    },
+    {
+      "nodeid": "tests/telephony/test_provider_contract.py::test_vonage_jwt_accepts_only_a_fresh_signature",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.003
+        }
+      ],
+      "status": "passed",
+      "duration": 0.003
+    },
+    {
+      "nodeid": "tests/telephony/test_provider_contract.py::test_twilio_capabilities_follow_configuration",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.233
+        }
+      ],
+      "status": "passed",
+      "duration": 0.233
+    },
+    {
+      "nodeid": "tests/telephony/test_qos.py::test_valid_metrics_and_missing_metric",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.002
+        }
+      ],
+      "status": "passed",
+      "duration": 0.002
+    },
+    {
+      "nodeid": "tests/telephony/test_qos.py::test_negative_and_unit_and_mos_are_rejected",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.001
+        }
+      ],
+      "status": "passed",
+      "duration": 0.001
+    },
+    {
+      "nodeid": "tests/telephony/test_qos.py::test_aggregation_is_tenant_scoped",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.64
+        }
+      ],
+      "status": "passed",
+      "duration": 0.64
+    },
+    {
+      "nodeid": "tests/telephony/test_recording.py::test_state_machine_and_duplicate_do_not_regress",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.623
+        }
+      ],
+      "status": "passed",
+      "duration": 0.623
+    },
+    {
+      "nodeid": "tests/telephony/test_recording.py::test_consent_and_policy_block_capture",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.609
+        }
+      ],
+      "status": "passed",
+      "duration": 0.609
+    },
+    {
+      "nodeid": "tests/telephony/test_recording.py::test_access_is_permissioned_audited_and_expires",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.637
+        }
+      ],
+      "status": "passed",
+      "duration": 0.637
+    },
+    {
+      "nodeid": "tests/telephony/test_recording.py::test_other_tenant_cannot_change_policy",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 1.915
+        }
+      ],
+      "status": "passed",
+      "duration": 1.915
+    },
+    {
+      "nodeid": "tests/telephony/test_recording.py::test_missing_provider_id_and_callback_duplicate",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.664
+        }
+      ],
+      "status": "passed",
+      "duration": 0.664
+    },
+    {
+      "nodeid": "tests/telephony/test_recording.py::test_retention_deletes_recording_unless_held",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.633
+        }
+      ],
+      "status": "passed",
+      "duration": 0.633
+    },
+    {
+      "nodeid": "tests/test_telephony_runtime_e2e.py::test_phone_number_lifecycle_e164_validation_and_agent_binding",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.752
+        }
+      ],
+      "status": "passed",
+      "duration": 0.752
+    },
+    {
+      "nodeid": "tests/test_telephony_runtime_e2e.py::test_sip_connection_validation_secret_hashing_and_test_probe",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.746
+        }
+      ],
+      "status": "passed",
+      "duration": 0.746
+    },
+    {
+      "nodeid": "tests/test_telephony_runtime_e2e.py::test_inbound_webhook_call_routing_and_unconfigured_agent_failure",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.807
+        }
+      ],
+      "status": "passed",
+      "duration": 0.807
+    },
+    {
+      "nodeid": "tests/test_telephony_runtime_e2e.py::test_outbound_call_lifecycle_and_provider_readiness_honesty",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.752
+        }
+      ],
+      "status": "passed",
+      "duration": 0.752
+    },
+    {
+      "nodeid": "tests/test_telephony_runtime_e2e.py::test_call_state_machine_valid_and_illegal_transitions",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.64
+        }
+      ],
+      "status": "passed",
+      "duration": 0.64
+    },
+    {
+      "nodeid": "tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.955
+        }
+      ],
+      "status": "passed",
+      "duration": 0.955
+    },
+    {
+      "nodeid": "tests/security/test_telephony_media_isolation.py::test_tenant_a_cannot_touch_tenant_b_media",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.732
+        }
+      ],
+      "status": "passed",
+      "duration": 0.732
+    },
+    {
+      "nodeid": "tests/test_contracts.py::test_contracts_exist",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.002
+        }
+      ],
+      "status": "passed",
+      "duration": 0.002
+    },
+    {
+      "nodeid": "tests/test_contracts.py::test_enum_vocabulary_matches_models",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.003
+        }
+      ],
+      "status": "passed",
+      "duration": 0.003
+    },
+    {
+      "nodeid": "tests/test_contracts.py::test_every_operational_message_is_tenant_scoped",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.003
+        }
+      ],
+      "status": "passed",
+      "duration": 0.003
+    },
+    {
+      "nodeid": "tests/test_contracts.py::test_shared_primitives_are_exactly_the_allowlist",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.001
+        }
+      ],
+      "status": "passed",
+      "duration": 0.001
+    },
+    {
+      "nodeid": "tests/test_api_contract.py::test_registered_api_method_path_pairs_are_unique",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.006
+        }
+      ],
+      "status": "passed",
+      "duration": 0.006
+    },
+    {
+      "nodeid": "tests/test_api_contract.py::test_no_route_returns_500_when_probed",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 4.386
+        }
+      ],
+      "status": "passed",
+      "duration": 4.386
+    },
+    {
+      "nodeid": "tests/test_external_success_honesty.py::test_webhook_records_only_transport_observed_success[204-delivered]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.572
+        }
+      ],
+      "status": "passed",
+      "duration": 0.572
+    },
+    {
+      "nodeid": "tests/test_external_success_honesty.py::test_webhook_records_only_transport_observed_success[302-dlq]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.581
+        }
+      ],
+      "status": "passed",
+      "duration": 0.581
+    },
+    {
+      "nodeid": "tests/test_external_success_honesty.py::test_webhook_records_only_transport_observed_success[401-dlq]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.583
+        }
+      ],
+      "status": "passed",
+      "duration": 0.583
+    },
+    {
+      "nodeid": "tests/test_external_success_honesty.py::test_webhook_records_only_transport_observed_success[503-failed]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.638
+        }
+      ],
+      "status": "passed",
+      "duration": 0.638
+    },
+    {
+      "nodeid": "tests/test_external_success_honesty.py::test_unsafe_or_disabled_webhook_never_opens_transport[https://127.0.0.1/private-True]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.634
+        }
+      ],
+      "status": "passed",
+      "duration": 0.634
+    },
+    {
+      "nodeid": "tests/test_external_success_honesty.py::test_unsafe_or_disabled_webhook_never_opens_transport[https://8.8.8.8/hooks-False]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 1.679
+        }
+      ],
+      "status": "passed",
+      "duration": 1.679
+    },
+    {
+      "nodeid": "tests/test_external_success_honesty.py::test_webhook_configuration_rejects_private_destination",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.002
+        }
+      ],
+      "status": "passed",
+      "duration": 0.002
+    },
+    {
+      "nodeid": "tests/test_external_success_honesty.py::test_unimplemented_remote_operations_do_not_fabricate_completion[connect_salesforce]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.649
+        }
+      ],
+      "status": "passed",
+      "duration": 0.649
+    },
+    {
+      "nodeid": "tests/test_external_success_honesty.py::test_unimplemented_remote_operations_do_not_fabricate_completion[oauth_authorize]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.615
+        }
+      ],
+      "status": "passed",
+      "duration": 0.615
+    },
+    {
+      "nodeid": "tests/test_external_success_honesty.py::test_unimplemented_remote_operations_do_not_fabricate_completion[oauth_callback]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.566
+        }
+      ],
+      "status": "passed",
+      "duration": 0.566
+    },
+    {
+      "nodeid": "tests/test_external_success_honesty.py::test_unimplemented_remote_operations_do_not_fabricate_completion[refresh_token]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.573
+        }
+      ],
+      "status": "passed",
+      "duration": 0.573
+    },
+    {
+      "nodeid": "tests/test_external_success_honesty.py::test_unimplemented_remote_operations_do_not_fabricate_completion[salesforce_writeback]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.576
+        }
+      ],
+      "status": "passed",
+      "duration": 0.576
+    },
+    {
+      "nodeid": "tests/test_external_success_honesty.py::test_unimplemented_remote_operations_do_not_fabricate_completion[sync_salesforce]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.59
+        }
+      ],
+      "status": "passed",
+      "duration": 0.59
+    },
+    {
+      "nodeid": "tests/test_external_success_honesty.py::test_unimplemented_remote_operations_do_not_fabricate_completion[api_limits]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.608
+        }
+      ],
+      "status": "passed",
+      "duration": 0.608
+    },
+    {
+      "nodeid": "tests/test_external_success_honesty.py::test_unimplemented_remote_operations_do_not_fabricate_completion[describe_objects]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.825
+        }
+      ],
+      "status": "passed",
+      "duration": 0.825
+    },
+    {
+      "nodeid": "tests/test_external_success_honesty.py::test_unimplemented_remote_operations_do_not_fabricate_completion[bulk_writeback]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.727
+        }
+      ],
+      "status": "passed",
+      "duration": 0.727
+    },
+    {
+      "nodeid": "tests/test_external_success_honesty.py::test_unimplemented_remote_operations_do_not_fabricate_completion[writeback_disposition]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.587
+        }
+      ],
+      "status": "passed",
+      "duration": 0.587
+    },
+    {
+      "nodeid": "tests/test_external_success_honesty.py::test_unimplemented_remote_operations_do_not_fabricate_completion[writeback_task_note]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.611
+        }
+      ],
+      "status": "passed",
+      "duration": 0.611
+    },
+    {
+      "nodeid": "tests/test_external_success_honesty.py::test_unimplemented_remote_operations_do_not_fabricate_completion[writeback_extracted_fields]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.673
+        }
+      ],
+      "status": "passed",
+      "duration": 0.673
+    },
+    {
+      "nodeid": "tests/test_external_success_honesty.py::test_unimplemented_remote_operations_do_not_fabricate_completion[create_mapping]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.638
+        }
+      ],
+      "status": "passed",
+      "duration": 0.638
+    },
+    {
+      "nodeid": "tests/test_external_success_honesty.py::test_unimplemented_remote_operations_do_not_fabricate_completion[list_mappings]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.599
+        }
+      ],
+      "status": "passed",
+      "duration": 0.599
+    },
+    {
+      "nodeid": "tests/test_external_success_honesty.py::test_unimplemented_remote_operations_do_not_fabricate_completion[backfill_crm]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.593
+        }
+      ],
+      "status": "passed",
+      "duration": 0.593
+    },
+    {
+      "nodeid": "tests/test_external_success_honesty.py::test_workflow_preserves_local_context_but_does_not_fake_remote_writeback",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.599
+        }
+      ],
+      "status": "passed",
+      "duration": 0.599
+    },
+    {
+      "nodeid": "tests/test_placeholder_security_regressions.py::test_trigger_requires_existing_tenant_workflow[malformed]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.608
+        }
+      ],
+      "status": "passed",
+      "duration": 0.608
+    },
+    {
+      "nodeid": "tests/test_placeholder_security_regressions.py::test_trigger_requires_existing_tenant_workflow[missing]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.622
+        }
+      ],
+      "status": "passed",
+      "duration": 0.622
+    },
+    {
+      "nodeid": "tests/test_placeholder_security_regressions.py::test_trigger_requires_existing_tenant_workflow[foreign]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.604
+        }
+      ],
+      "status": "passed",
+      "duration": 0.604
+    },
+    {
+      "nodeid": "tests/test_placeholder_security_regressions.py::test_trigger_requires_existing_tenant_workflow[owned]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.592
+        }
+      ],
+      "status": "passed",
+      "duration": 0.592
+    },
+    {
+      "nodeid": "tests/test_placeholder_security_regressions.py::test_monitor_end_enforces_owner_or_effective_admin[manager-False-False]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.611
+        }
+      ],
+      "status": "passed",
+      "duration": 0.611
+    },
+    {
+      "nodeid": "tests/test_placeholder_security_regressions.py::test_monitor_end_enforces_owner_or_effective_admin[manager-True-True]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.69
+        }
+      ],
+      "status": "passed",
+      "duration": 0.69
+    },
+    {
+      "nodeid": "tests/test_placeholder_security_regressions.py::test_monitor_end_enforces_owner_or_effective_admin[admin-False-True]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.703
+        }
+      ],
+      "status": "passed",
+      "duration": 0.703
+    },
+    {
+      "nodeid": "tests/test_placeholder_security_regressions.py::test_monitor_end_enforces_owner_or_effective_admin[owner-False-True]",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.703
+        }
+      ],
+      "status": "passed",
+      "duration": 0.703
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestAgentDomain::test_validation_rejects_unknown_provider",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.002
+        }
+      ],
+      "status": "passed",
+      "duration": 0.002
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestAgentDomain::test_validation_rejects_out_of_range_speed",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.002
+        }
+      ],
+      "status": "passed",
+      "duration": 0.002
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestAgentDomain::test_id_stable_across_content_edits",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.001
+        }
+      ],
+      "status": "passed",
+      "duration": 0.001
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestAgentDomain::test_publish_transition_rules",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.001
+        }
+      ],
+      "status": "passed",
+      "duration": 0.001
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestAgentService::test_draft_tenant_isolation",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.694
+        }
+      ],
+      "status": "passed",
+      "duration": 0.694
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestAgentService::test_publish_mints_immutable_version",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.668
+        }
+      ],
+      "status": "passed",
+      "duration": 0.668
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestAgentService::test_publish_persists_tenant_columns",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.606
+        }
+      ],
+      "status": "passed",
+      "duration": 0.606
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestAgentService::test_rollback_reapplies_history",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.618
+        }
+      ],
+      "status": "passed",
+      "duration": 0.618
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestAgentService::test_configure_tools_validation",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.597
+        }
+      ],
+      "status": "passed",
+      "duration": 0.597
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestAgentService::test_test_configuration_offline",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.627
+        }
+      ],
+      "status": "passed",
+      "duration": 0.627
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestConversationDomain::test_transition_table",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.002
+        }
+      ],
+      "status": "passed",
+      "duration": 0.002
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestConversationDomain::test_invalid_transition_raises",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.002
+        }
+      ],
+      "status": "passed",
+      "duration": 0.002
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestConversationService::test_start_and_project",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.628
+        }
+      ],
+      "status": "passed",
+      "duration": 0.628
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestConversationService::test_append_turn_and_classify",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.651
+        }
+      ],
+      "status": "passed",
+      "duration": 0.651
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestConversationService::test_escalate_records_intent_without_dialing",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.643
+        }
+      ],
+      "status": "passed",
+      "duration": 0.643
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestConversationService::test_close_and_reopen_policy",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.669
+        }
+      ],
+      "status": "passed",
+      "duration": 0.669
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestConversationService::test_reopen_outside_window_rejected",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.65
+        }
+      ],
+      "status": "passed",
+      "duration": 0.65
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestConversationService::test_summarize_persists",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.623
+        }
+      ],
+      "status": "passed",
+      "duration": 0.623
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestConversationService::test_search_tenant_scoped",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.63
+        }
+      ],
+      "status": "passed",
+      "duration": 0.63
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestWorkflowDomain::test_controlled_actions_are_bounded",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.002
+        }
+      ],
+      "status": "passed",
+      "duration": 0.002
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestWorkflowDomain::test_evaluate_condition_operators",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.001
+        }
+      ],
+      "status": "passed",
+      "duration": 0.001
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestWorkflowDomain::test_validation_rejects_unknown_action",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.001
+        }
+      ],
+      "status": "passed",
+      "duration": 0.001
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestWorkflowDomain::test_validation_rejects_code_markers",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.001
+        }
+      ],
+      "status": "passed",
+      "duration": 0.001
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestWorkflowDomain::test_validation_requires_terminal",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.001
+        }
+      ],
+      "status": "passed",
+      "duration": 0.001
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestWorkflowService::test_publish_required_before_execute",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.632
+        }
+      ],
+      "status": "passed",
+      "duration": 0.632
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestWorkflowService::test_execution_deterministic_and_idempotent",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.66
+        }
+      ],
+      "status": "passed",
+      "duration": 0.66
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestWorkflowService::test_condition_branching",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.676
+        }
+      ],
+      "status": "passed",
+      "duration": 0.676
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestWorkflowService::test_approval_gate_waits_then_cancel",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.674
+        }
+      ],
+      "status": "passed",
+      "duration": 0.674
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestWorkflowService::test_retry_after_failure",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.727
+        }
+      ],
+      "status": "passed",
+      "duration": 0.727
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestWorkflowService::test_tenant_isolation",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.623
+        }
+      ],
+      "status": "passed",
+      "duration": 0.623
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestWorkflowService::test_lead_status_action_persists",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.626
+        }
+      ],
+      "status": "passed",
+      "duration": 0.626
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestAutomationService::test_filter_matching",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.569
+        }
+      ],
+      "status": "passed",
+      "duration": 0.569
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestAutomationService::test_disabled_not_evaluated",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.571
+        }
+      ],
+      "status": "passed",
+      "duration": 0.571
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestAutomationService::test_deduplication_idempotency",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.599
+        }
+      ],
+      "status": "passed",
+      "duration": 0.599
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestAutomationService::test_cooldown_suppresses",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.597
+        }
+      ],
+      "status": "passed",
+      "duration": 0.597
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestAutomationService::test_run_idempotency_key_deterministic",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.002
+        }
+      ],
+      "status": "passed",
+      "duration": 0.002
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestCampaignDomain::test_state_transitions",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.002
+        }
+      ],
+      "status": "passed",
+      "duration": 0.002
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestCampaignDomain::test_compliance_gate_cannot_be_weakened",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.002
+        }
+      ],
+      "status": "passed",
+      "duration": 0.002
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestCampaignService::test_create_and_state_lifecycle",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.576
+        }
+      ],
+      "status": "passed",
+      "duration": 0.576
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestCampaignService::test_dnc_lead_skipped",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.573
+        }
+      ],
+      "status": "passed",
+      "duration": 0.573
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestCampaignService::test_window_check_respects_tenant",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.579
+        }
+      ],
+      "status": "passed",
+      "duration": 0.579
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestCampaignService::test_attempt_limit",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.588
+        }
+      ],
+      "status": "passed",
+      "duration": 0.588
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestCampaignService::test_execution_plan_never_dials",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.587
+        }
+      ],
+      "status": "passed",
+      "duration": 0.587
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestCampaignService::test_progress_counts_leads",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.581
+        }
+      ],
+      "status": "passed",
+      "duration": 0.581
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestAnalyticsService::test_aggregate_correctness",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.578
+        }
+      ],
+      "status": "passed",
+      "duration": 0.578
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestAnalyticsService::test_tenant_isolation",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.609
+        }
+      ],
+      "status": "passed",
+      "duration": 0.609
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestAnalyticsService::test_range_validation",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.583
+        }
+      ],
+      "status": "passed",
+      "duration": 0.583
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestAnalyticsService::test_empty_results",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.585
+        }
+      ],
+      "status": "passed",
+      "duration": 0.585
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestAnalyticsService::test_snapshot_has_no_pii",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.558
+        }
+      ],
+      "status": "passed",
+      "duration": 0.558
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestAnalyticsService::test_cost_estimate_from_usage",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.634
+        }
+      ],
+      "status": "passed",
+      "duration": 0.634
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestNotificationService::test_strict_rendering",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.002
+        }
+      ],
+      "status": "passed",
+      "duration": 0.002
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestNotificationService::test_undeclared_variable_flagged",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.002
+        }
+      ],
+      "status": "passed",
+      "duration": 0.002
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestNotificationService::test_preference_quiet_hours",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.001
+        }
+      ],
+      "status": "passed",
+      "duration": 0.001
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestNotificationService::test_deduplication",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.616
+        }
+      ],
+      "status": "passed",
+      "duration": 0.616
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestNotificationService::test_retry_backoff_advances",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.574
+        }
+      ],
+      "status": "passed",
+      "duration": 0.574
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestNotificationService::test_in_app_delivery",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.564
+        }
+      ],
+      "status": "passed",
+      "duration": 0.564
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestNotificationService::test_email_channel_suppressed_honestly",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.572
+        }
+      ],
+      "status": "passed",
+      "duration": 0.572
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestInboxService::test_thread_isolation",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.608
+        }
+      ],
+      "status": "passed",
+      "duration": 0.608
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestInboxService::test_message_ordering",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.572
+        }
+      ],
+      "status": "passed",
+      "duration": 0.572
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestInboxService::test_read_unread",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.605
+        }
+      ],
+      "status": "passed",
+      "duration": 0.605
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestInboxService::test_assignment",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.586
+        }
+      ],
+      "status": "passed",
+      "duration": 0.586
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestInboxService::test_escalation",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.568
+        }
+      ],
+      "status": "passed",
+      "duration": 0.568
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestInboxService::test_close_and_reopen_policy",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.623
+        }
+      ],
+      "status": "passed",
+      "duration": 0.623
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestInboxService::test_reopen_window_rule",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.002
+        }
+      ],
+      "status": "passed",
+      "duration": 0.002
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestAgentApi::test_owner_can_create_and_list",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.709
+        }
+      ],
+      "status": "passed",
+      "duration": 0.709
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestAgentApi::test_viewer_forbidden",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.674
+        }
+      ],
+      "status": "passed",
+      "duration": 0.674
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestAgentApi::test_mass_assignment_protected",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.663
+        }
+      ],
+      "status": "passed",
+      "duration": 0.663
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestAgentApi::test_no_secret_leakage",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.761
+        }
+      ],
+      "status": "passed",
+      "duration": 0.761
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestAgentApi::test_publish_flow",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.783
+        }
+      ],
+      "status": "passed",
+      "duration": 0.783
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestWorkflowApi::test_create_and_execute",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.844
+        }
+      ],
+      "status": "passed",
+      "duration": 0.844
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestWorkflowApi::test_approval_route_resumes_persisted_execution",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.856
+        }
+      ],
+      "status": "passed",
+      "duration": 0.856
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestWorkflowApi::test_rejects_arbitrary_action",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.74
+        }
+      ],
+      "status": "passed",
+      "duration": 0.74
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestWorkflowApi::test_tenant_isolation",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.786
+        }
+      ],
+      "status": "passed",
+      "duration": 0.786
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestCampaignApi::test_create_requires_write_permission",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.739
+        }
+      ],
+      "status": "passed",
+      "duration": 0.739
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestCampaignApi::test_create_and_plan",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.716
+        }
+      ],
+      "status": "passed",
+      "duration": 0.716
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestCampaignApi::test_mass_assignment_protected",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 1.818
+        }
+      ],
+      "status": "passed",
+      "duration": 1.818
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestSecurityGuarantees::test_workflow_cannot_execute_arbitrary_code",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.635
+        }
+      ],
+      "status": "passed",
+      "duration": 0.635
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestSecurityGuarantees::test_automation_never_duplicates_side_effects",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.627
+        }
+      ],
+      "status": "passed",
+      "duration": 0.627
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestSecurityGuarantees::test_no_cross_tenant_conversation_visibility",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.624
+        }
+      ],
+      "status": "passed",
+      "duration": 0.624
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestSecurityGuarantees::test_analytics_never_exposes_phone_numbers",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.627
+        }
+      ],
+      "status": "passed",
+      "duration": 0.627
+    },
+    {
+      "nodeid": "tests/test_enterprise_batch01.py::TestSecurityGuarantees::test_api_requires_authentication",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.655
+        }
+      ],
+      "status": "passed",
+      "duration": 0.655
+    },
+    {
+      "nodeid": "tests/test_legacy_lead_routes.py::test_bulk_import_url_and_response_shape_unchanged",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.65
+        }
+      ],
+      "status": "passed",
+      "duration": 0.65
+    },
+    {
+      "nodeid": "tests/test_legacy_lead_routes.py::test_bulk_import_skips_duplicates_within_the_environment",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.641
+        }
+      ],
+      "status": "passed",
+      "duration": 0.641
+    },
+    {
+      "nodeid": "tests/test_legacy_lead_routes.py::test_same_phone_may_exist_in_two_environments",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.659
+        }
+      ],
+      "status": "passed",
+      "duration": 0.659
+    },
+    {
+      "nodeid": "tests/test_legacy_lead_routes.py::test_bulk_import_refuses_a_cross_environment_campaign",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.672
+        }
+      ],
+      "status": "passed",
+      "duration": 0.672
+    },
+    {
+      "nodeid": "tests/test_legacy_lead_routes.py::test_bulk_import_refuses_a_foreign_environment",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.631
+        }
+      ],
+      "status": "passed",
+      "duration": 0.631
+    },
+    {
+      "nodeid": "tests/test_legacy_lead_routes.py::test_list_url_shape_and_environment_scope",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.656
+        }
+      ],
+      "status": "passed",
+      "duration": 0.656
+    },
+    {
+      "nodeid": "tests/test_legacy_lead_routes.py::test_do_not_call_route_goes_through_consent_and_history",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.682
+        }
+      ],
+      "status": "passed",
+      "duration": 0.682
+    },
+    {
+      "nodeid": "tests/test_legacy_lead_routes.py::test_do_not_call_from_the_wrong_environment_is_404",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.672
+        }
+      ],
+      "status": "passed",
+      "duration": 0.672
+    },
+    {
+      "nodeid": "tests/test_legacy_lead_routes.py::test_legacy_campaign_urls_still_work",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.645
+        }
+      ],
+      "status": "passed",
+      "duration": 0.645
+    },
+    {
+      "nodeid": "tests/test_legacy_lead_routes.py::test_foreign_tenant_manager_gets_404_on_every_legacy_url",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.656
+        }
+      ],
+      "status": "passed",
+      "duration": 0.656
+    },
+    {
+      "nodeid": "tests/test_legacy_lead_routes.py::test_viewer_cannot_write_legacy_lead_routes",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/final-regression.xml",
+          "status": "passed",
+          "duration": 0.657
+        }
+      ],
+      "status": "passed",
+      "duration": 0.657
+    },
+    {
+      "nodeid": "tests/truth/test_no_template_routes.py::test_openapi_matches_the_reviewed_current_contract",
+      "attempts": [
+        {
+          "evidence": "reports/part0-clean/truth.xml",
+          "status": "passed",
+          "duration": 3.146
+        }
+      ],
+      "status": "passed",
+      "duration": 3.146
+    }
+  ]
+}

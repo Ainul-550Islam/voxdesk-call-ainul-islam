@@ -8,6 +8,7 @@ import uuid
 import pytest
 
 from app.agent.errors import ProviderAuthenticationError, ProviderTimeoutError
+from app.db.models import Turn, Speaker
 from app.qa.auto_review import PROMPT_VERSION, context_for, enqueue, process_run
 from app.qa.exceptions import DuplicateAutoReview
 from app.qa.repository import review_items
@@ -19,6 +20,8 @@ from tests.acd_support import live_call, production
 async def _review(db, tenant, actor):
     env = await production(db, tenant)
     call = await live_call(db, tenant, env)
+    db.add(Turn(call_id=call.id, speaker=Speaker.ASSISTANT, text="Hello, how may I help you?"))
+    await db.flush()
     card = await create_scorecard(
         db,
         tenant_id=tenant.id,

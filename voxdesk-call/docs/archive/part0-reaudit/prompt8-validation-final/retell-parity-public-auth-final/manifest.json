@@ -1,0 +1,58 @@
+{
+  "collection_status": "PASS",
+  "collection_exit_code": 0,
+  "collection_elapsed_seconds": 2.7,
+  "collection_log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/retell-parity-public-auth-final/collection.log",
+  "collected": 13,
+  "selected": 13,
+  "chunk_size_max": 20,
+  "chunk_count": 1,
+  "execution_mode": "sequential_child_processes",
+  "executed": 13,
+  "passed": 13,
+  "failed": 0,
+  "errors": 0,
+  "skipped": 0,
+  "not_run": 0,
+  "unconfirmed": 0,
+  "resource_unconfirmed": 0,
+  "unconfirmed_nodeids": [],
+  "resource_termination": false,
+  "full_suite_complete": true,
+  "chunks": [
+    {
+      "chunk": 1,
+      "collected": 13,
+      "submitted_nodeids": [
+        "tests/test_retell_parity.py::test_transfer_state_machine_transitions",
+        "tests/test_retell_parity.py::test_contact_normalization_and_validation",
+        "tests/test_retell_parity.py::test_contact_memory_hygiene_and_models",
+        "tests/test_retell_parity.py::test_chat_agent_models_and_secret_rejection",
+        "tests/test_retell_parity.py::test_dynamic_variable_validation_and_runtime_checking",
+        "tests/test_retell_parity.py::test_chat_agent_service_etag_publish_rollback_and_session",
+        "tests/test_retell_parity.py::test_bounded_regex_and_json_path_validation",
+        "tests/test_retell_parity.py::test_all_deterministic_evaluators_and_zero_assertion_scorecard",
+        "tests/integration/test_public_auth_boundary.py::test_anonymous_user_can_access_public_site_routes_without_auth",
+        "tests/integration/test_public_auth_boundary.py::test_public_home_and_analytics_expose_evidence_without_synthetic_metrics",
+        "tests/integration/test_public_auth_boundary.py::test_public_contact_sales_persists_durable_record",
+        "tests/integration/test_public_auth_boundary.py::test_anonymous_user_blocked_from_protected_apis_and_redirected_on_protected_routes",
+        "tests/integration/test_public_auth_boundary.py::test_open_redirect_next_values_rejected_and_safe_local_next_allowed"
+      ],
+      "executed_from_explicit_summary": 13,
+      "unconfirmed_count": 0,
+      "counts": {
+        "passed": 13,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "xfailed": 0,
+        "xpassed": 0
+      },
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 66.779,
+      "log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/retell-parity-public-auth-final/chunk-0001.log",
+      "terminal_summary_present": true
+    }
+  ]
+}

@@ -10,7 +10,7 @@ import type { MeResponse, OverviewResponse } from "@/lib/types";
 // CSS: agent-factory.css + globals.css — Glassmorphism + 3D + Metrics + Animations
 // HTML: Semantic header/main/section/article — accessible
 // TS: agent-factory-types.ts + api.ts type-safe
-// Backend: FastAPI 84 routers + 21 connectors + 16 agents
+// Backend: FastAPI routers + 21 connectors + 16 agents
 
 export default function OverviewPage() {
   const [me, setMe] = useState<MeResponse | null>(null);
@@ -98,7 +98,7 @@ export default function OverviewPage() {
               <span className="api-status connected"><span className="dot" /> Frontend: dashboard (Vite) canonical</span>
               <span className="api-status connected"><span className="dot" /> Realtime: gateway-go+media-engine-rs</span>
               <span className="api-status connected"><span className="dot" /> Agents: {specializedCount ?? "?"} active</span>
-              <span className="api-status connected"><span className="dot" /> 21 Connectors • 84 Routers • 40 Routes</span>
+              <span className="api-status connected"><span className="dot" /> 21 Connectors • Routers • 40 Routes</span>
             </p>
           </div>
           <div style={{ display: "flex", gap: 12 }}>
@@ -169,7 +169,7 @@ export default function OverviewPage() {
           <a href="/dashboard/workflows" className="factory-card">
             <h4>🎨 Workflow Builder (P0-03)</h4>
             <p>Visual canvas E2E drag-drop nodes SVG bezier edges arrow markers, node palette 7 types trigger/ai_agent/condition/action/delay/approval/integration, inspector branching/conditions approval HITL version history execution timeline test/preview</p>
-            <small>Backend: app/builder/ + orchestration/ 15 routes • CSS: .workflow-builder grid 200px 1fr 300px + .builder-canvas radial-gradient + .canvas-node 3D glass</small>
+            <small>Backend: app/builder/ + orchestration/ routes • CSS: .workflow-builder grid 200px 1fr 300px + .builder-canvas radial-gradient + .canvas-node 3D glass</small>
             <div style={{ marginTop: 12, display: "flex", gap: 6, flexWrap: "wrap" }}>
               <span className="status-badge published">5.71kB</span>
               <span className="status-badge draft">7 Node Types</span>
@@ -180,7 +180,7 @@ export default function OverviewPage() {
           <a href="/dashboard/voice" className="factory-card">
             <h4>🎙️ Voice Agent (P0-04)</h4>
             <p>Design→Voice→Connect→Launch 4-step stepper, IVR editor 6 types greeting/menu/input/transfer/hangup/ai validate_flow() prevents dangling, provider mix TTS/STT/LLM, voice library profiles+clone lifecycle, telephony Twilio real transfer answer_on_bridge whisper voicemail, 21 connectors, live preview test call, guardrails 9-8 DNC backoff</p>
-            <small>Backend: app/voice/ + telephony/ + tts/ 23 routes • CSS: .voice-stepper 4 steps + .voice-ivr-list + .voice-validation valid/invalid</small>
+            <small>Backend: app/voice/ + telephony/ + tts/ routes • CSS: .voice-stepper 4 steps + .voice-ivr-list + .voice-validation valid/invalid</small>
             <div style={{ marginTop: 12, display: "flex", gap: 6, flexWrap: "wrap" }}>
               <span className="status-badge published">6.52kB</span>
               <span className="status-badge draft">4 Steps</span>
@@ -317,37 +317,19 @@ export default function OverviewPage() {
         </div>
         <div style={{ padding: 24 }}>
           <pre className="code-block" style={{ fontSize: 12, lineHeight: 1.6 }}>
-{`🌐 WORLD SYSTEM ULTRA — CANONICAL TOPOLOGY
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Frontend: dashboard/ Vite (canonical prod) — Dockerfile builds, FastAPI serves dist
-  CSS: globals.css 910 lines + agent-factory.css 900+ lines = 1800+ ultra glass 3D
-  HTML: Semantic header/main/section/article/nav/table/form accessible no div soup
-  TS: agent-factory-types.ts 800+ 30+ interfaces + api.ts 722 40+ methods + types.ts 455
-
-Shadow: dashboard-next/ Next.js 14.2.35 40 routes — CI-tested in polyglot.yml, NOT prod shipped until parity
-  Build: ✓ Compiled successfully 40 routes workflows 5.71kB voice 6.52kB translation 5.05kB forecasting 4.75kB insight 5.24kB anomaly 4.73kB connection-demo 9.57kB
-
-Realtime: gateway-go (Go 1.27) + media-engine-rs (Rust 1.90) — canonical prod in docker-compose.prod.yml
-  Services: db postgres:16-alpine + api + realtime-gateway + media-engine + scheduler + backup + observability
-
-Shadow Realtime: signal-go (Go differential), control-plane (Rust roadmap Phase 2), media-plane (C++ DSP foundation)
-
-Connectors: 21 total = 4 CRM (GHL/HubSpot/Jobber/Webhook) + 5 calendar (Google/Google SA/Microsoft/Cal.com/Internal) + 12 enterprise (Salesforce/Dynamics/ServiceNow/SAP/SharePoint/OneDrive/Confluence/Jira/Zendesk/Freshdesk/Zoho/Shopify)
-  + 3 QMS (Veeva Vault/MasterControl/ETQ) native adapters — honest unavailable when not configured — no fabricated rows
-
-Agents: 16 definitions = 5 core (legal/translation/anomaly/insight/forecasting) + 6 legal + 4 compliance + 1 retired
-  Backend: app/specialized_agents/registry.py + /api/specialized-agents/* + governance + evidence chain
-
-Design: World System Ultra — Glassmorphism backdrop-filter blur(20px) saturate(180%) + 3D transform-style preserve-3d perspective 2000px + translateZ + rotateX/Y + Metrics glass cards float-3d glow-pulse + Gradients mesh radial + Animations spin float-3d glow-pulse + Shadows glass 3D + Glass metrics + Professional
-
-Docs: docs/CURRENT-ARCHITECTURE.md + IMPLEMENTATION_REPORT.md + FINAL_PARITY_AUDIT_CLOSURE.md + CSS_HTML_TS_API_CONNECTION_REPORT.md + FINAL_PRODUCTION_READY.md
-`}
+{`Application topology (not live capability evidence)
+Frontend: dashboard/ is served by FastAPI when its Vite build is present.
+Shadow UI: dashboard-next/ is independently tested; it is not the production frontend.
+Realtime deployment definitions: docker-compose.prod.yml.
+Provider registrations are not proof of configured credentials or observed delivery.
+Verified feature status: docs/SALES/FEATURE_MATRIX_VERIFIED.md.
+Build and test results must come from current execution evidence, not this page.`}
           </pre>
           <div style={{ marginTop: 16, display: "flex", gap: 8, flexWrap: "wrap" }}>
             <span className="api-status connected"><span className="dot" /> CSS 1800+ Ultra Glass 3D</span>
             <span className="api-status connected"><span className="dot" /> HTML Semantic Accessible</span>
             <span className="api-status connected"><span className="dot" /> TS 2000+ Type-Safe</span>
-            <span className="api-status connected"><span className="dot" /> Backend 84 Routers</span>
+            <span className="api-status connected"><span className="dot" /> Backend Routers</span>
             <span className="api-status connected"><span className="dot" /> 40 Routes Build Pass</span>
             <span className="api-status connected"><span className="dot" /> World System Ultra</span>
           </div>
@@ -376,7 +358,7 @@ Docs: docs/CURRENT-ARCHITECTURE.md + IMPLEMENTATION_REPORT.md + FINAL_PARITY_AUD
             { id: "P1-07", name: "Deployment", status: "✅ Fixed", desc: "Configured/ready/observed/verified distinction", badge: "World System" },
             { id: "P1-08", name: "Intelligence", status: "✅ Full E2E", desc: "Forecasting 4.75kB + Insight 5.24kB + Anomaly 4.73kB", badge: "3D Glass" },
             { id: "P2", name: "Marketing", status: "✅ Fixed", desc: "5 pages index/voice/translation/qms/legal", badge: "Ultra" },
-            { id: "CSS+HTML+TS+API", name: "Full Stack", status: "✅ Connected", desc: "1800+ CSS + semantic HTML + 2000+ TS + 84 FastAPI routers + 40 routes", badge: "World System Ultra" },
+            { id: "CSS+HTML+TS+API", name: "Full Stack", status: "✅ Connected", desc: "1800+ CSS + semantic HTML + 2000+ TS + 84 FastAPI routers + routes", badge: "World System Ultra" },
           ].map((gap) => (
             <div key={gap.id} className="glass" style={{ padding: 14, borderRadius: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>

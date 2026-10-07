@@ -1,2 +1,35 @@
-/* blog.css — premium dark SaaS — deep black #050507 electric blue violet cyan glassmorphism 20-32px */
-.pricing-root { background: #050507; }
+/**
+ * dashboard/src/styles/blog.css
+ * Engineering & Product Blog — Articles, Technical Deep Dives & Release Notes
+ */
+.blog-root {
+  background: #050507;
+  color: #ffffff;
+  min-height: 100vh;
+}
+.blog-article-card {
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 1.75rem;
+  transition: transform 0.25s ease, border-color 0.25s ease;
+}
+.blog-article-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(59, 130, 246, 0.35);
+}
+.blog-prose {
+  max-width: 72ch;
+  line-height: 1.75;
+  color: rgba(255, 255, 255, 0.82);
+}
+.blog-prose h2 {
+  margin-top: 2.25rem;
+  margin-bottom: 0.75rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+.blog-prose p {
+  margin-bottom: 1.25rem;
+}

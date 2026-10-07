@@ -1,0 +1,151 @@
+{
+  "collection_status": "PASS",
+  "collection_exit_code": 0,
+  "collection_elapsed_seconds": 2.834,
+  "collection_log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/repair-tail/lane-11/collection.log",
+  "collected": 22,
+  "selected": 22,
+  "chunk_size_max": 5,
+  "chunk_count": 5,
+  "execution_mode": "sequential_child_processes",
+  "executed": 22,
+  "passed": 22,
+  "failed": 0,
+  "errors": 0,
+  "skipped": 0,
+  "not_run": 0,
+  "unconfirmed": 0,
+  "resource_unconfirmed": 0,
+  "unconfirmed_nodeids": [],
+  "resource_termination": false,
+  "full_suite_complete": true,
+  "chunks": [
+    {
+      "chunk": 1,
+      "collected": 5,
+      "submitted_nodeids": [
+        "tests/workflow/test_workflow_state_machine.py::test_all_states_defined",
+        "tests/workflow/test_workflow_state_machine.py::test_transition_matrix[created-queued-True]",
+        "tests/workflow/test_workflow_state_machine.py::test_transition_matrix[created-running-True]",
+        "tests/workflow/test_workflow_state_machine.py::test_transition_matrix[created-completed-False]",
+        "tests/workflow/test_workflow_state_machine.py::test_transition_matrix[queued-running-True]"
+      ],
+      "executed_from_explicit_summary": 5,
+      "unconfirmed_count": 0,
+      "counts": {
+        "passed": 5,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "xfailed": 0,
+        "xpassed": 0
+      },
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 2.648,
+      "log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/repair-tail/lane-11/chunk-0001.log",
+      "terminal_summary_present": true
+    },
+    {
+      "chunk": 2,
+      "collected": 5,
+      "submitted_nodeids": [
+        "tests/workflow/test_workflow_state_machine.py::test_transition_matrix[running-paused-True]",
+        "tests/workflow/test_workflow_state_machine.py::test_transition_matrix[running-waiting_approval-True]",
+        "tests/workflow/test_workflow_state_machine.py::test_transition_matrix[running-recovering-True]",
+        "tests/workflow/test_workflow_state_machine.py::test_transition_matrix[running-completed-True]",
+        "tests/workflow/test_workflow_state_machine.py::test_transition_matrix[running-timed_out-True]"
+      ],
+      "executed_from_explicit_summary": 5,
+      "unconfirmed_count": 0,
+      "counts": {
+        "passed": 5,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "xfailed": 0,
+        "xpassed": 0
+      },
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 2.753,
+      "log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/repair-tail/lane-11/chunk-0002.log",
+      "terminal_summary_present": true
+    },
+    {
+      "chunk": 3,
+      "collected": 5,
+      "submitted_nodeids": [
+        "tests/workflow/test_workflow_state_machine.py::test_transition_matrix[paused-running-True]",
+        "tests/workflow/test_workflow_state_machine.py::test_transition_matrix[paused-completed-False]",
+        "tests/workflow/test_workflow_state_machine.py::test_transition_matrix[waiting_approval-completed-True]",
+        "tests/workflow/test_workflow_state_machine.py::test_transition_matrix[waiting_approval-running-True]",
+        "tests/workflow/test_workflow_state_machine.py::test_transition_matrix[failed-retrying-True]"
+      ],
+      "executed_from_explicit_summary": 5,
+      "unconfirmed_count": 0,
+      "counts": {
+        "passed": 5,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "xfailed": 0,
+        "xpassed": 0
+      },
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 3.006,
+      "log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/repair-tail/lane-11/chunk-0003.log",
+      "terminal_summary_present": true
+    },
+    {
+      "chunk": 4,
+      "collected": 5,
+      "submitted_nodeids": [
+        "tests/workflow/test_workflow_state_machine.py::test_transition_matrix[failed-recovering-True]",
+        "tests/workflow/test_workflow_state_machine.py::test_transition_matrix[failed-completed-False]",
+        "tests/workflow/test_workflow_state_machine.py::test_transition_matrix[completed-running-False]",
+        "tests/workflow/test_workflow_state_machine.py::test_transition_matrix[cancelled-running-False]",
+        "tests/workflow/test_workflow_state_machine.py::test_transition_matrix[timed_out-running-False]"
+      ],
+      "executed_from_explicit_summary": 5,
+      "unconfirmed_count": 0,
+      "counts": {
+        "passed": 5,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "xfailed": 0,
+        "xpassed": 0
+      },
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 2.879,
+      "log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/repair-tail/lane-11/chunk-0004.log",
+      "terminal_summary_present": true
+    },
+    {
+      "chunk": 5,
+      "collected": 2,
+      "submitted_nodeids": [
+        "tests/workflow/test_workflow_state_machine.py::test_transition_matrix[unknown_state-running-False]",
+        "tests/workflow/test_workflow_state_machine.py::test_terminal_states_and_recovery_paths"
+      ],
+      "executed_from_explicit_summary": 2,
+      "unconfirmed_count": 0,
+      "counts": {
+        "passed": 2,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "xfailed": 0,
+        "xpassed": 0
+      },
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 2.946,
+      "log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/repair-tail/lane-11/chunk-0005.log",
+      "terminal_summary_present": true
+    }
+  ]
+}

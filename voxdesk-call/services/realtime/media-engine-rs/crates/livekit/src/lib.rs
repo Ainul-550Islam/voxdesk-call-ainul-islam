@@ -93,13 +93,11 @@ pub fn decode_b64url(s: &str) -> Option<Vec<u8>> {
         return None;
     }
     let body = &bytes[..bytes.len() - pad];
-    // Padding is OPTIONAL but must be exactly canonical when present:
     // the '=' count is fully determined by the body length mod 4.
     let expected_pad = match body.len() % 4 {
         0 | 2 | 3 => (4 - body.len() % 4) % 4,
         _ => return None,
     };
-    // Padding is OPTIONAL: accept unpadded entirely; accept padded only
     // when canonical ('==' for len%4==2, '=' for len%4==3).
     if pad > 0 && pad != expected_pad {
         return None;

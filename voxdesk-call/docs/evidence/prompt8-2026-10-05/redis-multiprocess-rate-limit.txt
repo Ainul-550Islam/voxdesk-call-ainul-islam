@@ -1,0 +1,9 @@
+TIMESTAMP_DHAKA=2026-10-05T17:44:42.205946+06:00
+REDIS_VERSION=8.0.2
+REDIS_DB=15; HOST=127.0.0.1; ROLE=disposable local test; credentials=none
+WORKER_PIDS=6603,6604
+WORKER_RESULTS=[{"pid": 6603, "results": [true, true]}, {"pid": 6604, "results": [true, false]}]
+COUNTER=4; TTL_SECONDS=60; allowed=3; denied=1
+RESULT=PASS: atomic Redis limit was shared by two independent Python process-local limiter instances.
+[2m2026-10-05T11:44:43.417867Z[0m [[33m[1mwarning  [0m] [1mrate_limit.backend_unavailable[0m [36mbackend[0m=[35mredis[0m [36merror_type[0m=[35mConnectionError[0m
+FAILURE_POLICY=PASS: unreachable Redis returned denied (False), not a synthetic allow.

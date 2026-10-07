@@ -8,6 +8,7 @@ from sqlalchemy import pool
 
 from app.core.config import settings
 from app.db.models import Base
+from app.db.migration_compatibility import normalize_legacy_revision_aliases
 import app.governance  # noqa: F401 - registers additive governance models
 import app.qa.outcomes  # noqa: F401 - registers durable call-outcome metadata
 import app.deployment.models  # noqa: F401 - registers runtime deployment observation metadata
@@ -35,6 +36,10 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection) -> None:
+    # Normalize only known historical overlength revision markers before
+    # Alembic reads alembic_version. This is metadata-only compatibility; it
+    # does not touch application rows or migration schema.
+    normalize_legacy_revision_aliases(connection)
     context.configure(
         connection=connection, target_metadata=target_metadata, compare_type=True
     )

@@ -13,7 +13,7 @@ from app.contact_center.repository import presence_for
 from app.tenancy.isolation import NotFound
 from sqlalchemy import select
 from tests.acd_support import production
-from tests.conftest import auth_headers, make_user
+from tests.conftest import auth_headers
 
 
 @pytest.mark.asyncio

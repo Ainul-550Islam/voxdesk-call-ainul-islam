@@ -38,6 +38,9 @@ export const PERMISSIONS = {
   USER_ROLE_CHANGE: 'user:role_change',
   TENANT_READ: 'tenant:read',
   TENANT_UPDATE: 'tenant:update',
+  IDENTITY_READ: 'identity:read',
+  IDENTITY_WRITE: 'identity:write',
+  API_KEY_MANAGE: 'apikey:manage',
 }
 
 /**

@@ -268,8 +268,14 @@ export const getAvailability = (day) =>
 
 export const listCampaigns = (tenantId) =>
   request(`${BASE}/tenants/${tenantId}/campaigns`)
-export const runCampaign = (tenantId, campaignId) =>
-  request(`${BASE}/tenants/${tenantId}/campaigns/${campaignId}/run`, { method: 'POST' })
+export const runCampaign = (tenantId, campaignId, { dryRun = true, environmentId } = {}) =>
+  request(
+    `${BASE}/tenants/${tenantId}/campaigns/${campaignId}/run${query({
+      dry_run: dryRun,
+      environment_id: environmentId,
+    })}`,
+    { method: 'POST' },
+  )
 
 // ------------------------------------------------------------- knowledge ---
 
@@ -367,7 +373,27 @@ export const setUserActive = (userId, isActive) =>
     method: 'PATCH',
     body: { is_active: isActive },
   })
-export const listAudit = (params) => request(`${BASE}/team/audit${query(params)}`)
+export const listAudit = (params) => request('/api/v1/audit/events' + query(params))
+export const getEnterpriseSecurityPosture = () =>
+  request('/api/v1/enterprise-security/posture')
+export const getIdentityPolicy = () => request(`${BASE}/identity/policy`)
+export const updateIdentityPolicy = (body) =>
+  request(`${BASE}/identity/policy`, { method: 'PATCH', body })
+export const reauthenticateIdentity = (body) =>
+  request(`${BASE}/identity/reauth`, { method: 'POST', body })
+export const listSecuritySessions = (includeRevoked = false) =>
+  request(`${BASE}/sessions${query({ include_revoked: includeRevoked })}`)
+export const revokeSecuritySession = (sessionId) =>
+  request(`${BASE}/sessions/${sessionId}`, { method: 'DELETE' })
+export const listSecurityApiKeys = (includeRevoked = true) =>
+  request(`${BASE}/api-keys${query({ include_revoked: includeRevoked })}`)
+export const getApiKeyScopes = () => request(`${BASE}/api-keys/scopes`)
+export const createSecurityApiKey = (body) =>
+  request(`${BASE}/api-keys`, { method: 'POST', body })
+export const revokeSecurityApiKey = (keyId) =>
+  request(`${BASE}/api-keys/${keyId}`, { method: 'DELETE' })
+export const rotateSecurityApiKey = (keyId) =>
+  request(`${BASE}/api-keys/${keyId}/rotate`, { method: 'POST' })
 
 // ------------------------------------------------------------------ agent ---
 //

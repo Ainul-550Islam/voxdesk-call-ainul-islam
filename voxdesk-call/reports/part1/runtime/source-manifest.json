@@ -1,0 +1,442 @@
+[
+  {
+    "path": "alembic/versions/0050_unify_webhooks.py",
+    "bytes": 9181,
+    "sha256": "7a5cddce47699408ade9454bbb8b31572d3b1277edbe36a867f9908323a87fdf"
+  },
+  {
+    "path": "alembic/versions/0051_post_call_pipeline.py",
+    "bytes": 2445,
+    "sha256": "1df723bbbd051bdded40305ae0a50739d7afb49583e1bb66b50faa064c026b7a"
+  },
+  {
+    "path": "app/ai/post_call_llm.py",
+    "bytes": 12941,
+    "sha256": "1ebea5b94661e3f1c0d6d8d3701f67891f74da21485d4c1ca7296922f12b0864"
+  },
+  {
+    "path": "app/api/outbound_call_routes.py",
+    "bytes": 68500,
+    "sha256": "050309c61ef1630d8fd683e8a400543648bb3a36e50ff08c30e01f7d283d4a1b"
+  },
+  {
+    "path": "app/api/webhook_lifecycle_routes.py",
+    "bytes": 25125,
+    "sha256": "b45533a1f1e1add1acd75b61cb3a4fcd0401d0632602ef52cc4aeeed64bb3c3d"
+  },
+  {
+    "path": "app/core/rate_limit.py",
+    "bytes": 11105,
+    "sha256": "ed3c0c6251f07976d7004c5be18ae6e5d203cbf0db99410a33149f4044a9639b"
+  },
+  {
+    "path": "app/db/enterprise_models.py",
+    "bytes": 39559,
+    "sha256": "8690ab3db802d55fedc60f5b0836d68c6ae87ece2cb01ac367c22867ad82e8d3"
+  },
+  {
+    "path": "app/db/models.py",
+    "bytes": 193265,
+    "sha256": "cf82cbe6f3c7fd29744e27febc5a9c4715b034269675c01cc926e2c9b9ad5279"
+  },
+  {
+    "path": "app/db/telephony_models.py",
+    "bytes": 20044,
+    "sha256": "1d43ab04f277848e27846d191242b31680346670f3fb7e5c820db5d7760a22ba"
+  },
+  {
+    "path": "app/jobs/idempotency.py",
+    "bytes": 6200,
+    "sha256": "a8cd6c06e84d3e30cb148244cb9c6964192c81fb13150942571dd2ef4441ac58"
+  },
+  {
+    "path": "app/jobs/registry.py",
+    "bytes": 1074,
+    "sha256": "fd784a4ce96a60a02bad94d8cf7bf367c32d2e8c71f1eb64b0a142f5b53e77c5"
+  },
+  {
+    "path": "app/jobs/types.py",
+    "bytes": 9471,
+    "sha256": "c2b60ffebb7968c442d5b4812f47e41874b5308ea9d9d068e195d5cbb5b550ca"
+  },
+  {
+    "path": "app/outbox/dispatcher.py",
+    "bytes": 19376,
+    "sha256": "a2b411ee6250fe70bbcb74498f172f7a1f35cef18e9b2a0bb1bbfb374db3a116"
+  },
+  {
+    "path": "app/telephony/call_events.py",
+    "bytes": 7880,
+    "sha256": "dd67b83ad907a1e0ed62f494db0f4d9d91a96a6cd6a8f13b952d9ea4b113302d"
+  },
+  {
+    "path": "app/telephony/call_state.py",
+    "bytes": 10763,
+    "sha256": "a235629c3600c86eaca8681f69f58ead93c45ccaa0886822c60c2080fc5be4fa"
+  },
+  {
+    "path": "app/telephony/callback_reconciliation.py",
+    "bytes": 5454,
+    "sha256": "40279d0e59f8e385f252eb8eb1d1c74b98cea2fc09255d6cbb2d0edf5d99bf6c"
+  },
+  {
+    "path": "app/telephony/outbound.py",
+    "bytes": 13489,
+    "sha256": "ca399e0c588ebbffb45c46b4cbd78ce4697a84846d5191cea8b1a5e629a03215"
+  },
+  {
+    "path": "app/telephony/post_call.py",
+    "bytes": 19474,
+    "sha256": "132f1b9a871034419aeb879b4859a31b69f9043a3647b3ec17704a9eb583fcf9"
+  },
+  {
+    "path": "app/telephony/recording.py",
+    "bytes": 14392,
+    "sha256": "c333e3e6dc7ae7d5dc17e93a4c262ba1ea3d11e03ef1827f9a5a5a0b7287c3b8"
+  },
+  {
+    "path": "app/telephony/transcription.py",
+    "bytes": 7892,
+    "sha256": "e6133b83df25081b649158b2ff309c6dfc9254ccf589e12e05b023843abe7a8c"
+  },
+  {
+    "path": "app/telephony/transfer_service.py",
+    "bytes": 19757,
+    "sha256": "37e7d15e04682b34a105bc9a75c566937dbb0560f59ca8247da960942f60c5cd"
+  },
+  {
+    "path": "app/telephony/twilio_handler.py",
+    "bytes": 29549,
+    "sha256": "8c066ebf5dac05dc1ca7694c431f109e5a81747728cc2f0eaa574055a9fa260b"
+  },
+  {
+    "path": "app/webhooks/call_event_bridge.py",
+    "bytes": 2327,
+    "sha256": "7b068a95b8544a58158b6e043061397287af062b90b49109336886b6a9b3f209"
+  },
+  {
+    "path": "app/webhooks/call_event_catalog.py",
+    "bytes": 3767,
+    "sha256": "1092c783cf14c28ac9bf0c89535c7f03114d07fd022609bf89f429e0391897ca"
+  },
+  {
+    "path": "app/webhooks/delivery.py",
+    "bytes": 4670,
+    "sha256": "475b775f840f1460729680d8afc2f4623d8f612f94df4350330805754f0b098e"
+  },
+  {
+    "path": "app/webhooks/replay.py",
+    "bytes": 3325,
+    "sha256": "a549871fb2f9e7bc013b80ccda3432d0d86782059cee4a66afa92d78abfb601e"
+  },
+  {
+    "path": "app/webhooks/repository.py",
+    "bytes": 12797,
+    "sha256": "a04a35e3c7860439a555dc5a87b5f7e10df0456f8e203c4addb9819bd5628bd7"
+  },
+  {
+    "path": "app/webhooks/retry.py",
+    "bytes": 1124,
+    "sha256": "394692f2e784b134ee3c2e44037339283b2dd8e73461b8265ac3abc352bc9c5c"
+  },
+  {
+    "path": "contracts/openapi.json",
+    "bytes": 2507419,
+    "sha256": "88cef6144a53796a8596c25bbf568bac405aa5c0adb9203f543011691f7b7ae7"
+  },
+  {
+    "path": "docs/POST_CALL.md",
+    "bytes": 25195,
+    "sha256": "12b201af2a4cfce058446e4e46e63e8d9043f618e272a21fe051c3516564908b"
+  },
+  {
+    "path": "docs/WEBHOOKS.md",
+    "bytes": 9934,
+    "sha256": "32562ce69d3305e18df635cebe7e14a99c72c9eaba31917f698aafc134de5f10"
+  },
+  {
+    "path": "reports/part1/1A_SUMMARY.md",
+    "bytes": 7663,
+    "sha256": "4686ba3ec715a214a98b3dec0b90390cdb6b343c218bd207096e3ccbdd3b52a2"
+  },
+  {
+    "path": "reports/part1/build_report.py",
+    "bytes": 3874,
+    "sha256": "4978c9f024cc5a8191eb14ba9bd80c04c88d877bc59b7b033c40a2ea435bf051"
+  },
+  {
+    "path": "reports/part1/continuation/STATUS.md",
+    "bytes": 5625,
+    "sha256": "0fd2026f635a2f95ae98cd2cf438f3a78d730b35d5e9e1701380b78c346e7079"
+  },
+  {
+    "path": "reports/part1/continuation/build_delivery.py",
+    "bytes": 2526,
+    "sha256": "86e8c3fbf59cb96541422130a2aa5560046e682cd40f8526c2ecbaf173100a4c"
+  },
+  {
+    "path": "reports/part1/final-1a/legacy-ddl.json",
+    "bytes": 1472,
+    "sha256": "920155638283927af5065c4799e796c7181536727423b8149419a779d0640657"
+  },
+  {
+    "path": "reports/part1/final-1a/verify_concurrency.py",
+    "bytes": 4987,
+    "sha256": "8383377967cbae5c40ec189e0d360ef79aa0ff970bd454163a09edb94926a7dc"
+  },
+  {
+    "path": "reports/part1/final-1a/verify_migration.py",
+    "bytes": 5297,
+    "sha256": "8ef1d607e35a9c20ca047ee249e1779fa46e225d4ca88ec6e9f30a8e7335288e"
+  },
+  {
+    "path": "reports/part1/runtime/STATUS.md",
+    "bytes": 7746,
+    "sha256": "dca6fc6a72bc8e40cfce1bcfba33c51c332e86af09c3f4882c9661e1c2f48e83"
+  },
+  {
+    "path": "reports/part1/runtime/build_delivery.py",
+    "bytes": 7501,
+    "sha256": "5320265a1e2d87f4d17d10d5797e05b7a92df1f78fbe5ae2f725e8d837524b16"
+  },
+  {
+    "path": "reports/part1/runtime/verify_post_call_postgres.py",
+    "bytes": 5204,
+    "sha256": "131b5033ba00d5c4011731338d598bf80635cafe25d3f1322b00bc8461dc54d4"
+  },
+  {
+    "path": "scripts/fake_success_allowlist.txt",
+    "bytes": 318,
+    "sha256": "7a67f08c04f131290401a04c23c2012f0f9924d9f6a2ad2f4a993ce572960c3e"
+  },
+  {
+    "path": "tests/ai/test_post_call_llm.py",
+    "bytes": 13624,
+    "sha256": "f6135d88665565f4c76079f11dbc07cb311f269babbd19b83b0fea92cd466768"
+  },
+  {
+    "path": "tests/operations/test_notification_webhook_email.py",
+    "bytes": 12115,
+    "sha256": "df975271769a9b36aba89e354e3a107f779346c401a968ba683b5a4e82efddee"
+  },
+  {
+    "path": "tests/telephony/test_post_call_pipeline.py",
+    "bytes": 16551,
+    "sha256": "5ce87109e79eacbd7bb4e34549654abfb6e781364c2a6254f3e1454721e2da2b"
+  },
+  {
+    "path": "tests/test_enterprise_batch01.py",
+    "bytes": 54115,
+    "sha256": "049feabc9c0b51261eda3426e51d2492a342f1d76f51444a6ef7168c649fd196"
+  },
+  {
+    "path": "tests/test_external_success_honesty.py",
+    "bytes": 5533,
+    "sha256": "0fa99976de0e1c3935f9f689105b578fbadd77f5f5a9ca6a57fcca1f5fa9f5f7"
+  },
+  {
+    "path": "tests/truth/routes_snapshot.json",
+    "bytes": 62,
+    "sha256": "b1334ce6f8463b61cc417fb629534657822334bd96e790868bfbc6aeee7cf2d1"
+  },
+  {
+    "path": "tests/webhooks/__init__.py",
+    "bytes": 42,
+    "sha256": "34e54f31646d11fc9da847c3295ce5823a0532ab0629170d27ba7b6d24ccec43"
+  },
+  {
+    "path": "tests/webhooks/conftest.py",
+    "bytes": 1875,
+    "sha256": "fafb509e08160edba21c29b8ec7742be912fd2404d77c63fedd5ea94df31bf21"
+  },
+  {
+    "path": "tests/webhooks/test_call_event_bridge.py",
+    "bytes": 16480,
+    "sha256": "851d44b4cc3f33086fca4c7e906d97e033c01d75f4291c0c67104fa9e03bfcbc"
+  },
+  {
+    "path": "tests/webhooks/test_webhook_isolation.py",
+    "bytes": 12267,
+    "sha256": "72275c3738a076c0efa4f9af04236f96438dff4b821d3d2b7ae8910250952f6a"
+  },
+  {
+    "path": "tests/webhooks/test_webhook_lifecycle_real.py",
+    "bytes": 15564,
+    "sha256": "27e725faf292249e566cd037821deaff5b7229ba03b7e123f72faccc7cb4b775"
+  },
+  {
+    "path": "alembic/versions/0052_analysis_versions.py",
+    "bytes": 2936,
+    "sha256": "ea205acd86ca36c9beb0ad315cea5de1e604fa0d4319def2e0f693fcc59ff50e"
+  },
+  {
+    "path": "app/api/post_call_analysis_routes.py",
+    "bytes": 24852,
+    "sha256": "142192e27bf39608840cc53d1af23f4fb1dad9a47354205d520ab849b9bd8585"
+  },
+  {
+    "path": "app/services/post_call_analysis_service.py",
+    "bytes": 23970,
+    "sha256": "05d1bd668c257523ca59be52c5fa6b6188a77d7a450d55a4da092fd8470afe83"
+  },
+  {
+    "path": "tests/telephony/test_custom_analysis.py",
+    "bytes": 6093,
+    "sha256": "ae5ff46dd03979750548a1a120c017bedf6673007e7fafa8f81c53771549e288"
+  },
+  {
+    "path": "reports/part1/analysis/STATUS.md",
+    "bytes": 7782,
+    "sha256": "9dc223e4644dd978a1360689580b7febc6d9e93e4781a2f8397da9b1e3ea4aae"
+  },
+  {
+    "path": "alembic/versions/0053_analysis_backfill.py",
+    "bytes": 1340,
+    "sha256": "d06a7cdfb2f0b65b28993439f643658e199931e42cef0a10189c5783e6ffea36"
+  },
+  {
+    "path": "app/resilience/idempotency.py",
+    "bytes": 8503,
+    "sha256": "452cf2ce5295c1aeb7725b20e1c9591b67a473cd64c7c58b875bbf96480f7e2b"
+  },
+  {
+    "path": "tests/telephony/test_analysis_backfill.py",
+    "bytes": 13645,
+    "sha256": "ef25d7b4cc3dea69d5ea241981dec0d13806af06482e975da7c0fe09b94c1511"
+  },
+  {
+    "path": "reports/part1/backfill/STATUS.md",
+    "bytes": 10630,
+    "sha256": "dcd161fbde987df4a0dc8c3297eaa968fa52c54fbe4359139596830088f27f47"
+  },
+  {
+    "path": "reports/part1/backfill/verify_postgres.py",
+    "bytes": 5735,
+    "sha256": "e53ddf6dd9b73ee206fdb222d13837d3a08c8d37cf09527c1fb6118989865376"
+  },
+  {
+    "path": "alembic/versions/0054_qa_runtime.py",
+    "bytes": 1066,
+    "sha256": "e943b246ee77188c0a8abcff0fad81a233b862efba5f64711af55a9832fdc791"
+  },
+  {
+    "path": "app/api/qa_routes.py",
+    "bytes": 25951,
+    "sha256": "f48e6dc767759ab9a764fffc22af1c907c7341be038c9a13c07e0760b3ddceba"
+  },
+  {
+    "path": "app/qa/models.py",
+    "bytes": 36183,
+    "sha256": "1bd88350f2ccd6969c21bb94604282a6c383d767d3d4e0618181fda7983291a7"
+  },
+  {
+    "path": "app/qa/auto_review.py",
+    "bytes": 20022,
+    "sha256": "242b82a8a3bfb935559e2d03289a3dacc94853b3fdfbb3e2c09ed3a5a352423c"
+  },
+  {
+    "path": "app/qa/sampling.py",
+    "bytes": 11780,
+    "sha256": "dceccb25ff7d4a717d829b9086684f236ca4c2555bc84a7cc982d913aff44768"
+  },
+  {
+    "path": "tests/qa/test_auto_review.py",
+    "bytes": 6442,
+    "sha256": "72d962e7b3baa9a14c2984acdc7a1ccae83dfa03b111cd63f94e323dd22689e7"
+  },
+  {
+    "path": "tests/qa/test_post_call_runtime.py",
+    "bytes": 17513,
+    "sha256": "0fc432769e2fd6d69fb88d6aa06b687c39aed2bad5a1865969cb1f7ae52c7ce6"
+  },
+  {
+    "path": "reports/part1/qa/STATUS.md",
+    "bytes": 11990,
+    "sha256": "ab146223a5f28e02fe934d152c454389fded09d6f4fa9e06670dba603910b1c9"
+  },
+  {
+    "path": "reports/part1/qa/verify_postgres.py",
+    "bytes": 7498,
+    "sha256": "880071287e7b4f100fa0a5a6d04308c023158c9b9d0e5b362d6dfb700f6704c5"
+  },
+  {
+    "path": "app/api/integration_routes.py",
+    "bytes": 26209,
+    "sha256": "09be3fcdc689e4b7f7587fc3085fe865104fbc3aa3f03a442607ace3ed636827"
+  },
+  {
+    "path": "app/integrations/crm/events.py",
+    "bytes": 12510,
+    "sha256": "ef547318a873141bfdef1b39bd5be1da32381fd57a5fc889a206d9927c7750a1"
+  },
+  {
+    "path": "app/integrations/crm/service.py",
+    "bytes": 34059,
+    "sha256": "3d029838b5ab8b73ae18ae35fe7c2aff4236d5409af5597c131440d4ac63f89c"
+  },
+  {
+    "path": "tests/telephony/test_post_call_crm.py",
+    "bytes": 11631,
+    "sha256": "2ae91369ec60cb58f7955c67b50df5c8444d62b4e2a008d6f99d5277850ce9f6"
+  },
+  {
+    "path": "reports/part1/crm-runtime/STATUS.md",
+    "bytes": 8483,
+    "sha256": "68356eba8acd5c305a974a3c20c5c6967cdc906a9d20ea0f89245556a3490ed1"
+  },
+  {
+    "path": "reports/part1/crm-runtime/verify_postgres.py",
+    "bytes": 4464,
+    "sha256": "56eac54dfd3d8042cdbbbc8722cbb6c1677b00c5138e69601ba413982e788892"
+  },
+  {
+    "path": "tests/telephony/test_analysis_extended.py",
+    "bytes": 12043,
+    "sha256": "92facb8308eb8ab01238c30aa13cecc90fc6c6c8a1638887389f9a5e93e09700"
+  },
+  {
+    "path": "reports/part1/analysis-facade/STATUS.md",
+    "bytes": 8061,
+    "sha256": "1565423224fe45670d2a7a3f7ed21bee37e8294943a23ea54e33800396019579"
+  },
+  {
+    "path": "reports/part1/analysis-facade/verify_postgres.py",
+    "bytes": 5085,
+    "sha256": "c62fb4019bf861ab924fb8fb48719007821a006daf84c3475f32b36df4343c28"
+  },
+  {
+    "path": "app/main.py",
+    "bytes": 31141,
+    "sha256": "dc0c4ecd0c12fcfd06ebc89cfe48723277e1fa3fc493fe4ef9ed39e84d7bf81b"
+  },
+  {
+    "path": "app/api/workflow_event_routes.py",
+    "bytes": 17827,
+    "sha256": "8f4ebc78b76d0c238e1d3ca0ba5f5553983dcaecdb77c012d638d4dd02b52604"
+  },
+  {
+    "path": "app/services/workflow_service.py",
+    "bytes": 41582,
+    "sha256": "7402817c5c42f071e2e983b3e6e288babbf6e829cca8886c82cf9b45e60d20b1"
+  },
+  {
+    "path": "app/services/post_call_workflow.py",
+    "bytes": 15325,
+    "sha256": "b8d79fc3412e3856b6792860e11801cc1e4ec962228a9780e127492a102aa8db"
+  },
+  {
+    "path": "tests/telephony/test_post_call_workflow.py",
+    "bytes": 20299,
+    "sha256": "1732928747fb4a20bbb4d17256c85a5906c2f648437c0820c17b1620df95101d"
+  },
+  {
+    "path": "reports/part1/workflow-runtime/STATUS.md",
+    "bytes": 9957,
+    "sha256": "966be863ed0be259c2cb7734eac9c3b130f1c5c503c1949274aac5500e43b187"
+  },
+  {
+    "path": "reports/part1/workflow-runtime/verify_postgres.py",
+    "bytes": 6750,
+    "sha256": "e0e51b44b991f73ba80ba2d2e34a5eb2734c626eb3c9eee0605e5029adae12fe"
+  }
+]

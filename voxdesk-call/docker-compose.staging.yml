@@ -73,6 +73,10 @@ services:
       APP_ENV: staging
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-voxdesk}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env.staging}@db:5432/${POSTGRES_DB:-voxdesk}
       REDIS_URL: redis://redis:6379/0
+      FORWARDED_ALLOW_IPS: ${STAGING_CADDY_PROXY_IPV4:-172.31.0.10}
+      TRUSTED_HOSTS: ${TRUSTED_HOSTS:-}
+      CONDUCTOR_WEBHOOK_SECRET: ${CONDUCTOR_WEBHOOK_SECRET:-}
+      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
       METRICS_ENABLED: ${METRICS_ENABLED:-true}
       METRICS_TOKEN: ${METRICS_TOKEN:-}
       LOG_FORMAT: json
@@ -226,7 +230,9 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data_staging:/data
       - caddy_config_staging:/config
-    networks: [staging]
+    networks:
+      staging:
+        ipv4_address: ${STAGING_CADDY_PROXY_IPV4:-172.31.0.10}
     depends_on:
       api:
         condition: service_healthy
@@ -235,6 +241,11 @@ networks:
   staging:
     name: voxdesk-staging-internal
     driver: bridge
+    ipam:
+      config:
+        - subnet: ${VOXDESK_STAGING_SUBNET:-172.31.0.0/24}
+    # Caddy is fixed at STAGING_CADDY_PROXY_IPV4 and is the only peer the API
+    # trusts for forwarded headers.
     # Intentionally NOT `internal: true`: the API/scheduler must reach external
     # providers (Twilio, Deepgram, ElevenLabs, LLM APIs, Stripe) over the
     # public internet. Egress policy is enforced at the infrastructure layer

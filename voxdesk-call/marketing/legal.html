@@ -1,60 +1,149 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>VoxDesk Legal — Clause Library, Playbook, Redline</title>
-<style>body{font-family:-apple-system,sans-serif;line-height:1.6;max-width:900px;margin:0 auto;padding:24px}header{background:#000;color:#fff;padding:12px 20px;display:flex;justify-content:space-between;border-radius:8px}header a{color:#fff;text-decoration:none;margin-left:16px;font-size:13px}h1{font-size:32px;margin:24px 0 12px}.card{border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:12px 0}.badge{font-size:10px;padding:2px 8px;border-radius:12px;background:#f5f3ff;color:#8b5cf6}</style>
-</head><body>
-<header><div><strong>VoxDesk</strong> Legal</div><nav><a href="index.html">Platform</a><a href="voice.html">Voice</a><a href="translation.html">Translation</a><a href="qms.html">QMS</a><a href="legal.html">Legal</a><a href="/dashboard/legal">Dashboard →</a></nav></header>
-<h1>Legal Agent — Clause Library, Playbook, Redline Artifacts, Versioning, Audit Chain <span class="badge">P1-04 Fixed</span></h1>
-<p>Backend: app/legal/clause_engine.py PATTERNS 5, review_engine.py, playbook.py, redline.py, clause_library.py, 10 routes (2 existing +8 new)</p>
-<p>LuMay: Legal playbook, clause management, redline artifacts, versioning, audit chain — demo</p>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VoxDesk Legal — Clause Library, Playbooks & Redline Artifacts</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --bg: #050507;
+  --bg-glass: rgba(17, 17, 26, 0.85);
+  --surface: rgba(255, 255, 255, 0.04);
+  --border: rgba(255, 255, 255, 0.12);
+  --text: #ffffff;
+  --text-muted: #a1a1b5;
+  --primary: #8b5cf6;
+  --blue: #3b82f6;
+  --emerald: #10b981;
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+}
+header {
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.brand { font-weight: 800; font-size: 20px; letter-spacing: -0.02em; }
+.brand span { color: var(--primary); font-size: 12px; margin-left: 8px; padding: 2px 8px; border-radius: 99px; background: rgba(139,92,246,0.15); }
+nav a {
+  color: var(--text-muted);
+  text-decoration: none;
+  margin-left: 16px;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+nav a:hover { color: #fff; background: var(--surface); }
+.container { max-width: 1120px; margin: 0 auto; padding: 56px 24px; }
+.hero-badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #93c5fd;
+  background: rgba(59,130,246,0.12);
+  border: 1px solid rgba(59,130,246,0.25);
+  padding: 4px 12px;
+  border-radius: 99px;
+}
+h1 { font-size: 42px; font-weight: 800; letter-spacing: -0.03em; margin-top: 16px; line-height: 1.15; }
+.subtitle { color: var(--text-muted); font-size: 16px; max-width: 760px; margin-top: 12px; }
+.grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); margin-top: 36px; }
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+}
+.card h2 { font-size: 18px; font-weight: 700; margin-bottom: 10px; color: #fff; }
+.card ul { padding-left: 18px; color: var(--text-muted); font-size: 13px; }
+.card li { margin-bottom: 8px; }
+.code-box {
+  margin-top: 28px;
+  background: #090a10;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  color: #cbd5e1;
+  overflow-x: auto;
+}
+footer {
+  border-top: 1px solid var(--border);
+  padding: 32px 24px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+</style>
+</head>
+<body>
 
-<div class="card"><h2>Clause Library — 5 Default Clauses Mapping to PATTERNS</h2>
-<ul>
-<li>ClauseLibraryEntry: key, title, category, risk_tier, version, pattern, suggested_text, fallback_text, source, review_required, fingerprint via sha256_hex</li>
-<li>5 entries: termination (PATTERN termination), limitation_of_liability (limitation_of_liability), indemnification (indemnification), confidentiality (confidentiality), data_protection (data_protection) — mapping to clause_engine.py PATTERNS</li>
-<li>Versioning: version int, fingerprint sha256_hex, created_at/updated_at</li>
-<li>Endpoints: GET /api/legal/clause-library?category=&q=, GET /api/legal/clause-library/{key}</li>
-<li>Repository: ClauseLibraryRepository list_entries, get_by_key, get_by_id, search(category, query)</li>
-</ul></div>
+<header>
+  <div class="brand">VoxDesk <span>Enterprise Voice AI</span></div>
+  <nav>
+    <a href="index.html">Platform</a>
+    <a href="voice.html">Voice</a>
+    <a href="translation.html">Translation</a>
+    <a href="qms.html">QMS</a>
+    <a href="legal.html">Legal</a>
+    <a href="security.html">Security</a>
+    <a href="pricing.html">Pricing</a>
+    <a href="/dashboard/agents">Agent Studio →</a>
+  </nav>
+</header>
 
-<div class="card"><h2>Playbook — Rules, Scope, Evaluation</h2>
-<ul>
-<li>Playbook: id, tenant_id, organization_id, environment_id, name, version, status draft/active/archived, clauses[], rules[], created_at, updated_at</li>
-<li>PlaybookRule: id, clause_key, operator contains/equals/gte/lte, value, severity, action, fingerprint sha256_hex</li>
-<li>3 default rules: termination_missing (finding contains termination, severity critical, action suggest_standard_termination), liability_cap_missing (limitation_of_liability, high, suggest_liability_cap), confidentiality_duration (confidentiality, medium, suggest_confidentiality_duration)</li>
-<li>Service: PlaybookService.create_playbook(tenant_id, org_id, env_id, name, clause_keys) + evaluate_against_playbook(findings, playbook) → matched evaluations with review_required</li>
-<li>Endpoints: GET/POST /api/legal/playbooks?environment_id=, GET /api/legal/playbooks/{id}, POST /api/legal/playbooks/{id}/evaluate with findings[]</li>
-<li>Repository: PlaybookRepository uses governance policies table type=legal_playbook — existing architecture reuse</li>
-</ul></div>
-
-<div class="card"><h2>Redline Artifacts — difflib, Fingerprint, Disclaimer, Reviewer Workflow</h2>
-<ul>
-<li>RedlineChange: change_type insertion/deletion/replacement, original_text, suggested_text, rationale, clause_key, source_reference, evidence_reference, fingerprint via sha256_hex of original+suggested+clause</li>
-<li>RedlineArtifact: id, document_id, playbook_id, changes[], diff_html via difflib.HtmlDiff, fingerprint sha256_hex, disclaimer "AI-generated redline suggestion only; not legal advice. Qualified human must review.", review_state pending/approved/rejected, evidence_references[], created_at</li>
-<li>Engine: RedlineEngine.generate_redline(document_id, findings[], playbook, evidence_refs) uses SequenceMatcher, _wrap_html(), _clause_to_original(), _clause_to_suggested(), generate_for_document() groups by finding</li>
-<li>Endpoints: POST /api/legal/redlines with document_id, playbook_id, findings[], evidence_references[], GET /api/legal/redlines/{id}?environment_id=, POST /api/legal/redlines/export with audit package fingerprint</li>
-<li>Persistence: RedlineRepository save_artifact, get_artifact, list_for_document, export_audit_package with fingerprint, exported_at, disclaimer, artifact_count</li>
-</ul></div>
-
-<div class="card"><h2>Versioning & Audit Chain — Evidence</h2>
-<ul>
-<li>ClauseLibrary versioning via version field, fingerprint</li>
-<li>Playbook versioning: version int, created_at/updated_at, status draft/active/archived</li>
-<li>Redline audit package: export_audit_package() with fingerprint, exported_at, disclaimer, artifact_count, artifacts[] as_dict()</li>
-<li>Evidence chain: evidence_references passed to redline artifacts, linked to review cases, evidence chain payload_hash/previous_hash</li>
-<li>No legal-certainty claims — all suggestions require human review, disclaimer on every artifact, review_state required</li>
-</ul></div>
-
-<div class="card"><h2>API Examples</h2>
-<pre style="font-size:11px;background:#f9fafb;padding:12px;border-radius:6px;overflow-x:auto">
-GET /api/legal/clause-library
-GET /api/legal/clause-library/termination
-GET /api/legal/playbooks?environment_id=uuid
-POST /api/legal/playbooks {"environment_id": "uuid", "name": "My Playbook", "clause_keys": ["termination","liability_cap"]}
-POST /api/legal/playbooks/{id}/evaluate {"environment_id": "uuid", "findings": [{"clause_key": "termination", "title": "Missing termination"}]}
-POST /api/legal/redlines {"environment_id": "uuid", "document_id": "doc-123", "playbook_id": "pb-123", "findings": [...], "evidence_references": ["ev-1"]}
-GET /api/legal/redlines/{artifact_id}?environment_id=uuid
-POST /api/legal/redlines/export {"environment_id": "uuid", "document_id": "doc-123"}
-</pre></div>
-
-<p><a href="/dashboard/legal">Open Legal Workspace → clause library 5 entries, playbook rules 3 default, redline artifacts with diff HTML, fingerprint, disclaimer, reviewer workflow</a> | <a href="/dashboard/compliance">Compliance → clause library + playbook + redline + QMS</a></p>
-</body></html>
+<main class="container">
+  <span class="hero-badge">P1-04 Legal Contract Intelligence • Playbooks & Redlines</span>
+  <h1>Legal Agent — Clause Library, Playbooks, Diff Redlines & Audit Chain</h1>
+  <p class="subtitle">
+    Powered by app/legal/clause_engine.py, review_engine.py, playbook.py, redline.py, and clause_library.py with SHA-256 artifact fingerprinting and mandatory human review gates.
+  </p>
+  <div class="grid">
+    <div class="card">
+      <h2>1. Clause Library & Risk Tiers</h2>
+      <ul>
+        <li>5 canonical clause categories: termination, limitation_of_liability, indemnification, confidentiality, and data_protection.</li>
+        <li>Each entry includes risk_tier, version, pattern matcher, suggested_text, fallback_text, and SHA-256 fingerprint.</li>
+        <li>Searchable via GET /api/legal/clause-library?category=&amp;q=.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>2. Contract Playbooks & Rule Evaluation</h2>
+      <ul>
+        <li>Tenant- and environment-scoped playbooks with draft, active, and archived lifecycle states.</li>
+        <li>Evaluate contract findings against playbook rules (contains, equals, gte, lte) with severity and required actions.</li>
+        <li>Backed by PlaybookService and governance policy storage.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>3. HTML Diff Redlines & Exportable Audit Packages</h2>
+      <ul>
+        <li>RedlineEngine generates side-by-side HTML diffs via difflib.HtmlDiff with rationale and evidence references.</li>
+        <li>Every artifact carries an explicit human-review disclaimer and pending/approved/rejected review_state.</li>
+        <li>Export complete cryptographic audit packages via POST /api/legal/redlines/export.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="code-box">
+POST /api/legal/redlines
+{"environment_id": "env_prod_01", "document_id": "msa_2026_09", "playbook_id": "pb_enterprise_standard", "findings": [{"clause_key": "limitation_of_liability", "title": "Uncapped liability detected"}]}
+  </div>
+</main>
+<footer>© 2026 VoxDesk Enterprise Voice AI Platform • Legal Intelligence Plane</footer>
+</body>
+</html>

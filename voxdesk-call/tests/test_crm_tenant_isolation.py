@@ -397,8 +397,9 @@ async def test_connecting_an_integration_writes_no_secret_to_the_audit_log(
     assert rows
     everything = json.dumps([r.detail for r in rows])
     assert "pat-na1-AUDIT-LEAK-TEST" not in everything
-    # The *names* of the supplied fields are recorded, which is what makes the
-    # audit trail useful without making it dangerous.
+    # The supplied field names are recorded under a neutral metadata key so
+    # redaction preserves safe schema information without persisting values.
+    assert "provided_field_names" in everything
     assert "access_token" in everything
 
 

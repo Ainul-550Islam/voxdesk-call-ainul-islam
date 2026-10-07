@@ -18,7 +18,7 @@ from app.db.models import (
 )
 from app.organization.access import can_manage_members, can_read_organization
 from app.organization.roles import resolve_organization_role
-from tests.conftest import auth_headers, make_user
+from tests.conftest import auth_headers
 
 pytestmark = pytest.mark.asyncio
 
@@ -168,7 +168,7 @@ async def test_revoked_membership_is_rejected_by_existing_tenant_api(
 def test_membership_backfill_is_empty_safe_and_idempotent(tmp_path):
     path = (
         __import__("pathlib").Path(__file__).resolve().parents[2]
-        / "alembic" / "versions" / "0018_organization_memberships_quotas.py"
+        / "alembic" / "versions" / "0018_org_memberships_quotas.py"
     )
     spec = importlib.util.spec_from_file_location("m0018", path)
     module = importlib.util.module_from_spec(spec)

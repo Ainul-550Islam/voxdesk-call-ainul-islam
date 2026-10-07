@@ -1,0 +1,20 @@
+{
+  "collection_status": "ERROR",
+  "collection_exit_code": 2,
+  "collection_elapsed_seconds": 99.067,
+  "collection_log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/full-suite-plan/collection.log",
+  "collected": 4074,
+  "selected": 0,
+  "executed": 0,
+  "passed": 0,
+  "failed": 0,
+  "errors": 0,
+  "skipped": 0,
+  "not_run": 4074,
+  "unconfirmed": 0,
+  "resource_unconfirmed": 0,
+  "unconfirmed_nodeids": [],
+  "resource_termination": false,
+  "full_suite_complete": false,
+  "chunks": []
+}

@@ -21,10 +21,37 @@ from app.core.config import settings
 from app.db.models import Base, Tenant, User, UserRole
 from app.db.session import get_session
 
-# Register shared metadata tables for standalone test modules that exercise
-# executor paths which may create durable review cases.
-import app.review  # noqa: F401
+# Register every SQLAlchemy model before the SQLite fixture calls
+# Base.metadata.create_all(). A monolithic pytest collection can accidentally
+# register tables through imports in unrelated test modules; deterministic
+# child-process sharding must not depend on those collection side effects.
+import app.ai.models  # noqa: F401
+import app.anomaly.persistence  # noqa: F401
+import app.auth.identity.models  # noqa: F401
+import app.compliance.models  # noqa: F401
+import app.contact_center.models  # noqa: F401
+import app.db.enterprise_models  # noqa: F401
+import app.db.retell_models  # noqa: F401
+import app.db.telephony_models  # noqa: F401
+import app.deployment.models  # noqa: F401
+import app.governance.models  # noqa: F401
+import app.leads.models  # noqa: F401
+import app.legal.persistence  # noqa: F401
+import app.outbox.models  # noqa: F401
+import app.qa.models  # noqa: F401
+import app.qa.outcomes  # noqa: F401
+import app.review.models  # noqa: F401
+import app.roi.service  # noqa: F401
 import app.specialized_agents.executor  # noqa: F401
+import app.telephony.call_events  # noqa: F401
+import app.telephony.consent  # noqa: F401
+import app.telephony.number_provisioning  # noqa: F401
+import app.telephony.providers.factory  # noqa: F401
+import app.telephony.qos  # noqa: F401
+import app.telephony.recording  # noqa: F401
+import app.telephony.recording_policy  # noqa: F401
+import app.telephony.transcription  # noqa: F401
+import app.translation.persistence  # noqa: F401
 
 # bcrypt at 12 rounds costs ~250ms per hash. The suite creates dozens of
 # users, so drop the cost for tests only -- the algorithm under test is

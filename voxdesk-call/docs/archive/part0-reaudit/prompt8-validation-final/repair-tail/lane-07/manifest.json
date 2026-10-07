@@ -1,0 +1,47 @@
+{
+  "collection_status": "PASS",
+  "collection_exit_code": 0,
+  "collection_elapsed_seconds": 2.688,
+  "collection_log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/repair-tail/lane-07/collection.log",
+  "collected": 2,
+  "selected": 2,
+  "chunk_size_max": 5,
+  "chunk_count": 1,
+  "execution_mode": "sequential_child_processes",
+  "executed": 2,
+  "passed": 2,
+  "failed": 0,
+  "errors": 0,
+  "skipped": 0,
+  "not_run": 0,
+  "unconfirmed": 0,
+  "resource_unconfirmed": 0,
+  "unconfirmed_nodeids": [],
+  "resource_termination": false,
+  "full_suite_complete": true,
+  "chunks": [
+    {
+      "chunk": 1,
+      "collected": 2,
+      "submitted_nodeids": [
+        "tests/translation/test_persistence.py::test_translation_job_segments_progress_glossary_immutability_and_retry",
+        "tests/translation/test_persistence.py::test_translation_persistence_is_scope_checked"
+      ],
+      "executed_from_explicit_summary": 2,
+      "unconfirmed_count": 0,
+      "counts": {
+        "passed": 2,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "xfailed": 0,
+        "xpassed": 0
+      },
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 4.411,
+      "log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/repair-tail/lane-07/chunk-0001.log",
+      "terminal_summary_present": true
+    }
+  ]
+}

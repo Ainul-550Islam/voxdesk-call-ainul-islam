@@ -196,7 +196,7 @@ def test_a_bare_key_with_no_id_is_accepted():
     "   ",
     "k1:not-valid-base64!!!",
     "k1:" + "c2hvcnQ=",           # valid base64, but only 5 bytes
-    "bad id:" + generate_key(),   # space in the key id
+    pytest.param("bad id:" + generate_key(), id="space-in-key-id"),
 ])
 def test_invalid_key_configuration_is_rejected_loudly(bad):
     with pytest.raises(CredentialCryptoError):

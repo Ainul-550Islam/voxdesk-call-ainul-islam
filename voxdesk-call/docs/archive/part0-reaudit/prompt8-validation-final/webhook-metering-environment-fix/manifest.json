@@ -1,0 +1,46 @@
+{
+  "collection_status": "PASS",
+  "collection_exit_code": 0,
+  "collection_elapsed_seconds": 2.619,
+  "collection_log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/webhook-metering-environment-fix/collection.log",
+  "collected": 1,
+  "selected": 1,
+  "chunk_size_max": 1,
+  "chunk_count": 1,
+  "execution_mode": "sequential_child_processes",
+  "executed": 1,
+  "passed": 1,
+  "failed": 0,
+  "errors": 0,
+  "skipped": 0,
+  "not_run": 0,
+  "unconfirmed": 0,
+  "resource_unconfirmed": 0,
+  "unconfirmed_nodeids": [],
+  "resource_termination": false,
+  "full_suite_complete": true,
+  "chunks": [
+    {
+      "chunk": 1,
+      "collected": 1,
+      "submitted_nodeids": [
+        "tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing"
+      ],
+      "executed_from_explicit_summary": 1,
+      "unconfirmed_count": 0,
+      "counts": {
+        "passed": 1,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "xfailed": 0,
+        "xpassed": 0
+      },
+      "exit_code": 0,
+      "status": "PASS",
+      "elapsed_seconds": 59.825,
+      "log": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.prompt8-validation-final/webhook-metering-environment-fix/chunk-0001.log",
+      "terminal_summary_present": true
+    }
+  ]
+}
