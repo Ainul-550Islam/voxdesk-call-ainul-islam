@@ -85,6 +85,7 @@ class PhoneNumberCreateRequest(StrictRequestModel):
     inbound_enabled: bool = True
     outbound_enabled: bool = True
     inbound_agent_id: str | None = Field(default=None, max_length=64)
+    inbound_agent_version: int | None = None
     outbound_agent_id: str | None = Field(default=None, max_length=64)
     environment_id: UUID | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
@@ -103,6 +104,7 @@ class PhoneNumberUpdateRequest(StrictRequestModel):
     inbound_enabled: bool | None = None
     outbound_enabled: bool | None = None
     inbound_agent_id: str | None = Field(default=None, max_length=64)
+    inbound_agent_version: int | None = None
     outbound_agent_id: str | None = Field(default=None, max_length=64)
     status: PhoneNumberLifecycleStatus | None = None
     metadata: dict[str, Any] | None = None
@@ -110,6 +112,7 @@ class PhoneNumberUpdateRequest(StrictRequestModel):
 
 class PhoneNumberBindAgentRequest(StrictRequestModel):
     inbound_agent_id: str | None = Field(default=None, max_length=64)
+    inbound_agent_version: int | None = None
     outbound_agent_id: str | None = Field(default=None, max_length=64)
     inbound_enabled: bool | None = None
     outbound_enabled: bool | None = None
@@ -130,6 +133,7 @@ class PhoneNumberResponse(BaseModel):
     inbound_enabled: bool
     outbound_enabled: bool
     inbound_agent_id: str | None = None
+    inbound_agent_version: int | None = None
     outbound_agent_id: str | None = None
     status: str
     metadata: dict[str, Any] = Field(default_factory=dict)

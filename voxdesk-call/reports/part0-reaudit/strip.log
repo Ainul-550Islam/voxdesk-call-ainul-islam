@@ -1,0 +1,456 @@
+[
+  {
+    "file": "dashboard/src/api/agent-test.ts",
+    "removed_lines": 0,
+    "remaining_lines": 1100,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/api/use-cases.ts",
+    "removed_lines": 1,
+    "remaining_lines": 1002,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/components/use-cases/UseCaseCard.tsx",
+    "removed_lines": 1,
+    "remaining_lines": 1002,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/components/use-cases/UseCaseCategoryBadge.tsx",
+    "removed_lines": 1,
+    "remaining_lines": 1002,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/components/use-cases/UseCaseDetailSkeleton.tsx",
+    "removed_lines": 1,
+    "remaining_lines": 1002,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/components/use-cases/UseCaseEmptyState.tsx",
+    "removed_lines": 1,
+    "remaining_lines": 1002,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/components/use-cases/UseCaseFAQ.tsx",
+    "removed_lines": 1,
+    "remaining_lines": 1002,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/components/use-cases/UseCaseFilterBar.tsx",
+    "removed_lines": 1,
+    "remaining_lines": 1002,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/components/use-cases/UseCaseGrid.tsx",
+    "removed_lines": 1,
+    "remaining_lines": 1002,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/components/use-cases/UseCaseMetricPreview.tsx",
+    "removed_lines": 1,
+    "remaining_lines": 1002,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/components/use-cases/UseCaseProcessTimeline.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 1003,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/components/use-cases/UseCaseSearchInput.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 1003,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/components/use-cases/UseCaseSkeleton.tsx",
+    "removed_lines": 1,
+    "remaining_lines": 1002,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/config/useCaseNavigation.ts",
+    "removed_lines": 1,
+    "remaining_lines": 1283,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/config/useCaseRoutes.ts",
+    "removed_lines": 1,
+    "remaining_lines": 1153,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/hooks/useAgentTest.ts",
+    "removed_lines": 0,
+    "remaining_lines": 1100,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/hooks/useUseCaseCategories.ts",
+    "removed_lines": 1,
+    "remaining_lines": 1002,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/hooks/useUseCaseDetail.ts",
+    "removed_lines": 1,
+    "remaining_lines": 1002,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/hooks/useUseCases.ts",
+    "removed_lines": 1,
+    "remaining_lines": 1002,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/agents/CreateAgentPage.tsx",
+    "removed_lines": 1,
+    "remaining_lines": 1344,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/industries/IndustriesBenefits.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 675,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/industries/IndustriesCTA.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 675,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/industries/IndustriesGrid.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 675,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/industries/IndustriesHero.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 675,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/answering-service/AnsweringServiceAnalytics.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 689,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/answering-service/AnsweringServiceBooking.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 689,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/answering-service/AnsweringServiceCRM.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 689,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/answering-service/AnsweringServiceCTA.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 689,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/answering-service/AnsweringServiceCapabilities.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 689,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/answering-service/AnsweringServiceCustomVoice.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 689,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/answering-service/AnsweringServiceDeveloper.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 689,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/answering-service/AnsweringServiceFAQ.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 689,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/answering-service/AnsweringServiceHero.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 689,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/answering-service/AnsweringServiceLifecycle.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 689,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/answering-service/AnsweringServiceRouting.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 689,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/answering-service/AnsweringServiceSecurity.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 689,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/appointment-setter/AppointmentSetterAnalytics.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 681,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/appointment-setter/AppointmentSetterBooking.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 681,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/appointment-setter/AppointmentSetterCTA.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 681,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/appointment-setter/AppointmentSetterCapabilities.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 681,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/appointment-setter/AppointmentSetterDeveloper.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 681,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/appointment-setter/AppointmentSetterFAQ.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 681,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/appointment-setter/AppointmentSetterHero.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 681,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/appointment-setter/AppointmentSetterHowItWorks.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 681,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/appointment-setter/AppointmentSetterLifecycle.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 681,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/appointment-setter/AppointmentSetterQualification.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 681,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/appointment-setter/AppointmentSetterReminders.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 681,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/appointment-setter/AppointmentSetterReschedule.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 681,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/appointment-setter/AppointmentSetterSecurity.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 681,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/customer-service/CustomerServiceAnalytics.tsx",
+    "removed_lines": 1,
+    "remaining_lines": 1006,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/customer-service/CustomerServiceChannels.tsx",
+    "removed_lines": 1,
+    "remaining_lines": 2505,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/customer-service/CustomerServiceHandoff.tsx",
+    "removed_lines": 1,
+    "remaining_lines": 1004,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/customer-service/CustomerServiceHero.tsx",
+    "removed_lines": 1,
+    "remaining_lines": 1343,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/customer-service/CustomerServiceKnowledge.tsx",
+    "removed_lines": 1,
+    "remaining_lines": 1005,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/telemarketing/TelemarketingAnalytics.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 676,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/telemarketing/TelemarketingCRM.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 676,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/telemarketing/TelemarketingCampaigns.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 676,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/telemarketing/TelemarketingDeveloper.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 676,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/telemarketing/TelemarketingFAQ.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 676,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/telemarketing/TelemarketingFollowUp.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 676,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/telemarketing/TelemarketingLifecycle.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 676,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/telemarketing/TelemarketingQualification.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 676,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/telemarketing/TelemarketingScheduling.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 676,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/product/telemarketing/TelemarketingSecurity.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 676,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/use-cases/UseCaseCTA.tsx",
+    "removed_lines": 1,
+    "remaining_lines": 1002,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/use-cases/UseCaseCapabilities.tsx",
+    "removed_lines": 1,
+    "remaining_lines": 1002,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/use-cases/UseCaseExampleCall.tsx",
+    "removed_lines": 1,
+    "remaining_lines": 1002,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/use-cases/UseCaseHero.tsx",
+    "removed_lines": 1,
+    "remaining_lines": 1002,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/use-cases/UseCaseIntegrationPreview.tsx",
+    "removed_lines": 1,
+    "remaining_lines": 1002,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/use-cases/UseCaseWorkflow.tsx",
+    "removed_lines": 1,
+    "remaining_lines": 1002,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/pages/use-cases/UseCasesHero.tsx",
+    "removed_lines": 1,
+    "remaining_lines": 1002,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/tests/use-cases.test.tsx",
+    "removed_lines": 0,
+    "remaining_lines": 774,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/types/agent-test.ts",
+    "removed_lines": 0,
+    "remaining_lines": 1100,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/types/use-case-filter.ts",
+    "removed_lines": 1,
+    "remaining_lines": 1092,
+    "review_short_head": false
+  },
+  {
+    "file": "dashboard/src/types/use-case.ts",
+    "removed_lines": 0,
+    "remaining_lines": 1061,
+    "review_short_head": false
+  }
+]
+nes": 785,
+    "review_short_head": false
+  }
+]

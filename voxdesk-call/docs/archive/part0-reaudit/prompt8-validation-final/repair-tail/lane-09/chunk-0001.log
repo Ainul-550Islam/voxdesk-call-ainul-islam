@@ -1,0 +1,5 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/workflow/test_workflow_execution_recovery.py::test_executor_execute_and_resume tests/workflow/test_workflow_execution_recovery.py::test_executor_checkpoint_and_recovery_progress tests/workflow/test_workflow_execution_recovery.py::test_executor_rejects_empty_checkpoint_identifiers tests/workflow/test_workflow_execution_recovery.py::test_flow_graph_and_node_validation
+....                                                                     [100%]
+4 passed in 0.05s
+
+STDERR:

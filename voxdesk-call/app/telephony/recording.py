@@ -28,7 +28,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.auth.permissions import Permission
 from app.auth.rbac import has_permission
 from app.db.models import AuditAction, Base, Call, Tenant, User, UserRole
-from app.telephony.media_storage import delete_bytes, issue, safe_reference, verify
+from app.telephony.media_storage import issue, safe_reference, verify
 from app.tenancy.isolation import Forbidden, NotFound
 
 STATES = frozenset(
@@ -138,7 +138,9 @@ def transition(row: CallRecording, target: str, *, observed_at: datetime | None 
     if target == "deleted":
         row.deleted_at = row.updated_at
         if row.storage_key:
-            delete_bytes(row.storage_key)
+            from app.telephony import media_storage
+
+            media_storage.delete_recording_object(row.storage_key)
             row.storage_key = ""
     return "applied"
 
@@ -147,15 +149,22 @@ async def request_recording(
     session,
     call: Call,
     *,
-    provider: str,
+    provider: str = "twilio",
     consent_category: str = "unspecified",
     consent_state: str = "unknown",
+    agent_id: str | uuid.UUID | None = None,
 ) -> CallRecording:
     from app.telephony.consent import evaluate
     from app.telephony.recording_policy import deadline, effective
 
     tenant = await session.get(Tenant, call.tenant_id)
-    policy = await effective(session, tenant)
+    resolved_agent_id = agent_id or getattr(call, "agent_id", None)
+    policy = await effective(
+        session,
+        tenant,
+        environment_id=getattr(call, "environment_id", None),
+        agent_id=resolved_agent_id,
+    )
     if not policy["enabled"]:
         raise Forbidden("Recording is disabled for this tenant")
     decision = evaluate(consent_category, consent_state)
@@ -169,6 +178,50 @@ async def request_recording(
         retention_deadline=deadline(policy["retention_days"]),
     )
     session.add(row)
+    await session.flush()
+    return row
+
+
+async def start_recording_if_enabled(
+    session,
+    call: Call,
+    *,
+    provider: str = "twilio",
+    consent_category: str = "one_party",
+    consent_state: str = "granted",
+    agent_id: str | uuid.UUID | None = None,
+    provider_start_fn=None,
+) -> CallRecording | None:
+    """Start call recording only when the effective RecordingPolicy enables it."""
+    from app.telephony.recording_policy import effective
+
+    tenant = await session.get(Tenant, call.tenant_id)
+    resolved_agent_id = agent_id or getattr(call, "agent_id", None)
+    policy = await effective(
+        session,
+        tenant,
+        environment_id=getattr(call, "environment_id", None),
+        agent_id=resolved_agent_id,
+    )
+    if not tenant or not policy.get("enabled", False):
+        return None
+    effective_category = policy.get("consent_mode") or consent_category
+    if effective_category == "none":
+        effective_category = "one_party"
+    row = await request_recording(
+        session,
+        call,
+        provider=provider,
+        consent_category=effective_category,
+        consent_state=consent_state,
+        agent_id=resolved_agent_id,
+    )
+    if provider_start_fn is not None:
+        ext_id = await provider_start_fn(call)
+        if ext_id:
+            row.external_recording_id = str(ext_id)[:80]
+            row.external_guard = f"{provider}:{ext_id}"[:96]
+        transition(row, "recording")
     await session.flush()
     return row
 
@@ -343,7 +396,7 @@ async def purge_for_calls(session, call_ids: list[uuid.UUID]) -> dict:
             transition(row, "deleted")
             purged += 1
     await session.flush()
-    return {"purged_recordings": purged, "held_calls": held_calls}
+    return {"purged_recordings": purged, "deleted": purged, "held_calls": held_calls}
 
 
 async def _by_external(session, provider: str, external_id: str) -> CallRecording | None:

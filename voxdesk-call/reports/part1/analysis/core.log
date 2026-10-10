@@ -1,0 +1,100 @@
+...............E...                                                      [100%]
+==================================== ERRORS ====================================
+____________ ERROR at setup of test_real_status_callback_admits_job ____________
+
+request = <SubRequest 'app' for <Coroutine test_real_status_callback_admits_job>>
+kwargs = {'sessionmaker_': async_sessionmaker(class_='AsyncSession', bind=<sqlalchemy.ext.asyncio.engine.AsyncEngine object at 0x7fab175ae4d0>, autoflush=True, expire_on_commit=False)}
+func = <function app at 0x7fab18b21300>, event_loop_fixture_id = 'event_loop'
+setup = <function _wrap_asyncgen_fixture.<locals>._asyncgen_fixture_wrapper.<locals>.setup at 0x7fab169e6340>
+setup_task = <Task finished name='Task-261' coro=<_wrap_asyncgen_fixture.<locals>._asyncgen_fixture_wrapper.<locals>.setup() done, ...s_permission' from 'app.auth.permissions' (/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/auth/permissions.py)")>
+
+    @functools.wraps(fixture)
+    def _asyncgen_fixture_wrapper(request: FixtureRequest, **kwargs: Any):
+        func = _perhaps_rebind_fixture_func(fixture, request.instance)
+        event_loop_fixture_id = _get_event_loop_fixture_id_for_async_fixture(
+            request, func
+        )
+        event_loop = request.getfixturevalue(event_loop_fixture_id)
+        kwargs.pop(event_loop_fixture_id, None)
+        gen_obj = func(**_add_kwargs(func, kwargs, event_loop, request))
+    
+        async def setup():
+            res = await gen_obj.__anext__()  # type: ignore[union-attr]
+            return res
+    
+        context = contextvars.copy_context()
+        setup_task = _create_task_in_context(event_loop, setup(), context)
+>       result = event_loop.run_until_complete(setup_task)
+
+.venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:329: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../../.local/share/uv/python/cpython-3.12.15-linux-x86_64-gnu/lib/python3.12/asyncio/base_events.py:691: in run_until_complete
+    return future.result()
+.venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:324: in setup
+    res = await gen_obj.__anext__()  # type: ignore[union-attr]
+tests/conftest.py:123: in app
+    from app.main import app as fastapi_app
+app/main.py:131: in <module>
+    from app.api.post_call_analysis_routes import router as post_call_analysis_router
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    # File: app/api/post_call_analysis_routes.py — Missing APIs: custom post-call-analysis definition CRUD, per-call results, custom fields, backfill/reprocess with idempotency
+    """
+    Post-call analysis API.
+    Closes gaps:
+    11. Custom post-call-analysis definition API missing — configurable analysis schema CRUD + per-call results
+    12. Historical analysis backfill API missing — bulk backfill/reprocess + status + idempotency
+    34. Post-call custom fields API — Boolean/Text/Number/Enum/custom schema matching Retell model
+    """
+    from __future__ import annotations
+    
+    import uuid
+    from datetime import datetime, timezone
+    from typing import Optional, Any
+    
+    from fastapi import APIRouter, Depends, HTTPException, Query, Header
+    from pydantic import BaseModel, ConfigDict, Field
+    from sqlalchemy import select, func
+    from sqlalchemy.ext.asyncio import AsyncSession
+    
+    from app.auth.dependencies import TenantContext, require_permission
+>   from app.auth.permissions import Permission, has_permission
+E   ImportError: cannot import name 'has_permission' from 'app.auth.permissions' (/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/auth/permissions.py)
+
+app/api/post_call_analysis_routes.py:21: ImportError
+=============================== warnings summary ===============================
+tests/telephony/test_post_call_pipeline.py: 21 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/telephony/test_post_call_pipeline.py: 70 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/telephony/test_post_call_pipeline.py: 21 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/telephony/test_post_call_pipeline.py: 17 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/conftest.py:569: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "started_at": datetime.utcnow(),
+
+tests/telephony/test_post_call_pipeline.py::test_terminal_transition_enqueues_once_in_same_transaction
+tests/telephony/test_post_call_pipeline.py::test_enqueue_failure_rolls_back_terminal_fact
+tests/telephony/test_post_call_pipeline.py::test_real_worker_governed_http_persists_output_and_usage
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/call_state.py:261: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call.ended_at = ended_at or datetime.utcnow()
+
+tests/telephony/test_post_call_pipeline.py::test_real_status_callback_admits_job
+tests/telephony/test_post_call_pipeline.py::test_real_status_callback_admits_job
+tests/telephony/test_post_call_pipeline.py::test_real_status_callback_admits_job
+tests/telephony/test_post_call_pipeline.py::test_real_status_callback_admits_job
+tests/telephony/test_post_call_pipeline.py::test_real_status_callback_admits_job
+tests/telephony/test_post_call_pipeline.py::test_real_status_callback_admits_job
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR tests/telephony/test_post_call_pipeline.py::test_real_status_callback_admits_job
+18 passed, 138 warnings, 1 error in 16.26s

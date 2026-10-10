@@ -1,0 +1,36 @@
+$ /usr/local/bin/python -m pytest -q tests/auth/test_api_keys.py::test_the_secret_is_returned_once_and_stored_only_as_a_digest tests/auth/test_api_keys.py::test_the_key_authenticates_and_records_its_last_use tests/auth/test_api_keys.py::test_a_key_without_the_scope_is_refused_where_it_would_need_it tests/auth/test_api_keys.py::test_a_key_cannot_carry_a_scope_its_maker_does_not_hold tests/auth/test_api_keys.py::test_the_scope_catalogue_is_available_to_a_key_manager tests/auth/test_api_keys.py::test_rotation_replaces_the_key_without_an_overlap tests/auth/test_api_keys.py::test_revocation_is_immediate_and_idempotent tests/auth/test_api_keys.py::test_an_expired_key_is_refused tests/auth/test_api_keys.py::test_a_machine_credential_cannot_mint_api_keys tests/auth/test_api_keys.py::test_a_key_is_confined_to_the_workspace_that_issued_it
+..........                                                               [100%]
+=============================== warnings summary ===============================
+tests/auth/test_api_keys.py::test_the_secret_is_returned_once_and_stored_only_as_a_digest
+tests/auth/test_api_keys.py::test_the_secret_is_returned_once_and_stored_only_as_a_digest
+tests/auth/test_api_keys.py::test_the_secret_is_returned_once_and_stored_only_as_a_digest
+tests/auth/test_api_keys.py::test_the_secret_is_returned_once_and_stored_only_as_a_digest
+tests/auth/test_api_keys.py::test_the_secret_is_returned_once_and_stored_only_as_a_digest
+tests/auth/test_api_keys.py::test_the_secret_is_returned_once_and_stored_only_as_a_digest
+  /usr/local/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/auth/test_api_keys.py: 11 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/auth/test_api_keys.py: 63 warnings
+  /usr/local/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/auth/test_api_keys.py: 11 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/auth/test_api_keys.py: 13 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/auth/test_api_keys.py: 11 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/auth/identity/models.py:69: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+10 passed, 115 warnings in 64.52s (0:01:04)
+
+STDERR:

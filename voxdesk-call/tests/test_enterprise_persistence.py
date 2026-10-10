@@ -130,7 +130,7 @@ class TestSchema:
         # The chain is linear by design; the current head includes the
         # deployment, governance, transfer-context, and Boolean-default fixes.
         heads = script.get_heads()
-        assert heads == ["0049_runtime_schema_alignment"]
+        assert heads == ["0062_drop_pcap_artifacts"]
         head = script.get_revision("0049_runtime_schema_alignment")
         assert head.down_revision == "0048_boolean_defaults"
         # Prompt 6 — Telephony / Voice Runtime head.

@@ -71,6 +71,7 @@ async def evaluate_readiness(*, target, revision, registry: ArtifactRegistryAdap
             expected = getattr(revision, "migration_revision", None) if revision_present else None
             put("migration_compatibility", "PASS" if current == expected and expected else "FAIL", "database Alembic revision matches deployment target" if current == expected and expected else "database Alembic revision does not match deployment target")
         except Exception:
+            __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
             put("migration_compatibility", "NOT_AVAILABLE", "Alembic version table could not be queried")
 
     prerequisites = getattr(target, "prerequisites", {}) or {} if target_present else {}

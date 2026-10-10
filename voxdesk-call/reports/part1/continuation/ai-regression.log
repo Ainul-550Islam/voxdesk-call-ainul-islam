@@ -1,0 +1,126 @@
+....................................................................s... [ 75%]
+........................                                                 [100%]
+=============================== warnings summary ===============================
+tests/ai/test_ai_runtime_enforcement.py: 15 warnings
+tests/ai/test_ai_unknown_usage.py: 1 warning
+tests/ai/test_gateway.py: 6 warnings
+tests/ai/test_governance.py: 4 warnings
+tests/ai/test_post_call_llm.py: 14 warnings
+tests/ai/test_runtime_enforcement.py: 12 warnings
+tests/ai/test_security.py: 6 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/ai/test_ai_runtime_enforcement.py: 51 warnings
+tests/ai/test_ai_unknown_usage.py: 5 warnings
+tests/ai/test_gateway.py: 23 warnings
+tests/ai/test_governance.py: 32 warnings
+tests/ai/test_post_call_llm.py: 61 warnings
+tests/ai/test_runtime_enforcement.py: 49 warnings
+tests/ai/test_security.py: 33 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/ai/test_ai_runtime_enforcement.py: 15 warnings
+tests/ai/test_ai_unknown_usage.py: 1 warning
+tests/ai/test_gateway.py: 6 warnings
+tests/ai/test_governance.py: 4 warnings
+tests/ai/test_post_call_llm.py: 14 warnings
+tests/ai/test_runtime_enforcement.py: 12 warnings
+tests/ai/test_security.py: 6 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/ai/test_ai_runtime_enforcement.py: 12 warnings
+tests/ai/test_ai_unknown_usage.py: 1 warning
+tests/ai/test_gateway.py: 4 warnings
+tests/ai/test_governance.py: 4 warnings
+tests/ai/test_post_call_llm.py: 13 warnings
+tests/ai/test_runtime_enforcement.py: 7 warnings
+tests/ai/test_security.py: 5 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/ai/test_ai_runtime_enforcement.py::test_governed_build_does_not_silently_switch_provider
+  tests/ai/test_ai_runtime_enforcement.py:359: PytestWarning: The test <Function test_governed_build_does_not_silently_switch_provider> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_governed_build_does_not_silently_switch_provider(monkeypatch):
+
+tests/ai/test_ai_runtime_enforcement.py::test_live_sources_do_not_select_a_model_outside_the_runtime
+  tests/ai/test_ai_runtime_enforcement.py:366: PytestWarning: The test <Function test_live_sources_do_not_select_a_model_outside_the_runtime> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_live_sources_do_not_select_a_model_outside_the_runtime():
+
+tests/ai/test_ai_runtime_enforcement.py::test_context_is_immutable_and_rejects_a_foreign_claim
+  tests/ai/test_ai_runtime_enforcement.py:378: PytestWarning: The test <Function test_context_is_immutable_and_rejects_a_foreign_claim> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_context_is_immutable_and_rejects_a_foreign_claim():
+
+tests/ai/test_ai_runtime_enforcement.py::test_customer_reply_distinguishes_governance_from_outage
+  tests/ai/test_ai_runtime_enforcement.py:394: PytestWarning: The test <Function test_customer_reply_distinguishes_governance_from_outage> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_customer_reply_distinguishes_governance_from_outage():
+
+tests/ai/test_ai_runtime_enforcement.py::test_inbound_message_does_not_call_a_policy_denial_an_outage
+tests/ai/test_ai_runtime_enforcement.py::test_inbound_message_does_not_call_a_policy_denial_an_outage
+tests/ai/test_ai_runtime_enforcement.py::test_inbound_message_does_not_call_a_policy_denial_an_outage
+tests/ai/test_ai_runtime_enforcement.py::test_inbound_message_does_not_call_a_policy_denial_an_outage
+tests/ai/test_ai_runtime_enforcement.py::test_inbound_message_does_not_call_a_policy_denial_an_outage
+tests/ai/test_ai_runtime_enforcement.py::test_inbound_message_does_not_call_a_policy_denial_an_outage
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/ai/test_ai_runtime_enforcement.py::test_inbound_message_does_not_call_a_policy_denial_an_outage
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/channels/messaging.py:94: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    cutoff = datetime.utcnow() - timedelta(minutes=THREAD_IDLE_MINUTES)
+
+tests/ai/test_ai_runtime_enforcement.py::test_inbound_message_does_not_call_a_policy_denial_an_outage
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/channels/messaging.py:127: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call_sid=f"{channel}-{customer}-{int(datetime.utcnow().timestamp())}",
+
+tests/ai/test_gateway.py::test_telemetry_drops_secrets
+  tests/ai/test_gateway.py:158: PytestWarning: The test <Function test_telemetry_drops_secrets> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_telemetry_drops_secrets():
+
+tests/ai/test_governance.py::test_published_version_is_immutable_and_rollback_restores_it
+tests/ai/test_governance.py::test_published_version_is_immutable_and_rollback_restores_it
+tests/ai/test_governance.py::test_rollout_is_deterministic
+tests/ai/test_governance.py::test_rollout_is_deterministic
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/ai/prompts/versioning.py:93: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    version.published_at = datetime.utcnow()
+
+tests/ai/test_governance.py::test_published_version_is_immutable_and_rollback_restores_it
+tests/ai/test_governance.py::test_published_version_is_immutable_and_rollback_restores_it
+tests/ai/test_governance.py::test_rollout_is_deterministic
+tests/ai/test_governance.py::test_rollout_is_deterministic
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/ai/prompts/versioning.py:95: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    prompt.updated_at = datetime.utcnow()
+
+tests/ai/test_governance.py::test_published_version_is_immutable_and_rollback_restores_it
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/api/prompt_routes.py:261: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    prompt.updated_at = datetime.utcnow()
+
+tests/ai/test_governance.py::test_eval_does_not_invent_a_score_or_leak_another_tenant
+tests/ai/test_governance.py::test_eval_does_not_invent_a_score_or_leak_another_tenant
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/api/eval_routes.py:148: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    finished_at=datetime.utcnow(),
+
+tests/ai/test_governance.py::test_safety_and_pii_are_explicit
+  tests/ai/test_governance.py:173: PytestWarning: The test <Function test_safety_and_pii_are_explicit> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_safety_and_pii_are_explicit():
+
+tests/ai/test_runtime_enforcement.py::test_voice_media_chain_wires_the_guardrail_processors
+  tests/ai/test_runtime_enforcement.py:384: PytestWarning: The test <Function test_voice_media_chain_wires_the_guardrail_processors> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_voice_media_chain_wires_the_guardrail_processors():
+
+tests/ai/test_runtime_enforcement.py::test_gateway_never_imports_the_runtime
+  tests/ai/test_runtime_enforcement.py:403: PytestWarning: The test <Function test_gateway_never_imports_the_runtime> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_gateway_never_imports_the_runtime():
+
+tests/ai/test_runtime_enforcement.py::test_policy_denial_is_never_a_fallback_trigger
+  tests/ai/test_runtime_enforcement.py:412: PytestWarning: The test <Function test_policy_denial_is_never_a_fallback_trigger> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_policy_denial_is_never_a_fallback_trigger():
+
+tests/ai/test_security.py::test_model_cannot_self_authorize_and_disallowed_tool_is_rejected
+  tests/ai/test_security.py:66: PytestWarning: The test <Function test_model_cannot_self_authorize_and_disallowed_tool_is_rejected> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_model_cannot_self_authorize_and_disallowed_tool_is_rejected():
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /home/user/voxdesk-call-ainul-islam/voxdesk-call/reports/part1/continuation/ai-regression.xml -
+95 passed, 1 skipped, 445 warnings in 42.00s

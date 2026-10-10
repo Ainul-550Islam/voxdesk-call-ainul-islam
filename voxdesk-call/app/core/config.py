@@ -133,12 +133,26 @@ class Settings(BaseSettings):
     openai_api_key: str = ""          # ChatGPT
     anthropic_api_key: str = ""       # Claude
     google_api_key: str = ""          # Gemini
+    groq_api_key: str = ""            # Groq
+    azure_openai_api_key: str = ""
+    azure_openai_endpoint: str = ""
+    aws_access_key_id: str = ""
+    aws_secret_access_key: str = ""
+    aws_region: str = "us-east-1"
+    custom_openai_api_key: str = ""
+    custom_openai_base_url: str = ""
     default_llm_preset: str = "natural"   # fast | natural | cheap | smart
 
-    # ElevenLabs (TTS)
+    # ElevenLabs & multi-provider STT/TTS (2C)
     elevenlabs_api_key: str = ""
     elevenlabs_voice_id: str = "21m00Tcm4TlvDq8ikWAM"
     elevenlabs_model: str = "eleven_flash_v2_5"
+    assemblyai_api_key: str = ""
+    cartesia_api_key: str = ""
+    playht_api_key: str = ""
+    playht_user_id: str = ""
+    azure_speech_key: str = ""
+    azure_speech_region: str = ""
     # Provider-neutral voice runtime policy. Provider credentials remain in
     # environment/configuration and are never stored on tenant rows.
     tts_provider: str = "elevenlabs"
@@ -859,6 +873,7 @@ class Settings(BaseSettings):
 
                 parse_key_ring(self.crm_encryption_keys)
             except Exception as exc:
+                __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
                 problems.append(f"CRM_ENCRYPTION_KEYS is invalid: {exc}")
         if self.crm_retry_max_attempts < 1:
             problems.append("CRM_RETRY_MAX_ATTEMPTS must be at least 1")

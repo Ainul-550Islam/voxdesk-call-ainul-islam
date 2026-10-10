@@ -21,6 +21,8 @@ from app.tenancy.isolation import NotFound, ValidationFailed
 
 CATEGORIES = {
     "all_party": True,
+    "two_party": True,
+    "explicit": True,
     "one_party": False,
     "unspecified": None,
 }

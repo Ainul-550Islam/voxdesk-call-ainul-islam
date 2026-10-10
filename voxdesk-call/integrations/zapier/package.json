@@ -1,0 +1,7 @@
+{
+  "name": "zapier-platform-app-voxdesk",
+  "version": "0.3.0",
+  "description": "Zapier integration for VoxDesk AI Voice Agents (webhooks + call actions)",
+  "main": "index.js",
+  "license": "MIT"
+}

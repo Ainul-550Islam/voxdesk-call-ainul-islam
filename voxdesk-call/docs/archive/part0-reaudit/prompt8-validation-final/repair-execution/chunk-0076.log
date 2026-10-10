@@ -1,0 +1,5 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_enum_consistency.py::test_migration_chain_is_linear_and_unbroken tests/test_enum_consistency.py::test_document_status_migration_matches_the_model tests/test_enum_consistency.py::test_document_source_type_migration_matches_the_model tests/test_enum_consistency.py::test_knowledge_enum_values_are_lowercase_names tests/test_enum_consistency.py::test_only_ready_is_searchable
+.....                                                                    [100%]
+5 passed in 0.22s
+
+STDERR:

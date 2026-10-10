@@ -1,0 +1,5 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_enum_consistency.py::test_migration_0006_creates_every_model_column tests/test_enum_consistency.py::test_migration_0006_declares_the_constraints_that_carry_the_guarantees tests/test_enum_consistency.py::test_migration_0006_follows_0005 tests/test_enum_consistency.py::test_migration_0006_does_not_touch_the_legacy_crm_columns tests/test_enum_consistency.py::test_the_retryable_and_terminal_status_sets_do_not_overlap
+.....                                                                    [100%]
+5 passed in 0.09s
+
+STDERR:

@@ -1,0 +1,19 @@
+
+> voxdesk-dashboard-next@0.1.0 test
+> vitest run
+
+
+ RUN  v3.2.7 /home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard-next
+
+ ✓ lib/identity.test.ts (14 tests) 7ms
+ ✓ tests/enterprise-ui/tilt-surface.test.tsx (14 tests) 12ms
+ ✓ tests/enterprise-ui/metric-card-3d.test.tsx (17 tests) 100ms
+ ✓ tests/enterprise-ui/data-state.test.tsx (15 tests) 15ms
+ ✓ tests/enterprise-ui/connection-truth.test.tsx (5 tests) 196ms
+ ✓ lib/format.test.ts (16 tests) 28ms
+
+ Test Files  6 passed (6)
+      Tests  81 passed (81)
+   Start at  02:08:55
+   Duration  4.76s (transform 302ms, setup 0ms, collect 542ms, tests 358ms, environment 2.66s, prepare 410ms)
+

@@ -66,6 +66,11 @@ def provider_config_ok() -> dict:
 async def check_database() -> bool:
     """A real ``SELECT 1`` against the configured engine. Returns a bool."""
     try:
+        from app.core.chaos import chaos
+
+        if chaos._enabled:
+            await chaos.inject("database")
+
         async def _probe() -> None:
             async with get_engine().connect() as conn:
                 await conn.execute(text("SELECT 1"))
@@ -83,9 +88,15 @@ async def check_database() -> bool:
 
 async def check_redis() -> bool | None:
     """Redis reachability, or None when Redis is not configured."""
-    if not settings.redis_url:
+    from app.core.chaos import chaos
+
+    if not settings.redis_url and not (chaos._enabled and "redis" in chaos._faults):
         return None
     try:
+        if chaos._enabled:
+            await chaos.inject("redis")
+        if not settings.redis_url:
+            return True
         return bool(await asyncio.wait_for(get_cache().ping(), timeout=2.0))
     except Exception as exc:  # probe contract is a safe bool, never provider/client text
         log.warning("health.redis_check_failed", error_type=type(exc).__name__)
@@ -108,20 +119,27 @@ async def readiness() -> dict:
     providers = provider_config_ok()
     providers_required = settings.is_production and not providers["ok"]
 
-    ready = db_ok and (redis_ok is None or redis_ok) and not providers_required
+    from app.core.graceful_shutdown import is_draining
+
+    draining = is_draining()
+    ready = db_ok and (redis_ok is None or redis_ok) and not providers_required and not draining
+
+    checks: dict = {
+        "database": {"ok": db_ok},
+        "redis": (
+            {"ok": redis_ok, "configured": True}
+            if redis_ok is not None
+            else {"ok": True, "configured": False}
+        ),
+        "providers": providers,
+    }
+    if draining:
+        checks["draining"] = True
 
     return {
         "ready": ready,
         "body": {
             "status": "ready" if ready else "unavailable",
-            "checks": {
-                "database": {"ok": db_ok},
-                "redis": (
-                    {"ok": redis_ok, "configured": True}
-                    if redis_ok is not None
-                    else {"ok": True, "configured": False}
-                ),
-                "providers": providers,
-            },
+            "checks": checks,
         },
     }

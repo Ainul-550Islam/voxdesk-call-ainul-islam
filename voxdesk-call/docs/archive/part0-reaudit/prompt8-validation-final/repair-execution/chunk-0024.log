@@ -1,0 +1,5 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_calendar_contract.py::test_a_401_body_is_never_included_in_the_message[microsoft] tests/test_calendar_contract.py::test_a_401_body_is_never_included_in_the_message[calcom] tests/test_calendar_contract.py::test_a_401_body_is_never_included_in_the_message[internal] tests/test_calendar_contract.py::test_a_health_check_never_raises_and_never_leaks[google] tests/test_calendar_contract.py::test_a_health_check_never_raises_and_never_leaks[google_service_account]
+.....                                                                    [100%]
+5 passed in 0.14s
+
+STDERR:

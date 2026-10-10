@@ -1,0 +1,5 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_calendar_providers.py::TestGoogleFreeBusy::test_an_empty_calendar_returns_nothing tests/test_calendar_providers.py::TestGoogleFreeBusy::test_a_per_calendar_error_raises_rather_than_looking_free tests/test_calendar_providers.py::TestGoogleFreeBusy::test_a_permission_error_on_one_calendar_raises tests/test_calendar_providers.py::TestGoogleEvents::test_create_returns_the_event tests/test_calendar_providers.py::TestGoogleEvents::test_a_409_on_our_own_id_means_already_booked
+.....                                                                    [100%]
+5 passed in 0.14s
+
+STDERR:

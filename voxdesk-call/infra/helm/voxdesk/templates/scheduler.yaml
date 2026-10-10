@@ -17,12 +17,13 @@ spec:
         app.kubernetes.io/name: {{ include "voxdesk.name" . }}-scheduler
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
+      terminationGracePeriodSeconds: {{ .Values.scheduler.terminationGracePeriodSeconds | default 45 }}
       securityContext:
         runAsNonRoot: true
         seccompProfile: {type: RuntimeDefault}
       containers:
         - name: scheduler
-          image: "{{ required \"image.repository is required\" .Values.image.repository }}:{{ required \"image.tag is required\" .Values.image.tag }}"
+          image: "{{ required "image.repository is required" .Values.image.repository }}:{{ required "image.tag is required" .Values.image.tag }}"
           command: ["python", "-m", "scripts.scheduler"]
           env:
             - name: APP_ENV
@@ -31,9 +32,28 @@ spec:
               value: {{ required "config.databaseUrl is required" .Values.config.databaseUrl | quote }}
             - name: REDIS_URL
               value: {{ required "config.redisUrl is required" .Values.config.redisUrl | quote }}
+            - name: SHUTDOWN_DRAIN_TIMEOUT_SECONDS
+              value: {{ .Values.scheduler.drain.timeoutSeconds | default 15 | quote }}
+            - name: SHUTDOWN_FLUSH_TIMEOUT_SECONDS
+              value: {{ .Values.scheduler.drain.flushTimeoutSeconds | default 20 | quote }}
           envFrom:
             - secretRef:
                 name: {{ required "secrets.existingSecret is required" .Values.secrets.existingSecret }}
           resources:
             {{- toYaml .Values.scheduler.resources | nindent 12 }}
+{{- if and .Values.scheduler.podDisruptionBudget .Values.scheduler.podDisruptionBudget.enabled }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "voxdesk.fullname" . }}-scheduler
+  labels:
+    {{- include "voxdesk.labels" . | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.scheduler.podDisruptionBudget.minAvailable | default 1 }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "voxdesk.name" . }}-scheduler
+      app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
 {{- end }}

@@ -1,0 +1,34 @@
+$ /usr/local/bin/python -m pytest -q tests/e2e/test_conductor_flow.py::test_conductor_full_workflow_partial_approve_simulate_and_immutable_apply
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../usr/local/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+../../../../usr/local/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+../../../../usr/local/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+../../../../usr/local/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+../../../../usr/local/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+../../../../usr/local/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+  /usr/local/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/e2e/test_conductor_flow.py::test_conductor_full_workflow_partial_approve_simulate_and_immutable_apply
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/e2e/test_conductor_flow.py::test_conductor_full_workflow_partial_approve_simulate_and_immutable_apply
+tests/e2e/test_conductor_flow.py::test_conductor_full_workflow_partial_approve_simulate_and_immutable_apply
+tests/e2e/test_conductor_flow.py::test_conductor_full_workflow_partial_approve_simulate_and_immutable_apply
+  /usr/local/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/e2e/test_conductor_flow.py::test_conductor_full_workflow_partial_approve_simulate_and_immutable_apply
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/e2e/test_conductor_flow.py::test_conductor_full_workflow_partial_approve_simulate_and_immutable_apply
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 12 warnings in 50.08s
+
+STDERR:

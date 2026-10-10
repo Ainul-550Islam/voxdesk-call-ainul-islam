@@ -1,0 +1,7 @@
+$ /usr/local/bin/python -m pytest --collect-only -q tests/auth/test_api_keys.py tests/test_rate_limit.py tests/test_ssrf.py tests/test_telephony_security_idempotency.py
+
+STDERR:
+ImportError while loading conftest '/home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/conftest.py'.
+tests/conftest.py:15: in <module>
+    import pytest_asyncio
+E   ModuleNotFoundError: No module named 'pytest_asyncio'

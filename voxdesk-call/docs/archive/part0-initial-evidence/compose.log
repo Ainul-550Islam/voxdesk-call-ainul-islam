@@ -1,0 +1,3 @@
+$ docker compose -f docker-compose.prod.yml config -q && docker compose -f docker-compose.full.yml config -q
+exit=0
+Temporary validation-only environment values supplied; no services started.

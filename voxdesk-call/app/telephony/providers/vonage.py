@@ -67,7 +67,17 @@ class VonageAdapter(TelephonyAdapter):
         return HealthResult(self.name, True, "credentials_present", probed=False)
 
     def capabilities(self) -> CapabilitySet:
-        return CapabilitySet(source="unconfirmed")
+        # Sub-Phase 2F: Honest capability declaration — Vonage voice/streaming
+        # is disabled (voice=False) until RS256 NCCO WebSocket media streaming is deployed.
+        return CapabilitySet(
+            voice=False,
+            sms=False,
+            mms=False,
+            whatsapp=False,
+            recording=False,
+            transcription=False,
+            source="unconfirmed",
+        )
 
     async def create_outbound(
         self, *, to_number: str, from_number: str, answer_url: str = ""

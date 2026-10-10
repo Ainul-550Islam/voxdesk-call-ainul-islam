@@ -1,0 +1,79 @@
+................F...........................                             [100%]
+=================================== FAILURES ===================================
+____________ test_failed_database_query_never_returns_zero_success _____________
+
+client = <httpx.AsyncClient object at 0x7f22368ee600>
+db = <sqlalchemy.ext.asyncio.session.AsyncSession object at 0x7f2236cd5cd0>
+tenant_a = <app.db.models.Tenant object at 0x7f2236cd5ca0>
+owner_a = <app.db.models.User object at 0x7f2236ee8230>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f2236403140>
+
+    async def test_failed_database_query_never_returns_zero_success(client, db, tenant_a, owner_a, monkeypatch):
+        from sqlalchemy.exc import OperationalError
+        _, _, headers = await seed(client, db, tenant_a, owner_a)
+        async def unavailable(*args, **kwargs):
+            raise OperationalError("query", {}, RuntimeError("database unavailable"))
+        monkeypatch.setattr(analysis, "observed_stats", unavailable)
+        response = await client.get("/api/analysis/extended/stats", headers=headers)
+        assert response.status_code == 503, response.text
+        assert "counts" not in response.json() and "database unavailable" not in response.text
+    
+        original_scalar = db.scalar
+        async def failed_health_count(statement, *args, **kwargs):
+            if "count(analysis_schemas.id)" in str(statement):
+                raise OperationalError("query", {}, RuntimeError("database unavailable"))
+            return await original_scalar(statement, *args, **kwargs)
+        monkeypatch.setattr(db, "scalar", failed_health_count)
+        health = await client.get("/api/analysis/extended/health", headers=headers)
+>       assert health.status_code == 503 and "reachable" not in health.text
+E       assert (200 == 503)
+E        +  where 200 = <Response [200 OK]>.status_code
+
+tests/telephony/test_analysis_extended.py:191: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[2m2026-10-07T10:09:08.440194Z[0m [[32m[1minfo     [0m] [1midentity.email_rendered       [0m [36mbody_chars[0m=[35m261[0m [36mrequest_id[0m=[35ma5ee586492ae44e4931a735914fbff5b[0m [36msubject[0m=[35mNew sign-in to your account - Tenant A[0m [36mto[0m=[35mo***@example.com[0m [36mtransport[0m=[35mlog[0m
+[2m2026-10-07T10:09:08.493227Z[0m [[33m[1mwarning  [0m] [1mdependency_unavailable        [0m [36mactor_type[0m=[35mhuman[0m [36mactor_user_id[0m=[35m36517c65-42ef-4f03-9e15-fe47da2cd601[0m [36merror[0m=[35mOperationalError[0m [36mrequest_id[0m=[35mcf849e3124d744c19afe74c1a62267fa[0m [36mtenant_id[0m=[35m6f11cb08-9548-4f94-8dc8-faa1e7c90789[0m
+=============================== warnings summary ===============================
+tests/telephony/test_analysis_extended.py::test_read_paths_query_only_authenticated_scope[health]
+tests/telephony/test_analysis_extended.py::test_read_paths_query_only_authenticated_scope[health]
+tests/telephony/test_analysis_extended.py::test_read_paths_query_only_authenticated_scope[health]
+tests/telephony/test_analysis_extended.py::test_read_paths_query_only_authenticated_scope[health]
+tests/telephony/test_analysis_extended.py::test_read_paths_query_only_authenticated_scope[health]
+tests/telephony/test_analysis_extended.py::test_read_paths_query_only_authenticated_scope[health]
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/telephony/test_analysis_extended.py: 29 warnings
+tests/telephony/test_analysis_backfill.py: 17 warnings
+tests/telephony/test_custom_analysis.py: 4 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/telephony/test_analysis_extended.py: 173 warnings
+tests/telephony/test_analysis_backfill.py: 124 warnings
+tests/telephony/test_custom_analysis.py: 25 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/telephony/test_analysis_extended.py: 29 warnings
+tests/telephony/test_analysis_backfill.py: 17 warnings
+tests/telephony/test_custom_analysis.py: 4 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/telephony/test_analysis_extended.py: 30 warnings
+tests/telephony/test_analysis_backfill.py: 16 warnings
+tests/telephony/test_custom_analysis.py: 2 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/telephony/test_analysis_extended.py: 12 warnings
+tests/telephony/test_analysis_backfill.py: 16 warnings
+tests/telephony/test_custom_analysis.py: 2 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/conftest.py:569: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "started_at": datetime.utcnow(),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/telephony/test_analysis_extended.py::test_failed_database_query_never_returns_zero_success
+1 failed, 43 passed, 506 warnings in 34.87s

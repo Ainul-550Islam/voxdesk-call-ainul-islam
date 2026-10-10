@@ -98,7 +98,7 @@ def test_missing_parts_is_a_programming_error_not_a_silent_collision():
 def test_migration_heads_reports_a_single_head():
     heads = facts.migration_heads(VERSIONS_DIR)
     assert len(heads) == 1, f"migration chain must stay linear, got heads: {heads}"
-    assert heads == ("0049_runtime_schema_alignment",)
+    assert heads == ("0062_drop_pcap_artifacts",)
 
 
 def test_annotated_revisions_are_parsed():

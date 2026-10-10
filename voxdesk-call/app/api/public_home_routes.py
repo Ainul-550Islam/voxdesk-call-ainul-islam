@@ -33,6 +33,7 @@ def _audit(event: str, **kwargs: Any) -> None:
         log.info(event, **kwargs)
     except Exception:
         # Public page telemetry is best-effort and is not an authorization control.
+        __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
         return
 
 

@@ -1,0 +1,27 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/workflow/test_durable_persistence.py::test_concurrent_duplicate_requests_create_one_execution tests/workflow/test_durable_persistence.py::test_checkpoint_recovery_resumes_at_persisted_node tests/workflow/test_durable_persistence.py::test_approval_resume_uses_persisted_checkpoint tests/workflow/test_durable_persistence.py::test_nonterminal_path_is_not_reported_as_completed tests/workflow/test_durable_persistence.py::test_cycle_is_persisted_as_timed_out
+.....                                                                    [100%]
+=============================== warnings summary ===============================
+tests/workflow/test_durable_persistence.py::test_concurrent_duplicate_requests_create_one_execution
+tests/workflow/test_durable_persistence.py::test_checkpoint_recovery_resumes_at_persisted_node
+tests/workflow/test_durable_persistence.py::test_approval_resume_uses_persisted_checkpoint
+tests/workflow/test_durable_persistence.py::test_nonterminal_path_is_not_reported_as_completed
+tests/workflow/test_durable_persistence.py::test_cycle_is_persisted_as_timed_out
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/workflow/test_durable_persistence.py: 55 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/workflow/test_durable_persistence.py::test_concurrent_duplicate_requests_create_one_execution
+tests/workflow/test_durable_persistence.py::test_checkpoint_recovery_resumes_at_persisted_node
+tests/workflow/test_durable_persistence.py::test_approval_resume_uses_persisted_checkpoint
+tests/workflow/test_durable_persistence.py::test_nonterminal_path_is_not_reported_as_completed
+tests/workflow/test_durable_persistence.py::test_cycle_is_persisted_as_timed_out
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+5 passed, 65 warnings in 3.92s
+
+STDERR:

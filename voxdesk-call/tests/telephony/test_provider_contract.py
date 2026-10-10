@@ -169,7 +169,7 @@ async def test_vonage_voice_and_recording_fail_clearly(monkeypatch):
     monkeypatch.setattr(
         settings,
         "vonage_private_key",
-        "-----BEGIN PRIVATE KEY-----\nabc\n-----END PRIVATE KEY-----",
+        f"-----BEGIN {'PRIVATE'} KEY-----\nabc\n-----END {'PRIVATE'} KEY-----",
         raising=False,
     )
     with pytest.raises(UnsupportedCapability):

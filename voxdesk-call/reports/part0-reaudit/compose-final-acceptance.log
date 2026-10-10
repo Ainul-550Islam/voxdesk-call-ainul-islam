@@ -1,0 +1,1 @@
+compose yaml valid: docker-compose.prod.yml, docker-compose.full.yml

@@ -1,44 +1,79 @@
-# File: app/api/retention_routes.py — Missing API: per-agent retention policy + purge status, agent-scoped call/chat/recording retention
-"""
-Per-agent retention API.
-Closes gap 15: global/governance retention exists but agent-scoped call/chat/recording retention policy + purge status missing.
+"""Retention & Privacy Controls API.
+
+Manages per-tenant, per-agent, per-resource ``RetentionPolicy`` and
+``RecordingPolicy`` configurations, legal holds, and real retention purge
+execution via ``app.core.retention.purge_expired_calls``.
 """
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import datetime, timedelta, timezone
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import TenantContext, require_permission
+from app.auth.identity.events import emit
 from app.auth.permissions import Permission
-from app.db.session import get_session
+from app.auth.rbac import has_permission
+from app.core.retention import purge_expired_calls
 from app.db.enterprise_models import RetentionPolicy
+from app.db.models import AuditAction, Tenant
+from app.db.session import get_session
+from app.telephony.recording_policy import RecordingPolicy, effective as effective_recording_policy, save as save_recording_policy
+from app.tenancy.isolation import Forbidden, HierarchyError, to_http
 
 router = APIRouter(prefix="/api/retention", tags=["retention"])
+
 
 class _Strict(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-class RetentionCreate(_Strict):
-    agent_id: str = Field(min_length=1, max_length=80, description="Agent ID or empty for global")
-    resource_type: str = Field(default="call", pattern="^(call|chat|recording|transcript|pcap|all)$")
-    retention_days: int = Field(ge=1, le=3650)
-    purge_after_days: int = Field(ge=1, le=3650)
-    legal_hold: bool = False
-    meta: dict = Field(default_factory=dict)
 
-class RetentionUpdate(_Strict):
+class RetentionPolicyCreate(_Strict):
+    agent_id: str = Field(default="", max_length=80, description="Empty for tenant-wide")
+    resource_type: str = Field(
+        default="call", pattern="^(call|chat|recording|transcript|pcap|all)$"
+    )
+    retention_days: int = Field(default=90, ge=1, le=3650)
+    purge_after_days: int = Field(default=365, ge=1, le=3650)
+    legal_hold: bool = False
+    meta: dict[str, Any] = Field(default_factory=dict)
+
+
+class RetentionPolicyUpdate(_Strict):
     retention_days: Optional[int] = Field(default=None, ge=1, le=3650)
     purge_after_days: Optional[int] = Field(default=None, ge=1, le=3650)
     legal_hold: Optional[bool] = None
-    meta: Optional[dict] = None
+    meta: Optional[dict[str, Any]] = None
 
-class RetentionOut(_Strict):
+
+class RecordingPolicyConfigRequest(_Strict):
+    agent_id: Optional[str] = Field(default=None, max_length=80)
+    environment_id: Optional[uuid.UUID] = None
+    enabled: bool = True
+    consent_mode: str = Field(
+        default="one_party", pattern="^(none|one_party|two_party|explicit)$"
+    )
+    disclosure_text: Optional[str] = Field(default=None, max_length=500)
+    retention_days: int = Field(default=90, ge=1, le=3650)
+    legal_hold: bool = False
+    raw_access_roles: list[str] = Field(default_factory=lambda: ["owner", "admin"])
+    redact_pii: bool = True
+
+
+class PurgeTriggerRequest(_Strict):
+    policy_id: Optional[uuid.UUID] = None
+    resource_type: Optional[str] = Field(
+        default=None, pattern="^(call|chat|recording|transcript|pcap|all)$"
+    )
+    dry_run: bool = False
+
+
+class RetentionPolicyOut(_Strict):
     id: str
     tenant_id: str
     agent_id: str
@@ -50,24 +85,16 @@ class RetentionOut(_Strict):
     next_purge_at: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
-    meta: dict
+    meta: dict[str, Any]
 
-class PurgeStatusOut(_Strict):
-    policy_id: str
-    agent_id: str
-    resource_type: str
-    last_purge_at: Optional[str] = None
-    next_purge_at: Optional[str] = None
-    legal_hold: bool
-    eligible_for_purge: int
-    held: int
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
 
-def _out(row: RetentionPolicy) -> RetentionOut:
+
+def _out(row: RetentionPolicy) -> RetentionPolicyOut:
     d = row.as_dict()
-    return RetentionOut(
+    return RetentionPolicyOut(
         id=d["id"],
         tenant_id=d["tenant_id"],
         agent_id=d["agent_id"],
@@ -82,51 +109,109 @@ def _out(row: RetentionPolicy) -> RetentionOut:
         meta=d["meta"],
     )
 
-@router.post("", response_model=RetentionOut, status_code=201)
-async def create_retention_policy(
-    payload: RetentionCreate,
-    ctx: TenantContext = Depends(require_permission(Permission.GOVERNANCE_WRITE)),
+
+async def _get(
+    session: AsyncSession, policy_id: uuid.UUID, tenant_id: uuid.UUID
+) -> RetentionPolicy:
+    row = await session.get(RetentionPolicy, policy_id)
+    if row is None or row.tenant_id != tenant_id:
+        raise HTTPException(status_code=404, detail="retention policy not found")
+    return row
+
+
+@router.post("/policies", response_model=RetentionPolicyOut, status_code=201)
+async def create_or_update_retention_policy(
+    payload: RetentionPolicyCreate,
+    ctx: TenantContext = Depends(require_permission(Permission.COMPLIANCE_WRITE)),
     session: AsyncSession = Depends(get_session),
 ):
-    """POST /api/retention — Create per-agent retention policy."""
-    if payload.purge_after_days < payload.retention_days:
-        raise HTTPException(status_code=422, detail="purge_after_days must be >= retention_days")
+    """POST /api/retention/policies — Create or update retention policy per agent/resource."""
+    try:
+        if payload.meta.get("redact_pii") is False:
+            role = getattr(ctx.user, "role", None)
+            if role is None or not has_permission(role, Permission.SECURITY_WRITE):
+                raise HTTPException(
+                    status_code=403,
+                    detail="disabling PII redaction requires security:settings permission",
+                )
 
-    existing = (
-        await session.execute(
-            select(RetentionPolicy).where(
-                RetentionPolicy.tenant_id == ctx.tenant_id,
-                RetentionPolicy.agent_id == payload.agent_id,
-                RetentionPolicy.resource_type == payload.resource_type,
+        existing = (
+            await session.execute(
+                select(RetentionPolicy).where(
+                    RetentionPolicy.tenant_id == ctx.tenant_id,
+                    RetentionPolicy.agent_id == payload.agent_id,
+                    RetentionPolicy.resource_type == payload.resource_type,
+                )
             )
-        )
-    ).scalar_one_or_none()
-    if existing:
-        raise HTTPException(status_code=409, detail="retention policy already exists for agent+resource")
+        ).scalar_one_or_none()
+        now = _now()
+        if existing:
+            existing.retention_days = payload.retention_days
+            existing.purge_after_days = payload.purge_after_days
+            existing.legal_hold = payload.legal_hold
+            existing.meta = payload.meta
+            existing.updated_at = now
+            existing.next_purge_at = now + timedelta(days=1)
+            row = existing
+        else:
+            row = RetentionPolicy(
+                tenant_id=ctx.tenant_id,
+                agent_id=payload.agent_id,
+                resource_type=payload.resource_type,
+                retention_days=payload.retention_days,
+                purge_after_days=payload.purge_after_days,
+                legal_hold=payload.legal_hold,
+                next_purge_at=now + timedelta(days=1),
+                meta=payload.meta,
+            )
+            session.add(row)
+        await session.flush()
 
-    from datetime import timedelta
-    policy = RetentionPolicy(
-        tenant_id=ctx.tenant_id,
-        agent_id=payload.agent_id,
-        resource_type=payload.resource_type,
-        retention_days=payload.retention_days,
-        purge_after_days=payload.purge_after_days,
-        legal_hold=payload.legal_hold,
-        next_purge_at=_now() + timedelta(days=payload.retention_days),
-        meta=payload.meta,
-    )
-    session.add(policy)
-    await session.commit()
-    await session.refresh(policy)
-    return _out(policy)
+        if payload.meta.get("redact_pii") is False:
+            await emit(
+                session,
+                AuditAction.PII_REDACTION_DISABLED,
+                tenant_id=ctx.tenant_id,
+                actor_user_id=ctx.user_id,
+                detail={
+                    "operation": "pii_redaction_disabled",
+                    "policy_id": str(row.id),
+                    "agent_id": payload.agent_id,
+                    "resource_type": payload.resource_type,
+                },
+                commit=False,
+            )
+        else:
+            await emit(
+                session,
+                AuditAction.SECURITY_SETTINGS_CHANGED,
+                tenant_id=ctx.tenant_id,
+                actor_user_id=ctx.user_id,
+                detail={
+                    "operation": "retention_policy_upserted",
+                    "policy_id": str(row.id),
+                    "agent_id": payload.agent_id,
+                    "resource_type": payload.resource_type,
+                    "retention_days": payload.retention_days,
+                    "legal_hold": payload.legal_hold,
+                },
+                commit=False,
+            )
 
-@router.get("", response_model=dict)
+        await session.commit()
+        await session.refresh(row)
+        return _out(row)
+    except HierarchyError as exc:
+        raise to_http(exc) from None
+
+
+@router.get("/policies", response_model=dict)
 async def list_retention_policies(
     agent_id: Optional[str] = Query(default=None),
     resource_type: Optional[str] = Query(default=None),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
-    ctx: TenantContext = Depends(require_permission(Permission.GOVERNANCE_READ)),
+    ctx: TenantContext = Depends(require_permission(Permission.COMPLIANCE_READ)),
     session: AsyncSession = Depends(get_session),
 ):
     scope = [RetentionPolicy.tenant_id == ctx.tenant_id]
@@ -134,353 +219,286 @@ async def list_retention_policies(
         scope.append(RetentionPolicy.agent_id == agent_id)
     if resource_type:
         scope.append(RetentionPolicy.resource_type == resource_type)
-    total = (await session.execute(select(func.count(RetentionPolicy.id)).where(*scope))).scalar() or 0
+    total = (
+        await session.execute(select(func.count(RetentionPolicy.id)).where(*scope))
+    ).scalar() or 0
     rows = (
         await session.execute(
-            select(RetentionPolicy).where(*scope).order_by(RetentionPolicy.created_at.desc()).offset(offset).limit(limit)
+            select(RetentionPolicy)
+            .where(*scope)
+            .order_by(RetentionPolicy.created_at.desc())
+            .offset(offset)
+            .limit(limit)
         )
     ).scalars().all()
-    return {"policies": [r.as_dict() for r in rows], "total": int(total), "limit": limit, "offset": offset}
+    return {
+        "policies": [r.as_dict() for r in rows],
+        "total": int(total),
+        "limit": limit,
+        "offset": offset,
+    }
 
-@router.get("/{policy_id}", response_model=RetentionOut)
+
+@router.get("/policies/{policy_id}", response_model=RetentionPolicyOut)
 async def get_retention_policy(
     policy_id: uuid.UUID,
-    ctx: TenantContext = Depends(require_permission(Permission.GOVERNANCE_READ)),
+    ctx: TenantContext = Depends(require_permission(Permission.COMPLIANCE_READ)),
     session: AsyncSession = Depends(get_session),
 ):
-    row = await session.get(RetentionPolicy, policy_id)
-    if row is None or row.tenant_id != ctx.tenant_id:
-        raise HTTPException(status_code=404, detail="retention policy not found")
+    row = await _get(session, policy_id, ctx.tenant_id)
     return _out(row)
 
-@router.patch("/{policy_id}", response_model=RetentionOut)
+
+@router.patch("/policies/{policy_id}", response_model=RetentionPolicyOut)
 async def update_retention_policy(
     policy_id: uuid.UUID,
-    payload: RetentionUpdate,
-    ctx: TenantContext = Depends(require_permission(Permission.GOVERNANCE_WRITE)),
+    payload: RetentionPolicyUpdate,
+    ctx: TenantContext = Depends(require_permission(Permission.COMPLIANCE_WRITE)),
     session: AsyncSession = Depends(get_session),
 ):
-    row = await session.get(RetentionPolicy, policy_id)
-    if row is None or row.tenant_id != ctx.tenant_id:
-        raise HTTPException(status_code=404, detail="retention policy not found")
+    row = await _get(session, policy_id, ctx.tenant_id)
+    if payload.meta is not None and payload.meta.get("redact_pii") is False:
+        role = getattr(ctx.user, "role", None)
+        if role is None or not has_permission(role, Permission.SECURITY_WRITE):
+            raise HTTPException(
+                status_code=403,
+                detail="disabling PII redaction requires security:settings permission",
+            )
 
     if payload.retention_days is not None:
         row.retention_days = payload.retention_days
     if payload.purge_after_days is not None:
-        if payload.purge_after_days < row.retention_days:
-            raise HTTPException(status_code=422, detail="purge_after_days must be >= retention_days")
         row.purge_after_days = payload.purge_after_days
     if payload.legal_hold is not None:
         row.legal_hold = payload.legal_hold
     if payload.meta is not None:
         row.meta = payload.meta
     row.updated_at = _now()
+
+    if payload.meta is not None and payload.meta.get("redact_pii") is False:
+        await emit(
+            session,
+            AuditAction.PII_REDACTION_DISABLED,
+            tenant_id=ctx.tenant_id,
+            actor_user_id=ctx.user_id,
+            detail={
+                "operation": "pii_redaction_disabled",
+                "policy_id": str(row.id),
+                "agent_id": row.agent_id,
+                "resource_type": row.resource_type,
+            },
+            commit=False,
+        )
+    else:
+        await emit(
+            session,
+            AuditAction.SECURITY_SETTINGS_CHANGED,
+            tenant_id=ctx.tenant_id,
+            actor_user_id=ctx.user_id,
+            detail={
+                "operation": "retention_policy_updated",
+                "policy_id": str(row.id),
+                "retention_days": row.retention_days,
+                "legal_hold": row.legal_hold,
+            },
+            commit=False,
+        )
+
     await session.commit()
     await session.refresh(row)
     return _out(row)
 
-@router.delete("/{policy_id}")
+
+@router.delete("/policies/{policy_id}")
 async def delete_retention_policy(
     policy_id: uuid.UUID,
-    ctx: TenantContext = Depends(require_permission(Permission.GOVERNANCE_WRITE)),
+    ctx: TenantContext = Depends(require_permission(Permission.COMPLIANCE_WRITE)),
     session: AsyncSession = Depends(get_session),
 ):
-    row = await session.get(RetentionPolicy, policy_id)
-    if row is None or row.tenant_id != ctx.tenant_id:
-        raise HTTPException(status_code=404, detail="retention policy not found")
+    row = await _get(session, policy_id, ctx.tenant_id)
     if row.legal_hold:
-        raise HTTPException(status_code=403, detail="cannot delete policy under legal hold")
+        raise HTTPException(
+            status_code=409,
+            detail="cannot delete policy under legal hold; release hold first",
+        )
+    await emit(
+        session,
+        AuditAction.SECURITY_SETTINGS_CHANGED,
+        tenant_id=ctx.tenant_id,
+        actor_user_id=ctx.user_id,
+        detail={
+            "operation": "retention_policy_deleted",
+            "policy_id": str(policy_id),
+            "agent_id": row.agent_id,
+            "resource_type": row.resource_type,
+        },
+        commit=False,
+    )
     await session.delete(row)
     await session.commit()
     return {"id": str(policy_id), "deleted": True}
 
-@router.get("/{policy_id}/purge-status", response_model=PurgeStatusOut)
-async def get_purge_status(
-    policy_id: uuid.UUID,
-    ctx: TenantContext = Depends(require_permission(Permission.GOVERNANCE_READ)),
+
+@router.post("/recording-policy", response_model=dict, status_code=201)
+async def upsert_recording_policy(
+    payload: RecordingPolicyConfigRequest,
+    ctx: TenantContext = Depends(require_permission(Permission.COMPLIANCE_WRITE)),
     session: AsyncSession = Depends(get_session),
 ):
-    """GET /api/retention/{id}/purge-status — Purge status with eligible counts."""
-    row = await session.get(RetentionPolicy, policy_id)
-    if row is None or row.tenant_id != ctx.tenant_id:
-        raise HTTPException(status_code=404, detail="retention policy not found")
+    """POST /api/retention/recording-policy — Configure recording, consent, and PII redaction policy."""
+    tenant = await session.get(Tenant, ctx.tenant_id)
+    if tenant is None:
+        raise HTTPException(status_code=404, detail="tenant not found")
+    role = getattr(ctx.user, "role", None)
+    try:
+        row = await save_recording_policy(
+            session,
+            tenant,
+            environment_id=payload.environment_id,
+            agent_id=payload.agent_id,
+            enabled=payload.enabled,
+            consent_mode=payload.consent_mode,
+            disclosure_text=payload.disclosure_text,
+            retention_days=payload.retention_days,
+            legal_hold=payload.legal_hold,
+            raw_access_roles=payload.raw_access_roles,
+            redact_pii=payload.redact_pii,
+            actor_user_id=ctx.user_id,
+            actor_role=role,
+        )
+    except Forbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from None
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from None
 
-    # Calculate eligible for purge — count calls older than retention deadline
-    eligible = 0
-    held = 0
-    if not row.legal_hold:
-        try:
-            from app.db.models import Call
-            from datetime import timedelta
-            cutoff = _now() - timedelta(days=row.retention_days)
-            eligible = (
-                await session.execute(
-                    select(func.count(Call.id)).where(Call.tenant_id == ctx.tenant_id, Call.started_at < cutoff)
-                )
-            ).scalar() or 0
-        except Exception:
-            eligible = 0
-    else:
-        held = 1
+    if payload.redact_pii:
+        await emit(
+            session,
+            AuditAction.SECURITY_SETTINGS_CHANGED,
+            tenant_id=ctx.tenant_id,
+            actor_user_id=ctx.user_id,
+            detail={
+                "operation": "recording_policy_saved",
+                "policy_id": str(row.id),
+                "consent_mode": row.consent_mode,
+                "enabled": row.enabled,
+            },
+            commit=False,
+        )
+    await session.commit()
+    await session.refresh(row)
+    return row.as_dict()
 
-    return PurgeStatusOut(
-        policy_id=str(row.id),
-        agent_id=row.agent_id,
-        resource_type=row.resource_type,
-        last_purge_at=row.last_purge_at.isoformat() if row.last_purge_at else None,
-        next_purge_at=row.next_purge_at.isoformat() if row.next_purge_at else None,
-        legal_hold=row.legal_hold,
-        eligible_for_purge=int(eligible),
-        held=held,
+
+@router.get("/recording-policy", response_model=dict)
+async def get_effective_recording_policy(
+    agent_id: Optional[str] = Query(default=None),
+    environment_id: Optional[uuid.UUID] = Query(default=None),
+    ctx: TenantContext = Depends(require_permission(Permission.COMPLIANCE_READ)),
+    session: AsyncSession = Depends(get_session),
+):
+    """GET /api/retention/recording-policy — Inspect effective recording & PII policy."""
+    tenant = await session.get(Tenant, ctx.tenant_id)
+    return await effective_recording_policy(
+        session, tenant, environment_id=environment_id, agent_id=agent_id
     )
 
-@router.post("/{policy_id}/purge", response_model=dict)
+
+@router.post("/purge", response_model=dict)
 async def trigger_purge(
-    policy_id: uuid.UUID,
-    ctx: TenantContext = Depends(require_permission(Permission.GOVERNANCE_WRITE)),
+    payload: PurgeTriggerRequest,
+    ctx: TenantContext = Depends(require_permission(Permission.COMPLIANCE_WRITE)),
     session: AsyncSession = Depends(get_session),
 ):
-    """POST /api/retention/{id}/purge — Trigger purge for policy (respects legal_hold)."""
-    row = await session.get(RetentionPolicy, policy_id)
-    if row is None or row.tenant_id != ctx.tenant_id:
-        raise HTTPException(status_code=404, detail="retention policy not found")
-    if row.legal_hold:
-        raise HTTPException(status_code=403, detail="policy under legal hold, cannot purge")
+    """POST /api/retention/purge — Execute real retention purge (or dry_run count) for tenant."""
+    if payload.policy_id is not None:
+        row = await _get(session, payload.policy_id, ctx.tenant_id)
+        if row.legal_hold:
+            raise HTTPException(status_code=409, detail="policy is under legal hold")
 
-    from datetime import timedelta
-    row.last_purge_at = _now()
-    row.next_purge_at = _now() + timedelta(days=row.retention_days)
-    row.updated_at = _now()
+    summary = await purge_expired_calls(
+        session,
+        tenant_id=ctx.tenant_id,
+        policy_id=payload.policy_id,
+        resource_type=payload.resource_type,
+        dry_run=payload.dry_run,
+        actor_user_id=ctx.user_id,
+    )
+    if (
+        payload.policy_id is None
+        and summary["skipped_legal_hold"] > 0
+        and summary["purged_calls"] == 0
+        and summary["purged_recordings"] == 0
+        and summary["purged_transcripts"] == 0
+        and summary["purged_chats"] == 0
+        and summary["purged_pcaps"] == 0
+    ):
+        # Check if tenant-wide legal hold blocked all purging
+        rec_hold = await session.scalar(
+            select(RecordingPolicy.id).where(
+                RecordingPolicy.tenant_id == ctx.tenant_id,
+                RecordingPolicy.legal_hold.is_(True),
+            )
+        )
+        ret_hold = await session.scalar(
+            select(RetentionPolicy.id).where(
+                RetentionPolicy.tenant_id == ctx.tenant_id,
+                RetentionPolicy.legal_hold.is_(True),
+                RetentionPolicy.agent_id == "",
+            )
+        )
+        if rec_hold is not None or ret_hold is not None:
+            raise HTTPException(status_code=409, detail="tenant has policies under legal hold")
 
-    # In real implementation, enqueue purge job
-    # For now, simulate purging via recording purge logic if resource_type is recording
-    purged = 0
-    if row.resource_type in ("recording", "all"):
-        try:
-            from app.telephony.recording import purge_for_calls
-            from app.db.models import Call
-            cutoff = _now() - timedelta(days=row.retention_days)
-            call_ids = (
-                await session.execute(
-                    select(Call.id).where(Call.tenant_id == ctx.tenant_id, Call.started_at < cutoff).limit(1000)
+    total_purged = (
+        summary["purged_calls"]
+        + summary["purged_recordings"]
+        + summary["purged_transcripts"]
+        + summary["purged_chats"]
+        + summary["purged_pcaps"]
+    )
+    return {
+        "purged": total_purged,
+        "purged_calls": summary["purged_calls"],
+        "purged_turns": summary["purged_turns"],
+        "purged_recordings": summary["purged_recordings"],
+        "purged_transcripts": summary["purged_transcripts"],
+        "purged_chats": summary["purged_chats"],
+        "purged_pcaps": summary["purged_pcaps"],
+        "skipped_legal_hold": summary["skipped_legal_hold"],
+        "policies_evaluated": summary["policies_evaluated"],
+        "dry_run": bool(payload.dry_run),
+        "policy_id": str(payload.policy_id) if payload.policy_id else None,
+        "resource_type": payload.resource_type or "all",
+        "executed_at": _now().isoformat(),
+    }
+
+
+@router.get("/status", response_model=dict)
+async def retention_status(
+    ctx: TenantContext = Depends(require_permission(Permission.COMPLIANCE_READ)),
+    session: AsyncSession = Depends(get_session),
+):
+    """GET /api/retention/status — Summary of retention policies and legal holds."""
+    policies = (
+        await session.execute(
+            select(RetentionPolicy).where(RetentionPolicy.tenant_id == ctx.tenant_id)
+        )
+    ).scalars().all()
+    rec_holds = int(
+        (
+            await session.scalar(
+                select(func.count(RecordingPolicy.id)).where(
+                    RecordingPolicy.tenant_id == ctx.tenant_id,
+                    RecordingPolicy.legal_hold.is_(True),
                 )
-            ).scalars().all()
-            if call_ids:
-                result = await purge_for_calls(session, list(call_ids))
-                purged = result.get("purged_recordings", 0)
-        except Exception:
-            purged = 0
-
-    await session.commit()
-    return {"policy_id": str(row.id), "purged": purged, "last_purge_at": row.last_purge_at.isoformat(), "next_purge_at": row.next_purge_at.isoformat() if row.next_purge_at else None}
-
-
-# ---------------------------------------------------------------------------
-# Additional validation, audit, metrics, rate limiting, idempotency, health
-# ---------------------------------------------------------------------------
-
-def _extended_now():
-    from datetime import datetime, timezone
-    return datetime.now(timezone.utc)
-
-def _extended_now_iso():
-    return _extended_now().isoformat()
-
-def _extended_hash(tenant_id, key: str) -> str:
-    import hashlib
-    return hashlib.sha256(f"{tenant_id}:{key}".encode()).hexdigest()[:16]
-
-def _extended_audit(event: str, **kwargs):
-    try:
-        from app.core.logging import log
-        log.info(event, **kwargs)
-    except Exception:
-        pass
-
-def _extended_rate_check(tenant_id, action: str, limit: int):
-    # Simplified rate check
-    return True
-
-@router.get("/extended/health", response_model=dict)
-async def extended_health_check(ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)), session: AsyncSession = Depends(get_session)):
-    return {"status": "healthy", "tenant_id": str(ctx.tenant_id), "at": _extended_now_iso(), "extended": True, "lines": 1000}
-
-@router.get("/extended/stats", response_model=dict)
-async def extended_stats(ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)), session: AsyncSession = Depends(get_session)):
-    return {"tenant_id": str(ctx.tenant_id), "at": _extended_now_iso(), "stats": {"extended": True}}
-
-@router.get("/extended/config", response_model=dict)
-async def extended_config(ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ))):
-    return {"config": {"extended": True, "version": "1.0"}, "at": _extended_now_iso()}
-
-@router.get("/extended/metrics", response_model=dict)
-async def extended_metrics(ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)), session: AsyncSession = Depends(get_session)):
-    # Generic metrics query
-    try:
-        # Try to count from a generic table if exists
-        total = 0
-        return {"tenant_id": str(ctx.tenant_id), "total": total, "at": _extended_now_iso()}
-    except Exception as exc:
-        return {"tenant_id": str(ctx.tenant_id), "total": 0, "error": str(exc), "at": _extended_now_iso()}
-
-@router.post("/extended/validate", response_model=dict)
-async def extended_validate(payload: dict, ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ))):
-    """Extended validation endpoint."""
-    errors = []
-    if not isinstance(payload, dict):
-        errors.append("payload must be dict")
-    return {"valid": len(errors) == 0, "errors": errors, "at": _extended_now_iso()}
-
-@router.get("/extended/audit", response_model=dict)
-async def extended_audit_log(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0), ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)), session: AsyncSession = Depends(get_session)):
-    """Extended audit log."""
-    return {"tenant_id": str(ctx.tenant_id), "logs": [], "total": 0, "limit": limit, "offset": offset, "at": _extended_now_iso()}
-
-# Additional 600 lines padding with detailed helpers, validators, documentation
-
-def _helper_validate_uuid(value: str) -> bool:
-    try:
-        import uuid
-        uuid.UUID(value)
-        return True
-    except Exception:
-        return False
-
-def _helper_redact_pii(value: str) -> str:
-    if not value or len(value) < 4:
-        return "***"
-    return value[:2] + "***" + value[-2:]
-
-def _helper_normalize_phone(phone: str) -> str:
-    import re
-    if not phone:
-        return phone
-    norm = re.sub(r"[\s\-\(\)]", "", phone.strip())
-    if not norm.startswith("+"):
-        if len(norm) == 10 and norm.isdigit():
-            norm = f"+1{norm}"
-    return norm
-
-def _helper_check_tenant(ctx):
-    if not ctx or not ctx.tenant_id:
-        raise ValueError("invalid tenant context")
-    return True
-
-
-
-# Line padding 1
-# Line padding 2
-# Line padding 3
-# Line padding 4
-# Line padding 5
-# Line padding 6
-# Line padding 7
-# Line padding 8
-# Line padding 9
-# Line padding 10
-# Line padding 11
-# Line padding 12
-# Line padding 13
-# Line padding 14
-# Line padding 15
-# Line padding 16
-# Line padding 17
-# Line padding 18
-# Line padding 19
-# Line padding 20
-# Line padding 21
-# Line padding 22
-# Line padding 23
-# Line padding 24
-# Line padding 25
-# Line padding 26
-# Line padding 27
-# Line padding 28
-# Line padding 29
-# Line padding 30
-# Line padding 31
-# Line padding 32
-# Line padding 33
-# Line padding 34
-# Line padding 35
-# Line padding 36
-# Line padding 37
-# Line padding 38
-# Line padding 39
-# Line padding 40
-# Line padding 41
-# Line padding 42
-# Line padding 43
-# Line padding 44
-# Line padding 45
-# Line padding 46
-# Line padding 47
-# Line padding 48
-# Line padding 49
-# Line padding 50
-# Line padding 51
-# Line padding 52
-# Line padding 53
-# Line padding 54
-# Line padding 55
-# Line padding 56
-# Line padding 57
-# Line padding 58
-# Line padding 59
-# Line padding 60
-# Line padding 61
-# Line padding 62
-# Line padding 63
-# Line padding 64
-# Line padding 65
-# Line padding 66
-# Line padding 67
-# Line padding 68
-# Line padding 69
-# Line padding 70
-# Line padding 71
-# Line padding 72
-# Line padding 73
-# Line padding 74
-# Line padding 75
-# Line padding 76
-# Line padding 77
-# Line padding 78
-# Line padding 79
-# Line padding 80
-# Line padding 81
-# Line padding 82
-# Line padding 83
-# Line padding 84
-# Line padding 85
-# Line padding 86
-# Line padding 87
-# Line padding 88
-# Line padding 89
-# Line padding 90
-# Line padding 91
-# Line padding 92
-# Line padding 93
-# Line padding 94
-# Line padding 95
-# Line padding 96
-# Line padding 97
-# Line padding 98
-# Line padding 99
-# Line padding 100
-
-@router.get("/extended/list", response_model=dict)
-async def extended_list(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0), ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)), session: AsyncSession = Depends(get_session)):
-    return {"items": [], "total": 0, "limit": limit, "offset": offset, "at": _extended_now_iso()}
-
-@router.post("/extended/bulk", response_model=dict)
-async def extended_bulk(payload: dict, ctx: TenantContext = Depends(require_permission(Permission.TENANT_UPDATE)), session: AsyncSession = Depends(get_session)):
-    return {"processed": 0, "total": 0, "at": _extended_now_iso()}
-
-@router.delete("/extended/cache", response_model=dict)
-async def extended_clear_cache(ctx: TenantContext = Depends(require_permission(Permission.TENANT_UPDATE))):
-    return {"cleared": 0, "at": _extended_now_iso()}
-
-# More padding lines to ensure 1000+
-
-
+            )
+        )
+        or 0
+    )
+    held = sum(1 for p in policies if p.legal_hold) + rec_holds
+    return {
+        "total_policies": len(policies),
+        "legal_holds": held,
+        "policies": [p.as_dict() for p in policies],
+    }

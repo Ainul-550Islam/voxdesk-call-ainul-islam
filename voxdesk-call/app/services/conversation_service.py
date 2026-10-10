@@ -127,10 +127,13 @@ async def append_turn(
     latency_ms: float | None = None,
 ) -> Turn:
     """Append one transcript turn. Fails on cross-tenant call ids."""
+    from app.telephony.transcription import redact_turn_text
+
     _ensure_owned(call, tenant.id)
     if not text or len(text) > 8_000:
         raise BadRequestError("turn text must be 1–8000 characters")
-    turn = Turn(call_id=call.id, speaker=speaker, text=text, latency_ms=latency_ms)
+    clean_text = await redact_turn_text(session, call, text)
+    turn = Turn(call_id=call.id, speaker=speaker, text=clean_text, latency_ms=latency_ms)
     session.add(turn)
     await session.commit()
     await session.refresh(turn)

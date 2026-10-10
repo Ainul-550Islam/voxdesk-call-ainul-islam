@@ -1,0 +1,155 @@
+Traceback (most recent call last):
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/reports/part1/final-1a/verify_migration.py", line 85, in <module>
+    asyncio.run(main())
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.cache/python/cpython-3.12.15-linux-x86_64-gnu/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.cache/python/cpython-3.12.15-linux-x86_64-gnu/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.cache/python/cpython-3.12.15-linux-x86_64-gnu/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/reports/part1/final-1a/verify_migration.py", line 55, in main
+    alembic("migration-seeded-upgrade.log", "upgrade", "head")
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/reports/part1/final-1a/verify_migration.py", line 27, in alembic
+    assert (run.returncode == 0) == success, run.stdout + run.stderr
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade 0049_runtime_schema_alignment -> 0050_unify_webhooks, Unify webhook storage; preserve legacy records in sealed quarantine.
+Traceback (most recent call last):
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 534, in _prepare_and_execute
+    self._rows = deque(await prepared_stmt.fetch(*parameters))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/asyncpg/prepared_stmt.py", line 176, in fetch
+    data = await self.__bind_execute(args, 0, timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/asyncpg/prepared_stmt.py", line 267, in __bind_execute
+    data, status, _ = await self.__do_execute(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/asyncpg/prepared_stmt.py", line 256, in __do_execute
+    return await executor(protocol)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncpg/protocol/protocol.pyx", line 206, in bind_execute
+asyncpg.exceptions.NotNullViolationError: null value in column "updated_at" of relation "outbox_events" violates not-null constraint
+DETAIL:  Failing row contains (c1596e73-d6b3-5041-a708-57f57db0e563, 1bb1550c-1203-4ec2-beb4-856e9cde27b6, null, webhook.legacy_quarantine, 1, webhook_subscription, 9137cfeb-b243-40ed-af8a-4a25dbb53e0e, {"legacy_delivery_id": "d31693a5-4b11-4c5a-984a-29be984116d7", "..., dead_letter, 0, 8, 0, 2026-10-07 04:15:00.169211+00, null, legacy_unverified, Historical delivery requires review, legacy-webhook:d31693a5-4b11-4c5a-984a-29be984116d7, 2026-10-07 04:14:55.736667+00, null).
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 941, in do_execute
+    cursor.execute(statement, parameters)
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 568, in execute
+    self._adapt_connection.await_(
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 132, in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 196, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 546, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 497, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 780, in _handle_exception
+    raise translated_error from error
+sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.IntegrityError: <class 'asyncpg.exceptions.NotNullViolationError'>: null value in column "updated_at" of relation "outbox_events" violates not-null constraint
+DETAIL:  Failing row contains (c1596e73-d6b3-5041-a708-57f57db0e563, 1bb1550c-1203-4ec2-beb4-856e9cde27b6, null, webhook.legacy_quarantine, 1, webhook_subscription, 9137cfeb-b243-40ed-af8a-4a25dbb53e0e, {"legacy_delivery_id": "d31693a5-4b11-4c5a-984a-29be984116d7", "..., dead_letter, 0, 8, 0, 2026-10-07 04:15:00.169211+00, null, legacy_unverified, Historical delivery requires review, legacy-webhook:d31693a5-4b11-4c5a-984a-29be984116d7, 2026-10-07 04:14:55.736667+00, null).
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/alembic", line 10, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/alembic/config.py", line 636, in main
+    CommandLine(prog=prog).main(argv=argv)
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/alembic/config.py", line 626, in main
+    self.run_cmd(cfg, options)
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/alembic/config.py", line 603, in run_cmd
+    fn(
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/alembic/command.py", line 406, in upgrade
+    script.run_env()
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/alembic/script/base.py", line 586, in run_env
+    util.load_python_file(self.dir, "env.py")
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/alembic/util/pyfiles.py", line 95, in load_python_file
+    module = load_module_py(module_id, path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/alembic/util/pyfiles.py", line 113, in load_module_py
+    spec.loader.exec_module(module)  # type: ignore
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/alembic/env.py", line 68, in <module>
+    run_migrations_online()
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/alembic/env.py", line 62, in run_migrations_online
+    asyncio.run(run_async_migrations())
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.cache/python/cpython-3.12.15-linux-x86_64-gnu/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.cache/python/cpython-3.12.15-linux-x86_64-gnu/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.cache/python/cpython-3.12.15-linux-x86_64-gnu/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/alembic/env.py", line 57, in run_async_migrations
+    await connection.run_sync(do_run_migrations)
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/ext/asyncio/engine.py", line 886, in run_sync
+    return await greenlet_spawn(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 203, in greenlet_spawn
+    result = context.switch(value)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/alembic/env.py", line 47, in do_run_migrations
+    context.run_migrations()
+  File "<string>", line 8, in run_migrations
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/alembic/runtime/environment.py", line 946, in run_migrations
+    self.get_context().run_migrations(**kw)
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/alembic/runtime/migration.py", line 623, in run_migrations
+    step.migration_fn(**kw)
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/alembic/versions/0050_unify_webhooks.py", line 111, in upgrade
+    bind.execute(outbox.insert().values(
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1418, in execute
+    return meth(
+           ^^^^^
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 515, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1640, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2355, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 941, in do_execute
+    cursor.execute(statement, parameters)
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 568, in execute
+    self._adapt_connection.await_(
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 132, in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 196, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 546, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 497, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 780, in _handle_exception
+    raise translated_error from error
+sqlalchemy.exc.IntegrityError: (sqlalchemy.dialects.postgresql.asyncpg.IntegrityError) <class 'asyncpg.exceptions.NotNullViolationError'>: null value in column "updated_at" of relation "outbox_events" violates not-null constraint
+DETAIL:  Failing row contains (c1596e73-d6b3-5041-a708-57f57db0e563, 1bb1550c-1203-4ec2-beb4-856e9cde27b6, null, webhook.legacy_quarantine, 1, webhook_subscription, 9137cfeb-b243-40ed-af8a-4a25dbb53e0e, {"legacy_delivery_id": "d31693a5-4b11-4c5a-984a-29be984116d7", "..., dead_letter, 0, 8, 0, 2026-10-07 04:15:00.169211+00, null, legacy_unverified, Historical delivery requires review, legacy-webhook:d31693a5-4b11-4c5a-984a-29be984116d7, 2026-10-07 04:14:55.736667+00, null).
+[SQL: INSERT INTO outbox_events (id, tenant_id, environment_id, event_type, event_version, aggregate_type, aggregate_id, payload, status, attempt_count, max_attempts, replay_count, available_at, delivered_at, last_error_category, last_error, idempotency_key, created_at) VALUES ($1::UUID, $2::UUID, $3::UUID, $4::VARCHAR, $5::INTEGER, $6::VARCHAR, $7::VARCHAR, $8::JSON, $9::VARCHAR, $10::INTEGER, $11::INTEGER, $12::INTEGER, $13::TIMESTAMP WITH TIME ZONE, $14::TIMESTAMP WITH TIME ZONE, $15::VARCHAR, $16::VARCHAR, $17::VARCHAR, $18::TIMESTAMP WITH TIME ZONE)]
+[parameters: (UUID('c1596e73-d6b3-5041-a708-57f57db0e563'), UUID('1bb1550c-1203-4ec2-beb4-856e9cde27b6'), None, 'webhook.legacy_quarantine', 1, 'webhook_subscription', '9137cfeb-b243-40ed-af8a-4a25dbb53e0e', '{"legacy_delivery_id": "d31693a5-4b11-4c5a-984a-29be984116d7", "requires_review": true}', 'dead_letter', 0, 8, 0, datetime.datetime(2026, 10, 7, 4, 15, 0, 169211, tzinfo=datetime.timezone.utc), None, 'legacy_unverified', 'Historical delivery requires review', 'legacy-webhook:d31693a5-4b11-4c5a-984a-29be984116d7', datetime.datetime(2026, 10, 7, 4, 14, 55, 736667, tzinfo=datetime.timezone.utc))]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+

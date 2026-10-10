@@ -1,0 +1,20 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_calendar_providers.py::TestGoogleServiceAccountProvider::test_a_missing_calendar_id_is_a_config_error tests/test_call_state.py::test_legal_transitions_are_applied[ringing-in_progress] tests/test_call_state.py::test_legal_transitions_are_applied[ringing-no_answer] tests/test_call_state.py::test_legal_transitions_are_applied[ringing-failed] tests/test_call_state.py::test_legal_transitions_are_applied[ringing-cancelled]
+.....                                                                    [100%]
+=============================== warnings summary ===============================
+tests/test_call_state.py::test_legal_transitions_are_applied[ringing-in_progress]
+tests/test_call_state.py::test_legal_transitions_are_applied[ringing-no_answer]
+tests/test_call_state.py::test_legal_transitions_are_applied[ringing-failed]
+tests/test_call_state.py::test_legal_transitions_are_applied[ringing-cancelled]
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/test_call_state.py:27: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    started_at=datetime.utcnow(),
+
+tests/test_call_state.py::test_legal_transitions_are_applied[ringing-no_answer]
+tests/test_call_state.py::test_legal_transitions_are_applied[ringing-failed]
+tests/test_call_state.py::test_legal_transitions_are_applied[ringing-cancelled]
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/call_state.py:260: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call.ended_at = ended_at or datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+5 passed, 7 warnings in 0.15s
+
+STDERR:

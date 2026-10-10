@@ -1,0 +1,160 @@
+[2m2026-10-07T01:24:46.801011Z[0m [[32m[1minfo     [0m] [1mdashboard.not_built           [0m [36mcanonical[0m=[35mdashboard (Vite)[0m [36mdist_dir[0m=[35m/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/dist[0m [36mshadow_next_present[0m=[35mFalse[0m
+/api/calls/extended/health
+--- 
+
++++ 
+
+@@ -1,6 +1,5 @@
+
+ {
+   "get": {
+-    "description": "Extended health check for 1000+ lines compliance.",
+     "operationId": "extended_health_check_api_calls_extended_health_get",
+     "responses": {
+       "200": {
+/api/phone-numbers/extended/health
+--- 
+
++++ 
+
+@@ -1,6 +1,5 @@
+
+ {
+   "get": {
+-    "description": "Extended health check for 1000+ lines compliance.",
+     "operationId": "extended_health_check_api_phone_numbers_extended_health_get",
+     "responses": {
+       "200": {
+/api/recordings/extended/health
+--- 
+
++++ 
+
+@@ -1,6 +1,5 @@
+
+ {
+   "get": {
+-    "description": "Extended health check for 1000+ lines compliance.",
+     "operationId": "extended_health_check_api_recordings_extended_health_get",
+     "responses": {
+       "200": {
+/api/analysis/extended/health
+--- 
+
++++ 
+
+@@ -1,6 +1,5 @@
+
+ {
+   "get": {
+-    "description": "Extended health check for 1000+ lines compliance.",
+     "operationId": "extended_health_check_api_analysis_extended_health_get",
+     "responses": {
+       "200": {
+/api/pcap/extended/health
+--- 
+
++++ 
+
+@@ -1,6 +1,5 @@
+
+ {
+   "get": {
+-    "description": "Extended health check for 1000+ lines compliance.",
+     "operationId": "extended_health_check_api_pcap_extended_health_get",
+     "responses": {
+       "200": {
+/api/retention/extended/health
+--- 
+
++++ 
+
+@@ -1,6 +1,5 @@
+
+ {
+   "get": {
+-    "description": "Extended health check for 1000+ lines compliance.",
+     "operationId": "extended_health_check_api_retention_extended_health_get",
+     "responses": {
+       "200": {
+/api/crm/extended/health
+--- 
+
++++ 
+
+@@ -1,6 +1,5 @@
+
+ {
+   "get": {
+-    "description": "Extended health check for 1000+ lines compliance.",
+     "operationId": "extended_health_check_api_crm_extended_health_get",
+     "responses": {
+       "200": {
+/api/kb/extended/health
+--- 
+
++++ 
+
+@@ -1,6 +1,5 @@
+
+ {
+   "get": {
+-    "description": "Extended health check for 1000+ lines compliance.",
+     "operationId": "extended_health_check_api_kb_extended_health_get",
+     "responses": {
+       "200": {
+/api/agents/extended/health
+--- 
+
++++ 
+
+@@ -1,6 +1,5 @@
+
+ {
+   "get": {
+-    "description": "Extended health check for 1000+ lines compliance.",
+     "operationId": "extended_health_check_api_agents_extended_health_get",
+     "responses": {
+       "200": {
+/api/workflows/extended/health
+--- 
+
++++ 
+
+@@ -1,6 +1,5 @@
+
+ {
+   "get": {
+-    "description": "Extended health check for 1000+ lines compliance.",
+     "operationId": "extended_health_check_api_workflows_extended_health_get",
+     "responses": {
+       "200": {
+/api/channels/extended/health
+--- 
+
++++ 
+
+@@ -1,6 +1,5 @@
+
+ {
+   "get": {
+-    "description": "Extended health check for 1000+ lines compliance.",
+     "operationId": "extended_health_check_api_channels_extended_health_get",
+     "responses": {
+       "200": {
+/api/calls/export/stream
+--- 
+
++++ 
+
+@@ -20,7 +20,7 @@
+
+         "name": "fields",
+         "required": false,
+         "schema": {
+-          "default": "created_at,recording_url,outcome,call_sid,status,provider,duration_seconds,lead_id,campaign_id,agent_id,metadata,transcript_excerpt,direction,id,cost_cents,started_at,transfer_state,ended_at,from_number,to_number",
++          "default": "transfer_state,direction,cost_cents,metadata,status,recording_url,id,ended_at,created_at,lead_id,provider,from_number,started_at,call_sid,transcript_excerpt,agent_id,duration_seconds,campaign_id,outcome,to_number",
+           "description": "Comma-separated field list",
+           "title": "Fields",
+           "type": "string"
+ROUTES 1210 REMOVED_PATHS 459 CHANGED 12

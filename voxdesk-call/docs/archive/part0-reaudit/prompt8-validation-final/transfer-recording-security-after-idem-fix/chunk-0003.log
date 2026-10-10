@@ -1,0 +1,136 @@
+$ /usr/local/bin/python -m pytest -q tests/telephony/test_recording.py::test_other_tenant_cannot_change_policy tests/telephony/test_recording.py::test_missing_provider_id_and_callback_duplicate tests/telephony/test_recording.py::test_retention_deletes_recording_unless_held tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+....                                                                     [100%]
+=============================== warnings summary ===============================
+tests/telephony/test_recording.py::test_other_tenant_cannot_change_policy
+tests/telephony/test_recording.py::test_other_tenant_cannot_change_policy
+tests/telephony/test_recording.py::test_missing_provider_id_and_callback_duplicate
+tests/telephony/test_recording.py::test_retention_deletes_recording_unless_held
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/telephony/test_recording.py: 4 warnings
+tests/test_telephony_runtime_e2e.py: 22 warnings
+  /usr/local/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/telephony/test_recording.py::test_other_tenant_cannot_change_policy
+tests/telephony/test_recording.py::test_other_tenant_cannot_change_policy
+tests/telephony/test_recording.py::test_missing_provider_id_and_callback_duplicate
+tests/telephony/test_recording.py::test_retention_deletes_recording_unless_held
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/telephony/test_recording.py::test_missing_provider_id_and_callback_duplicate
+tests/telephony/test_recording.py::test_retention_deletes_recording_unless_held
+tests/telephony/test_recording.py::test_retention_deletes_recording_unless_held
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/conftest.py:569: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "started_at": datetime.utcnow(),
+
+tests/telephony/test_recording.py::test_retention_deletes_recording_unless_held
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/telephony/test_recording.py:148: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call.started_at = datetime.utcnow() - timedelta(days=400)
+
+tests/telephony/test_recording.py::test_retention_deletes_recording_unless_held
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/telephony/test_recording.py:160: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call2.started_at = datetime.utcnow() - timedelta(days=400)
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /usr/local/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/runtime.py:401: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/runtime.py:478: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    occurred_at=datetime.utcnow(),
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/call_session.py:331: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = occurred_at or datetime.utcnow()
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  <string>:16: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  <string>:17: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/call_session.py:204: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    ts = (occurred_at or datetime.utcnow()).isoformat()
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/call_session.py:237: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "timestamp": (occurred_at or datetime.utcnow()).isoformat(),
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/media_gateway.py:174: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    session.last_activity_at = datetime.utcnow()
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/media_gateway.py:198: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    session.last_activity_at = datetime.utcnow()
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/media_gateway.py:142: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    session.last_activity_at = datetime.utcnow()
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/dtmf.py:94: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/transfer.py:278: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/transfer.py:345: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    occurred_at=datetime.utcnow(),
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/transfer.py:401: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    completed_at=datetime.utcnow(),
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/transfer.py:405: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    completed_at = datetime.utcnow()
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/runtime.py:575: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/media_gateway.py:215: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    session.closed_at = datetime.utcnow()
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/runtime.py:601: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    occurred_at=datetime.utcnow(),
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/telephony_usage.py:113: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    recorded_at=datetime.utcnow(),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+4 passed, 74 warnings in 60.58s (0:01:00)
+
+STDERR:

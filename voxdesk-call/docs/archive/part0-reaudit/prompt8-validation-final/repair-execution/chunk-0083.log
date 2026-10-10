@@ -1,0 +1,5 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_enum_consistency.py::test_usage_event_type_migration_matches_the_model tests/test_enum_consistency.py::test_invoice_and_interval_migrations_match_the_model tests/test_enum_consistency.py::test_billing_enum_values_are_lowercase_names tests/test_enum_consistency.py::test_the_new_billing_audit_actions_are_added_by_the_migration tests/test_enum_consistency.py::test_the_step9_audit_actions_are_added_by_the_migration
+.....                                                                    [100%]
+5 passed in 0.09s
+
+STDERR:

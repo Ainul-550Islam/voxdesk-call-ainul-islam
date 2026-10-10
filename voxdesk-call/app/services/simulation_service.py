@@ -144,6 +144,14 @@ def _classify_utterance_intent(text: str) -> str:
     return "general_inquiry"
 
 
+def _classify_intent_and_tools(
+    text: str, tools: list[Any] | None = None
+) -> str:
+    """Compatibility helper returning the classified utterance intent."""
+    _ = tools
+    return _classify_utterance_intent(text)
+
+
 def _extract_configured_tools(config_snapshot: dict[str, Any]) -> list[str]:
     tools: list[str] = []
     for key in ("tools", "enabled_tools", "tool_ids"):
@@ -1310,6 +1318,29 @@ async def run_single_test_case(
         **(case.dynamic_variables or {}),
         **(dynamic_variables_override or {}),
     }
+    meta = dict(case.metadata_json or {})
+    caller_cfg = meta.get("simulated_caller")
+    if isinstance(caller_cfg, dict) and (caller_cfg.get("goal") or caller_cfg.get("persona")):
+        return await execute_simulated_caller_run(
+            session,
+            tenant_id,
+            agent_id=case.agent_id,
+            agent_version_number=target_version,
+            agent_kind=case.agent_kind,
+            suite_id=case.suite_id,
+            batch_id=batch_id,
+            test_case_id=case.id,
+            persona=str(caller_cfg.get("persona") or "Customer"),
+            goal=str(caller_cfg.get("goal") or case.name),
+            variables=merged_vars,
+            interruption_style=str(caller_cfg.get("interruption_style") or "normal"),
+            seed=caller_cfg.get("seed"),
+            max_turns=int(caller_cfg.get("max_turns") or 5),
+            success_criteria=list(caller_cfg.get("success_criteria") or []),
+            inline_rules=None,
+            allow_mock_fallback=allow_mock_fallback,
+            actor_user_id=actor_user_id,
+        )
     return await execute_pinned_simulation_run(
         session,
         tenant_id,
@@ -1546,3 +1577,515 @@ async def rerun_evaluation_only(
         actor_user_id=actor_user_id,
     )
     return await _build_run_response(session, row)
+
+
+# ------------------------------------ Simulated Caller Mode, KPIs & Evaluation Job
+
+
+async def execute_simulated_caller_run(
+    session: AsyncSession,
+    tenant_id: uuid.UUID | str,
+    *,
+    agent_id: str,
+    agent_version_number: int,
+    agent_kind: str = "voice",
+    suite_id: uuid.UUID | None = None,
+    batch_id: str | None = None,
+    test_case_id: uuid.UUID | None = None,
+    persona: str,
+    goal: str,
+    variables: dict[str, Any] | None = None,
+    interruption_style: str = "normal",
+    seed: int | None = None,
+    max_turns: int = 5,
+    success_criteria: list[str] | None = None,
+    inline_rules: list[dict[str, Any]] | None = None,
+    caller_executor: Any | None = None,
+    judge_executor: Any | None = None,
+    allow_mock_fallback: bool = False,
+    enqueue_job: bool = True,
+    actor_user_id: uuid.UUID | None = None,
+) -> TestRunResponse:
+    """Execute an LLM-simulated-caller conversation against a pinned AgentVersion.
+
+    Records every turn, judges ``goal`` + ``success_criteria`` with verdict and
+    rationale, marks ``is_mock_provider`` honestly, and optionally records a
+    ``JobType.EVALUATION`` job row in the durable job ledger.
+    """
+    from app.ai import costs
+    from app.db.models import Tenant
+    from app.db.retell_models import EvaluationResultStatusEnum
+    from app.domain.evaluation_models import EvaluationRuleType
+    from app.services.simulation_caller import SimulatedCaller
+
+    t_id = _ensure_uuid(tenant_id, "tenant_id")
+    tenant_row = await session.get(Tenant, t_id)
+    pinned = await resolve_pinned_agent_version_async(
+        session,
+        t_id,
+        agent_id,
+        agent_version_number,
+        agent_kind=agent_kind,
+    )
+    frozen_snapshot = copy.deepcopy(pinned["config_snapshot"])
+    dyn_vars = dict(variables or {})
+    caller = SimulatedCaller(
+        persona=persona,
+        goal=goal,
+        variables=dyn_vars,
+        interruption_style=interruption_style,
+        seed=seed,
+        max_turns=max_turns,
+        success_criteria=list(success_criteria or []),
+    )
+
+    now_start = _now()
+    t_perf_start = time.perf_counter()
+    correlation_id = f"simcaller-{uuid.uuid4().hex[:16]}"
+
+    run = TestRun(
+        id=uuid.uuid4(),
+        tenant_id=t_id,
+        environment_id=pinned.get("environment_id"),
+        suite_id=suite_id,
+        batch_id=batch_id,
+        test_case_id=test_case_id,
+        agent_id=str(pinned["agent_id"]),
+        agent_kind=str(pinned["agent_kind"]),
+        agent_version_id=pinned["version_id"],
+        agent_version_number=int(pinned["version_number"]),
+        agent_config_hash=str(pinned["config_hash"]),
+        pinned_config_snapshot=frozen_snapshot,
+        mode=TestRunModeEnum.SIMULATION.value,
+        status=TestRunStatusEnum.RUNNING.value,
+        is_mock_provider=False,
+        provider=str(pinned["provider"]),
+        model=str(pinned["model"]),
+        correlation_id=correlation_id,
+        transcript_snapshot=[],
+        events_snapshot=[
+            {
+                "event": "simulated_caller_started",
+                "persona": caller.persona,
+                "goal": caller.goal,
+                "interruption_style": caller.interruption_style,
+                "seed": caller.seed,
+                "timestamp": now_start.isoformat(),
+            }
+        ],
+        usage_metadata={},
+        latency_metadata={},
+        final_output={},
+        scorecard_summary={},
+        started_at=now_start,
+        created_by=actor_user_id,
+        created_at=now_start,
+        updated_at=now_start,
+    )
+    session.add(run)
+    await session.flush()
+
+    eval_job_id: str | None = None
+    if enqueue_job and tenant_row is not None and tenant_row.organization_id and pinned.get("environment_id"):
+        try:
+            job_row, _ = await enqueue_evaluation_job(
+                session,
+                tenant_id=t_id,
+                organization_id=tenant_row.organization_id,
+                environment_id=pinned["environment_id"],
+                run_id=run.id,
+            )
+            eval_job_id = str(job_row.id)
+        except Exception:
+            __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
+            eval_job_id = None
+
+    events: list[dict[str, Any]] = list(run.events_snapshot or [])
+    runtime_variables: dict[str, Any] = {}
+    turn_latencies: list[int] = []
+    total_prompt_tokens = 0
+    total_completion_tokens = 0
+    any_mock = False
+    transferred = False
+    transfer_destination: str | None = None
+    final_state = "completed"
+
+    _, greeting = _extract_system_prompt_and_greeting(frozen_snapshot)
+    last_agent_reply = ""
+    if greeting:
+        last_agent_reply = _interpolate_variables(greeting, dyn_vars)
+        caller.record_agent_turn(
+            last_agent_reply,
+            turn_index=0,
+            intent="greeting",
+            tool_calls=[],
+            latency_ms=5,
+        )
+
+    try:
+        for step_idx in range(caller.max_turns):
+            caller_turn = await caller.generate_next_turn(
+                session,
+                tenant=tenant_row,
+                agent_message=last_agent_reply,
+                turn_index=step_idx,
+                executor=caller_executor,
+                allow_mock_fallback=allow_mock_fallback,
+            )
+            if caller_turn.get("is_mock_provider"):
+                any_mock = True
+            if caller_turn.get("interrupted"):
+                events.append(
+                    {
+                        "event": "caller_interrupted_agent",
+                        "step": step_idx + 1,
+                        "interruption_style": caller.interruption_style,
+                        "timestamp": _now().isoformat(),
+                    }
+                )
+            if caller_turn.get("goal_reached") and step_idx > 0:
+                break
+
+            turn_out = await _execute_turn_against_pinned_config(
+                pinned_config=frozen_snapshot,
+                agent_name=str(pinned["name"]),
+                provider=str(pinned["provider"]),
+                model=str(pinned["model"]),
+                turn_index=len(caller.transcript),
+                user_text=caller_turn["content"],
+                conversation_history=caller.transcript[:-1],
+                dynamic_variables=dyn_vars,
+                runtime_variables=runtime_variables,
+                allow_mock_fallback=allow_mock_fallback or (caller_executor is not None),
+            )
+            last_agent_reply = turn_out["reply"]
+            caller.record_agent_turn(
+                last_agent_reply,
+                turn_index=len(caller.transcript),
+                intent=turn_out["intent"],
+                tool_calls=turn_out["tool_calls"],
+                latency_ms=turn_out["latency_ms"],
+            )
+            events.extend(turn_out["events"])
+            runtime_variables.update(turn_out["variables_delta"])
+            turn_latencies.append(turn_out["latency_ms"])
+            total_prompt_tokens += turn_out["prompt_tokens"]
+            total_completion_tokens += turn_out["completion_tokens"]
+            if turn_out["is_mock_provider"] and caller_executor is None:
+                any_mock = True
+            if turn_out["transferred"]:
+                transferred = True
+                transfer_destination = turn_out["transfer_destination"]
+            if turn_out.get("final_state"):
+                final_state = str(turn_out["final_state"])
+            if transferred:
+                break
+
+        now_done = _now()
+        duration_ms = max(1, int((time.perf_counter() - t_perf_start) * 1000))
+        sorted_lat = sorted(turn_latencies) if turn_latencies else [duration_ms]
+        p95_idx = min(len(sorted_lat) - 1, int(len(sorted_lat) * 0.95))
+
+        total_tokens = total_prompt_tokens + total_completion_tokens + caller.total_tokens
+        cost_info = costs.estimate(
+            provider=str(pinned["provider"]),
+            tokens=total_tokens if total_tokens > 0 else None,
+        )
+
+        run.is_mock_provider = any_mock
+        run.transcript_snapshot = list(caller.transcript)
+
+        judge_verdict = await caller.judge_conversation(
+            session,
+            tenant=tenant_row,
+            transcript=caller.transcript,
+            final_output={
+                "final_state": final_state,
+                "transferred": transferred,
+                "transfer_destination": transfer_destination,
+                "variables": {**dyn_vars, **runtime_variables},
+            },
+            success_criteria=caller.success_criteria,
+            executor=judge_executor or caller_executor,
+            allow_mock_fallback=allow_mock_fallback or (judge_executor is not None),
+        )
+        if judge_verdict.get("is_mock_provider") and judge_executor is None and caller_executor is None:
+            run.is_mock_provider = True
+
+        events.append(
+            {
+                "event": "simulated_caller_judged",
+                "verdict": judge_verdict["verdict"],
+                "overall_score": judge_verdict["overall_score"],
+                "timestamp": now_done.isoformat(),
+            }
+        )
+        run.events_snapshot = events
+        run.usage_metadata = {
+            "prompt_tokens": total_prompt_tokens,
+            "completion_tokens": total_completion_tokens,
+            "caller_tokens": caller.total_tokens,
+            "total_tokens": total_tokens,
+            "turn_count": len(caller.transcript),
+            "cost": cost_info,
+        }
+        run.latency_metadata = {
+            "total_duration_ms": duration_ms,
+            "avg_turn_latency_ms": round(sum(sorted_lat) / len(sorted_lat), 2),
+            "max_turn_latency_ms": max(sorted_lat),
+            "p95_ms": sorted_lat[p95_idx],
+        }
+        run.final_output = {
+            "mode": "simulated_caller",
+            "persona": caller.persona,
+            "goal": caller.goal,
+            "interruption_style": caller.interruption_style,
+            "seed": caller.seed,
+            "success_criteria": caller.success_criteria,
+            "judge_verdict": judge_verdict,
+            "final_state": final_state,
+            "transferred": transferred,
+            "transfer_destination": transfer_destination,
+            "variables": {**dyn_vars, **runtime_variables},
+            "dynamic_variables": dyn_vars,
+            "evaluation_job_id": eval_job_id,
+            "cost": cost_info,
+            "last_reply": last_agent_reply,
+        }
+        run.completed_at = now_done
+        run.duration_ms = duration_ms
+
+        await evaluate_test_run(
+            session,
+            t_id,
+            run,
+            inline_rules=inline_rules,
+            allow_mock_judge=allow_mock_fallback or (judge_executor is not None),
+            actor_user_id=actor_user_id,
+        )
+
+        # Persist each judged criterion as an EvaluationResult row so scorecards & APIs expose it
+        for idx, c_verdict in enumerate(judge_verdict.get("criteria_verdicts") or []):
+            c_passed = bool(c_verdict.get("passed"))
+            eval_row = EvaluationResult(
+                id=uuid.uuid4(),
+                tenant_id=t_id,
+                test_run_id=run.id,
+                evaluation_rule_id=None,
+                rule_name=f"Criterion {idx + 1}: {str(c_verdict.get('criterion'))[:140]}",
+                rule_type=EvaluationRuleType.LLM_JUDGE.value,
+                status=(
+                    EvaluationResultStatusEnum.PASSED.value
+                    if c_passed
+                    else EvaluationResultStatusEnum.FAILED_ASSERTION.value
+                ),
+                score=1.0 if c_passed else 0.0,
+                weight=1.0,
+                evidence={
+                    "criterion": c_verdict.get("criterion"),
+                    "judge_rationale": c_verdict.get("rationale"),
+                    "judge_provider": judge_verdict.get("judge_provider"),
+                    "judge_model": judge_verdict.get("judge_model"),
+                    "is_mock_judge": bool(judge_verdict.get("is_mock_provider")),
+                    "seed": caller.seed,
+                },
+                explanation=str(c_verdict.get("rationale") or ""),
+                evaluator_version="v1.0",
+                formula_version="weighted_v1",
+                created_at=now_done,
+            )
+            session.add(eval_row)
+
+        summary = dict(run.scorecard_summary or {})
+        summary["judge_verdict"] = judge_verdict["verdict"]
+        summary["judge_rationale"] = judge_verdict["rationale"]
+        summary["criteria_verdicts"] = judge_verdict["criteria_verdicts"]
+        summary["is_mock_provider"] = bool(run.is_mock_provider)
+        summary["kpi_eligible"] = not bool(run.is_mock_provider)
+        if not judge_verdict["passed"]:
+            run.status = TestRunStatusEnum.FAILED.value
+            summary["status"] = "FAILED_ASSERTION"
+            summary["overall_score"] = judge_verdict["overall_score"]
+            summary["explanation"] = judge_verdict["rationale"]
+        elif run.status in (TestRunStatusEnum.RUNNING.value, TestRunStatusEnum.PASSED.value):
+            run.status = TestRunStatusEnum.PASSED.value
+            summary["status"] = "PASSED"
+            if summary.get("overall_score") is None:
+                summary["overall_score"] = judge_verdict["overall_score"]
+            summary["explanation"] = judge_verdict["rationale"]
+        run.scorecard_summary = summary
+        await session.flush()
+
+    except Exception as exc:
+        now_err = _now()
+        duration_ms = max(1, int((time.perf_counter() - t_perf_start) * 1000))
+        err_msg = str(exc)
+        err_code = (
+            "PROVIDER_NOT_CONFIGURED"
+            if "PROVIDER_NOT_CONFIGURED" in err_msg
+            else "RUNTIME_EXECUTION_ERROR"
+        )
+        run.status = TestRunStatusEnum.ERROR.value
+        run.error_code = err_code
+        run.error_message = err_msg
+        run.transcript_snapshot = list(caller.transcript)
+        run.completed_at = now_err
+        run.duration_ms = duration_ms
+        run.scorecard_summary = {
+            "status": "EVALUATION_ERROR",
+            "overall_score": None,
+            "explanation": f"Simulated caller run failed ({err_code}): {err_msg}",
+            "evaluated_at": now_err.isoformat(),
+        }
+        await session.flush()
+
+    await _audit(
+        session,
+        tenant_id=t_id,
+        actor_user_id=actor_user_id,
+        event="test_run.simulated_caller_executed",
+        resource_id=str(run.id),
+        detail={
+            "agent_id": run.agent_id,
+            "agent_version_number": run.agent_version_number,
+            "persona": caller.persona,
+            "goal": caller.goal,
+            "seed": caller.seed,
+            "status": run.status,
+            "is_mock_provider": run.is_mock_provider,
+        },
+    )
+    return await _build_run_response(session, run)
+
+
+async def compute_simulation_kpis(
+    session: AsyncSession,
+    tenant_id: uuid.UUID | str,
+    *,
+    suite_id: uuid.UUID | str | None = None,
+    agent_id: str | None = None,
+) -> dict[str, Any]:
+    """Compute simulation pass-rate and KPIs, strictly excluding mocked provider runs."""
+    t_id = _ensure_uuid(tenant_id, "tenant_id")
+    stmt = select(TestRun).where(TestRun.tenant_id == t_id)
+    if suite_id is not None:
+        stmt = stmt.where(TestRun.suite_id == _ensure_uuid(suite_id, "suite_id"))
+    if agent_id is not None:
+        stmt = stmt.where(TestRun.agent_id == str(agent_id))
+    all_runs = list((await session.execute(stmt)).scalars().all())
+
+    mock_runs = [r for r in all_runs if bool(r.is_mock_provider)]
+    real_runs = [r for r in all_runs if not bool(r.is_mock_provider)]
+    terminal_real = [
+        r
+        for r in real_runs
+        if r.status
+        in (
+            TestRunStatusEnum.PASSED.value,
+            TestRunStatusEnum.FAILED.value,
+            TestRunStatusEnum.ERROR.value,
+        )
+    ]
+    passed_real = [r for r in terminal_real if r.status == TestRunStatusEnum.PASSED.value]
+    failed_real = [r for r in terminal_real if r.status == TestRunStatusEnum.FAILED.value]
+    error_real = [r for r in terminal_real if r.status == TestRunStatusEnum.ERROR.value]
+
+    pass_rate = (
+        round((len(passed_real) / len(terminal_real)) * 100.0, 2)
+        if terminal_real
+        else None
+    )
+    scores = [
+        float((r.scorecard_summary or {}).get("overall_score"))
+        for r in terminal_real
+        if isinstance(r.scorecard_summary, dict)
+        and (r.scorecard_summary or {}).get("overall_score") is not None
+    ]
+    avg_score = round(sum(scores) / len(scores), 2) if scores else None
+    durations = [int(r.duration_ms) for r in terminal_real if r.duration_ms is not None]
+    avg_duration_ms = round(sum(durations) / len(durations), 2) if durations else None
+
+    return {
+        "tenant_id": str(t_id),
+        "total_runs": len(all_runs),
+        "mock_runs_excluded": len(mock_runs),
+        "kpi_eligible_runs": len(terminal_real),
+        "passed_count": len(passed_real),
+        "failed_count": len(failed_real),
+        "error_count": len(error_real),
+        "pass_rate": pass_rate,
+        "average_score": avg_score,
+        "avg_duration_ms": avg_duration_ms,
+    }
+
+
+async def enqueue_evaluation_job(
+    session: AsyncSession,
+    *,
+    tenant_id: uuid.UUID,
+    organization_id: uuid.UUID,
+    environment_id: uuid.UUID,
+    run_id: uuid.UUID,
+    idempotency_key: str | None = None,
+):
+    """Enqueue a simulation/evaluation job on the durable job queue (JobType.EVALUATION)."""
+    from app.jobs.queue import enqueue
+    from app.jobs.types import JobType
+
+    key = idempotency_key or f"eval-run:{run_id}"
+    payload = {
+        "tenant_id": str(tenant_id),
+        "organization_id": str(organization_id),
+        "environment_id": str(environment_id),
+        "run_id": str(run_id),
+    }
+    return await enqueue(
+        session,
+        tenant_id=tenant_id,
+        organization_id=organization_id,
+        environment_id=environment_id,
+        job_type=JobType.EVALUATION,
+        idempotency_key=key,
+        payload=payload,
+        max_attempts=3,
+    )
+
+
+from app.jobs.types import ExecutionResult, JobType, register_handler  # noqa: E402
+
+
+@register_handler(JobType.EVALUATION)
+async def handle_evaluation_job(job) -> ExecutionResult:
+    """Registered handler for ``JobType.EVALUATION`` durable jobs."""
+    from app.db.rls import set_tenant_context
+    from app.db.session import get_sessionmaker
+    from app.jobs.models import PermanentJobError
+
+    payload = dict(job.payload or {})
+    run_id_raw = payload.get("run_id")
+    if not run_id_raw:
+        raise PermanentJobError("evaluation_missing_run_id", "Job payload is missing run_id")
+    run_uuid = _ensure_uuid(run_id_raw, "run_id")
+
+    maker = get_sessionmaker()
+    async with maker() as session:
+        await set_tenant_context(session, job.tenant_id)
+        run = await session.get(TestRun, run_uuid)
+        if run is None or run.tenant_id != job.tenant_id:
+            raise PermanentJobError("evaluation_run_not_found", "TestRun not found in job tenant scope")
+        if run.status in (
+            TestRunStatusEnum.PASSED.value,
+            TestRunStatusEnum.FAILED.value,
+            TestRunStatusEnum.CANCELLED.value,
+        ):
+            return ExecutionResult.ok("TestRun evaluation already completed")
+        await evaluate_test_run(
+            session,
+            job.tenant_id,
+            run,
+            allow_mock_judge=bool(run.is_mock_provider),
+            actor_user_id=run.created_by,
+        )
+        await session.commit()
+    return ExecutionResult.ok(f"Evaluated TestRun {run_uuid}")
+

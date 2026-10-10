@@ -32,6 +32,7 @@ from app.telephony.providers.webhook_verifier import verify as verify_provider_w
 
 class TwilioAdapter(TelephonyAdapter):
     name = "twilio"
+    supports_takeover = True
 
     def configured(self) -> bool:
         return bool(
@@ -124,6 +125,65 @@ class TwilioAdapter(TelephonyAdapter):
                 raise ProviderUnavailableError("Twilio SDK is not installed", provider=self.name)
             raise ProviderStateError("Twilio refused the transfer", provider=self.name)
         return CallResult(self.name, external_id, "transfer_requested", to_number=dest)
+
+    async def bridge_to(
+        self,
+        external_id: str,
+        destination: str,
+        *,
+        whisper_text: str | None = None,
+        record: bool = True,
+        conference_name: str | None = None,
+        caller_id: str | None = None,
+    ) -> CallResult:
+        """Replace the active call's TwiML (`<Dial>` / `<Conference>`) to bridge a supervisor."""
+        if not external_id or not str(external_id).strip():
+            raise ProviderValidationError("Call id is required", provider=self.name)
+        raw_dest = (destination or "").strip()
+        if not raw_dest and not conference_name:
+            raise ProviderValidationError("Supervisor destination is required", provider=self.name)
+
+        from app.telephony.provider import FakeTelephonyProvider, TwilioProvider, get_provider
+        from app.telephony.takeover import build_takeover_twiml, normalize_takeover_destination
+
+        try:
+            normalized_dest = (
+                f"conference:{conference_name}"
+                if conference_name and not raw_dest
+                else normalize_takeover_destination(raw_dest)
+            )
+        except ValueError as exc:
+            raise ProviderValidationError(str(exc), provider=self.name) from exc
+
+        twiml = build_takeover_twiml(
+            normalized_dest,
+            whisper_text=whisper_text,
+            record=record,
+            conference_name=conference_name,
+            caller_id=caller_id,
+        )
+
+        provider = get_provider()
+        if not isinstance(provider, FakeTelephonyProvider) and isinstance(provider, TwilioProvider):
+            self.require_configured()
+
+        result = await provider.redirect_call(external_id, twiml)
+        if not result.ok:
+            if result.error_code == "20404":
+                raise ProviderNotFoundError("Call is not in progress", provider=self.name)
+            if result.error_code == "sdk_missing":
+                raise ProviderUnavailableError("Twilio SDK is not installed", provider=self.name)
+            raise ProviderStateError(
+                result.error_message or "Twilio refused the takeover bridge",
+                provider=self.name,
+            )
+        return CallResult(
+            self.name,
+            external_id,
+            "bridged",
+            to_number=normalized_dest,
+            from_number=caller_id or "",
+        )
 
     async def search_numbers(self, *, country: str, limit: int = 10) -> list[NumberResult]:
         self.require_configured()

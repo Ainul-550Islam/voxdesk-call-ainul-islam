@@ -1,0 +1,5 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_tts.py::test_no_speed_warning_for_in_range_values tests/test_tts.py::test_the_warning_leaks_no_secret tests/test_tts.py::test_model_and_voice_resolution_reuses_language_options tests/test_tts.py::test_a_custom_tenant_voice_is_used tests/test_tts.py::test_the_default_voice_is_used_when_none_is_configured
+.....                                                                    [100%]
+5 passed in 1.32s
+
+STDERR:

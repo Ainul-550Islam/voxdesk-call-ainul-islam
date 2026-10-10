@@ -1,0 +1,62 @@
+python scripts/verify_no_filler.py
+[]
+python scripts/verify_no_fake_success.py
+[]
+python scripts/verify_retired_references.py
+[]
+python scripts/verify_no_null_bytes.py
+[]
+python scripts/strip_padding_markers.py --check
+{}
+python -m pytest tests/truth -q
+.........................................                                [100%]
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:295
+.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:295
+.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:295
+.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:295
+.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:295
+.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:295
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/truth/test_part0_authorized_repairs.py::test_legacy_test_creation_is_scoped_and_cannot_issue_fake_session
+tests/truth/test_part0_authorized_repairs.py::test_legacy_test_creation_is_scoped_and_cannot_issue_fake_session
+tests/truth/test_part0_authorized_repairs.py::test_dnc_and_audit_commit_together
+tests/truth/test_part0_authorized_repairs.py::test_failed_audit_cannot_commit_dnc
+tests/truth/test_part0_authorized_repairs.py::test_qms_http_unavailable_is_not_empty_success_and_is_tenant_scoped
+tests/truth/test_part0_authorized_repairs.py::test_qms_http_unavailable_is_not_empty_success_and_is_tenant_scoped
+tests/truth/test_part0_authorized_repairs.py::test_replay_does_not_manufacture_a_signed_recording_link
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/truth/test_part0_authorized_repairs.py: 31 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/truth/test_part0_authorized_repairs.py::test_legacy_test_creation_is_scoped_and_cannot_issue_fake_session
+tests/truth/test_part0_authorized_repairs.py::test_legacy_test_creation_is_scoped_and_cannot_issue_fake_session
+tests/truth/test_part0_authorized_repairs.py::test_dnc_and_audit_commit_together
+tests/truth/test_part0_authorized_repairs.py::test_failed_audit_cannot_commit_dnc
+tests/truth/test_part0_authorized_repairs.py::test_qms_http_unavailable_is_not_empty_success_and_is_tenant_scoped
+tests/truth/test_part0_authorized_repairs.py::test_qms_http_unavailable_is_not_empty_success_and_is_tenant_scoped
+tests/truth/test_part0_authorized_repairs.py::test_replay_does_not_manufacture_a_signed_recording_link
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/truth/test_part0_authorized_repairs.py::test_legacy_test_creation_is_scoped_and_cannot_issue_fake_session
+tests/truth/test_part0_authorized_repairs.py::test_legacy_test_creation_is_scoped_and_cannot_issue_fake_session
+tests/truth/test_part0_authorized_repairs.py::test_dnc_and_audit_commit_together
+tests/truth/test_part0_authorized_repairs.py::test_failed_audit_cannot_commit_dnc
+tests/truth/test_part0_authorized_repairs.py::test_qms_http_unavailable_is_not_empty_success_and_is_tenant_scoped
+tests/truth/test_part0_authorized_repairs.py::test_qms_http_unavailable_is_not_empty_success_and_is_tenant_scoped
+tests/truth/test_part0_authorized_repairs.py::test_replay_does_not_manufacture_a_signed_recording_link
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/truth/test_part0_authorized_repairs.py::test_replay_does_not_manufacture_a_signed_recording_link
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/conftest.py:569: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "started_at": datetime.utcnow(),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+41 passed, 59 warnings in 20.65s

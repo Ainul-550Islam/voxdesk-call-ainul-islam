@@ -1,0 +1,9 @@
+$ /usr/local/bin/python -m pytest --collect-only -q tests/e2e/test_calls_analytics_flow.py tests/e2e/test_live_monitor_takeover_flow.py tests/e2e/test_full_platform_e2e.py
+tests/e2e/test_calls_analytics_flow.py::test_persisted_call_transcript_replay_and_analytics_read_paths
+tests/e2e/test_live_monitor_takeover_flow.py::test_live_monitor_and_takeover_actions_are_audited_and_not_faked
+tests/e2e/test_full_platform_e2e.py::test_master_new_customer_to_simulated_call_and_truthful_cross_module_state
+tests/e2e/test_full_platform_e2e.py::test_call_pin_keeps_superseded_snapshot_and_unpinned_call_uses_persisted_pointer
+
+4 tests collected in 0.05s
+
+STDERR:

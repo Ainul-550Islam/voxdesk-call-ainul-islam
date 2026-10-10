@@ -1,0 +1,153 @@
+...F.......................................................              [100%]
+=================================== FAILURES ===================================
+_____________ test_step_failure_isolated_and_retry_skips_completed _____________
+
+db = <sqlalchemy.ext.asyncio.session.AsyncSession object at 0x7f074da4d550>
+tenant_a = <app.db.models.Tenant object at 0x7f074db68c80>
+sessionmaker_ = async_sessionmaker(class_='AsyncSession', bind=<sqlalchemy.ext.asyncio.engine.AsyncEngine object at 0x7f074d9ddb50>, autoflush=True, expire_on_commit=False)
+
+    async def test_step_failure_isolated_and_retry_skips_completed(db, tenant_a, sessionmaker_):
+        call = await prepared(db, tenant_a)
+        counts = {"summary": 0, "sentiment": 0}
+    
+        async def executor(choice, prompt, timeout_ms):
+            key = "summary" if '"summary"' in prompt else "sentiment"
+            counts[key] += 1
+            if key == "summary":
+                raise ProviderTimeoutError("sensitive text must not be saved", provider=choice.provider)
+            return await completed_executor(choice, prompt, timeout_ms)
+    
+        first = await PostCallPipeline(sessionmaker_, executor=executor).run(call.id, **scope(call, tenant_a))
+        assert not first.success and first.failure_class.value == "transient"
+        rows = await step_rows(db, call)
+        assert rows["summary"].status == "failed" and rows["summary"].retryable
+        assert rows["sentiment"].status == "completed"
+        assert rows["summary"].error == "timeout"
+        await db.rollback()
+>       second = await PostCallPipeline(sessionmaker_, executor=completed_executor).run(call.id, **scope(call, tenant_a))
+
+tests/telephony/test_post_call_pipeline.py:158: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:566: in __get__
+    return self.impl.get(state, dict_)  # type: ignore[no-any-return]
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:1086: in get
+    value = self._fire_loader_callables(state, key, passive)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/attributes.py:1116: in _fire_loader_callables
+    return state._load_expired(state, passive)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/state.py:803: in _load_expired
+    self.manager.expired_attribute_loader(self, toload, passive)
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/loading.py:1670: in load_scalar_attributes
+    result = load_on_ident(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/loading.py:509: in load_on_ident
+    return load_on_pk_identity(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/loading.py:694: in load_on_pk_identity
+    session.execute(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:2362: in execute
+    return self._execute_internal(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:2247: in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+.venv/lib/python3.12/site-packages/sqlalchemy/orm/context.py:305: in orm_execute_statement
+    result = conn.execute(
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1418: in execute
+    return meth(
+.venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py:515: in _execute_on_connection
+    return connection._execute_clauseelement(
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1640: in _execute_clauseelement
+    ret = self._execute_context(
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1846: in _execute_context
+    return self._exec_single_context(
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1986: in _exec_single_context
+    self._handle_dbapi_exception(
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:2358: in _handle_dbapi_exception
+    raise exc_info[1].with_traceback(exc_info[2])
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1967: in _exec_single_context
+    self.dialect.do_execute(
+.venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:941: in do_execute
+    cursor.execute(statement, parameters)
+.venv/lib/python3.12/site-packages/sqlalchemy/dialects/sqlite/aiosqlite.py:147: in execute
+    self._adapt_connection._handle_exception(error)
+.venv/lib/python3.12/site-packages/sqlalchemy/dialects/sqlite/aiosqlite.py:298: in _handle_exception
+    raise error
+.venv/lib/python3.12/site-packages/sqlalchemy/dialects/sqlite/aiosqlite.py:124: in execute
+    _cursor = self.await_(self._connection.cursor())
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+awaitable = <aiosqlite.context.Result object at 0x7f074d0e7590>
+
+    def await_only(awaitable: Awaitable[_T]) -> _T:
+        """Awaits an async function in a sync method.
+    
+        The sync method must be inside a :func:`greenlet_spawn` context.
+        :func:`await_only` calls cannot be nested.
+    
+        :param awaitable: The coroutine to call.
+    
+        """
+        # this is called in the context greenlet while running fn
+        current = getcurrent()
+        if not getattr(current, "__sqlalchemy_greenlet_provider__", False):
+            _safe_cancel_awaitable(awaitable)
+    
+>           raise exc.MissingGreenlet(
+                "greenlet_spawn has not been called; can't call await_only() "
+                "here. Was IO attempted in an unexpected place?"
+            )
+E           sqlalchemy.exc.MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)
+
+.venv/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py:123: MissingGreenlet
+----------------------------- Captured stdout call -----------------------------
+[2m2026-10-07T05:45:17.672089Z[0m [[31m[1merror    [0m] [1mbilling.no_plan_resolved      [0m [36mmetric[0m=[35mllm_token[0m [36mtenant_id[0m=[35m1ca4e3e0-ff93-454e-a24e-3514e9002bb8[0m
+[2m2026-10-07T05:45:17.683711Z[0m [[31m[1merror    [0m] [1mbilling.no_plan_resolved      [0m [36mmetric[0m=[35mllm_token[0m [36mtenant_id[0m=[35m1ca4e3e0-ff93-454e-a24e-3514e9002bb8[0m
+[2m2026-10-07T05:45:17.687653Z[0m [[32m[1minfo     [0m] [1mbilling.usage_recorded        [0m [36mbilling_period[0m=[35m2026-10[0m [36midempotency_key[0m=[35mllm_token:post-call:1fcbc3d1-6c1e-40b6-bf3c-2f2201e7f3e8:openai[0m [36mmetric[0m=[35mllm_token[0m [36mquantity[0m=[35m8[0m [36mtenant_id[0m=[35m1ca4e3e0-ff93-454e-a24e-3514e9002bb8[0m [36munit[0m=[35mtoken[0m
+[2m2026-10-07T05:45:17.687980Z[0m [[32m[1minfo     [0m] [1mai.governance                 [0m [36mcall_id[0m=[35m5cf2fff7-e98d-4208-bbf9-8848d03b3a53[0m [36mchannel[0m=[35masync[0m [36mcost_known[0m=[35mFalse[0m [36menvironment_id[0m=[35m5766556d-f[phone]fb-8c87c5f42969[0m [36mexecuted[0m=[35mTrue[0m [36mfallback_used[0m=[35mFalse[0m [36mguardrail[0m=[35mnone[0m [36mlatency_ms[0m=[35m4[0m [36mmodel[0m=[35mgpt-4o-mini[0m [36mprovider[0m=[35mopenai[0m [36mprovider_cost_usd[0m=[35mNone[0m [36mrequest_id[0m=[35mpost-call:1fcbc3d1-6c1e-40b6-bf3c-2f2201e7f3e8[0m [36mretry_count[0m=[35m0[0m [36mstatus[0m=[35mcompleted[0m [36mtenant_id[0m=[35m1ca4e3e0-ff93-454e-a24e-3514e9002bb8[0m [36mtokens[0m=[35m***[0m [36mtrace_id[0m=[35maa5a90c7-3a02-44b8-9294-63c102f27c88[0m
+=============================== warnings summary ===============================
+tests/telephony/test_post_call_pipeline.py: 16 warnings
+tests/webhooks/test_call_event_bridge.py: 34 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/telephony/test_post_call_pipeline.py: 47 warnings
+tests/webhooks/test_call_event_bridge.py: 104 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/telephony/test_post_call_pipeline.py: 16 warnings
+tests/webhooks/test_call_event_bridge.py: 34 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/telephony/test_post_call_pipeline.py: 13 warnings
+tests/webhooks/test_call_event_bridge.py: 30 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/conftest.py:569: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "started_at": datetime.utcnow(),
+
+tests/telephony/test_post_call_pipeline.py::test_terminal_transition_enqueues_once_in_same_transaction
+tests/telephony/test_post_call_pipeline.py::test_enqueue_failure_rolls_back_terminal_fact
+tests/telephony/test_post_call_pipeline.py::test_real_worker_governed_http_persists_output_and_usage
+tests/webhooks/test_call_event_bridge.py::test_transition_and_replay_publish_one_fact
+tests/webhooks/test_call_event_bridge.py::test_rollback_removes_event_and_state
+tests/webhooks/test_call_event_bridge.py::test_real_status_route_is_replay_safe
+tests/webhooks/test_call_event_bridge.py::test_callback_publication_failure_rolls_back_state
+tests/webhooks/test_call_event_bridge.py::test_reconciliation_uses_the_same_customer_outbox
+tests/webhooks/test_call_event_bridge.py::test_provider_callback_deduplication_cannot_expose_another_tenant
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/call_state.py:261: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call.ended_at = ended_at or datetime.utcnow()
+
+tests/webhooks/test_call_event_bridge.py::test_real_status_route_is_replay_safe
+tests/webhooks/test_call_event_bridge.py::test_real_status_route_is_replay_safe
+tests/webhooks/test_call_event_bridge.py::test_real_status_route_is_replay_safe
+tests/webhooks/test_call_event_bridge.py::test_real_status_route_is_replay_safe
+tests/webhooks/test_call_event_bridge.py::test_real_status_route_is_replay_safe
+tests/webhooks/test_call_event_bridge.py::test_real_status_route_is_replay_safe
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/webhooks/test_call_event_bridge.py::test_transfer_ringing_then_provider_failure_then_late_answer
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/transfer_service.py:472: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call.transfer_failed_at = datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /home/user/voxdesk-call-ainul-islam/voxdesk-call/reports/part1/runtime/core-initial.xml -
+=========================== short test summary info ============================
+FAILED tests/telephony/test_post_call_pipeline.py::test_step_failure_isolated_and_retry_skips_completed
+1 failed, 58 passed, 310 warnings in 35.41s

@@ -1,0 +1,56 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/auth/sso/test_oidc_redirect_validation.py::test_the_authorization_request_carries_the_connections_redirect_uri tests/auth/sso/test_oidc_redirect_validation.py::test_the_token_exchange_uses_the_same_redirect_uri tests/auth/sso/test_oidc_redirect_validation.py::test_a_caller_cannot_supply_its_own_redirect_uri tests/auth/sso/test_oidc_redirect_validation.py::test_the_default_redirect_uri_is_derived_from_the_deployment tests/auth/sso/test_oidc_redirect_validation.py::test_a_plaintext_redirect_uri_is_refused tests/auth/sso/test_oidc_redirect_validation.py::test_a_plaintext_acs_url_is_refused_for_a_saml_connection tests/auth/sso/test_oidc_redirect_validation.py::test_a_plaintext_idp_sign_on_url_is_refused tests/auth/sso/test_oidc_redirect_validation.py::test_updating_a_connection_cannot_smuggle_in_a_plaintext_redirect tests/auth/sso/test_oidc_redirect_validation.py::test_the_public_metadata_is_published_only_for_an_active_connection tests/auth/sso/test_oidc_redirect_validation.py::test_the_default_acs_url_is_derived_per_connection tests/auth/sso/test_oidc_redirect_validation.py::test_an_explicit_acs_url_is_used_exactly_as_given tests/auth/sso/test_oidc_redirect_validation.py::test_the_service_helper_and_the_route_agree tests/auth/sso/test_oidc_state_nonce.py::test_the_state_and_nonce_are_never_stored_in_the_clear tests/auth/sso/test_oidc_state_nonce.py::test_a_state_cannot_be_spent_twice tests/auth/sso/test_oidc_state_nonce.py::test_an_expired_state_is_refused tests/auth/sso/test_oidc_state_nonce.py::test_a_state_from_another_connection_cannot_be_redeemed tests/auth/sso/test_oidc_state_nonce.py::test_the_connection_binding_rule_itself tests/auth/sso/test_oidc_state_nonce.py::test_a_state_from_another_protocol_is_refused tests/auth/sso/test_oidc_state_nonce.py::test_a_missing_state_or_code_is_refused tests/auth/sso/test_oidc_state_nonce.py::test_the_pkce_verifier_is_sealed_and_matches_the_challenge tests/auth/sso/test_oidc_state_nonce.py::test_pkce_can_be_turned_off_without_losing_the_state_check tests/auth/sso/test_saml_assertion.py::test_two_assertions_in_one_response_are_refused tests/auth/sso/test_saml_assertion.py::test_an_unsigned_assertion_inside_a_signed_response_is_refused tests/auth/sso/test_saml_assertion.py::test_a_response_level_signature_is_enough_when_the_connection_allows_it tests/auth/sso/test_saml_assertion.py::test_a_signature_that_covers_the_response_is_still_refused_by_default tests/auth/sso/test_saml_assertion.py::test_a_tampered_digest_is_refused tests/auth/sso/test_saml_assertion.py::test_a_tampered_signature_value_is_refused tests/auth/sso/test_saml_assertion.py::test_a_signature_with_two_references_is_refused tests/auth/sso/test_saml_assertion.py::test_key_info_naming_an_untrusted_certificate_is_refused tests/auth/sso/test_saml_assertion.py::test_an_assertion_without_an_id_is_refused tests/auth/sso/test_saml_assertion.py::test_an_assertion_without_an_audience_is_refused tests/auth/sso/test_saml_assertion.py::test_the_signature_must_be_over_the_assertion_that_carries_the_claims tests/auth/sso/test_saml_assertion.py::test_an_assertion_that_has_been_re_signed_by_us_is_refused tests/auth/sso/test_saml_assertion.py::test_the_digest_algorithm_allow_list_is_enforced tests/auth/sso/test_saml_certificates.py::test_a_registered_certificate_is_enough_to_verify_a_real_assertion tests/auth/sso/test_saml_certificates.py::test_the_certificate_is_stored_sealed_and_not_as_pem_text tests/auth/sso/test_saml_certificates.py::test_a_certificate_cannot_be_moved_to_another_tenant tests/auth/sso/test_saml_certificates.py::test_importing_the_same_certificate_twice_is_idempotent tests/auth/sso/test_saml_certificates.py::test_a_pasted_base64_body_is_accepted_and_junk_is_refused tests/auth/sso/test_saml_certificates.py::test_a_rotation_overlap_keeps_the_old_certificate_working tests/auth/sso/test_saml_certificates.py::test_an_overlap_ends_and_the_retired_certificate_stops_working tests/auth/sso/test_saml_certificates.py::test_the_last_certificate_of_an_active_connection_cannot_be_retired tests/auth/sso/test_saml_certificates.py::test_an_expired_certificate_is_not_trusted tests/auth/sso/test_saml_certificates.py::test_the_certificate_list_reports_status_and_fingerprint tests/auth/sso/test_saml_certificates.py::test_certificate_administration_is_tenant_scoped tests/auth/sso/test_saml_certificates.py::test_retiring_a_certificate_never_touches_another_connections_trust tests/auth/sso/test_saml_certificates.py::test_an_unknown_certificate_id_is_a_404 tests/auth/sso/test_saml_certificates.py::test_the_trusted_set_is_recomputed_on_every_login tests/auth/sso/test_saml_login.py::test_a_signed_assertion_creates_a_user_and_a_session tests/auth/sso/test_saml_login.py::test_a_second_assertion_reuses_the_same_account
+..................................................                       [100%]
+=============================== warnings summary ===============================
+tests/auth/sso/test_oidc_redirect_validation.py::test_the_authorization_request_carries_the_connections_redirect_uri
+tests/auth/sso/test_oidc_redirect_validation.py::test_the_authorization_request_carries_the_connections_redirect_uri
+tests/auth/sso/test_oidc_redirect_validation.py::test_the_authorization_request_carries_the_connections_redirect_uri
+tests/auth/sso/test_oidc_redirect_validation.py::test_the_authorization_request_carries_the_connections_redirect_uri
+tests/auth/sso/test_oidc_redirect_validation.py::test_the_authorization_request_carries_the_connections_redirect_uri
+tests/auth/sso/test_oidc_redirect_validation.py::test_the_authorization_request_carries_the_connections_redirect_uri
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/auth/sso/test_oidc_redirect_validation.py: 12 warnings
+tests/auth/sso/test_oidc_state_nonce.py: 8 warnings
+tests/auth/sso/test_saml_assertion.py: 13 warnings
+tests/auth/sso/test_saml_certificates.py: 15 warnings
+tests/auth/sso/test_saml_login.py: 2 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/auth/sso/test_oidc_redirect_validation.py: 70 warnings
+tests/auth/sso/test_oidc_state_nonce.py: 54 warnings
+tests/auth/sso/test_saml_assertion.py: 69 warnings
+tests/auth/sso/test_saml_certificates.py: 123 warnings
+tests/auth/sso/test_saml_login.py: 20 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/auth/sso/test_oidc_redirect_validation.py: 12 warnings
+tests/auth/sso/test_oidc_state_nonce.py: 8 warnings
+tests/auth/sso/test_saml_assertion.py: 13 warnings
+tests/auth/sso/test_saml_certificates.py: 15 warnings
+tests/auth/sso/test_saml_login.py: 2 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/auth/sso/test_oidc_redirect_validation.py: 13 warnings
+tests/auth/sso/test_oidc_state_nonce.py: 11 warnings
+tests/auth/sso/test_saml_assertion.py: 14 warnings
+tests/auth/sso/test_saml_certificates.py: 21 warnings
+tests/auth/sso/test_saml_login.py: 4 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/auth/sso/test_oidc_redirect_validation.py: 39 warnings
+tests/auth/sso/test_oidc_state_nonce.py: 39 warnings
+tests/auth/sso/test_saml_assertion.py: 56 warnings
+tests/auth/sso/test_saml_certificates.py: 88 warnings
+tests/auth/sso/test_saml_login.py: 17 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/auth/identity/models.py:69: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+50 passed, 744 warnings in 99.88s (0:01:39)
+
+STDERR:

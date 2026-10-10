@@ -43,6 +43,8 @@ python-dotenv==1.2.2
 # canonical paths. See docs/STEP10-*.md for the compatibility matrix.
 pipecat-ai[deepgram,openai,anthropic,google,elevenlabs,silero]==0.0.94
 websockets==13.1
+soundfile==0.13.1
+noisereduce==3.0.3
 
 # ---- Telephony ----
 twilio==9.4.1
@@ -50,7 +52,7 @@ twilio==9.4.1
 # explicit rather than relying on a transitive install: the verifier must
 # fail closed when this dependency is absent, and a clean deployment must
 # still be able to verify Telnyx signatures.
-PyNaCl==1.5.0
+PyNaCl==1.6.2
 # STEP 9 (security audit): 0.0.20 has CVE-2026-24486 (multipart DoS); 0.0.22 is
 # the first patched release on the same minor line and changes no parsing
 # behaviour the Twilio form webhooks rely on.
@@ -127,7 +129,7 @@ cryptography==50.0.1
 # PDF is an untrusted-upload parser with 41 advisories fixed between 6.0.0 and
 # 6.13.0; the extractor only uses the stable PdfReader/pages/extract_text API,
 # verified by the full backend suite (including the PDF extraction tests).
-pypdf==6.16.1
+pypdf==6.20.0
 
 # `app/knowledge/storage/s3.py` imports `boto3` lazily and only when the S3
 # storage backend is selected, so the omission is invisible at boot -- but S3
@@ -175,7 +177,7 @@ bcrypt==4.2.1              # password hashing; used directly, not via passlib
 # confusion) and several signature/DoS advisories fixed in 2.12.x/2.13.0.
 # Bumped within the same major; encode/decode are called with an explicit
 # algorithm and issuer/audience, which is unchanged in 2.13.0.
-PyJWT==2.13.0              # access tokens (HS256, pinned on decode)
+PyJWT==2.15.1              # access tokens (HS256, pinned on decode)
 email-validator==2.2.0     # EmailStr validation for pydantic
 
 # --- enterprise identity (SAML 2.0) ---

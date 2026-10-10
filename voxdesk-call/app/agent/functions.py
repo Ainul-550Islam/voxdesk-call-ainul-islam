@@ -10,6 +10,24 @@ from zoneinfo import ZoneInfo
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.agent.tools.builtin_calls import (
+    END_CALL_TOOL_SCHEMA,
+    SEND_DTMF_TOOL_SCHEMA,
+    execute_end_call,
+    execute_send_dtmf,
+)
+from app.agent.tools.http_tools import (
+    build_http_tool_schemas,
+    execute_agent_http_tool,
+)
+from app.agent.tools.ivr_navigation import (
+    NAVIGATE_IVR_TOOL_SCHEMA,
+    execute_navigate_ivr,
+)
+from app.agent.tools.mcp_tools import (
+    build_mcp_tool_schemas,
+    execute_agent_mcp_tool,
+)
 from app.core.logging import log
 from app.db.models import Appointment, Call, Tenant
 from app.integrations.google_calendar import CalendarClient
@@ -69,6 +87,10 @@ TOOL_CONTRACTS = {
     # a durable note about the caller. Both write tenant-scoped rows only.
     "request_agent_transfer": {"effect": "handoff", "scope": "lead:update", "agent_runtime": True},
     "save_contact_memory": {"effect": "write", "scope": "lead:update", "agent_runtime": True},
+    # Sub-Phase 2D: built-in call control & IVR navigation tools.
+    "end_call": {"effect": "write", "scope": "call:write", "agent_runtime": True},
+    "send_dtmf": {"effect": "write", "scope": "call:write", "agent_runtime": True},
+    "navigate_ivr": {"effect": "write", "scope": "call:write", "agent_runtime": True},
 }
 
 
@@ -95,6 +117,10 @@ DISPATCHABLE_TOOLS = frozenset({
     # contact memory, both dispatched through the same allowlist.
     "request_agent_transfer",
     "save_contact_memory",
+    # Sub-Phase 2D: built-in call control & IVR navigation tools.
+    "end_call",
+    "send_dtmf",
+    "navigate_ivr",
 })
 
 TOOL_SCHEMAS = [
@@ -294,6 +320,9 @@ TOOL_SCHEMAS = [
             },
         },
     },
+    END_CALL_TOOL_SCHEMA,
+    SEND_DTMF_TOOL_SCHEMA,
+    NAVIGATE_IVR_TOOL_SCHEMA,
 ]
 
 
@@ -309,6 +338,8 @@ class FunctionHandlers:
         call: Call,
         *,
         provider=None,
+        runtime_config=None,
+        frame_pusher=None,
     ):
         self.session = session
         self.tenant = tenant
@@ -322,6 +353,8 @@ class FunctionHandlers:
         # Injectable so integration tests exercise this exact class against a
         # fake provider instead of mocking the handler out entirely.
         self.provider = provider
+        self.runtime_config = runtime_config
+        self.frame_pusher = frame_pusher
 
     # -- availability ------------------------------------------------------
     async def check_availability(self, date: str, part_of_day: str = "any") -> dict:
@@ -732,6 +765,7 @@ class FunctionHandlers:
         try:
             contact = await contact_service.get_by_phone(self.session, self.tenant, number)
         except Exception:
+            __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
             contact = None
         if contact is None:
             from app.domain.contact_models import ContactCreate, ContactSource
@@ -815,6 +849,41 @@ class FunctionHandlers:
             "message": f"Handing you over to {name} now.",
         }
 
+    # -- Sub-Phase 2D: end_call, send_dtmf, navigate_ivr -------------------
+    async def end_call(
+        self, reason: str = "completed", farewell_message: str | None = None
+    ) -> dict:
+        return await execute_end_call(
+            reason=reason,
+            farewell_message=farewell_message,
+            call=self.call,
+            call_sid=getattr(self.call, "call_sid", None),
+            telephony_provider=self.provider,
+            frame_pusher=self.frame_pusher,
+        )
+
+    async def send_dtmf(self, digits: str) -> dict:
+        return await execute_send_dtmf(
+            digits=digits,
+            call=self.call,
+            call_sid=getattr(self.call, "call_sid", None),
+            telephony_provider=self.provider,
+            frame_pusher=self.frame_pusher,
+        )
+
+    async def navigate_ivr(
+        self, ivr_prompt: str, goal: str, digits: str | None = None
+    ) -> dict:
+        return await execute_navigate_ivr(
+            ivr_prompt=ivr_prompt,
+            goal=goal,
+            digits=digits,
+            call=self.call,
+            call_sid=getattr(self.call, "call_sid", None),
+            telephony_provider=self.provider,
+            frame_pusher=self.frame_pusher,
+        )
+
     # -- tool availability -------------------------------------------------
     def available_tools(self) -> list[dict]:
         """
@@ -826,11 +895,19 @@ class FunctionHandlers:
         to promise things it cannot deliver.
         """
         if transfer_service.transfer_available(self.tenant, self.call):
-            return list(TOOL_SCHEMAS)
-        return [
-            schema for schema in TOOL_SCHEMAS
-            if schema["function"]["name"] != "escalate_to_human"
-        ]
+            base_tools = list(TOOL_SCHEMAS)
+        else:
+            base_tools = [
+                schema for schema in TOOL_SCHEMAS
+                if schema["function"]["name"] != "escalate_to_human"
+            ]
+
+        if self.runtime_config is not None:
+            custom_tools = getattr(self.runtime_config, "custom_tools", ()) or ()
+            mcp_tools = getattr(self.runtime_config, "mcp_tools", ()) or ()
+            base_tools.extend(build_http_tool_schemas(custom_tools))
+            base_tools.extend(build_mcp_tool_schemas(mcp_tools))
+        return base_tools
 
     # -- STEP 6 scheduling -------------------------------------------------
 
@@ -853,6 +930,25 @@ class FunctionHandlers:
 
     # -- dispatch ----------------------------------------------------------
     async def dispatch(self, name: str, args: dict) -> dict:
+        # Check agent-scoped HTTP and MCP tools from RuntimeConfig first (2D)
+        if self.runtime_config is not None:
+            for ctool in getattr(self.runtime_config, "custom_tools", ()) or ():
+                if ctool.get("name") == name:
+                    return await execute_agent_http_tool(
+                        tool_spec=ctool,
+                        arguments=args or {},
+                        session=self.session,
+                        tenant_id=self.tenant.id,
+                    )
+            for mtool in getattr(self.runtime_config, "mcp_tools", ()) or ():
+                if mtool.get("qualified_name") == name or mtool.get("name") == name:
+                    return await execute_agent_mcp_tool(
+                        self.session,
+                        tenant_id=self.tenant.id,
+                        tool_descriptor=mtool,
+                        arguments=args or {},
+                    )
+
         # Allowlist first (STEP 9, item N): the tool name comes from the model
         # and is never trusted to be a name we advertised. Anything else is
         # refused before any attribute lookup.

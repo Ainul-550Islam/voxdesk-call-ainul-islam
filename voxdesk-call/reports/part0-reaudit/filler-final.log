@@ -1,0 +1,9 @@
+[
+  {
+    "file": "dashboard/src/app/router.tsx",
+    "line": 0,
+    "reason": "distinct-line ratio",
+    "ratio": 0.3440366972477064,
+    "code_lines": 218
+  }
+]

@@ -1,0 +1,92 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_enterprise_batch01.py::TestCampaignService::test_execution_plan_never_dials tests/test_enterprise_batch01.py::TestCampaignService::test_progress_counts_leads tests/test_enterprise_batch01.py::TestAnalyticsService::test_aggregate_correctness tests/test_enterprise_batch01.py::TestAnalyticsService::test_tenant_isolation tests/test_enterprise_batch01.py::TestAnalyticsService::test_range_validation tests/test_enterprise_batch01.py::TestAnalyticsService::test_empty_results tests/test_enterprise_batch01.py::TestAnalyticsService::test_snapshot_has_no_pii tests/test_enterprise_batch01.py::TestAnalyticsService::test_cost_estimate_from_usage tests/test_enterprise_batch01.py::TestNotificationService::test_strict_rendering tests/test_enterprise_batch01.py::TestNotificationService::test_undeclared_variable_flagged tests/test_enterprise_batch01.py::TestNotificationService::test_preference_quiet_hours tests/test_enterprise_batch01.py::TestNotificationService::test_deduplication tests/test_enterprise_batch01.py::TestNotificationService::test_retry_backoff_advances tests/test_enterprise_batch01.py::TestNotificationService::test_in_app_delivery tests/test_enterprise_batch01.py::TestNotificationService::test_email_channel_suppressed_honestly tests/test_enterprise_batch01.py::TestInboxService::test_thread_isolation tests/test_enterprise_batch01.py::TestInboxService::test_message_ordering tests/test_enterprise_batch01.py::TestInboxService::test_read_unread tests/test_enterprise_batch01.py::TestInboxService::test_assignment tests/test_enterprise_batch01.py::TestInboxService::test_escalation tests/test_enterprise_batch01.py::TestInboxService::test_close_and_reopen_policy tests/test_enterprise_batch01.py::TestInboxService::test_reopen_window_rule tests/test_enterprise_batch01.py::TestAgentApi::test_owner_can_create_and_list tests/test_enterprise_batch01.py::TestAgentApi::test_viewer_forbidden tests/test_enterprise_batch01.py::TestAgentApi::test_mass_assignment_protected tests/test_enterprise_batch01.py::TestAgentApi::test_no_secret_leakage tests/test_enterprise_batch01.py::TestAgentApi::test_publish_flow tests/test_enterprise_batch01.py::TestWorkflowApi::test_create_and_execute tests/test_enterprise_batch01.py::TestWorkflowApi::test_approval_route_resumes_persisted_execution tests/test_enterprise_batch01.py::TestWorkflowApi::test_rejects_arbitrary_action
+.......F......................                                           [100%]
+=================================== FAILURES ===================================
+______________ TestAnalyticsService.test_cost_estimate_from_usage ______________
+
+self = <tests.test_enterprise_batch01.TestAnalyticsService object at 0x7fd99a0edae0>
+db = <sqlalchemy.ext.asyncio.session.AsyncSession object at 0x7fd998c8ce20>
+tenant_a = <app.db.models.Tenant object at 0x7fd998d8c2d0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fd99a234aa0>
+
+    async def test_cost_estimate_from_usage(self, db, tenant_a, monkeypatch):
+        from app.core.config import settings
+    
+        monkeypatch.setattr(
+            settings.__class__,
+            "cost_unit_prices",
+            property(lambda self: {"voice_minute": 1300, "sms_segment": 790}),
+        )
+        event = UsageEvent(
+            tenant_id=tenant_a.id,
+            billing_period="2026-09",
+            metric=UsageMetric.VOICE_MINUTE,
+            event_type=UsageEventType.VOICE_MINUTE_USED,
+            quantity=120,
+            unit="seconds",
+            idempotency_key="usage-test-1",
+            event_metadata={},
+        )
+        db.add(event)
+        await db.commit()
+        cost = await analytics_service.cost_kpis(
+            db, str(tenant_a.id), start=datetime(2026, 9, 1), end=datetime(2026, 10, 1)
+        )
+>       assert cost.minutes == 2.0
+E       AssertionError: assert 0.0 == 2.0
+E        +  where 0.0 = CostKpi(minutes=0.0, sms_segments=0, llm_tokens=0, estimated_cost_millicents=0, currency='USD').minutes
+
+tests/test_enterprise_batch01.py:825: AssertionError
+=============================== warnings summary ===============================
+tests/test_enterprise_batch01.py: 28 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_enterprise_batch01.py: 84 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/test_enterprise_batch01.py: 28 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_enterprise_batch01.py::TestAnalyticsService::test_aggregate_correctness
+tests/test_enterprise_batch01.py::TestAnalyticsService::test_tenant_isolation
+tests/test_enterprise_batch01.py::TestAnalyticsService::test_empty_results
+tests/test_enterprise_batch01.py::TestAnalyticsService::test_snapshot_has_no_pii
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/test_enterprise_batch01.py:186: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_enterprise_batch01.py::TestAnalyticsService::test_aggregate_correctness
+tests/test_enterprise_batch01.py::TestAnalyticsService::test_aggregate_correctness
+tests/test_enterprise_batch01.py::TestAnalyticsService::test_aggregate_correctness
+tests/test_enterprise_batch01.py::TestAnalyticsService::test_tenant_isolation
+tests/test_enterprise_batch01.py::TestAnalyticsService::test_snapshot_has_no_pii
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/conftest.py:569: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "started_at": datetime.utcnow(),
+
+tests/test_enterprise_batch01.py::TestInboxService::test_thread_isolation
+tests/test_enterprise_batch01.py::TestInboxService::test_message_ordering
+tests/test_enterprise_batch01.py::TestInboxService::test_read_unread
+tests/test_enterprise_batch01.py::TestInboxService::test_assignment
+tests/test_enterprise_batch01.py::TestInboxService::test_escalation
+tests/test_enterprise_batch01.py::TestInboxService::test_close_and_reopen_policy
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/inbox_service.py:126: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call_sid=f"inbox-{int(datetime.utcnow().timestamp()*1000)}",
+
+tests/test_enterprise_batch01.py::TestAgentApi::test_owner_can_create_and_list
+tests/test_enterprise_batch01.py::TestAgentApi::test_viewer_forbidden
+tests/test_enterprise_batch01.py::TestAgentApi::test_mass_assignment_protected
+tests/test_enterprise_batch01.py::TestAgentApi::test_no_secret_leakage
+tests/test_enterprise_batch01.py::TestAgentApi::test_publish_flow
+tests/test_enterprise_batch01.py::TestWorkflowApi::test_create_and_execute
+tests/test_enterprise_batch01.py::TestWorkflowApi::test_approval_route_resumes_persisted_execution
+tests/test_enterprise_batch01.py::TestWorkflowApi::test_rejects_arbitrary_action
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_enterprise_batch01.py::TestAnalyticsService::test_cost_estimate_from_usage
+1 failed, 29 passed, 163 warnings in 19.56s
+
+STDERR:

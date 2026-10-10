@@ -88,6 +88,8 @@ ALLOWED_VOICE_PROVIDERS: frozenset[str] = frozenset(
     {"elevenlabs", "openai", "deepgram", "cartesia", "playht", "azure", "polly", "google"}
 )
 
+ALLOWED_AGENT_MODES: frozenset[str] = frozenset({"single_prompt", "flow"})
+
 ALLOWED_TOOLS: frozenset[str] = frozenset(
     {
         "book_appointment",
@@ -98,6 +100,11 @@ ALLOWED_TOOLS: frozenset[str] = frozenset(
         "create_lead",
         "update_lead",
         "transfer_to_human",
+        "warm_transfer",
+        "end_call",
+        "send_dtmf",
+        "navigate_ivr",
+        "leave_voicemail",
         "send_sms_confirmation",
         "search_knowledge_base",
         "capture_callback",
@@ -303,6 +310,39 @@ class SafetyPolicy:
         return problems
 
 
+@dataclass(frozen=True)
+class TurnTakingConfig:
+    """Turn-taking, backchannel, idle reminder, and keyword boosting settings (Sub-Phase 2B)."""
+
+    responsiveness: float = 0.7
+    interruption_sensitivity: float = 0.7
+    enable_smart_turn: bool = True
+    enable_backchannel: bool = False
+    backchannel_frequency: float = 0.5
+    backchannel_words: tuple[str, ...] = ("yeah", "uh-huh", "got it", "mm-hmm", "okay")
+    reminder_trigger_ms: int = 10000
+    reminder_max_count: int = 2
+    boosted_keywords: tuple[tuple[str, float], ...] = ()
+
+    def validate(self) -> list[str]:
+        problems: list[str] = []
+        if not (0.0 <= self.responsiveness <= 1.0):
+            problems.append("turn_taking.responsiveness must be between 0.0 and 1.0")
+        if not (0.0 <= self.interruption_sensitivity <= 1.0):
+            problems.append("turn_taking.interruption_sensitivity must be between 0.0 and 1.0")
+        if not (0.0 <= self.backchannel_frequency <= 1.0):
+            problems.append("turn_taking.backchannel_frequency must be between 0.0 and 1.0")
+        if len(self.backchannel_words) > 25:
+            problems.append("turn_taking.backchannel_words may contain at most 25 entries")
+        if not (1000 <= self.reminder_trigger_ms <= 120_000):
+            problems.append("turn_taking.reminder_trigger_ms must be between 1000 and 120000")
+        if not (0 <= self.reminder_max_count <= 10):
+            problems.append("turn_taking.reminder_max_count must be between 0 and 10")
+        if len(self.boosted_keywords) > 100:
+            problems.append("turn_taking.boosted_keywords may contain at most 100 entries")
+        return problems
+
+
 # ---------------------------------------------------------------------------
 # Aggregate root & immutable version record
 # ---------------------------------------------------------------------------
@@ -362,10 +402,13 @@ class AgentConfig:
     operating_hours: OperatingHours = field(default_factory=OperatingHours)
     handoff: HandoffConfig = field(default_factory=HandoffConfig)
     safety: SafetyPolicy = field(default_factory=SafetyPolicy)
+    turn_taking: TurnTakingConfig = field(default_factory=TurnTakingConfig)
     enabled_tools: tuple[str, ...] = ("book_appointment", "transfer_to_human")
     knowledge_source_ids: tuple[str, ...] = ()
     metadata: dict[str, Any] = field(default_factory=dict)
     agent_id: str = ""
+    mode: str = "single_prompt"
+    flow: dict[str, Any] | None = None
 
     @property
     def id(self) -> str:
@@ -392,6 +435,7 @@ class AgentConfig:
         problems.extend(self.operating_hours.validate())
         problems.extend(self.handoff.validate())
         problems.extend(self.safety.validate())
+        problems.extend(self.turn_taking.validate())
         unknown_tools = [t for t in self.enabled_tools if t not in ALLOWED_TOOLS]
         if unknown_tools:
             problems.append(f"enabled_tools contains unsupported tools: {sorted(unknown_tools)}")
@@ -402,11 +446,33 @@ class AgentConfig:
             problems.append(
                 f"metadata must not contain credential-like keys: {sorted(secret_keys)}"
             )
+        norm_mode = (self.mode or "single_prompt").strip().lower()
+        if norm_mode not in ALLOWED_AGENT_MODES:
+            problems.append(
+                f"mode must be one of {sorted(ALLOWED_AGENT_MODES)}"
+            )
+        elif norm_mode == "flow":
+            if not self.flow or not isinstance(self.flow, dict):
+                problems.append("flow is required when mode is 'flow'")
+            else:
+                from app.builder.flow_validation import validate_flow
+
+                flow_res = validate_flow(self.flow)
+                for issue in flow_res.errors:
+                    node_ref = f" (node '{issue.node_id}')" if issue.node_id else ""
+                    problems.append(f"flow.{issue.code}{node_ref}: {issue.message}")
+        elif self.flow and isinstance(self.flow, dict) and self.flow.get("nodes"):
+            from app.builder.flow_validation import validate_flow
+
+            flow_res = validate_flow(self.flow)
+            for issue in flow_res.errors:
+                node_ref = f" (node '{issue.node_id}')" if issue.node_id else ""
+                problems.append(f"flow.{issue.code}{node_ref}: {issue.message}")
         return problems
 
     def canonical_hash(self) -> str:
         """Content hash over every behavioural field — used to detect no-op publishes."""
-        payload = {
+        payload: dict[str, Any] = {
             "name": self.name.strip(),
             "greeting": self.greeting,
             "system_prompt": self.system_prompt,
@@ -442,6 +508,9 @@ class AgentConfig:
             "enabled_tools": sorted(self.enabled_tools),
             "knowledge_source_ids": sorted(self.knowledge_source_ids),
         }
+        if self.mode != "single_prompt" or self.flow is not None:
+            payload["mode"] = self.mode
+            payload["flow"] = self.flow
         raw = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
         return hashlib.sha256(raw).hexdigest()
 
@@ -452,10 +521,11 @@ class AgentConfig:
             builder_extra = {
                 k: v for k, v in self.metadata.items() if not any(p.search(str(k)) for p in SECRET_KEY_PATTERNS)
             }
-        return {
+        snap: dict[str, Any] = {
             "id": self.id,
             "tenant_id": self.tenant_id,
             "name": self.name,
+            "mode": self.mode,
             "greeting": self.greeting,
             "system_prompt": self.system_prompt,
             "persona": self.persona,
@@ -501,10 +571,26 @@ class AgentConfig:
                 "disallowed_topics": list(self.safety.disallowed_topics),
                 "require_consent_disclosure": self.safety.require_consent_disclosure,
             },
+            "turn_taking": {
+                "responsiveness": self.turn_taking.responsiveness,
+                "interruption_sensitivity": self.turn_taking.interruption_sensitivity,
+                "enable_smart_turn": self.turn_taking.enable_smart_turn,
+                "enable_backchannel": self.turn_taking.enable_backchannel,
+                "backchannel_frequency": self.turn_taking.backchannel_frequency,
+                "backchannel_words": list(self.turn_taking.backchannel_words),
+                "reminder_trigger_ms": self.turn_taking.reminder_trigger_ms,
+                "reminder_max_count": self.turn_taking.reminder_max_count,
+                "boosted_keywords": [
+                    [str(w), float(b)] for w, b in self.turn_taking.boosted_keywords
+                ],
+            },
             "enabled_tools": list(self.enabled_tools),
             "knowledge_source_ids": list(self.knowledge_source_ids),
             "metadata": builder_extra,
         }
+        if self.flow is not None:
+            snap["flow"] = dict(self.flow)
+        return snap
 
     @classmethod
     def from_snapshot_dict(
@@ -684,6 +770,70 @@ class AgentConfig:
         knowledge_source_ids = tuple(str(k) for k in (raw_kb or ()) if k)
 
         raw_meta = dictionary_value(data.get("metadata"))
+        turn_block = block("turn_taking")
+        raw_keywords = data.get("boosted_keywords", turn_block.get("boosted_keywords", ()))
+        parsed_keywords: list[tuple[str, float]] = []
+        if isinstance(raw_keywords, (list, tuple)):
+            for item in raw_keywords:
+                if isinstance(item, (list, tuple)) and len(item) >= 2:
+                    parsed_keywords.append((str(item[0]), float(item[1])))
+                elif isinstance(item, dict) and item.get("word"):
+                    parsed_keywords.append((str(item["word"]), float(item.get("boost", 2.0))))
+                elif isinstance(item, str) and item.strip():
+                    parsed_keywords.append((item.strip(), 2.0))
+
+        raw_bc_words = data.get(
+            "backchannel_words",
+            turn_block.get(
+                "backchannel_words", ("yeah", "uh-huh", "got it", "mm-hmm", "okay")
+            ),
+        )
+        turn_cfg = TurnTakingConfig(
+            responsiveness=float(
+                data.get("responsiveness", turn_block.get("responsiveness", 0.7))
+            ),
+            interruption_sensitivity=float(
+                data.get(
+                    "interruption_sensitivity",
+                    turn_block.get("interruption_sensitivity", 0.7),
+                )
+            ),
+            enable_smart_turn=bool(
+                data.get("enable_smart_turn", turn_block.get("enable_smart_turn", True))
+            ),
+            enable_backchannel=bool(
+                data.get(
+                    "enable_backchannel", turn_block.get("enable_backchannel", False)
+                )
+            ),
+            backchannel_frequency=float(
+                data.get(
+                    "backchannel_frequency",
+                    turn_block.get("backchannel_frequency", 0.5),
+                )
+            ),
+            backchannel_words=tuple(str(w) for w in (raw_bc_words or ()) if str(w).strip()),
+            reminder_trigger_ms=int(
+                data.get(
+                    "reminder_trigger_ms",
+                    turn_block.get("reminder_trigger_ms", 10000),
+                )
+            ),
+            reminder_max_count=int(
+                data.get(
+                    "reminder_max_count",
+                    turn_block.get("reminder_max_count", 2),
+                )
+            ),
+            boosted_keywords=tuple(parsed_keywords),
+        )
+
+        raw_flow = data.get("flow")
+        flow_dict = dict(raw_flow) if isinstance(raw_flow, dict) else None
+        raw_mode = str(data.get("mode") or "single_prompt").strip().lower()
+        if raw_mode not in ALLOWED_AGENT_MODES:
+            raw_mode = "single_prompt"
+
         return cls(
             tenant_id=resolved_tenant,
             name=name,
@@ -696,10 +846,13 @@ class AgentConfig:
             operating_hours=hours_cfg,
             handoff=handoff_cfg,
             safety=safety_cfg,
+            turn_taking=turn_cfg,
             enabled_tools=enabled_tools,
             knowledge_source_ids=knowledge_source_ids,
             metadata=dict(raw_meta),
             agent_id=str(agent_id or data.get("id") or ""),
+            mode=raw_mode,
+            flow=flow_dict,
         )
 
 
@@ -774,3 +927,5 @@ class AgentProjection:
     validation_errors: tuple[dict[str, Any], ...] = ()
     archived_at: str | None = None
     created_at: str = ""
+    mode: str = "single_prompt"
+    has_flow: bool = False

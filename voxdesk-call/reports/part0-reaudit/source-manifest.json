@@ -1,0 +1,763 @@
+{
+  "task": "PART 0 specification re-audit / P0-08 generated UI cleanup",
+  "source_files": [
+    {
+      "path": "Makefile",
+      "sha256": "42eb6cc543648f09072632c1ecf8674d285d9f855ef907cb11dcc9345d41dfb5",
+      "bytes": 1721,
+      "physical_lines": 64
+    },
+    {
+      "path": "README.md",
+      "sha256": "6280f007af3179d7169ced56c04e0b2870d6797b31f7d23b6aea3d6a8aae9ab9",
+      "bytes": 1679,
+      "physical_lines": 42
+    },
+    {
+      "path": "dashboard/package-lock.json",
+      "sha256": "92dabadb9beb48343725dc7b3ec9bd6c50a24b88df2b974b3bdcc0cd392fdcaf",
+      "bytes": 113904,
+      "physical_lines": 3360
+    },
+    {
+      "path": "dashboard/package.json",
+      "sha256": "bf817f76ad70e630aa98352015069a1e56cda3164b9cb91e4d01921accdea167",
+      "bytes": 704,
+      "physical_lines": 31
+    },
+    {
+      "path": "dashboard/src/__tests__/fixtures/route-registry.json",
+      "sha256": "2ae407f85bf0cc47cd1caf2556e1fe21897c6e92cbb14c9dba7d348e8d71cc64",
+      "bytes": 28780,
+      "physical_lines": 826
+    },
+    {
+      "path": "dashboard/src/__tests__/no-generated-tails.test.ts",
+      "sha256": "dc66a2e1c89bd3fc5c5c17aaae6358d27f5db9817c51cc7bb8abbb8a4735898d",
+      "bytes": 4707,
+      "physical_lines": 96
+    },
+    {
+      "path": "dashboard/src/api/agent-test.ts",
+      "sha256": "05db4a4c86db5491757cf3531b5afa3ffb6f6a99f73142f2607b9fc1f22d4dd7",
+      "bytes": 1549,
+      "physical_lines": 15
+    },
+    {
+      "path": "dashboard/src/api/use-cases.ts",
+      "sha256": "5df715c4b3f5629d6f8c7406301e95f75fc84e243d1236740c296847e4ce549a",
+      "bytes": 8057,
+      "physical_lines": 206
+    },
+    {
+      "path": "dashboard/src/app/router.tsx",
+      "sha256": "2193c713063dffbef39f97e3b512e7b011048354d630b3ee5b3af6e0b0ab319a",
+      "bytes": 26899,
+      "physical_lines": 261
+    },
+    {
+      "path": "dashboard/src/components/use-cases/UseCaseCard.tsx",
+      "sha256": "d9cd3e231d757e39022796981f4139a0cf5a03e70b526fe149a28d5c2d211fc9",
+      "bytes": 3074,
+      "physical_lines": 63
+    },
+    {
+      "path": "dashboard/src/components/use-cases/UseCaseCategoryBadge.tsx",
+      "sha256": "8ab3718719f1f9cf195c92a029fafdf98a2b77ab16e3bd35a71d2687e03e3e3a",
+      "bytes": 2369,
+      "physical_lines": 53
+    },
+    {
+      "path": "dashboard/src/components/use-cases/UseCaseDetailSkeleton.tsx",
+      "sha256": "16a8f5f2367c2a53a406505c03fb6d854e745f458c1fac008ca32885b8e4f4e9",
+      "bytes": 894,
+      "physical_lines": 24
+    },
+    {
+      "path": "dashboard/src/components/use-cases/UseCaseEmptyState.tsx",
+      "sha256": "4f18d6d68d00d6351cfad0ad3cb129bd0a829c17615f4cf1da2cf8bbedeeb39c",
+      "bytes": 1425,
+      "physical_lines": 31
+    },
+    {
+      "path": "dashboard/src/components/use-cases/UseCaseFAQ.tsx",
+      "sha256": "c69469284b2632ce1889725f98582492cbf441e507295dd4ca7a2f0eea7d6321",
+      "bytes": 1634,
+      "physical_lines": 45
+    },
+    {
+      "path": "dashboard/src/components/use-cases/UseCaseFilterBar.tsx",
+      "sha256": "c024918f717d6686b6e3f75e0262cb08264bf4f2d6dec323c9c61b081d70445d",
+      "bytes": 1743,
+      "physical_lines": 41
+    },
+    {
+      "path": "dashboard/src/components/use-cases/UseCaseGrid.tsx",
+      "sha256": "3258b91c10ab49948e1b582c9a481f47b4f14b5bafa168ff70155dc78ec8f100",
+      "bytes": 1856,
+      "physical_lines": 49
+    },
+    {
+      "path": "dashboard/src/components/use-cases/UseCaseMetricPreview.tsx",
+      "sha256": "ed135bdaeb8cb8da7cb5f79e679bb43f6ef985ada935f44f5a87e9ef99a877b5",
+      "bytes": 990,
+      "physical_lines": 24
+    },
+    {
+      "path": "dashboard/src/components/use-cases/UseCaseProcessTimeline.tsx",
+      "sha256": "f95dbfbed9c40ad095a17f38ad7466ac71c91ceae71ee99aacdb443af3971db5",
+      "bytes": 2135,
+      "physical_lines": 46
+    },
+    {
+      "path": "dashboard/src/components/use-cases/UseCaseSearchInput.tsx",
+      "sha256": "92ee46eb0e80c41a39cd2407aaaf1ae740f349f541b34c61fb4b54fc0ac665b1",
+      "bytes": 2528,
+      "physical_lines": 62
+    },
+    {
+      "path": "dashboard/src/components/use-cases/UseCaseSkeleton.tsx",
+      "sha256": "431fb5c09d7a1b0c74a4598f7f0f4cd85a26fd5983afc53e7a5ef346ec0322c4",
+      "bytes": 1211,
+      "physical_lines": 32
+    },
+    {
+      "path": "dashboard/src/config/useCaseNavigation.ts",
+      "sha256": "63976e5cd09b03c77d91450aa98c6b993c0924a62802cf1dbfe42134e2fb72f8",
+      "bytes": 4016,
+      "physical_lines": 83
+    },
+    {
+      "path": "dashboard/src/config/useCaseRoutes.ts",
+      "sha256": "9c303c69e185aeaba57296f5439be25e29476e7ecfeeaeba2e3839a8d69e96d8",
+      "bytes": 1477,
+      "physical_lines": 53
+    },
+    {
+      "path": "dashboard/src/features/public-widget/__tests__/PublicWidget.test.tsx",
+      "sha256": "a7133591c61c3ce044b2b147888a5d8a2538784121c1b1a1e38e202921d9da15",
+      "bytes": 17239,
+      "physical_lines": 498
+    },
+    {
+      "path": "dashboard/src/hooks/useAgentTest.ts",
+      "sha256": "ec8b2f117dcb9377ea70755e8cf5c7e7415253edb0bebafd385ec9d6c4d9a216",
+      "bytes": 2393,
+      "physical_lines": 17
+    },
+    {
+      "path": "dashboard/src/hooks/useUseCaseCategories.ts",
+      "sha256": "eca4e5ee8f6a018cdeb02ac6a9e6b94ab4b55b732f6b91c996cbca1fb34f761a",
+      "bytes": 2413,
+      "physical_lines": 78
+    },
+    {
+      "path": "dashboard/src/hooks/useUseCaseDetail.ts",
+      "sha256": "d25077211e86986c690a44ee3b7afdac5caa42f5316351dff265d156e4cf33c2",
+      "bytes": 3354,
+      "physical_lines": 116
+    },
+    {
+      "path": "dashboard/src/hooks/useUseCases.ts",
+      "sha256": "970ae9fdc20bd42a0f2c084d766336d660a75a9c03eb7709b2fdca2dcb4049af",
+      "bytes": 8397,
+      "physical_lines": 232
+    },
+    {
+      "path": "dashboard/src/pages/agents/CreateAgentPage.tsx",
+      "sha256": "9160be5188e841589575e57c538d4d41841dd205c146adf75f951f17a45d90a4",
+      "bytes": 10235,
+      "physical_lines": 171
+    },
+    {
+      "path": "dashboard/src/pages/industries/IndustriesBenefits.tsx",
+      "sha256": "a38777afdd09a07be77234be841b4c1ff8977b7d78e9fe398014d28cd165364b",
+      "bytes": 1923,
+      "physical_lines": 14
+    },
+    {
+      "path": "dashboard/src/pages/industries/IndustriesCTA.tsx",
+      "sha256": "8a7bf1d634806d119a25f4a7df726730b0badea82bf5f50e55803440302c1747",
+      "bytes": 1905,
+      "physical_lines": 14
+    },
+    {
+      "path": "dashboard/src/pages/industries/IndustriesGrid.tsx",
+      "sha256": "5e13827d27198d8cf9c03ba5483635682433c98bd4ca1ba48cceee57c1703060",
+      "bytes": 1908,
+      "physical_lines": 14
+    },
+    {
+      "path": "dashboard/src/pages/industries/IndustriesHero.tsx",
+      "sha256": "824c8ae93ce8fe79fece31203b013f1a7670d607e093290ec8743728f1fe05a9",
+      "bytes": 1937,
+      "physical_lines": 14
+    },
+    {
+      "path": "dashboard/src/pages/product/answering-service/AnsweringServiceAnalytics.tsx",
+      "sha256": "36c22b49a7cfdc72e1bf7fdbbd27c5d030e59d2dd5daf47763505ed111ccdce3",
+      "bytes": 7911,
+      "physical_lines": 56
+    },
+    {
+      "path": "dashboard/src/pages/product/answering-service/AnsweringServiceBooking.tsx",
+      "sha256": "e7ce58dc4b1ca5b98ea559c657a06d0083a52f385ae075ecdc90d87b6e64303d",
+      "bytes": 7927,
+      "physical_lines": 56
+    },
+    {
+      "path": "dashboard/src/pages/product/answering-service/AnsweringServiceCRM.tsx",
+      "sha256": "70bb54af7f1ee651bfd8c4a452dbef23dda8dfa88ab118723928157d93ac47d9",
+      "bytes": 7907,
+      "physical_lines": 56
+    },
+    {
+      "path": "dashboard/src/pages/product/answering-service/AnsweringServiceCTA.tsx",
+      "sha256": "b552cc550e373308210aabf58641944cd53d6e83865860132310581929709c52",
+      "bytes": 7849,
+      "physical_lines": 56
+    },
+    {
+      "path": "dashboard/src/pages/product/answering-service/AnsweringServiceCapabilities.tsx",
+      "sha256": "7571a6dbebfc9d188e604758f1087aeed1908cba7beca520771285727eb81d90",
+      "bytes": 7955,
+      "physical_lines": 56
+    },
+    {
+      "path": "dashboard/src/pages/product/answering-service/AnsweringServiceCustomVoice.tsx",
+      "sha256": "3f45205f2015a3e1c98b9a6493f594375f65ffe8d083a065b72d84e59d415e3f",
+      "bytes": 7933,
+      "physical_lines": 56
+    },
+    {
+      "path": "dashboard/src/pages/product/answering-service/AnsweringServiceDeveloper.tsx",
+      "sha256": "4c555b75e2d20decec88c6dc3123d460fb825466996fe7c35ad3d1973687806e",
+      "bytes": 7927,
+      "physical_lines": 56
+    },
+    {
+      "path": "dashboard/src/pages/product/answering-service/AnsweringServiceFAQ.tsx",
+      "sha256": "b1f3c3b54dc535ce24ca6cf591ecb61c5e6d1699046c028d8d7e25862d255317",
+      "bytes": 7899,
+      "physical_lines": 56
+    },
+    {
+      "path": "dashboard/src/pages/product/answering-service/AnsweringServiceHero.tsx",
+      "sha256": "25925b85ff83f0d0446b056187c4693ad7f77fe555de95c3c0308da53e62ec42",
+      "bytes": 7955,
+      "physical_lines": 56
+    },
+    {
+      "path": "dashboard/src/pages/product/answering-service/AnsweringServiceLifecycle.tsx",
+      "sha256": "9ae082e60b408c9914a340247e946d6aa9c1431f05362cba7108366aa0022d50",
+      "bytes": 7867,
+      "physical_lines": 56
+    },
+    {
+      "path": "dashboard/src/pages/product/answering-service/AnsweringServiceRouting.tsx",
+      "sha256": "e667ff03c91e5655d5397b656a417fb42a36b22fb285a09155b26b42c1d27be4",
+      "bytes": 7919,
+      "physical_lines": 56
+    },
+    {
+      "path": "dashboard/src/pages/product/answering-service/AnsweringServiceSecurity.tsx",
+      "sha256": "8daf3d0593a6cb6e05ddd30bd03a3a2735497ec17857a2f1bf7ecd49711d5434",
+      "bytes": 7913,
+      "physical_lines": 56
+    },
+    {
+      "path": "dashboard/src/pages/product/appointment-setter/AppointmentSetterAnalytics.tsx",
+      "sha256": "d00f625c9112dde6cc04bfa18f599911e730230e99029d317fb75c5cbf0787e8",
+      "bytes": 7890,
+      "physical_lines": 28
+    },
+    {
+      "path": "dashboard/src/pages/product/appointment-setter/AppointmentSetterBooking.tsx",
+      "sha256": "dada44e0835b6638b80ace0188e8e97d3e9c8024f099295d15f41e5689e5bed5",
+      "bytes": 7872,
+      "physical_lines": 28
+    },
+    {
+      "path": "dashboard/src/pages/product/appointment-setter/AppointmentSetterCTA.tsx",
+      "sha256": "bf49dfd9f1997f04f61af786cb31cddbe068b20f826ca8623786d2d0ec7706d0",
+      "bytes": 7798,
+      "physical_lines": 28
+    },
+    {
+      "path": "dashboard/src/pages/product/appointment-setter/AppointmentSetterCapabilities.tsx",
+      "sha256": "fbb1a936f63c7c3a8f3bef3ea8fe824a6daeb18de99df99ce8cbca7d4f0fd570",
+      "bytes": 7910,
+      "physical_lines": 28
+    },
+    {
+      "path": "dashboard/src/pages/product/appointment-setter/AppointmentSetterDeveloper.tsx",
+      "sha256": "08e5e7d2af3b3770d6255de42f2fd1c4434ac4a5f4881d522af4d737bcef5e61",
+      "bytes": 7886,
+      "physical_lines": 28
+    },
+    {
+      "path": "dashboard/src/pages/product/appointment-setter/AppointmentSetterFAQ.tsx",
+      "sha256": "ec59440166786be9cad914b42aecda7af5d2825d50de253903a4a2badc690337",
+      "bytes": 7888,
+      "physical_lines": 28
+    },
+    {
+      "path": "dashboard/src/pages/product/appointment-setter/AppointmentSetterHero.tsx",
+      "sha256": "0c64b384223813dff9df3e79b9d062dc99eea6f6ea3e53a4a1d7c51079fe39fe",
+      "bytes": 7910,
+      "physical_lines": 28
+    },
+    {
+      "path": "dashboard/src/pages/product/appointment-setter/AppointmentSetterHowItWorks.tsx",
+      "sha256": "453c396ab02dad1b9df9f20cdb98a320eb4d55c6f8ed9294390877f5d2df4916",
+      "bytes": 7864,
+      "physical_lines": 28
+    },
+    {
+      "path": "dashboard/src/pages/product/appointment-setter/AppointmentSetterLifecycle.tsx",
+      "sha256": "b980098314bbed904e9ce5ddd5f8d77b55f1267569506a7c4751b1843e78fedf",
+      "bytes": 7814,
+      "physical_lines": 28
+    },
+    {
+      "path": "dashboard/src/pages/product/appointment-setter/AppointmentSetterQualification.tsx",
+      "sha256": "cf81621b9ff41fe6309d61bc7401844142e5f7adc4a88ac4984c4a08f2e4535e",
+      "bytes": 7890,
+      "physical_lines": 28
+    },
+    {
+      "path": "dashboard/src/pages/product/appointment-setter/AppointmentSetterReminders.tsx",
+      "sha256": "66f94ece9dbc11521cfadbdac7a5781bed18443157754af467fce21fc809e4bd",
+      "bytes": 7850,
+      "physical_lines": 28
+    },
+    {
+      "path": "dashboard/src/pages/product/appointment-setter/AppointmentSetterReschedule.tsx",
+      "sha256": "8bf8a0e31a35a8b110a7be69b7681f7df61eb0ce038a405d97eb21354856a6b1",
+      "bytes": 7888,
+      "physical_lines": 28
+    },
+    {
+      "path": "dashboard/src/pages/product/appointment-setter/AppointmentSetterSecurity.tsx",
+      "sha256": "15e7ac65cadfc3fdbf1fcc155508fe3d0bbea0555df249ae696d5148b2615d6f",
+      "bytes": 7860,
+      "physical_lines": 28
+    },
+    {
+      "path": "dashboard/src/pages/product/customer-service/CustomerServiceAnalytics.tsx",
+      "sha256": "36ef84858d2f1b7725143cf422d1f836da965db955f073606b2196d0cd0af369",
+      "bytes": 19459,
+      "physical_lines": 311
+    },
+    {
+      "path": "dashboard/src/pages/product/customer-service/CustomerServiceChannels.tsx",
+      "sha256": "0d847de303d13d07f2a1138eb030bdc56fe31b6d98af43806015d42c17577a61",
+      "bytes": 13534,
+      "physical_lines": 246
+    },
+    {
+      "path": "dashboard/src/pages/product/customer-service/CustomerServiceHandoff.tsx",
+      "sha256": "2d3e7071a661873948fd75ba10e69ad3b7db7efd54fcf65bcba8028de9c5ee4e",
+      "bytes": 9018,
+      "physical_lines": 166
+    },
+    {
+      "path": "dashboard/src/pages/product/customer-service/CustomerServiceHero.tsx",
+      "sha256": "4b8e500a68543eb0377ef250b9e46f2ed4016d1ae3a63b0aa5fe9563933dcb42",
+      "bytes": 27503,
+      "physical_lines": 254
+    },
+    {
+      "path": "dashboard/src/pages/product/customer-service/CustomerServiceKnowledge.tsx",
+      "sha256": "43fb53c45d80b0196fab034f4d16138acc9504a21506d918fcb3acee1460eb30",
+      "bytes": 11904,
+      "physical_lines": 181
+    },
+    {
+      "path": "dashboard/src/pages/product/telemarketing/TelemarketingAnalytics.tsx",
+      "sha256": "e3bd124530edcb48670cb9843cb805d5ec192cb83cdc97d8ff95f05e847df10d",
+      "bytes": 7552,
+      "physical_lines": 17
+    },
+    {
+      "path": "dashboard/src/pages/product/telemarketing/TelemarketingCRM.tsx",
+      "sha256": "a51ce528b8b13aeac585e1388807952cfac24d59bac734aa27af836754416d93",
+      "bytes": 7516,
+      "physical_lines": 17
+    },
+    {
+      "path": "dashboard/src/pages/product/telemarketing/TelemarketingCampaigns.tsx",
+      "sha256": "c4f70d370769ad9de8515346755ae6639d2eeb19a4be0838e7c808a1e2ffc3c4",
+      "bytes": 7560,
+      "physical_lines": 17
+    },
+    {
+      "path": "dashboard/src/pages/product/telemarketing/TelemarketingDeveloper.tsx",
+      "sha256": "414cb71bc0ff731455e19c13f90692b5bca85eff953371a1eaa8e28a6c1337a0",
+      "bytes": 7550,
+      "physical_lines": 17
+    },
+    {
+      "path": "dashboard/src/pages/product/telemarketing/TelemarketingFAQ.tsx",
+      "sha256": "9b256c4598136424b304796f7176bf28dbdbd2763f4778d9237e106ad647a660",
+      "bytes": 7523,
+      "physical_lines": 17
+    },
+    {
+      "path": "dashboard/src/pages/product/telemarketing/TelemarketingFollowUp.tsx",
+      "sha256": "985bff0db0452613f988cc3b2fd6a2af855a33e233a01eed5a0daeed869084fc",
+      "bytes": 7534,
+      "physical_lines": 17
+    },
+    {
+      "path": "dashboard/src/pages/product/telemarketing/TelemarketingLifecycle.tsx",
+      "sha256": "a70a82a5cb10ac0a38617be1e98e75950e724aeb03b4b97a34da076326a0641f",
+      "bytes": 7526,
+      "physical_lines": 17
+    },
+    {
+      "path": "dashboard/src/pages/product/telemarketing/TelemarketingQualification.tsx",
+      "sha256": "ff6edd0957407b15c9a7e0fa82623632871f895c11d8559f48b061f96442aa4e",
+      "bytes": 7552,
+      "physical_lines": 17
+    },
+    {
+      "path": "dashboard/src/pages/product/telemarketing/TelemarketingScheduling.tsx",
+      "sha256": "8e0b998b1d10bcea2a24270ad5556d8ccf3b1a0b4c09d85d75a2913939132020",
+      "bytes": 7545,
+      "physical_lines": 17
+    },
+    {
+      "path": "dashboard/src/pages/product/telemarketing/TelemarketingSecurity.tsx",
+      "sha256": "ddff1b5091714834a9ea154229d278058565cfba9062c7e77aef6d385f20b645",
+      "bytes": 7545,
+      "physical_lines": 17
+    },
+    {
+      "path": "dashboard/src/pages/use-cases/UseCaseCTA.tsx",
+      "sha256": "bb6858984ed7deb2fd838b3d7919bd8af21d0c8ba9ba672a35f6571963a4fff7",
+      "bytes": 1664,
+      "physical_lines": 29
+    },
+    {
+      "path": "dashboard/src/pages/use-cases/UseCaseCapabilities.tsx",
+      "sha256": "84dfa5a01451f22579331f7ff3c83c6c467ae7e201f7038d02d0806c2bafd4c4",
+      "bytes": 1875,
+      "physical_lines": 37
+    },
+    {
+      "path": "dashboard/src/pages/use-cases/UseCaseExampleCall.tsx",
+      "sha256": "1b3656779c92f325a8f0337d200f52cafb2c6cc42994a86f4b403eaf79a72b66",
+      "bytes": 2348,
+      "physical_lines": 49
+    },
+    {
+      "path": "dashboard/src/pages/use-cases/UseCaseHero.tsx",
+      "sha256": "2d9eeacf0af52740af77f5cfb3513330d5fa1323ea6934f41534433436c6b56f",
+      "bytes": 1832,
+      "physical_lines": 37
+    },
+    {
+      "path": "dashboard/src/pages/use-cases/UseCaseIntegrationPreview.tsx",
+      "sha256": "4bcd265e033a38307dcd91f63f1fd2fb15d8405353f1e17f89949beb5ff8962e",
+      "bytes": 2326,
+      "physical_lines": 45
+    },
+    {
+      "path": "dashboard/src/pages/use-cases/UseCaseWorkflow.tsx",
+      "sha256": "8947d640740d7abeb12a8901ecfa84a9c68970663d57282bd2a18bf65f8da7d0",
+      "bytes": 2421,
+      "physical_lines": 53
+    },
+    {
+      "path": "dashboard/src/pages/use-cases/UseCasesHero.tsx",
+      "sha256": "037f137dc63c6430ce9977c93d330f966f1e97d12b9f5c4399b1816d7c1a55a5",
+      "bytes": 4086,
+      "physical_lines": 61
+    },
+    {
+      "path": "dashboard/src/tests/use-case-detail.test.tsx",
+      "sha256": "cdaba538f45c2ec0d4e9370ae9113dbe5d773ce9cf7817cd1af1bdb850b2301a",
+      "bytes": 2860,
+      "physical_lines": 67
+    },
+    {
+      "path": "dashboard/src/tests/use-cases.test.tsx",
+      "sha256": "4851d70128d952fdc3daaafcabf921d1882da1db2b0cc6fb6d2e836933f60d29",
+      "bytes": 3123,
+      "physical_lines": 83
+    },
+    {
+      "path": "dashboard/src/types/agent-test.ts",
+      "sha256": "eee6759e0e53f538af3abd78209d3bee3db84dec4f49d45fe398b333e2dbceee",
+      "bytes": 1168,
+      "physical_lines": 8
+    },
+    {
+      "path": "dashboard/src/types/use-case-filter.ts",
+      "sha256": "87dcd76bc29018940873bcea9a5f31aa765fb246798e51ba81bbe3748ff7004c",
+      "bytes": 16117,
+      "physical_lines": 427
+    },
+    {
+      "path": "dashboard/src/types/use-case.ts",
+      "sha256": "92058cf92db5ad93a558a43283e59b8402a726bc52f2f7a8de1bc003c1bdfb16",
+      "bytes": 29341,
+      "physical_lines": 779
+    },
+    {
+      "path": "dashboard/tests/knowledge.test.jsx",
+      "sha256": "3310b5afca09b8b9b437f620c29080e7c9d5a0399f40872ef99fd4c769f5001d",
+      "bytes": 24253,
+      "physical_lines": 674
+    },
+    {
+      "path": "docs/archive/dashboard-static-mockups/README.md",
+      "sha256": "59a0940b75020472df1a68c5b1993f48f782186f4e82258db5be968fff0c5ffa",
+      "bytes": 623,
+      "physical_lines": 3
+    },
+    {
+      "path": "docs/archive/dashboard-static-mockups/src/pages/auth/LoginPage.html",
+      "sha256": "775dd682f90abaaf25a2c56331a46f9a10b80fa3d5aa76f29e1ad72b354e51b2",
+      "bytes": 127368,
+      "physical_lines": 1000
+    },
+    {
+      "path": "docs/archive/dashboard-static-mockups/src/pages/auth/SignupPage.html",
+      "sha256": "c34171dc7e521b3f2db8bbfaa9cb9e99ce8920d216e1ade219309bb4ab726995",
+      "bytes": 116353,
+      "physical_lines": 1000
+    },
+    {
+      "path": "docs/archive/dashboard-static-mockups/src/pages/contact/BookDemoPage.html",
+      "sha256": "2fb930897da8d928dfecf2b6c6fac48d1518d6e7f63c9993aedb033019a001fb",
+      "bytes": 120594,
+      "physical_lines": 1000
+    },
+    {
+      "path": "docs/archive/dashboard-static-mockups/src/pages/contact/ContactPage.html",
+      "sha256": "f94003cfcf7d61e3246ebb2874bdcebdd16767ca892056a2f0d5043c411ded79",
+      "bytes": 124393,
+      "physical_lines": 1000
+    },
+    {
+      "path": "docs/archive/dashboard-static-mockups/src/pages/docs/DocsPage.html",
+      "sha256": "b0a17b63a60fb84292dc06e882a2eb560216a19cbd985080b78b1b241c58ee47",
+      "bytes": 153810,
+      "physical_lines": 1000
+    },
+    {
+      "path": "docs/archive/dashboard-static-mockups/src/pages/industries/IndustriesPage.html",
+      "sha256": "e9e81128eac651224dfb2788c06e2c25c46f5b86fa4a50d9bd2bef2ff24c24e3",
+      "bytes": 113552,
+      "physical_lines": 1000
+    },
+    {
+      "path": "docs/archive/dashboard-static-mockups/src/pages/integrations/IntegrationDetailPage.html",
+      "sha256": "7cf3c3bbdd916542a0db8a28f0e4aa2ed474f606509f671365938c680750a31b",
+      "bytes": 65898,
+      "physical_lines": 1000
+    },
+    {
+      "path": "docs/archive/dashboard-static-mockups/src/pages/integrations/IntegrationsPage.html",
+      "sha256": "b25130b64e2ee5faff4763d074b54d9364c6c5089d0a810979cfef14e86cca09",
+      "bytes": 104133,
+      "physical_lines": 1000
+    },
+    {
+      "path": "docs/archive/dashboard-static-mockups/src/pages/product/answering-service/AnsweringServicePage.html",
+      "sha256": "d43f4dfd67f9d1d80df17b0b4a65eb17a70a2cba3903a07fee8789d3f6b568fc",
+      "bytes": 224007,
+      "physical_lines": 1000
+    },
+    {
+      "path": "docs/archive/dashboard-static-mockups/src/pages/product/appointment-setter/AppointmentSetterPage.html",
+      "sha256": "6985618eb3aa302ee4c569c433981ab0ac31bcfa67b1572d33e102b5dc800c8f",
+      "bytes": 193624,
+      "physical_lines": 1000
+    },
+    {
+      "path": "docs/archive/dashboard-static-mockups/src/pages/product/customer-service/CustomerServicePage.html",
+      "sha256": "5fe15ed9de65779e6a5c6b9d9ce9ffe878393cd95a79cee352df75561cbf8b82",
+      "bytes": 98561,
+      "physical_lines": 1000
+    },
+    {
+      "path": "docs/archive/dashboard-static-mockups/src/pages/product/telemarketing/TelemarketingPage.html",
+      "sha256": "614e61ff09fa944bdc270ad4c585bb86f8bfc2f7b36031e585280f8d254c13e9",
+      "bytes": 206190,
+      "physical_lines": 1000
+    },
+    {
+      "path": "docs/archive/dashboard-static-mockups/src/pages/product/voice-agents/VoiceAgentsPage.html",
+      "sha256": "02192de6d8fc776f373c0f45621871ac57e7c26cf14ba62f67f1c8e6fe9ec1ca",
+      "bytes": 142822,
+      "physical_lines": 1003
+    },
+    {
+      "path": "docs/archive/dashboard-static-mockups/src/pages/trust/TrustPage.html",
+      "sha256": "b922d18c5e5ccd00e8f3cd246211ab3db70e623bc45beb22a7cb226c53825a36",
+      "bytes": 143659,
+      "physical_lines": 1000
+    },
+    {
+      "path": "docs/archive/dashboard-static-mockups/src/pages/use-cases/UseCasesPage.html",
+      "sha256": "e9c2b0341fbc246a8ba197c5e230ec121b59d55f72b6669daa2a92f85aa089f0",
+      "bytes": 151384,
+      "physical_lines": 1003
+    },
+    {
+      "path": "scripts/generate_feature_matrix.py",
+      "sha256": "b1e5a7471490a86ec279b44ba4db4d65d11c0e8625a70d602a7666aa0ba37809",
+      "bytes": 4212,
+      "physical_lines": 96
+    },
+    {
+      "path": "scripts/repo_stats.py",
+      "sha256": "f7e0aa9a94d31c7d2c7a55393e2784a08a3dae79083c36f04048bd3f93d98a2e",
+      "bytes": 3532,
+      "physical_lines": 45
+    },
+    {
+      "path": "scripts/strip_generated_tails.mjs",
+      "sha256": "dfaf5b29883f305ab947762175fcef876876903afa07e9f4280ce45f7ebb6aaa",
+      "bytes": 4606,
+      "physical_lines": 102
+    },
+    {
+      "path": "scripts/strip_generated_tails.py",
+      "sha256": "878e47149feb2438ad3a99d648b4d637ff0c99b4f55cb32eb32e7b7b10999a06",
+      "bytes": 5930,
+      "physical_lines": 126
+    },
+    {
+      "path": "scripts/strip_padding_markers.py",
+      "sha256": "c4770936619e014f8ccf1e4d31ebe463eb9466281b34e3708504ceaecb0ba725",
+      "bytes": 2897,
+      "physical_lines": 68
+    },
+    {
+      "path": "scripts/verify_no_filler.py",
+      "sha256": "b278136c24ec8551665bb84f71e4cdd543616f9a9d5bef4e999bf5dd497d5656",
+      "bytes": 3077,
+      "physical_lines": 68
+    },
+    {
+      "path": "scripts/verify_retired_references.py",
+      "sha256": "87b155cc52a8c3362b9d5ef4352ca69be5bc41f6f454d92eb78aac9b9e862919",
+      "bytes": 2990,
+      "physical_lines": 63
+    },
+    {
+      "path": "tests/truth/routes_snapshot.json",
+      "sha256": "b1334ce6f8463b61cc417fb629534657822334bd96e790868bfbc6aeee7cf2d1",
+      "bytes": 62,
+      "physical_lines": 4
+    },
+    {
+      "path": "tests/truth/test_feature_evidence_dates.py",
+      "sha256": "4480fb8b801b6bead05333373bb69005c6eb28846b7a29015cb749e359baa78d",
+      "bytes": 1136,
+      "physical_lines": 22
+    },
+    {
+      "path": "tests/truth/test_generated_tails.py",
+      "sha256": "826ad813730d5341f07f7fc0e92d8c4ceecb50fa064916afb415895676b78838",
+      "bytes": 4866,
+      "physical_lines": 107
+    },
+    {
+      "path": "tests/truth/test_no_filler.py",
+      "sha256": "54a1efb9af5fdafcb2440c29c8495a4200b3d83a0ef34063f3b1ea7fb531467e",
+      "bytes": 1943,
+      "physical_lines": 47
+    },
+    {
+      "path": "tests/truth/test_retired_references.py",
+      "sha256": "fb86ff33ed8d8f1c65893d921742c641e24774f8c1571c03e8023a1301ecf25d",
+      "bytes": 1170,
+      "physical_lines": 27
+    }
+  ],
+  "evidence_files": [
+    {
+      "path": "reports/part0-reaudit/build-acceptance-final.log",
+      "sha256": "250c31077f02f48d37a075b4228f622965e0f31b2b6f88d8f2428fdd6655adf6",
+      "bytes": 809,
+      "physical_lines": 19
+    },
+    {
+      "path": "reports/part0-reaudit/compose-final-acceptance.log",
+      "sha256": "cf09c69febfbb5859936d22c03036995b7412c6d872014b3458fbb15239ff7f6",
+      "bytes": 69,
+      "physical_lines": 1
+    },
+    {
+      "path": "reports/part0-reaudit/contracts-final-acceptance.log",
+      "sha256": "c882dd39f7bee036fe4de82daef3cdab2b928e9296d52dc7f097d3d84bca2fa4",
+      "bytes": 167,
+      "physical_lines": 3
+    },
+    {
+      "path": "reports/part0-reaudit/knowledge-test-fix.log",
+      "sha256": "9200cf2b7bee1f05ef984efc1b438cf48c2e29e950630f0748e211dc2401894d",
+      "bytes": 5513,
+      "physical_lines": 117
+    },
+    {
+      "path": "reports/part0-reaudit/npm-ci-final.log",
+      "sha256": "92eead496f6b164bd95a3062d9d4e272e7d9476cc0fec9e0583dc65dd5bfa281",
+      "bytes": 143,
+      "physical_lines": 7
+    },
+    {
+      "path": "reports/part0-reaudit/repo-stats-final-acceptance.json",
+      "sha256": "51c046bfa05fe7495b1bc55419cbcfed45627130e077f04638f714a8c69601f1",
+      "bytes": 173,
+      "physical_lines": 7
+    },
+    {
+      "path": "reports/part0-reaudit/route-openapi-final.log",
+      "sha256": "3c6e973918642ea1ac0fd062cad5c5d234e5badcf89bd15a0acbb01e18facf8c",
+      "bytes": 345,
+      "physical_lines": 2
+    },
+    {
+      "path": "reports/part0-reaudit/ruff-final-acceptance.log",
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "bytes": 19,
+      "physical_lines": 1
+    },
+    {
+      "path": "reports/part0-reaudit/tail-guard-final.log",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "bytes": 3,
+      "physical_lines": 1
+    },
+    {
+      "path": "reports/part0-reaudit/tail-removal-audit.json",
+      "sha256": "50d36fe2048a56712b103583f834a4e158d7835fe92bb8970abfce619a6d3e4f",
+      "bytes": 41152,
+      "physical_lines": 1003
+    },
+    {
+      "path": "reports/part0-reaudit/truth-final-acceptance.log",
+      "sha256": "0637536d844a809dfbd1a29d310551c7bc9139a2c4bfed9fc909e7330c26e17e",
+      "bytes": 5361,
+      "physical_lines": 64
+    },
+    {
+      "path": "reports/part0-reaudit/unreferenced-html-audit.json",
+      "sha256": "5ff9711e93b8c80e3c350ec8698ce015b0dbf87e873c9a7a078c5f8c0c707d50",
+      "bytes": 5227,
+      "physical_lines": 167
+    },
+    {
+      "path": "reports/part0-reaudit/vitest-acceptance-final.log",
+      "sha256": "3793acd2ab9cdfd88214d31489512647c59546b9d588660a05aba0896c55ef5b",
+      "bytes": 517,
+      "physical_lines": 10
+    }
+  ]
+}

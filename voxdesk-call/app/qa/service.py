@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.service import record_audit
 from app.contact_center.models import QueueEntry
 from app.core.logging import log
-from app.db.models import AuditAction, EnvironmentMembership, User
+from app.db.models import AuditAction, Call, EnvironmentMembership, User
 from app.qa import auto_review, coaching, evidence, rubrics, scoring
 from app.qa.exceptions import (
     InvalidEvidence,
@@ -523,3 +523,243 @@ async def add_coaching(
     )
     log.info("coaching.created", coaching_id=str(signal.id), tenant_id=str(tenant_id))
     return signal
+
+
+# ----------------------------------------- Post-Call Sampling Policies & Exposure
+
+
+async def evaluate_post_call_sampling_policy(
+    session: AsyncSession,
+    *,
+    call: Call,
+    policy: dict,
+) -> tuple[bool, str]:
+    """Evaluate a post-call QA sampling policy for ``call`` (1C / Part 6).
+
+    Supported policy kinds:
+    - ``percentage``: deterministic sha256 bucket ``< percent * 100``
+    - ``negative_sentiment``: persisted ``SentimentResult(label='negative')`` or negative post-call sentiment step
+    - ``transfers``: ``call.escalated``, ``call.status == TRANSFERRED``, or ``call.transfer_state != NONE``
+    - ``long_calls``: ``call.duration_seconds >= min_duration_seconds`` (default 300s)
+    """
+    from app.db.models import CallStatus, TransferState
+    from app.db.telephony_models import PostCallStepRun
+    from app.qa import sampling
+    from app.qa.models import SentimentResult
+
+    kind = str(policy.get("kind") or "percentage").strip().lower()
+    rule_uuid = uuid.UUID(str(policy["rule_id"])) if policy.get("rule_id") else call.id
+    window_key = str(policy.get("window_key") or "post-call:v1")
+
+    if kind == "percentage":
+        pct = int(policy.get("percent", 100))
+        if pct <= 0:
+            return False, "percent_zero"
+        if pct >= 100:
+            return True, "percent_100"
+        b = sampling.bucket(call.tenant_id, window_key, rule_uuid, call.id)
+        matched = b < (pct * 100)
+        return matched, f"percentage_bucket:{b}<{pct * 100}"
+
+    if kind in {"negative_sentiment", "sentiment_negative"}:
+        sent_row = await session.scalar(
+            select(SentimentResult)
+            .where(
+                SentimentResult.tenant_id == call.tenant_id,
+                SentimentResult.call_id == call.id,
+            )
+            .order_by(SentimentResult.created_at.desc())
+        )
+        if sent_row is not None and str(sent_row.label).lower() == "negative":
+            return True, "negative_sentiment_result"
+        step_row = await session.scalar(
+            select(PostCallStepRun).where(
+                PostCallStepRun.tenant_id == call.tenant_id,
+                PostCallStepRun.call_id == call.id,
+                PostCallStepRun.step == "sentiment",
+            )
+        )
+        if step_row is not None and isinstance(step_row.output, dict):
+            lbl = str(step_row.output.get("label") or step_row.output.get("sentiment") or "").lower()
+            score = step_row.output.get("score")
+            if lbl == "negative" or (isinstance(score, (int, float)) and float(score) < -0.1):
+                return True, "negative_sentiment_step"
+        return False, "sentiment_not_negative"
+
+    if kind in {"transfers", "transfer", "transferred"}:
+        status_val = call.status.value if hasattr(call.status, "value") else str(call.status)
+        t_state = (
+            call.transfer_state.value
+            if hasattr(call.transfer_state, "value")
+            else str(call.transfer_state)
+        )
+        if (
+            bool(call.escalated)
+            or status_val == CallStatus.TRANSFERRED.value
+            or t_state != TransferState.NONE.value
+        ):
+            return True, "call_transferred_or_escalated"
+        return False, "no_transfer"
+
+    if kind in {"long_calls", "long_call"}:
+        min_dur = float(policy.get("min_duration_seconds", 300.0))
+        dur = float(call.duration_seconds or 0.0)
+        return dur >= min_dur, f"duration:{dur}>={min_dur}"
+
+    return False, f"unsupported_policy:{kind}"
+
+
+async def admit_post_call_with_policies(
+    session: AsyncSession,
+    call: Call,
+    *,
+    organization_id: uuid.UUID | None = None,
+    scorecard_id: uuid.UUID | None = None,
+    policies: list[dict] | None = None,
+) -> dict:
+    """Admit a terminal call to QA auto-review using canonical percentage rules + targeted policies."""
+    from app.qa import sampling
+
+    base_admission = await sampling.admit_post_call(
+        session, call, organization_id=organization_id
+    )
+    policy_admissions = []
+    if policies and scorecard_id is not None:
+        for idx, pol in enumerate(policies):
+            matched, reason = await evaluate_post_call_sampling_policy(
+                session, call=call, policy=pol
+            )
+            if not matched:
+                continue
+            review, _ = await create_review(
+                session,
+                tenant_id=call.tenant_id,
+                call_id=call.id,
+                scorecard_id=scorecard_id,
+                actor_id=None,
+                environment_id=call.environment_id,
+                idempotency_key=f"post-call-policy:{call.id}:{scorecard_id}:{pol.get('kind', idx)}",
+            )
+            if review.status in {"finalized", "cancelled"}:
+                policy_admissions.append(
+                    {
+                        "policy_kind": pol.get("kind"),
+                        "reason": reason,
+                        "review_id": str(review.id),
+                        "status": review.status,
+                    }
+                )
+                continue
+            run, _ = await auto_review.enqueue(
+                session,
+                tenant_id=call.tenant_id,
+                review=review,
+                organization_id=organization_id,
+            )
+            policy_admissions.append(
+                {
+                    "policy_kind": pol.get("kind"),
+                    "reason": reason,
+                    "review_id": str(review.id),
+                    "run_id": str(run.id),
+                    "job_id": str(run.job_id),
+                    "status": run.status,
+                }
+            )
+        await session.flush()
+
+    return {
+        **base_admission,
+        "policy_admissions": policy_admissions,
+    }
+
+
+async def get_call_qa_dashboard_summary(
+    session: AsyncSession,
+    *,
+    tenant_id: uuid.UUID,
+    call_id: uuid.UUID,
+) -> dict:
+    """Expose QA reviews, rubric item scores, auto-review runs, compliance findings, and sentiment for dashboard & webhooks."""
+    from app.qa.models import AutoReviewRun, ComplianceFinding, SentimentResult
+
+    call = await evidence.load_call(session, tenant_id, call_id)
+    reviews = list(
+        (
+            await session.execute(
+                select(QAReview)
+                .where(QAReview.tenant_id == tenant_id, QAReview.call_id == call.id)
+                .order_by(QAReview.created_at.desc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+    reviews_payload = []
+    for rev in reviews:
+        items = await review_items(session, tenant_id, rev.id)
+        auto_runs = list(
+            (
+                await session.execute(
+                    select(AutoReviewRun)
+                    .where(
+                        AutoReviewRun.tenant_id == tenant_id,
+                        AutoReviewRun.review_id == rev.id,
+                    )
+                    .order_by(AutoReviewRun.created_at.desc())
+                )
+            )
+            .scalars()
+            .all()
+        )
+        reviews_payload.append(
+            {
+                **rev.as_dict(),
+                "items": [it.as_dict() for it in items],
+                "auto_review_runs": [ar.as_dict() for ar in auto_runs],
+            }
+        )
+
+    findings = list(
+        (
+            await session.execute(
+                select(ComplianceFinding).where(
+                    ComplianceFinding.tenant_id == tenant_id,
+                    ComplianceFinding.call_id == call.id,
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    sentiment_rows = list(
+        (
+            await session.execute(
+                select(SentimentResult)
+                .where(
+                    SentimentResult.tenant_id == tenant_id,
+                    SentimentResult.call_id == call.id,
+                )
+                .order_by(SentimentResult.created_at.desc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+    latest_score = next(
+        (r.overall_score for r in reviews if r.overall_score is not None), None
+    )
+    latest_pass = next((r.passed for r in reviews if r.passed is not None), None)
+
+    return {
+        "call_id": str(call.id),
+        "tenant_id": str(tenant_id),
+        "overall_score": latest_score,
+        "passed": latest_pass,
+        "review_count": len(reviews_payload),
+        "reviews": reviews_payload,
+        "compliance_findings": [f.as_dict() for f in findings],
+        "sentiment": [s.as_dict() for s in sentiment_rows],
+    }
+

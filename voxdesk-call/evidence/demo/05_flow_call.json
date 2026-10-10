@@ -1,0 +1,22 @@
+{
+  "recording_id": "demo-05-flow-call",
+  "feature_matrix_ids": [
+    8,
+    9,
+    10
+  ],
+  "captured_at_utc": "2026-10-08T18:04:35.448063+00:00",
+  "node_types_exercised": [
+    "conversation",
+    "function",
+    "branch",
+    "transfer",
+    "press_digit",
+    "end"
+  ],
+  "verified_by_tests": [
+    "tests/builder/test_flow_runner.py::test_flow_runner_transitions_equations_fake_judge_and_action_nodes",
+    "tests/builder/test_flow_runner.py::test_e2e_flow_published_bound_to_number_drives_call_timeline_and_w12_bindings",
+    "tests/agent/test_flow_processor.py::test_flow_processor_swaps_prompt_and_tools_through_fake_pipeline"
+  ]
+}

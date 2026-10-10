@@ -1,0 +1,5 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_call_state.py::test_provider_status_mapping[failed-failed] tests/test_call_state.py::test_provider_status_mapping[canceled-cancelled] tests/test_call_state.py::test_provider_status_mapping[cancelled-cancelled] tests/test_call_state.py::test_provider_status_mapping[in-progress-in_progress] tests/test_call_state.py::test_provider_status_mapping[ringing-ringing]
+.....                                                                    [100%]
+5 passed in 0.06s
+
+STDERR:

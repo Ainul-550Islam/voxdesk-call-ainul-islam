@@ -1,0 +1,5 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_tts.py::test_default_speed_is_omitted_like_before tests/test_tts.py::test_a_faster_tenant_speed_is_mapped tests/test_tts.py::test_a_slower_tenant_speed_is_mapped tests/test_tts.py::test_the_boundary_values_are_passed_through tests/test_tts.py::test_out_of_range_stored_speed_is_clamped_and_warned
+.....                                                                    [100%]
+5 passed in 1.27s
+
+STDERR:

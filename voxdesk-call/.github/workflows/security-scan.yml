@@ -1,7 +1,9 @@
 name: security-scan
 
-# Supply-chain and static analysis. Runs alongside CI on every push/PR and
-# weekly on a schedule (dependency CVEs appear after a commit, not at it).
+# Supply-chain, SAST, secret, polyglot dependency, and container image scanning.
+# Runs alongside CI on every push/PR and weekly on a schedule (dependency CVEs
+# appear after a commit, not at it). Fails on HIGH/CRITICAL findings and uploads
+# SARIF reports to GitHub Code Scanning.
 on:
   push:
     branches: [main]
@@ -11,6 +13,7 @@ on:
 
 permissions:
   contents: read
+  security-events: write
 
 jobs:
   sast:
@@ -22,27 +25,62 @@ jobs:
         with:
           python-version: "3.12"
 
-      # SAST: bandit only scans our code (app/, scripts/) — never vendored
-      # dependencies, so it stays fast and actionable. The skip list lives in
-      # pyproject.toml [tool.bandit] (each skip carries its review rationale)
-      # and is passed explicitly: bandit does not auto-discover pyproject.toml.
+      # SAST: bandit scans our code (app/, scripts/) — never vendored
+      # dependencies. Fails on medium/high/critical severity findings and emits SARIF.
       - name: Bandit (Python SAST)
         run: |
-          pip install bandit
+          pip install bandit[sarif]
+          bandit -c pyproject.toml -r app scripts -lll -f sarif -o bandit-results.sarif
           bandit -c pyproject.toml -r app scripts -q
+
+      - name: Upload Bandit SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: bandit-results.sarif
+          category: bandit-sast
 
   dependency-audit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      # pip-audit with the documented accepted-risk list: the script is the
-      # single source of truth for WHICH findings are accepted and why
-      # (docs/SECURITY.md), so CI and `make`-less local runs agree.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # pip-audit with the documented accepted-risk list (docs/SECURITY.md).
       - name: pip-audit (Python dependency CVEs)
         run: |
           pip install pip-audit
           bash scripts/audit_dependencies.sh
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: npm audit (dashboard-next high/critical CVEs)
+        working-directory: dashboard-next
+        run: |
+          npm audit --omit=dev --audit-level=high
+
+      - uses: dtolnay/rust-toolchain@1.90.0
+
+      - name: cargo audit (Rust workspaces high/critical CVEs)
+        run: |
+          cargo install cargo-audit --locked
+          (cd services/control-plane && cargo audit --deny warnings)
+          (cd services/realtime/media-engine-rs && cargo audit --deny warnings)
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.27"
+
+      - name: govulncheck (Go services vulnerability check)
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          (cd services/signal-go && govulncheck ./...)
+          (cd services/ops && govulncheck ./...)
 
   secret-scan:
     runs-on: ubuntu-latest
@@ -57,3 +95,30 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITLEAKS_ENABLE_COMMENTS: "true"
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "true"
+
+  trivy-image-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build production image for Trivy scan
+        run: |
+          docker build -t voxdesk-call:security-scan .
+
+      - name: Run Trivy vulnerability scanner (fail on HIGH/CRITICAL)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: "voxdesk-call:security-scan"
+          format: "sarif"
+          output: "trivy-results.sarif"
+          severity: "HIGH,CRITICAL"
+          ignore-unfixed: true
+          exit-code: "1"
+
+      - name: Upload Trivy SARIF report
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: "trivy-results.sarif"
+          category: trivy-image

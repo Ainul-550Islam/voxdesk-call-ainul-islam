@@ -1,0 +1,40 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_knowledge_grounding.py::test_source_metadata_is_included_for_the_model_but_marked_unspoken tests/test_knowledge_grounding.py::test_scores_are_never_placed_in_the_prompt tests/test_knowledge_grounding.py::test_the_context_block_is_closed tests/test_knowledge_grounding.py::test_context_respects_the_character_budget tests/test_knowledge_grounding.py::test_a_single_oversized_excerpt_is_clamped_to_whole_sentences tests/test_knowledge_grounding.py::test_the_best_chunk_survives_truncation tests/test_knowledge_grounding.py::test_sources_identify_the_answer_back_to_its_chunks tests/test_knowledge_grounding.py::test_sources_never_include_scores_or_vectors tests/test_knowledge_grounding.py::test_every_known_injection_shape_is_neutralized tests/test_knowledge_grounding.py::test_neutralization_keeps_the_surrounding_content tests/test_knowledge_grounding.py::test_ordinary_business_text_is_left_alone tests/test_knowledge_grounding.py::test_a_document_cannot_forge_a_fence_to_escape_its_block tests/test_knowledge_grounding.py::test_the_block_declares_its_contents_untrusted_up_front tests/test_knowledge_grounding.py::test_the_block_forbids_tool_calls_and_prompt_disclosure tests/test_knowledge_grounding.py::test_tool_summaries_are_neutralized_too tests/test_knowledge_grounding.py::test_tool_summaries_are_bounded tests/test_knowledge_grounding.py::test_an_empty_result_summarizes_to_nothing tests/test_knowledge_ingest.py::test_upload_then_process_reaches_ready tests/test_knowledge_ingest.py::test_upload_starts_in_uploaded_not_ready tests/test_knowledge_ingest.py::test_pdf_ingests_with_page_metadata_on_chunks tests/test_knowledge_ingest.py::test_docx_ingests tests/test_knowledge_ingest.py::test_stored_file_key_is_opaque_and_tenant_scoped tests/test_knowledge_ingest.py::test_empty_file_is_rejected tests/test_knowledge_ingest.py::test_oversized_file_is_rejected_before_processing tests/test_knowledge_ingest.py::test_executable_is_rejected tests/test_knowledge_ingest.py::test_document_limit_is_enforced tests/test_knowledge_ingest.py::test_identical_content_in_the_same_tenant_is_deduplicated tests/test_knowledge_ingest.py::test_different_tenants_may_hold_identical_content tests/test_knowledge_ingest.py::test_duplicate_does_not_create_a_second_set_of_embeddings tests/test_knowledge_ingest.py::test_malformed_pdf_lands_in_failed_with_a_safe_message
+..............................                                           [100%]
+=============================== warnings summary ===============================
+tests/test_knowledge_ingest.py: 14 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_knowledge_ingest.py: 76 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/test_knowledge_ingest.py: 14 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_knowledge_ingest.py::test_upload_then_process_reaches_ready
+tests/test_knowledge_ingest.py::test_pdf_ingests_with_page_metadata_on_chunks
+tests/test_knowledge_ingest.py::test_docx_ingests
+tests/test_knowledge_ingest.py::test_identical_content_in_the_same_tenant_is_deduplicated
+tests/test_knowledge_ingest.py::test_different_tenants_may_hold_identical_content
+tests/test_knowledge_ingest.py::test_different_tenants_may_hold_identical_content
+tests/test_knowledge_ingest.py::test_duplicate_does_not_create_a_second_set_of_embeddings
+tests/test_knowledge_ingest.py::test_malformed_pdf_lands_in_failed_with_a_safe_message
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/knowledge/ingest.py:227: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    document.processing_started_at = datetime.utcnow()
+
+tests/test_knowledge_ingest.py::test_upload_then_process_reaches_ready
+tests/test_knowledge_ingest.py::test_pdf_ingests_with_page_metadata_on_chunks
+tests/test_knowledge_ingest.py::test_docx_ingests
+tests/test_knowledge_ingest.py::test_identical_content_in_the_same_tenant_is_deduplicated
+tests/test_knowledge_ingest.py::test_different_tenants_may_hold_identical_content
+tests/test_knowledge_ingest.py::test_different_tenants_may_hold_identical_content
+tests/test_knowledge_ingest.py::test_duplicate_does_not_create_a_second_set_of_embeddings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/knowledge/ingest.py:327: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    document.ingested_at = datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+30 passed, 119 warnings in 9.48s
+
+STDERR:

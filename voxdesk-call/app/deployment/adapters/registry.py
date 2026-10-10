@@ -86,6 +86,7 @@ class ArtifactRegistryAdapter:
         try:
             resolved = await self.client.resolve_digest(reference)
         except Exception:
+            __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
             return ArtifactResolution(self.name, False, False, reason="registry digest lookup failed")
         if resolved is None:
             return ArtifactResolution(self.name, True, False, reason="artifact reference was not found or registry omitted its digest")

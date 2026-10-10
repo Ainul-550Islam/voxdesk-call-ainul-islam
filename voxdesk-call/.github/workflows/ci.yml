@@ -71,7 +71,9 @@ jobs:
         working-directory: services/realtime/gateway-go
         run: |
           go vet ./...
-          go test -race -count=1 ./...
+          set -o pipefail
+          go test -race -count=1 -json ./... | tee /tmp/gateway-tests.jsonl
+          python3 -c 'import json; rows=[json.loads(s) for s in open("/tmp/gateway-tests.jsonl")]; assert any(r.get("Action")=="pass" and r.get("Test") for r in rows), "zero passing gateway tests"' 
 
   frontend:
     runs-on: ubuntu-latest
@@ -98,7 +100,7 @@ jobs:
         run: npm audit --omit=dev --audit-level=high
 
   image:
-    needs: [backend, gateway, frontend]
+    needs: [backend, gateway, frontend, truth-guards]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -110,3 +112,27 @@ jobs:
 
       - name: Build the realtime gateway image
         run: docker build services/realtime/gateway-go -t voxdesk-realtime-gateway:ci
+
+  truth-guards:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install pinned validation dependencies
+        run: pip install -r requirements-validation.txt
+      - name: Enforce shrink-only facade history
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -z "$BASE_REF" ] || [ "$BASE_REF" = "0000000000000000000000000000000000000000" ]; then
+            python scripts/verify_no_fake_success.py
+          else
+            python scripts/verify_no_fake_success.py --base-ref "$BASE_REF"
+          fi
+      - name: Required truth gates
+        run: make verify-truth

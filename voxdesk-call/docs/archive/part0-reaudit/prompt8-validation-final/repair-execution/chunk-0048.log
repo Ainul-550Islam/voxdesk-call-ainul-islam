@@ -1,0 +1,5 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_calendar_providers.py::TestInternalProvider::test_it_claims_no_free_busy tests/test_calendar_providers.py::TestInternalProvider::test_the_event_id_is_deterministic_from_the_key tests/test_calendar_providers.py::TestInternalProvider::test_health_reports_connected tests/test_calendar_providers.py::TestGoogleServiceAccountProvider::test_it_claims_only_what_the_legacy_client_can_do tests/test_calendar_providers.py::TestGoogleServiceAccountProvider::test_a_silent_legacy_failure_becomes_a_raise
+.....                                                                    [100%]
+5 passed in 0.08s
+
+STDERR:

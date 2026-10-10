@@ -1,0 +1,19 @@
+{
+  "recording_id": "demo-08-custom-dashboard",
+  "feature_matrix_ids": [
+    28,
+    29,
+    30
+  ],
+  "captured_at_utc": "2026-10-08T18:04:35.448063+00:00",
+  "endpoints": [
+    "POST /api/analytics/dashboards",
+    "GET /api/analytics/dashboards/{id}/export.csv",
+    "GET /api/ab-testing/experiments/{id}/results"
+  ],
+  "verified_by_tests": [
+    "tests/services/test_custom_dashboards.py::test_analytics_aggregation_correctness_and_group_by_dimensions",
+    "tests/services/test_custom_dashboards.py::test_custom_dashboards_tenant_scoping_limits_share_and_csv",
+    "tests/telephony/test_experiment_assignment.py::test_runtime_call_setup_persists_experiment_and_variant_and_results_compute_stats"
+  ]
+}

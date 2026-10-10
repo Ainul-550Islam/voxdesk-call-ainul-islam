@@ -1,0 +1,45 @@
+$ make verify-truth
+exit=2
+python scripts/verify_no_filler.py
+[
+  {
+    "file": "app/api/conductor_routes.py",
+    "line": 0,
+    "reason": "distinct-line ratio",
+    "ratio": 0.34279475982532753,
+    "code_lines": 458
+  },
+  {
+    "file": "app/leads/models.py",
+    "line": 0,
+    "reason": "distinct-line ratio",
+    "ratio": 0.3432203389830508,
+    "code_lines": 236
+  },
+  {
+    "file": "dashboard-next/app/dashboard/connection-demo/page.tsx",
+    "line": 143,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard-next/app/dashboard/connection-demo/page.tsx",
+    "line": 149,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard-next/app/dashboard/connection-demo/page.tsx",
+    "line": 367,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard-next/app/dashboard/connection-demo/page.tsx",
+    "line": 397,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard-next/app/dashboard/page.tsx",
+    "line": 323,
+    "reason": "forbidden marker"
+  }
+]
+make: *** [Makefile:58: verify-truth] Error 1

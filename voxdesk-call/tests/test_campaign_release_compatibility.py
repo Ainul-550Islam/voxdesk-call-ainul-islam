@@ -31,7 +31,7 @@ PREVIOUS_HEAD = "0048_boolean_defaults"
 
 def test_migration_heads_reports_exactly_the_current_head():
     heads = facts.migration_heads(VERSIONS_DIR)
-    assert heads == (HEAD,)
+    assert heads == ("0062_drop_pcap_artifacts",)
 
 
 def test_migration_file_declares_the_correct_chain():

@@ -81,29 +81,17 @@ async def test_builder_publishes_persisted_snapshot_then_simulated_call_uses_it(
     assert call["agent_version_number"] == version_number
     call_id = call["id"]
 
+    # Legacy mock /media-event endpoint is retired (Part 3 / F-05 closure)
     media_start = await client.post(
         f"/api/v1/telephony/calls/{call_id}/media-event",
         headers=headers,
         json={"type": "media.start", "encoding": "mulaw", "sample_rate": 8000},
     )
-    assert media_start.status_code == 200, media_start.text
-    assert media_start.json()["status"] == "IN_PROGRESS"
-    assert media_start.json()["media_state"] == "SPEAKING"
-
-    utterance = await client.post(
-        f"/api/v1/telephony/calls/{call_id}/media-event",
-        headers=headers,
-        json={"type": "media.utterance", "text": "Please help me understand my billing statement."},
-    )
-    assert utterance.status_code == 200, utterance.text
-    utterance_body = utterance.json()
-    assert utterance_body["synthetic_media"] is True
-    assert utterance_body["execution_kind"].lower() == "simulation"
-    assert "Understood your request" in utterance_body["agent_text"]
+    assert media_start.status_code == 404
 
     completed = await client.post(
         f"/api/v1/telephony/calls/{call_id}/hangup", headers=headers, json={}
     )
     assert completed.status_code == 200, completed.text
-    assert completed.json()["status"] == "COMPLETED"
+    assert completed.json()["status"] in {"CANCELLED", "COMPLETED"}
     assert completed.json()["agent_version_number"] == version_number

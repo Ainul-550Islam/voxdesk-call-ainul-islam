@@ -1,0 +1,14 @@
+version: "3.9"
+
+services:
+  sip-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5060:5060/udp"
+      - "5060:5060/tcp"
+      - "5061:5061/tcp"
+    environment:
+      - VOXDESK_API_URL=http://host.docker.internal:8000
+    restart: unless-stopped

@@ -128,11 +128,34 @@ def put_bytes(tenant_id: uuid.UUID, recording_id: uuid.UUID, data: bytes) -> tup
 
 def delete_bytes(key: str) -> None:
     root = (settings.telephony_media_dir or "").strip()
-    if not root or not key or not key.startswith("tenant/"):
+    if not root or not key:
         return
-    path = Path(root) / key
-    if path.is_file() and str(path.resolve()).startswith(str(Path(root).resolve())):
-        path.unlink()
+    root_path = Path(root).resolve()
+    cand = Path(key)
+    path = cand if cand.is_absolute() else (root_path / key)
+    try:
+        resolved = path.resolve()
+    except OSError:
+        return
+    if resolved.is_file() and (
+        str(resolved).startswith(str(root_path)) or key.startswith("tenant/")
+    ):
+        resolved.unlink(missing_ok=True)
+
+
+def delete_recording_object(key: str | None) -> bool:
+    """Delete a stored recording file by storage key or path inside ``telephony_media_dir``."""
+    if not key:
+        return False
+    root = (settings.telephony_media_dir or "").strip()
+    cand = Path(key)
+    if cand.is_absolute() and cand.is_file():
+        cand.unlink(missing_ok=True)
+        return True
+    if root:
+        delete_bytes(key)
+        return True
+    return False
 
 
 def _sign(payload: str) -> str:

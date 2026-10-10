@@ -1,0 +1,37 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_workflow_lead_lifecycle.py::test_update_lead_status_executes_with_history tests/test_workflow_lead_lifecycle.py::test_apply_dnc_executes_with_history tests/test_workflow_lead_lifecycle.py::test_status_sequence_keeps_continuous_history tests/test_workflow_lead_lifecycle.py::test_workflow_cannot_reverse_a_do_not_call tests/test_workflow_lead_lifecycle.py::test_workflow_cannot_make_an_illegal_transition
+.....                                                                    [100%]
+=============================== warnings summary ===============================
+tests/test_workflow_lead_lifecycle.py::test_update_lead_status_executes_with_history
+tests/test_workflow_lead_lifecycle.py::test_apply_dnc_executes_with_history
+tests/test_workflow_lead_lifecycle.py::test_status_sequence_keeps_continuous_history
+tests/test_workflow_lead_lifecycle.py::test_workflow_cannot_reverse_a_do_not_call
+tests/test_workflow_lead_lifecycle.py::test_workflow_cannot_make_an_illegal_transition
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_workflow_lead_lifecycle.py: 78 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/test_workflow_lead_lifecycle.py::test_update_lead_status_executes_with_history
+tests/test_workflow_lead_lifecycle.py::test_apply_dnc_executes_with_history
+tests/test_workflow_lead_lifecycle.py::test_status_sequence_keeps_continuous_history
+tests/test_workflow_lead_lifecycle.py::test_workflow_cannot_reverse_a_do_not_call
+tests/test_workflow_lead_lifecycle.py::test_workflow_cannot_make_an_illegal_transition
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_workflow_lead_lifecycle.py::test_update_lead_status_executes_with_history
+tests/test_workflow_lead_lifecycle.py::test_apply_dnc_executes_with_history
+tests/test_workflow_lead_lifecycle.py::test_status_sequence_keeps_continuous_history
+tests/test_workflow_lead_lifecycle.py::test_status_sequence_keeps_continuous_history
+tests/test_workflow_lead_lifecycle.py::test_status_sequence_keeps_continuous_history
+tests/test_workflow_lead_lifecycle.py::test_workflow_cannot_reverse_a_do_not_call
+tests/test_workflow_lead_lifecycle.py::test_workflow_cannot_make_an_illegal_transition
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/leads/models.py:25: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+5 passed, 95 warnings in 4.03s
+
+STDERR:

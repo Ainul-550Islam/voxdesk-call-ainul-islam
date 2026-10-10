@@ -1,0 +1,17 @@
+{
+  "name": "@voxdesk/node",
+  "version": "0.3.0",
+  "description": "Typed Node.js server SDK for the VoxDesk OpenAPI contract + webhook signature verification",
+  "license": "MIT",
+  "type": "module",
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
+  "types": "./src/index.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}

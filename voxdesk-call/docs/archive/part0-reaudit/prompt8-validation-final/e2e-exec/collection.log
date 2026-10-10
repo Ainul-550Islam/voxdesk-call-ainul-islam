@@ -1,0 +1,32 @@
+$ /usr/local/bin/python -m pytest --collect-only -q tests/e2e
+tests/e2e/test_agent_builder_to_call_flow.py::test_builder_publishes_persisted_snapshot_then_simulated_call_uses_it
+tests/e2e/test_calls_analytics_flow.py::test_persisted_call_transcript_replay_and_analytics_read_paths
+tests/e2e/test_campaign_workflow_flow.py::test_campaign_audience_plan_and_controlled_workflow_lead_action
+tests/e2e/test_chat_sms_flow.py::test_persisted_chat_message_memory_and_sms_provider_fail_closed
+tests/e2e/test_conductor_flow.py::test_conductor_full_workflow_partial_approve_simulate_and_immutable_apply
+tests/e2e/test_conductor_flow.py::test_prompt8_conductor_failure_reproduction_review_and_immutable_apply
+tests/e2e/test_enterprise_cross_module_auth.py::test_tenant_environment_rbac_api_key_and_module_isolation
+tests/e2e/test_full_platform_e2e.py::test_master_new_customer_to_simulated_call_and_truthful_cross_module_state
+tests/e2e/test_full_platform_e2e.py::test_call_pin_keeps_superseded_snapshot_and_unpinned_call_uses_persisted_pointer
+tests/e2e/test_guardrails_pii_flow.py::test_guardrails_pii_redaction_and_raw_export_authorization
+tests/e2e/test_knowledge_crm_flow.py::test_ingested_knowledge_builder_association_contact_memory_and_crm_readiness
+tests/e2e/test_live_monitor_takeover_flow.py::test_live_monitor_and_takeover_actions_are_audited_and_not_faked
+tests/e2e/test_public_to_dashboard_flow.py::test_public_catalog_signup_environment_and_authenticated_dashboard_api
+tests/e2e/test_settings_billing_flow.py::test_settings_security_and_billing_read_write_state_are_persisted
+tests/e2e/test_testing_simulation_flow.py::test_version_pinned_playground_and_failed_scenario_are_persisted_truthfully
+tests/e2e/test_voice_telephony_flow.py::test_phone_sip_inbound_live_fail_closed_and_simulation_version_binding
+
+=============================== warnings summary ===============================
+../../../../usr/local/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+../../../../usr/local/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+../../../../usr/local/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+../../../../usr/local/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+../../../../usr/local/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+../../../../usr/local/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+  /usr/local/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+16 tests collected in 59.43s
+
+STDERR:

@@ -15,6 +15,8 @@ WORKDIR /src
 COPY Cargo.toml Cargo.lock ./
 COPY crates ./crates
 COPY bins ./bins
+COPY benches ./benches
+COPY vendor ./vendor
 
 RUN cargo build --release --locked -p media-engine && \
     strip target/release/media-engine

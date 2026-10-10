@@ -34,6 +34,7 @@ async def dependency_health() -> dict:
         try:
             redis_ok = bool(await asyncio.wait_for(existing_health.check_redis(), timeout=2.0))
         except Exception:
+            __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
             redis_ok = False
         redis_latency = round((perf_counter() - started) * 1000, 2)
         checks["cache"] = {"state": _state(True, redis_ok), "configured": True, "reachable": redis_ok, "latency_ms": redis_latency}

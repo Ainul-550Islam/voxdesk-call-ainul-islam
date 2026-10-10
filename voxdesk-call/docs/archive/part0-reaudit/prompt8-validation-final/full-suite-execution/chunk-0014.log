@@ -1,0 +1,76 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/environments/test_environment_resource_api.py::test_owner_can_read_and_create_and_viewer_cannot_write tests/environments/test_environment_resource_api.py::test_cross_tenant_and_missing_environment_look_the_same tests/environments/test_environment_resource_api.py::test_suspended_environment_rejects_a_write_and_export_is_paged tests/environments/test_environment_resource_isolation.py::test_production_does_not_list_staging_or_foreign_rows tests/environments/test_environment_resource_isolation.py::test_a_foreign_resource_id_is_not_readable_in_this_environment tests/environments/test_environment_resource_isolation.py::test_retrieval_does_not_cross_environments tests/environments/test_legacy_tenant_compatibility.py::test_legacy_lead_import_binds_production tests/environments/test_legacy_tenant_compatibility.py::test_direct_constructors_bind_production_without_an_environment_argument tests/environments/test_legacy_tenant_compatibility.py::test_usage_metric_contract_is_unchanged tests/environments/test_resource_binding.py::test_a_new_lead_binds_to_the_tenants_production_environment tests/environments/test_resource_binding.py::test_an_explicit_same_tenant_environment_is_accepted tests/environments/test_resource_binding.py::test_a_cross_tenant_environment_is_rejected tests/environments/test_resource_binding.py::test_a_missing_environment_is_rejected_for_a_new_scoped_write tests/environments/test_resource_binding.py::test_archived_and_suspended_environments_reject_writes tests/environments/test_resource_binding.py::test_environment_id_is_immutable_after_insert tests/environments/test_resource_binding.py::test_a_foreign_key_to_another_tenants_environment_is_not_stored tests/environments/test_resource_concurrency.py::test_two_creates_bind_the_same_production_row_and_cannot_be_rebound tests/environments/test_resource_concurrency.py::test_a_suspended_environment_racing_a_create_rejects_the_insert tests/environments/test_resource_concurrency.py::test_duplicate_usage_events_do_not_double_charge tests/environments/test_resource_migration.py::test_empty_database_backfill_is_a_no_op tests/environments/test_resource_migration.py::test_many_tenants_bind_only_to_their_own_production tests/environments/test_resource_queries.py::test_combined_filter_excludes_other_environments_and_tenants tests/environments/test_resource_scope.py::test_explicit_environment_wins tests/environments/test_resource_scope.py::test_selected_environment_is_used_when_no_explicit_id tests/environments/test_resource_scope.py::test_legacy_resolution_uses_active_default_production tests/environments/test_resource_scope.py::test_archived_or_suspended_default_is_not_used_for_a_write tests/environments/test_resource_scope.py::test_a_cross_tenant_environment_id_is_rejected tests/environments/test_resource_scope.py::test_a_malformed_environment_id_does_not_resolve tests/environments/test_resource_types.py::test_exactly_eight_resource_types_are_registered tests/environments/test_resource_types.py::test_each_type_maps_to_one_model tests/environments/test_resource_types.py::test_control_plane_resources_stay_excluded tests/evals/rag/test_rag_eval.py::test_retrieval_relevance[standard_cleaning_price] tests/evals/rag/test_rag_eval.py::test_retrieval_relevance[deep_cleaning_price] tests/evals/rag/test_rag_eval.py::test_retrieval_relevance[refund_window] tests/evals/rag/test_rag_eval.py::test_retrieval_relevance[cancellation_fee] tests/evals/rag/test_rag_eval.py::test_retrieval_relevance[parking] tests/evals/rag/test_rag_eval.py::test_retrieval_relevance[insurance_accepted] tests/evals/rag/test_rag_eval.py::test_retrieval_relevance[saturday_hours] tests/evals/rag/test_rag_eval.py::test_relevance_summary tests/evals/rag/test_rag_eval.py::test_the_answer_context_is_grounded_in_a_real_chunk[standard_cleaning_price] tests/evals/rag/test_rag_eval.py::test_the_answer_context_is_grounded_in_a_real_chunk[deep_cleaning_price] tests/evals/rag/test_rag_eval.py::test_the_answer_context_is_grounded_in_a_real_chunk[refund_window] tests/evals/rag/test_rag_eval.py::test_the_answer_context_is_grounded_in_a_real_chunk[cancellation_fee] tests/evals/rag/test_rag_eval.py::test_the_answer_context_is_grounded_in_a_real_chunk[parking] tests/evals/rag/test_rag_eval.py::test_the_answer_context_is_grounded_in_a_real_chunk[insurance_accepted] tests/evals/rag/test_rag_eval.py::test_the_answer_context_is_grounded_in_a_real_chunk[saturday_hours] tests/evals/rag/test_rag_eval.py::test_every_grounded_answer_is_traceable_to_its_source[standard_cleaning_price] tests/evals/rag/test_rag_eval.py::test_every_grounded_answer_is_traceable_to_its_source[deep_cleaning_price] tests/evals/rag/test_rag_eval.py::test_every_grounded_answer_is_traceable_to_its_source[refund_window] tests/evals/rag/test_rag_eval.py::test_every_grounded_answer_is_traceable_to_its_source[cancellation_fee]
+......................................
+  retrieval relevance: 7/7 cases
+............                       [100%]
+=============================== warnings summary ===============================
+tests/environments/test_environment_resource_api.py::test_owner_can_read_and_create_and_viewer_cannot_write
+tests/environments/test_environment_resource_api.py::test_owner_can_read_and_create_and_viewer_cannot_write
+tests/environments/test_environment_resource_api.py::test_owner_can_read_and_create_and_viewer_cannot_write
+tests/environments/test_environment_resource_api.py::test_owner_can_read_and_create_and_viewer_cannot_write
+tests/environments/test_environment_resource_api.py::test_owner_can_read_and_create_and_viewer_cannot_write
+tests/environments/test_environment_resource_api.py::test_owner_can_read_and_create_and_viewer_cannot_write
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/environments/test_environment_resource_api.py: 4 warnings
+tests/environments/test_environment_resource_isolation.py: 5 warnings
+tests/environments/test_legacy_tenant_compatibility.py: 2 warnings
+tests/environments/test_resource_binding.py: 9 warnings
+tests/environments/test_resource_concurrency.py: 3 warnings
+tests/environments/test_resource_queries.py: 2 warnings
+tests/environments/test_resource_scope.py: 7 warnings
+tests/evals/rag/test_rag_eval.py: 38 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/environments/test_environment_resource_api.py: 22 warnings
+tests/environments/test_environment_resource_isolation.py: 26 warnings
+tests/environments/test_legacy_tenant_compatibility.py: 14 warnings
+tests/environments/test_resource_binding.py: 17 warnings
+tests/environments/test_resource_concurrency.py: 7 warnings
+tests/environments/test_resource_queries.py: 7 warnings
+tests/environments/test_resource_scope.py: 17 warnings
+tests/evals/rag/test_rag_eval.py: 475 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/environments/test_environment_resource_api.py: 4 warnings
+tests/environments/test_environment_resource_isolation.py: 5 warnings
+tests/environments/test_legacy_tenant_compatibility.py: 2 warnings
+tests/environments/test_resource_binding.py: 9 warnings
+tests/environments/test_resource_concurrency.py: 3 warnings
+tests/environments/test_resource_queries.py: 2 warnings
+tests/environments/test_resource_scope.py: 7 warnings
+tests/evals/rag/test_rag_eval.py: 38 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/environments/test_environment_resource_api.py::test_owner_can_read_and_create_and_viewer_cannot_write
+tests/environments/test_environment_resource_api.py::test_owner_can_read_and_create_and_viewer_cannot_write
+tests/environments/test_environment_resource_api.py::test_cross_tenant_and_missing_environment_look_the_same
+tests/environments/test_environment_resource_api.py::test_suspended_environment_rejects_a_write_and_export_is_paged
+tests/environments/test_environment_resource_isolation.py::test_production_does_not_list_staging_or_foreign_rows
+tests/environments/test_environment_resource_isolation.py::test_a_foreign_resource_id_is_not_readable_in_this_environment
+tests/environments/test_legacy_tenant_compatibility.py::test_legacy_lead_import_binds_production
+tests/environments/test_resource_scope.py::test_explicit_environment_wins
+tests/environments/test_resource_scope.py::test_selected_environment_is_used_when_no_explicit_id
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/environments/test_environment_resource_api.py::test_owner_can_read_and_create_and_viewer_cannot_write
+tests/environments/test_legacy_tenant_compatibility.py::test_legacy_lead_import_binds_production
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/leads/models.py:25: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow()
+
+tests/evals/rag/test_rag_eval.py: 57 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/knowledge/ingest.py:227: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    document.processing_started_at = datetime.utcnow()
+
+tests/evals/rag/test_rag_eval.py: 57 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/knowledge/ingest.py:327: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    document.ingested_at = datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+50 passed, 856 warnings in 91.30s (0:01:31)
+
+STDERR:

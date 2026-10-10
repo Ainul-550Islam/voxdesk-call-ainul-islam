@@ -21,6 +21,11 @@ from app.core.config import settings
 
 @lru_cache(maxsize=1)
 def get_engine() -> AsyncEngine:
+    if settings.database_url.startswith("sqlite"):
+        return create_async_engine(
+            settings.database_url,
+            echo=False,
+        )
     return create_async_engine(
         settings.database_url,
         pool_pre_ping=True,     # drop dead connections instead of erroring mid-call

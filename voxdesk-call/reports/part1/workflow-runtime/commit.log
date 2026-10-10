@@ -1,0 +1,29 @@
+[main ef7b798] 1C: wire durable post-call analysis, QA, CRM and workflow execution
+ 46 files changed, 5849 insertions(+), 955 deletions(-)
+ create mode 100644 voxdesk-call/alembic/versions/0051_post_call_pipeline.py
+ create mode 100644 voxdesk-call/alembic/versions/0052_analysis_versions.py
+ create mode 100644 voxdesk-call/alembic/versions/0053_analysis_backfill.py
+ create mode 100644 voxdesk-call/alembic/versions/0054_qa_runtime.py
+ create mode 100644 voxdesk-call/app/ai/post_call_llm.py
+ create mode 100644 voxdesk-call/app/db/telephony_models.py
+ create mode 100644 voxdesk-call/app/resilience/idempotency.py
+ create mode 100644 voxdesk-call/app/services/post_call_analysis_service.py
+ create mode 100644 voxdesk-call/app/services/post_call_workflow.py
+ create mode 100644 voxdesk-call/app/telephony/post_call.py
+ create mode 100644 voxdesk-call/app/webhooks/call_event_bridge.py
+ create mode 100644 voxdesk-call/docs/POST_CALL.md
+ create mode 100644 voxdesk-call/reports/part1/runtime/build_delivery.py
+ create mode 100644 voxdesk-call/reports/part1/runtime/verify_post_call_postgres.py
+ create mode 100644 voxdesk-call/reports/part1/workflow-runtime/STATUS.md
+ create mode 100644 voxdesk-call/reports/part1/workflow-runtime/verify_postgres.py
+ create mode 100644 voxdesk-call/tests/ai/test_post_call_llm.py
+ create mode 100644 voxdesk-call/tests/qa/test_post_call_runtime.py
+ create mode 100644 voxdesk-call/tests/telephony/test_analysis_backfill.py
+ create mode 100644 voxdesk-call/tests/telephony/test_analysis_extended.py
+ create mode 100644 voxdesk-call/tests/telephony/test_custom_analysis.py
+ create mode 100644 voxdesk-call/tests/telephony/test_post_call_crm.py
+ create mode 100644 voxdesk-call/tests/telephony/test_post_call_pipeline.py
+ create mode 100644 voxdesk-call/tests/telephony/test_post_call_workflow.py
+
+Preexisting staged AB3 SHA-256 unchanged: d6381eee5322f484ca1ebfdb3a1ff42450ca7a29ba970f1b2eee98a650d65b10
+ef7b7981ef4e50a00edae912b63b1dad9ea1b9ac

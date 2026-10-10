@@ -43,7 +43,19 @@ import httpx
 from app.core.config import settings
 from app.core.health import provider_config_ok
 
-BASE = (os.environ.get("SMOKE_BASE_URL") or "http://localhost:8000").rstrip("/")
+def _resolve_base_url() -> str:
+    argv = sys.argv[1:]
+    for idx, arg in enumerate(argv):
+        if arg in ("--base", "--base-url") and idx + 1 < len(argv):
+            return argv[idx + 1].rstrip("/")
+        if arg.startswith("--base="):
+            return arg.split("=", 1)[1].rstrip("/")
+        if arg.startswith("--base-url="):
+            return arg.split("=", 1)[1].rstrip("/")
+    return (os.environ.get("SMOKE_BASE_URL") or "http://localhost:8000").rstrip("/")
+
+
+BASE = _resolve_base_url()
 
 _results: list[tuple[str, str, str]] = []  # (check, status, detail)
 

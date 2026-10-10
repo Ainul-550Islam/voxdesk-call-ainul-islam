@@ -15,8 +15,9 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import Agent
+from app.db.models import Agent, AgentVersion
 from app.db.telephony_models import TelephonyPhoneNumber, TelephonySipConnection
+from app.telephony.number_provisioning import PhoneNumber
 from app.telephony.enums import (
     PhoneNumberLifecycleStatus,
     SipConnectionStatus,
@@ -51,6 +52,7 @@ def _serialize_phone_number(row: TelephonyPhoneNumber) -> PhoneNumberResponse:
         inbound_enabled=bool(row.inbound_enabled),
         outbound_enabled=bool(row.outbound_enabled),
         inbound_agent_id=row.inbound_agent_id,
+        inbound_agent_version=getattr(row, "inbound_agent_version", None),
         outbound_agent_id=row.outbound_agent_id,
         status=row.status,
         metadata=dict(row.metadata_json or {}),
@@ -59,6 +61,67 @@ def _serialize_phone_number(row: TelephonyPhoneNumber) -> PhoneNumberResponse:
         created_at=row.created_at,
         updated_at=row.updated_at,
     )
+
+
+def _serialize_legacy_phone_number(row: PhoneNumber) -> PhoneNumberResponse:
+    now = datetime.utcnow()
+    return PhoneNumberResponse(
+        id=row.id,
+        organization_id=row.tenant_id,
+        environment_id=row.environment_id,
+        number=row.e164,
+        e164_number=row.e164,
+        provider=str(row.provider or "twilio").upper(),
+        provider_number_id=row.external_id,
+        sip_connection_id=None,
+        sip_enabled=False,
+        inbound_enabled=True,
+        outbound_enabled=True,
+        inbound_agent_id=str(row.inbound_agent_id) if row.inbound_agent_id else None,
+        inbound_agent_version=row.inbound_agent_version,
+        outbound_agent_id=str(row.outbound_agent_id) if row.outbound_agent_id else None,
+        status=str(row.status or "ACTIVE").upper(),
+        metadata=dict(row.capabilities or {}),
+        last_health_check_at=None,
+        last_health_error=None,
+        created_at=row.created_at or now,
+        updated_at=row.updated_at or now,
+    )
+
+
+async def _validate_agent_version(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    agent_id: str | None,
+    version_number: int | None,
+) -> int | None:
+    if version_number is None:
+        return None
+    if not agent_id:
+        raise PhoneNumberValidationError(
+            "Cannot pin inbound_agent_version without inbound_agent_id.",
+            detail={"field": "inbound_agent_version"},
+        )
+    try:
+        agent_uuid = UUID(str(agent_id))
+    except ValueError:
+        return int(version_number)
+    ver = (
+        await session.execute(
+            select(AgentVersion).where(
+                AgentVersion.tenant_id == tenant_id,
+                AgentVersion.agent_id == agent_uuid,
+                AgentVersion.version_number == int(version_number),
+            )
+        )
+    ).scalar_one_or_none()
+    if ver is None:
+        raise PhoneNumberValidationError(
+            f"AgentVersion v{version_number} not found for agent '{agent_id}'.",
+            detail={"field": "inbound_agent_version", "version_number": version_number},
+        )
+    return int(version_number)
 
 
 async def _validate_agent_ownership(
@@ -158,6 +221,12 @@ class PhoneNumberService:
             agent_id=payload.inbound_agent_id,
             field_name="inbound_agent_id",
         )
+        inbound_version = await _validate_agent_version(
+            self.session,
+            tenant_id=tenant_id,
+            agent_id=inbound_agent,
+            version_number=payload.inbound_agent_version,
+        )
         outbound_agent = await _validate_agent_ownership(
             self.session,
             tenant_id=tenant_id,
@@ -207,6 +276,7 @@ class PhoneNumberService:
             inbound_enabled=payload.inbound_enabled,
             outbound_enabled=payload.outbound_enabled,
             inbound_agent_id=inbound_agent,
+            inbound_agent_version=inbound_version,
             outbound_agent_id=outbound_agent,
             status=lifecycle.value,
             metadata_json=dict(payload.metadata or {}),
@@ -255,8 +325,12 @@ class PhoneNumberService:
         tenant_id: UUID,
         phone_number_id: UUID,
     ) -> PhoneNumberResponse:
-        row = await self._get_row(tenant_id=tenant_id, phone_number_id=phone_number_id)
-        return _serialize_phone_number(row)
+        try:
+            row = await self._get_row(tenant_id=tenant_id, phone_number_id=phone_number_id)
+            return _serialize_phone_number(row)
+        except PhoneNumberNotFoundError:
+            legacy = await self._get_legacy_row(tenant_id=tenant_id, phone_number_id=phone_number_id)
+            return _serialize_legacy_phone_number(legacy)
 
     async def find_by_e164(
         self,
@@ -279,8 +353,38 @@ class PhoneNumberService:
         phone_number_id: UUID,
         payload: PhoneNumberUpdateRequest,
     ) -> PhoneNumberResponse:
-        row = await self._get_row(tenant_id=tenant_id, phone_number_id=phone_number_id)
         fields_set = payload.model_fields_set
+        try:
+            row = await self._get_row(tenant_id=tenant_id, phone_number_id=phone_number_id)
+        except PhoneNumberNotFoundError:
+            legacy = await self._get_legacy_row(tenant_id=tenant_id, phone_number_id=phone_number_id)
+            if "inbound_agent_id" in fields_set:
+                val = await _validate_agent_ownership(
+                    self.session,
+                    tenant_id=tenant_id,
+                    agent_id=payload.inbound_agent_id,
+                    field_name="inbound_agent_id",
+                )
+                legacy.inbound_agent_id = UUID(val) if val else None
+            if "inbound_agent_version" in fields_set:
+                legacy.inbound_agent_version = await _validate_agent_version(
+                    self.session,
+                    tenant_id=tenant_id,
+                    agent_id=str(legacy.inbound_agent_id) if legacy.inbound_agent_id else None,
+                    version_number=payload.inbound_agent_version,
+                )
+            elif "inbound_agent_id" in fields_set and payload.inbound_agent_id is None:
+                legacy.inbound_agent_version = None
+            if "outbound_agent_id" in fields_set:
+                val = await _validate_agent_ownership(
+                    self.session,
+                    tenant_id=tenant_id,
+                    agent_id=payload.outbound_agent_id,
+                    field_name="outbound_agent_id",
+                )
+                legacy.outbound_agent_id = UUID(val) if val else None
+            await self.session.flush()
+            return _serialize_legacy_phone_number(legacy)
 
         if "provider" in fields_set and payload.provider is not None:
             row.provider = payload.provider.value
@@ -300,6 +404,15 @@ class PhoneNumberService:
                 tenant_id=tenant_id,
                 agent_id=payload.inbound_agent_id,
                 field_name="inbound_agent_id",
+            )
+            if payload.inbound_agent_id is None and "inbound_agent_version" not in fields_set:
+                row.inbound_agent_version = None
+        if "inbound_agent_version" in fields_set:
+            row.inbound_agent_version = await _validate_agent_version(
+                self.session,
+                tenant_id=tenant_id,
+                agent_id=row.inbound_agent_id,
+                version_number=payload.inbound_agent_version,
             )
         if "outbound_agent_id" in fields_set:
             row.outbound_agent_id = await _validate_agent_ownership(
@@ -346,6 +459,13 @@ class PhoneNumberService:
                 tenant_id=tenant_id,
                 agent_id=payload.inbound_agent_id,
                 field_name="inbound_agent_id",
+            )
+        if "inbound_agent_version" in fields_set:
+            row.inbound_agent_version = await _validate_agent_version(
+                self.session,
+                tenant_id=tenant_id,
+                agent_id=row.inbound_agent_id,
+                version_number=payload.inbound_agent_version,
             )
         if "outbound_agent_id" in fields_set:
             row.outbound_agent_id = await _validate_agent_ownership(
@@ -395,6 +515,27 @@ class PhoneNumberService:
                 select(TelephonyPhoneNumber).where(
                     TelephonyPhoneNumber.id == phone_number_id,
                     TelephonyPhoneNumber.tenant_id == tenant_id,
+                )
+            )
+        ).scalar_one_or_none()
+        if row is None:
+            raise PhoneNumberNotFoundError(
+                f"Phone number '{phone_number_id}' not found in this organization.",
+                detail={"phone_number_id": str(phone_number_id)},
+            )
+        return row
+
+    async def _get_legacy_row(
+        self,
+        *,
+        tenant_id: UUID,
+        phone_number_id: UUID,
+    ) -> PhoneNumber:
+        row = (
+            await self.session.execute(
+                select(PhoneNumber).where(
+                    PhoneNumber.id == phone_number_id,
+                    PhoneNumber.tenant_id == tenant_id,
                 )
             )
         ).scalar_one_or_none()

@@ -92,6 +92,7 @@ def verify_license(token: str, *, now: int | None = None) -> LicenseInfo | None:
     try:
         raw = base64.urlsafe_b64decode(body_b64.encode()).decode()
     except Exception:
+        __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
         return None
 
     parts = raw.split(".")

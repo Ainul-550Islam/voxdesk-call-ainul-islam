@@ -1,0 +1,96 @@
+$ /usr/local/bin/python -m pytest -q tests/telephony/test_recording.py::test_other_tenant_cannot_change_policy tests/telephony/test_recording.py::test_missing_provider_id_and_callback_duplicate tests/telephony/test_recording.py::test_retention_deletes_recording_unless_held tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+...F                                                                     [100%]
+=================================== FAILURES ===================================
+___________ test_realtime_media_gateway_barge_in_dtmf_and_transfers ____________
+
+client = <httpx.AsyncClient object at 0x7fca334e5550>
+db = <sqlalchemy.ext.asyncio.session.AsyncSession object at 0x7fca58480d60>
+
+    @pytest.mark.asyncio
+    async def test_realtime_media_gateway_barge_in_dtmf_and_transfers(
+        client: AsyncClient,
+        db: AsyncSession,
+    ):
+        tenant = await make_tenant(db, "Realtime Media & Transfer Org")
+        admin = await make_user(db, tenant, role=UserRole.ADMIN)
+        headers = await auth_headers(client, admin)
+        agent1 = await _seed_agent(db, tenant_id=tenant.id, name="Primary Intake Agent")
+        agent2 = await _seed_agent(db, tenant_id=tenant.id, name="Specialist Escalation Agent")
+    
+        # 1. Start an outbound call
+        out_resp = await client.post(
+            "/api/v1/telephony/calls/outbound",
+            json={
+                "to_number": "+14155550177",
+                "from_number": "+14155550101",
+                "agent_id": str(agent1.id),
+                "provider": "SIMULATED",
+                "is_simulation": True,
+            },
+            headers=headers,
+        )
+>       assert out_resp.status_code == 201
+E       assert 400 == 201
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests/test_telephony_runtime_e2e.py:446: AssertionError
+---------------------------- Captured stdout setup -----------------------------
+[2m2026-10-06T08:59:23.432365Z[0m [[32m[1minfo     [0m] [1mdashboard.mounted             [0m [36mcanonical[0m=[35mdashboard (Vite)[0m [36mdist_dir[0m=[35m/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/dist[0m [36mnote[0m=[35mdashboard-next is roadmap/shadow, not production served[0m [36mshadow_next_present[0m=[35mFalse[0m
+----------------------------- Captured stdout call -----------------------------
+[2m2026-10-06T08:59:23.501762Z[0m [[32m[1minfo     [0m] [1midentity.email_rendered       [0m [36mbody_chars[0m=[35m282[0m [36mrequest_id[0m=[35mff93277d133945289dd2e342ce56848b[0m [36msubject[0m=[35mNew sign-in to your account - Realtime Media & Transfer Org[0m [36mto[0m=[35ma***@example.com[0m [36mtransport[0m=[35mlog[0m
+[2m2026-10-06T08:59:23.554541Z[0m [[33m[1mwarning  [0m] [1mapp_error                     [0m [36mactor_type[0m=[35mhuman[0m [36mactor_user_id[0m=[35m5e845779-f2d5-402a-a5cb-b76cfa9e3676[0m [36mcode[0m=[35mIDEMPOTENCY_KEY_REQUIRED[0m [36mmessage[0m=[35mIdempotency-Key is required for outbound calls.[0m [36mrequest_id[0m=[35m270b3c8ee8e84e95afcbe3e4829c4850[0m [36mstatus[0m=[35m400[0m [36mtenant_id[0m=[35m92cb7281-d3d1-47ab-b509-227f748ff307[0m
+=============================== warnings summary ===============================
+tests/telephony/test_recording.py::test_other_tenant_cannot_change_policy
+tests/telephony/test_recording.py::test_other_tenant_cannot_change_policy
+tests/telephony/test_recording.py::test_missing_provider_id_and_callback_duplicate
+tests/telephony/test_recording.py::test_retention_deletes_recording_unless_held
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/telephony/test_recording.py: 4 warnings
+tests/test_telephony_runtime_e2e.py: 15 warnings
+  /usr/local/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/telephony/test_recording.py::test_other_tenant_cannot_change_policy
+tests/telephony/test_recording.py::test_other_tenant_cannot_change_policy
+tests/telephony/test_recording.py::test_missing_provider_id_and_callback_duplicate
+tests/telephony/test_recording.py::test_retention_deletes_recording_unless_held
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/telephony/test_recording.py::test_missing_provider_id_and_callback_duplicate
+tests/telephony/test_recording.py::test_retention_deletes_recording_unless_held
+tests/telephony/test_recording.py::test_retention_deletes_recording_unless_held
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/conftest.py:569: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "started_at": datetime.utcnow(),
+
+tests/telephony/test_recording.py::test_retention_deletes_recording_unless_held
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/telephony/test_recording.py:148: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call.started_at = datetime.utcnow() - timedelta(days=400)
+
+tests/telephony/test_recording.py::test_retention_deletes_recording_unless_held
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/telephony/test_recording.py:160: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call2.started_at = datetime.utcnow() - timedelta(days=400)
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /usr/local/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+1 failed, 3 passed, 41 warnings in 60.13s (0:01:00)
+
+STDERR:

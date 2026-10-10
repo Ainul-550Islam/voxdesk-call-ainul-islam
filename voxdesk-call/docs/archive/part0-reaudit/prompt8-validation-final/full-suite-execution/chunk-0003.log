@@ -1,0 +1,51 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/auth/scim/test_scim_credentials.py::test_scopes_are_recorded_and_narrowing_is_possible tests/auth/scim/test_scim_credentials.py::test_an_expiry_is_honoured tests/auth/scim/test_scim_groups.py::test_a_group_is_created_with_its_members tests/auth/scim/test_scim_groups.py::test_a_group_with_a_duplicate_name_updates_the_existing_one tests/auth/scim/test_scim_groups.py::test_a_group_without_a_display_name_is_refused tests/auth/scim/test_scim_groups.py::test_a_group_member_that_is_not_a_user_id_is_refused tests/auth/scim/test_scim_groups.py::test_put_replaces_membership tests/auth/scim/test_scim_groups.py::test_patch_updates_membership tests/auth/scim/test_scim_groups.py::test_delete_removes_the_group_and_leaves_members_alone tests/auth/scim/test_scim_groups.py::test_a_known_group_grants_its_mapped_role tests/auth/scim/test_scim_groups.py::test_an_unmapped_group_grants_nothing tests/auth/scim/test_scim_groups.py::test_a_group_cannot_demote_a_member_below_another_groups_role tests/auth/scim/test_scim_groups.py::test_a_group_sync_never_lowers_a_role_it_did_not_grant tests/auth/scim/test_scim_groups.py::test_a_role_set_by_an_administrator_is_not_lowered_by_a_sync tests/auth/scim/test_scim_groups.py::test_a_group_never_grants_ownership tests/auth/scim/test_scim_groups.py::test_an_existing_owner_is_never_demoted_by_a_group tests/auth/scim/test_scim_groups.py::test_groups_are_listed_with_paging tests/auth/scim/test_scim_groups.py::test_an_unknown_group_id_is_a_404_and_a_foreign_one_is_invisible tests/auth/scim/test_scim_groups.py::test_a_credential_without_the_groups_scope_cannot_manage_groups tests/auth/scim/test_scim_protocol.py::test_service_provider_config_is_honest tests/auth/scim/test_scim_protocol.py::test_resource_types_name_the_real_endpoints tests/auth/scim/test_scim_protocol.py::test_schemas_describe_the_attributes_we_return tests/auth/scim/test_scim_protocol.py::test_every_scim_route_requires_a_credential tests/auth/scim/test_scim_protocol.py::test_a_wrong_or_malformed_token_is_refused tests/auth/scim/test_scim_protocol.py::test_a_connection_scoped_credential_cannot_use_another_connections_url tests/auth/scim/test_scim_protocol.py::test_a_connection_scoped_credential_cannot_use_the_default_path tests/auth/scim/test_scim_protocol.py::test_an_unknown_connection_id_is_a_404 tests/auth/scim/test_scim_protocol.py::test_the_credential_is_scoped_to_its_tenant tests/auth/scim/test_scim_protocol.py::test_two_credentials_in_two_workspaces_do_not_collide tests/auth/scim/test_scim_protocol.py::test_concurrent_creates_of_the_same_user_produce_one_user tests/auth/scim/test_scim_protocol.py::test_concurrent_deactivation_of_the_same_user_is_idempotent tests/auth/scim/test_scim_protocol.py::test_concurrent_rotation_leaves_exactly_one_live_credential tests/auth/scim/test_scim_protocol.py::test_concurrent_revocations_write_one_audit_entry tests/auth/scim/test_scim_protocol.py::test_responses_never_leak_secrets tests/auth/scim/test_scim_users.py::test_create_returns_201_with_a_location_and_the_resource tests/auth/scim/test_scim_users.py::test_the_created_user_cannot_be_signed_into_without_a_password tests/auth/scim/test_scim_users.py::test_a_duplicate_user_name_is_a_409_with_uniqueness tests/auth/scim/test_scim_users.py::test_a_user_name_that_is_not_an_address_is_refused tests/auth/scim/test_scim_users.py::test_external_id_round_trips tests/auth/scim/test_scim_users.py::test_listing_reports_the_total_and_paginates tests/auth/scim/test_scim_users.py::test_filtering_by_user_name tests/auth/scim/test_scim_users.py::test_filtering_by_active tests/auth/scim/test_scim_users.py::test_a_filter_naming_an_unfilterable_attribute_is_refused tests/auth/scim/test_scim_users.py::test_a_sql_shaped_filter_is_data_not_syntax tests/auth/scim/test_scim_users.py::test_put_replaces_the_resource tests/auth/scim/test_scim_users.py::test_patch_deactivates_and_revokes_sessions tests/auth/scim/test_scim_users.py::test_patch_without_a_path_uses_the_value_object tests/auth/scim/test_scim_users.py::test_an_unsupported_patch_path_is_refused_not_ignored tests/auth/scim/test_scim_users.py::test_a_patch_without_operations_is_refused tests/auth/scim/test_scim_users.py::test_delete_deprovisions_and_removes_the_user
+..................................................                       [100%]
+=============================== warnings summary ===============================
+tests/auth/scim/test_scim_credentials.py::test_scopes_are_recorded_and_narrowing_is_possible
+tests/auth/scim/test_scim_credentials.py::test_scopes_are_recorded_and_narrowing_is_possible
+tests/auth/scim/test_scim_credentials.py::test_scopes_are_recorded_and_narrowing_is_possible
+tests/auth/scim/test_scim_credentials.py::test_scopes_are_recorded_and_narrowing_is_possible
+tests/auth/scim/test_scim_credentials.py::test_scopes_are_recorded_and_narrowing_is_possible
+tests/auth/scim/test_scim_credentials.py::test_scopes_are_recorded_and_narrowing_is_possible
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/auth/scim/test_scim_credentials.py: 2 warnings
+tests/auth/scim/test_scim_groups.py: 18 warnings
+tests/auth/scim/test_scim_protocol.py: 17 warnings
+tests/auth/scim/test_scim_users.py: 16 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/auth/scim/test_scim_credentials.py: 16 warnings
+tests/auth/scim/test_scim_groups.py: 168 warnings
+tests/auth/scim/test_scim_protocol.py: 119 warnings
+tests/auth/scim/test_scim_users.py: 163 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/auth/scim/test_scim_credentials.py: 2 warnings
+tests/auth/scim/test_scim_groups.py: 18 warnings
+tests/auth/scim/test_scim_protocol.py: 17 warnings
+tests/auth/scim/test_scim_users.py: 16 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/auth/scim/test_scim_credentials.py: 2 warnings
+tests/auth/scim/test_scim_groups.py: 31 warnings
+tests/auth/scim/test_scim_protocol.py: 24 warnings
+tests/auth/scim/test_scim_users.py: 36 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/auth/scim/test_scim_credentials.py: 11 warnings
+tests/auth/scim/test_scim_groups.py: 188 warnings
+tests/auth/scim/test_scim_protocol.py: 76 warnings
+tests/auth/scim/test_scim_users.py: 122 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/auth/identity/models.py:69: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+50 passed, 1068 warnings in 99.08s (0:01:39)
+
+STDERR:

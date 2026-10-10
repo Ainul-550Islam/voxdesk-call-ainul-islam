@@ -145,6 +145,7 @@ def _is_docx_zip(data: bytes) -> bool:
         with zipfile.ZipFile(io.BytesIO(data)) as archive:
             names = set(archive.namelist())
     except Exception:
+        __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
         return False
     return "word/document.xml" in names
 

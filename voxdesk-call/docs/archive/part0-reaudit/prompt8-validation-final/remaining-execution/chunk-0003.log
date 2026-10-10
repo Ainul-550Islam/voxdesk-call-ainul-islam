@@ -1,0 +1,82 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_crm_idempotency.py::test_a_401_fails_permanently_without_burning_attempts tests/test_crm_idempotency.py::test_a_422_fails_permanently tests/test_crm_idempotency.py::test_repeated_transient_failures_eventually_give_up tests/test_crm_idempotency.py::test_a_429_reads_retry_after tests/test_crm_idempotency.py::test_an_absurd_retry_after_is_capped tests/test_crm_idempotency.py::test_a_garbage_retry_after_falls_back_to_our_own_backoff tests/test_crm_idempotency.py::test_the_token_bucket_allows_a_burst_then_throttles tests/test_crm_idempotency.py::test_the_bucket_refills_over_time tests/test_crm_idempotency.py::test_one_tenant_cannot_exhaust_another_tenants_budget tests/test_crm_idempotency.py::test_buckets_are_per_provider_as_well_as_per_tenant tests/test_crm_idempotency.py::test_a_throttled_sync_is_rescheduled_not_failed tests/test_crm_mapping.py::TestMappingValidation::test_a_valid_mapping_is_accepted tests/test_crm_mapping.py::TestMappingValidation::test_an_empty_mapping_is_fine tests/test_crm_mapping.py::TestMappingValidation::test_an_unknown_source_is_rejected tests/test_crm_mapping.py::TestMappingValidation::test_the_allowlist_covers_the_examples_the_brief_named tests/test_crm_mapping.py::TestMappingValidation::test_too_many_mappings_are_rejected tests/test_crm_mapping.py::TestMappingValidation::test_an_overlong_key_is_rejected tests/test_crm_mapping.py::TestMappingValidation::test_a_non_string_source_is_rejected tests/test_crm_mapping.py::TestMappingValidation::test_an_empty_key_is_rejected tests/test_crm_mapping.py::TestMappingValidation::test_a_non_dict_is_rejected tests/test_crm_mapping.py::TestMappingResolution::test_values_are_pulled_from_the_named_sources tests/test_crm_mapping.py::TestMappingResolution::test_a_missing_source_is_skipped_not_sent_as_null tests/test_crm_mapping.py::TestMappingResolution::test_an_empty_value_is_skipped tests/test_crm_mapping.py::TestMappingResolution::test_booleans_become_provider_friendly_strings tests/test_crm_mapping.py::TestMappingResolution::test_numbers_stay_numbers tests/test_crm_mapping.py::TestMappingResolution::test_an_enormous_value_is_truncated_at_send_time tests/test_crm_mapping.py::TestMappingResolution::test_an_unmapped_source_is_never_sent tests/test_crm_mapping.py::TestIdentity::test_phone_normalization_makes_formats_comparable[+1 (555) 010-2000-5550102000] tests/test_crm_mapping.py::TestIdentity::test_phone_normalization_makes_formats_comparable[+15550102000-5550102000] tests/test_crm_mapping.py::TestIdentity::test_phone_normalization_makes_formats_comparable[555-010-2000-5550102000]
+..............................                                           [100%]
+=============================== warnings summary ===============================
+tests/test_crm_idempotency.py::test_a_401_fails_permanently_without_burning_attempts
+tests/test_crm_idempotency.py::test_a_422_fails_permanently
+tests/test_crm_idempotency.py::test_repeated_transient_failures_eventually_give_up
+tests/test_crm_idempotency.py::test_a_429_reads_retry_after
+tests/test_crm_idempotency.py::test_an_absurd_retry_after_is_capped
+tests/test_crm_idempotency.py::test_a_garbage_retry_after_falls_back_to_our_own_backoff
+tests/test_crm_idempotency.py::test_a_throttled_sync_is_rescheduled_not_failed
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_crm_idempotency.py: 69 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/test_crm_idempotency.py::test_a_401_fails_permanently_without_burning_attempts
+tests/test_crm_idempotency.py::test_a_422_fails_permanently
+tests/test_crm_idempotency.py::test_repeated_transient_failures_eventually_give_up
+tests/test_crm_idempotency.py::test_a_429_reads_retry_after
+tests/test_crm_idempotency.py::test_an_absurd_retry_after_is_capped
+tests/test_crm_idempotency.py::test_a_garbage_retry_after_falls_back_to_our_own_backoff
+tests/test_crm_idempotency.py::test_a_throttled_sync_is_rescheduled_not_failed
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_crm_idempotency.py::test_a_401_fails_permanently_without_burning_attempts
+tests/test_crm_idempotency.py::test_a_422_fails_permanently
+tests/test_crm_idempotency.py::test_repeated_transient_failures_eventually_give_up
+tests/test_crm_idempotency.py::test_a_429_reads_retry_after
+tests/test_crm_idempotency.py::test_an_absurd_retry_after_is_capped
+tests/test_crm_idempotency.py::test_a_garbage_retry_after_falls_back_to_our_own_backoff
+tests/test_crm_idempotency.py::test_a_throttled_sync_is_rescheduled_not_failed
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/conftest.py:550: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    integration.credentials_updated_at = datetime.utcnow()
+
+tests/test_crm_idempotency.py::test_a_401_fails_permanently_without_burning_attempts
+tests/test_crm_idempotency.py::test_a_422_fails_permanently
+tests/test_crm_idempotency.py::test_repeated_transient_failures_eventually_give_up
+tests/test_crm_idempotency.py::test_a_429_reads_retry_after
+tests/test_crm_idempotency.py::test_an_absurd_retry_after_is_capped
+tests/test_crm_idempotency.py::test_a_garbage_retry_after_falls_back_to_our_own_backoff
+tests/test_crm_idempotency.py::test_a_throttled_sync_is_rescheduled_not_failed
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/conftest.py:569: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "started_at": datetime.utcnow(),
+
+tests/test_crm_idempotency.py::test_a_401_fails_permanently_without_burning_attempts
+tests/test_crm_idempotency.py::test_a_422_fails_permanently
+tests/test_crm_idempotency.py::test_repeated_transient_failures_eventually_give_up
+tests/test_crm_idempotency.py::test_repeated_transient_failures_eventually_give_up
+tests/test_crm_idempotency.py::test_repeated_transient_failures_eventually_give_up
+tests/test_crm_idempotency.py::test_a_429_reads_retry_after
+tests/test_crm_idempotency.py::test_an_absurd_retry_after_is_capped
+tests/test_crm_idempotency.py::test_a_garbage_retry_after_falls_back_to_our_own_backoff
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/integrations/crm/service.py:261: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_crm_idempotency.py::test_repeated_transient_failures_eventually_give_up
+tests/test_crm_idempotency.py::test_repeated_transient_failures_eventually_give_up
+tests/test_crm_idempotency.py::test_a_429_reads_retry_after
+tests/test_crm_idempotency.py::test_an_absurd_retry_after_is_capped
+tests/test_crm_idempotency.py::test_a_garbage_retry_after_falls_back_to_our_own_backoff
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/integrations/crm/service.py:600: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    sync.next_attempt_at = datetime.utcnow() + timedelta(seconds=delay)
+
+tests/test_crm_idempotency.py::test_a_429_reads_retry_after
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/test_crm_idempotency.py:498: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    before = datetime.utcnow()
+
+tests/test_crm_idempotency.py::test_an_absurd_retry_after_is_capped
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/test_crm_idempotency.py:512: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    before = datetime.utcnow()
+
+tests/test_crm_idempotency.py::test_a_throttled_sync_is_rescheduled_not_failed
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/integrations/crm/service.py:240: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    sync.next_attempt_at = datetime.utcnow() + timedelta(seconds=max(delay, 1.0))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+30 passed, 113 warnings in 6.28s
+
+STDERR:

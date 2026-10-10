@@ -9,9 +9,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 ROOTS = ('app', 'services', 'dashboard/src', 'dashboard-next', 'sdk')
 SUFFIXES = {'.py', '.ts', '.tsx', '.js', '.jsx', '.rs', '.go', '.c', '.cc', '.cpp', '.h', '.hpp', '.html'}
-SKIP = {'node_modules', 'target', 'build', 'dist', '__pycache__', '.next', '.cache', '.venv'}
+SKIP = {'node_modules', 'target', 'build', 'dist', 'vendor', '__pycache__', '.next', '.cache', '.venv'}
 BANNER = re.compile(r'NO SKIP FULL CODE|\b\d{3,}\+\s*lines\b', re.I)
-PADDING = re.compile(r'^\s*(?:(?:#|//)\s*Padding\b.*|//\s*(?:Extended line \d+ — production implementation detail:|Production test helper \d+: real coverage for exhaustive testing).*)')
+PADDING = re.compile(
+    r'^\s*(?:(?:#|//)\s*Padding\b.*|//\s*(?:Extended [\w.-]*\s*line \d+ — production (?:implementation detail|hook logic):|Production (?:test helper|line) \d+:\s*real (?:coverage|logic)\b|Real (?:production|analytics|handoff) helper(?:\s+\d+|\s+for\b)|==================== Extended (?:Production|Real Production)\b).*)'
+)
 
 
 def sources(root=ROOT):

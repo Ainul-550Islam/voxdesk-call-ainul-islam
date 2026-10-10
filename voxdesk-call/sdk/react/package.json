@@ -1,0 +1,22 @@
+{
+  "name": "@voxdesk/react",
+  "version": "0.3.0",
+  "description": "React hooks and call UI components for VoxDesk Browser Voice Calls",
+  "license": "MIT",
+  "type": "module",
+  "main": "./src/index.tsx",
+  "module": "./src/index.tsx",
+  "types": "./src/index.tsx",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "peerDependencies": {
+    "@voxdesk/web-sdk": "^0.3.0",
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}

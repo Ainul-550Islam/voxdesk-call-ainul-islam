@@ -1,0 +1,129 @@
+app/services/post_call_analysis_service.py:137:1: E402 Module level import not at top of file
+    |
+135 | # Backfill is an admission manifest over the existing jobs/checkpoints, not a
+136 | # second queue. Each bounded child invokes the same governed extraction above.
+137 | from datetime import datetime, timezone, timedelta
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E402
+138 | 
+139 | from app.agent.errors import ProviderError
+    |
+
+app/services/post_call_analysis_service.py:139:1: E402 Module level import not at top of file
+    |
+137 | from datetime import datetime, timezone, timedelta
+138 | 
+139 | from app.agent.errors import ProviderError
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E402
+140 | from app.ai.models import GovernanceError
+141 | from app.core.rate_limit import rate_limit
+    |
+
+app/services/post_call_analysis_service.py:140:1: E402 Module level import not at top of file
+    |
+139 | from app.agent.errors import ProviderError
+140 | from app.ai.models import GovernanceError
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E402
+141 | from app.core.rate_limit import rate_limit
+142 | from app.core.ssrf import OutboundUrlError
+    |
+
+app/services/post_call_analysis_service.py:141:1: E402 Module level import not at top of file
+    |
+139 | from app.agent.errors import ProviderError
+140 | from app.ai.models import GovernanceError
+141 | from app.core.rate_limit import rate_limit
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E402
+142 | from app.core.ssrf import OutboundUrlError
+143 | from app.db.models import Call, Tenant, Environment, DurableJob
+    |
+
+app/services/post_call_analysis_service.py:142:1: E402 Module level import not at top of file
+    |
+140 | from app.ai.models import GovernanceError
+141 | from app.core.rate_limit import rate_limit
+142 | from app.core.ssrf import OutboundUrlError
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E402
+143 | from app.db.models import Call, Tenant, Environment, DurableJob
+144 | from app.db.enterprise_models import BackfillJob
+    |
+
+app/services/post_call_analysis_service.py:143:1: E402 Module level import not at top of file
+    |
+141 | from app.core.rate_limit import rate_limit
+142 | from app.core.ssrf import OutboundUrlError
+143 | from app.db.models import Call, Tenant, Environment, DurableJob
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E402
+144 | from app.db.enterprise_models import BackfillJob
+145 | from app.db.telephony_models import PostCallStepRun
+    |
+
+app/services/post_call_analysis_service.py:144:1: E402 Module level import not at top of file
+    |
+142 | from app.core.ssrf import OutboundUrlError
+143 | from app.db.models import Call, Tenant, Environment, DurableJob
+144 | from app.db.enterprise_models import BackfillJob
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E402
+145 | from app.db.telephony_models import PostCallStepRun
+146 | from app.jobs.queue import enqueue
+    |
+
+app/services/post_call_analysis_service.py:145:1: E402 Module level import not at top of file
+    |
+143 | from app.db.models import Call, Tenant, Environment, DurableJob
+144 | from app.db.enterprise_models import BackfillJob
+145 | from app.db.telephony_models import PostCallStepRun
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E402
+146 | from app.jobs.queue import enqueue
+147 | from app.jobs.types import JobType, ExecutionResult, register_handler
+    |
+
+app/services/post_call_analysis_service.py:146:1: E402 Module level import not at top of file
+    |
+144 | from app.db.enterprise_models import BackfillJob
+145 | from app.db.telephony_models import PostCallStepRun
+146 | from app.jobs.queue import enqueue
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E402
+147 | from app.jobs.types import JobType, ExecutionResult, register_handler
+148 | from app.jobs.models import PermanentJobError
+    |
+
+app/services/post_call_analysis_service.py:147:1: E402 Module level import not at top of file
+    |
+145 | from app.db.telephony_models import PostCallStepRun
+146 | from app.jobs.queue import enqueue
+147 | from app.jobs.types import JobType, ExecutionResult, register_handler
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E402
+148 | from app.jobs.models import PermanentJobError
+149 | from app.telephony.call_state import TERMINAL_STATUSES, is_terminal
+    |
+
+app/services/post_call_analysis_service.py:148:1: E402 Module level import not at top of file
+    |
+146 | from app.jobs.queue import enqueue
+147 | from app.jobs.types import JobType, ExecutionResult, register_handler
+148 | from app.jobs.models import PermanentJobError
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E402
+149 | from app.telephony.call_state import TERMINAL_STATUSES, is_terminal
+150 | from app.telephony.transcription import finalize_stored_turns, TranscriptUnavailable
+    |
+
+app/services/post_call_analysis_service.py:149:1: E402 Module level import not at top of file
+    |
+147 | from app.jobs.types import JobType, ExecutionResult, register_handler
+148 | from app.jobs.models import PermanentJobError
+149 | from app.telephony.call_state import TERMINAL_STATUSES, is_terminal
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E402
+150 | from app.telephony.transcription import finalize_stored_turns, TranscriptUnavailable
+    |
+
+app/services/post_call_analysis_service.py:150:1: E402 Module level import not at top of file
+    |
+148 | from app.jobs.models import PermanentJobError
+149 | from app.telephony.call_state import TERMINAL_STATUSES, is_terminal
+150 | from app.telephony.transcription import finalize_stored_turns, TranscriptUnavailable
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E402
+151 | 
+152 | MAX_BACKFILL_CALLS = 200
+    |
+
+Found 13 errors.

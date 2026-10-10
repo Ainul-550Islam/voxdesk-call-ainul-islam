@@ -1,0 +1,7 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest --collect-only -q tests/test_transfer_security.py::test_transfer_logs_carry_correlation_ids_and_no_secrets tests/test_transfer_security.py::test_selected_environment_hides_calls_and_transfer_metadata_in_other_environment
+tests/test_transfer_security.py::test_transfer_logs_carry_correlation_ids_and_no_secrets
+tests/test_transfer_security.py::test_selected_environment_hides_calls_and_transfer_metadata_in_other_environment
+
+2 tests collected in 0.05s
+
+STDERR:

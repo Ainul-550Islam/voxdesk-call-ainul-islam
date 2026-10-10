@@ -97,6 +97,36 @@ def validate_field_mappings(mappings: Any) -> dict[str, str]:
     return validated
 
 
+def validate_field_mappings_against_describe(
+    mappings: Any,
+    describe_metadata: dict[str, Any] | None = None,
+) -> dict[str, str]:
+    """Validate field mappings and optionally verify CRM field names against provider ``describe()`` metadata."""
+    validated = validate_field_mappings(mappings)
+    if not describe_metadata or not isinstance(describe_metadata, dict):
+        return validated
+    fields_list = describe_metadata.get("fields")
+    if not isinstance(fields_list, list) or not fields_list:
+        return validated
+    known_fields: dict[str, dict[str, Any]] = {}
+    for f in fields_list:
+        if isinstance(f, dict) and f.get("name"):
+            known_fields[str(f["name"])] = f
+    if not known_fields:
+        return validated
+    for provider_field in validated:
+        if provider_field not in known_fields:
+            raise MappingError(
+                f"CRM field {provider_field!r} does not exist in provider describe metadata"
+            )
+        field_meta = known_fields[provider_field]
+        if field_meta.get("updateable") is False and field_meta.get("createable") is False:
+            raise MappingError(
+                f"CRM field {provider_field!r} is read-only in provider describe metadata"
+            )
+    return validated
+
+
 def resolve_custom_fields(
     mappings: dict[str, str], sources: dict[str, Any]
 ) -> dict[str, Any]:

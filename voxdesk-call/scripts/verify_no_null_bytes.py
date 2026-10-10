@@ -12,7 +12,7 @@ def inspect_bytes(path, data):
     errors = []
     if b'\x00' in data:
         errors.append('null byte')
-    if not data and path.name not in {'__init__.py', '__init__.pyi', 'py.typed', '.gitkeep'}:
+    if not data and path.name not in {'__init__.py', '__init__.pyi', 'py.typed', '.gitkeep', 'fake_success_allowlist.txt'}:
         errors.append('unexpected empty text file')
     return errors
 

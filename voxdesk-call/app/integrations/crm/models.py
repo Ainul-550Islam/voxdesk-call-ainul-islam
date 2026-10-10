@@ -177,3 +177,7 @@ class HealthResult:
     provider: str
     latency_ms: float
     safe_message: str = ""
+
+
+# Canonical SQLAlchemy connection model alias (CrmIntegration in app.db.models)
+from app.db.models import CrmIntegration as CrmConnection  # noqa: E402,F401

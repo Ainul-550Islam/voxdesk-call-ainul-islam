@@ -31,6 +31,7 @@ class KubernetesAdapter:
             except config.ConfigException:
                 config.load_kube_config()
         except Exception:
+            __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
             return None
         active_host = client.Configuration.get_default_copy().host.rstrip("/")
         if active_host != self.cluster_reference.rstrip("/"):
@@ -50,6 +51,7 @@ class KubernetesAdapter:
             deployment = await asyncio.to_thread(apps.read_namespaced_deployment, name, namespace)
             pods = await asyncio.to_thread(core.list_namespaced_pod, namespace, label_selector=f"app={name}")
         except Exception as exc:
+            __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
             status = getattr(exc, "status", None)
             if status == 404:
                 return DeploymentObservation(self.name, True, False, False, "not_found", reference=f"{namespace}/{name}", reason="deployment resource was not found")
@@ -109,6 +111,7 @@ class KubernetesAdapter:
             current.spec.template.metadata.annotations = annotations
             await asyncio.to_thread(apps.replace_namespaced_deployment, name, ns, current)
         except Exception as exc:
+            __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
             if getattr(exc, "status", None) != 404:
                 return DeploymentObservation(self.name, False, False, False, "deploy_failed", reference=f"{ns}/{name}", reason="Kubernetes deployment update failed")
             return DeploymentObservation(self.name, False, False, False, "not_found", reference=f"{ns}/{name}", reason="deployment resource must be provisioned before managed rollout")

@@ -1,0 +1,5 @@
+ retained_results | correctly_unverified | result_bodies_preserved | scope_preserved 
+------------------+----------------------+-------------------------+-----------------
+                1 | t                    | t                       | t
+(1 row)
+

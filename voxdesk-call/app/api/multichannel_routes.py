@@ -1,9 +1,9 @@
-# File: app/api/multichannel_routes.py — Missing APIs: multichannel normalization voice+SMS+chat/WhatsApp unified conversation/action contract, message provider lifecycle
+# File: app/api/multichannel_routes.py — Multichannel messaging routes wired to app/messaging/sms.py, MessageChannel (W-11), and MessageWebhookReceipt
 """
-Multichannel API normalization + message provider lifecycle.
-Closes gaps:
-29. Multichannel API normalization — voice + SMS + chat/WhatsApp unified conversation/action contract
-30. Message provider lifecycle API — channel registration/provider health/send capability/receipt state
+Expanded multichannel messaging API (`/api/channels`).
+Wired to `app/messaging/sms.py`, `MessageChannel` (`W-11`), and `MessageWebhookReceipt`:
+- Channel registration, update, delete, health check, outbound send, inbound/status webhooks, and real delivery receipts
+- Fails closed with HTTP 501 (`NOT_CONFIGURED`) when provider credentials are absent
 """
 from __future__ import annotations
 
@@ -11,30 +11,40 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import TenantContext, require_permission
 from app.auth.permissions import Permission
-from app.db.session import get_session
 from app.db.enterprise_models import MessageChannel
+from app.db.models import MessageWebhookReceipt
+from app.db.session import get_session
+from app.messaging import sms as sms_service
 
 router = APIRouter(prefix="/api/channels", tags=["multichannel"])
 
+ALLOWED_CHANNEL_TYPES = {"sms", "whatsapp", "email", "webchat"}
+ALLOWED_PROVIDERS = {"twilio", "meta", "sendgrid", "internal", "webhook"}
+
+
 class _Strict(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
+
 
 class ChannelCreate(_Strict):
-    channel_type: str = Field(pattern="^(voice|sms|whatsapp|chat|email)$")
-    provider: str = Field(min_length=1, max_length=32, description="twilio, telnyx, vonage, custom")
-    config: dict = Field(default_factory=dict, description="Provider config: api_key_ref, webhook_url, etc. No secrets in plain")
+    channel_type: str = Field(pattern="^(sms|whatsapp|email|webchat)$")
+    provider: str = Field(pattern="^(twilio|meta|sendgrid|internal|webhook)$")
+    config: dict = Field(default_factory=dict)
     is_active: bool = True
+
 
 class ChannelUpdate(_Strict):
     config: Optional[dict] = None
     is_active: Optional[bool] = None
+
 
 class ChannelOut(_Strict):
     id: str
@@ -48,107 +58,91 @@ class ChannelOut(_Strict):
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
 
-class UnifiedConversationRequest(_Strict):
-    channel_type: str = Field(pattern="^(voice|sms|whatsapp|chat|email)$")
-    to: str = Field(min_length=3, max_length=100)
+
+class SendMessageRequest(_Strict):
+    channel_type: str = Field(pattern="^(sms|whatsapp|email|webchat)$")
+    to: str = Field(min_length=3, max_length=200)
     message: str = Field(min_length=1, max_length=4000)
-    agent_id: Optional[str] = Field(default=None, max_length=80)
-    custom_fields: dict = Field(default_factory=dict)
+    subject: Optional[str] = Field(default=None, max_length=200)
+    metadata: dict = Field(default_factory=dict)
 
-class UnifiedConversationOut(_Strict):
-    id: str
-    channel_type: str
-    provider: str
-    to: str
-    status: str
-    message_id: Optional[str] = None
-    created_at: str
-
-class HealthCheckOut(_Strict):
-    channel_id: str
-    health_status: str
-    can_send: bool
-    can_receive: bool
-    last_check_at: str
-    details: dict
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
 
+
+def _mask_config(cfg: dict) -> dict:
+    masked = {}
+    for k, v in (cfg or {}).items():
+        if any(s in k.lower() for s in ("secret", "token", "key", "password")):
+            masked[k] = "***REDACTED***"
+        else:
+            masked[k] = v
+    return masked
+
+
 def _to_out(row: MessageChannel) -> ChannelOut:
     d = row.as_dict()
-    return ChannelOut(
-        id=d["id"],
-        tenant_id=d["tenant_id"],
-        channel_type=d["channel_type"],
-        provider=d["provider"],
-        is_active=d["is_active"],
-        config=d["config"],
-        health_status=d["health_status"],
-        last_health_check_at=d["last_health_check_at"],
-        created_at=d["created_at"],
-        updated_at=d["updated_at"],
-    )
+    d["config"] = _mask_config(d.get("config", {}))
+    return ChannelOut(**d)
+
 
 @router.post("", response_model=ChannelOut, status_code=201)
-async def register_channel(
+async def create_channel(
     payload: ChannelCreate,
-    ctx: TenantContext = Depends(require_permission(Permission.INTEGRATION_WRITE)),
+    ctx: TenantContext = Depends(require_permission(Permission.TENANT_UPDATE)),
     session: AsyncSession = Depends(get_session),
 ):
-    """POST /api/channels — Channel registration."""
-    # Check duplicate channel_type+provider for tenant
-    existing = (
-        await session.execute(
-            select(MessageChannel).where(
-                MessageChannel.tenant_id == ctx.tenant_id,
-                MessageChannel.channel_type == payload.channel_type,
-                MessageChannel.provider == payload.provider,
-            )
-        )
-    ).scalar_one_or_none()
-    if existing:
-        raise HTTPException(status_code=409, detail="channel already registered for this provider+type")
-
-    ch = MessageChannel(
+    """POST /api/channels — Register messaging channel (SMS/WhatsApp/Email/Webchat)."""
+    row = MessageChannel(
         tenant_id=ctx.tenant_id,
         channel_type=payload.channel_type,
         provider=payload.provider,
         is_active=payload.is_active,
         config=payload.config,
         health_status="unknown",
+        last_health_check_at=None,
     )
-    session.add(ch)
+    session.add(row)
     await session.commit()
-    await session.refresh(ch)
-    return _to_out(ch)
+    await session.refresh(row)
+    return _to_out(row)
+
 
 @router.get("", response_model=dict)
 async def list_channels(
     channel_type: Optional[str] = Query(default=None),
-    is_active: Optional[bool] = Query(default=None),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
-    ctx: TenantContext = Depends(require_permission(Permission.INTEGRATION_READ)),
+    ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)),
     session: AsyncSession = Depends(get_session),
 ):
     scope = [MessageChannel.tenant_id == ctx.tenant_id]
     if channel_type:
         scope.append(MessageChannel.channel_type == channel_type)
-    if is_active is not None:
-        scope.append(MessageChannel.is_active == is_active)
-    total = (await session.execute(select(func.count(MessageChannel.id)).where(*scope))).scalar() or 0
-    rows = (
-        await session.execute(
-            select(MessageChannel).where(*scope).order_by(MessageChannel.created_at.desc()).offset(offset).limit(limit)
-        )
-    ).scalars().all()
-    return {"channels": [r.as_dict() for r in rows], "total": int(total), "limit": limit, "offset": offset}
+    total = (
+        await session.execute(select(func.count(MessageChannel.id)).where(*scope))
+    ).scalar() or 0
+    stmt = (
+        select(MessageChannel)
+        .where(*scope)
+        .order_by(MessageChannel.created_at.desc())
+        .limit(limit)
+        .offset(offset)
+    )
+    rows = (await session.execute(stmt)).scalars().all()
+    return {
+        "channels": [_to_out(r).model_dump() for r in rows],
+        "total": int(total),
+        "limit": limit,
+        "offset": offset,
+    }
+
 
 @router.get("/{channel_id}", response_model=ChannelOut)
 async def get_channel(
     channel_id: uuid.UUID,
-    ctx: TenantContext = Depends(require_permission(Permission.INTEGRATION_READ)),
+    ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)),
     session: AsyncSession = Depends(get_session),
 ):
     row = await session.get(MessageChannel, channel_id)
@@ -156,11 +150,12 @@ async def get_channel(
         raise HTTPException(status_code=404, detail="channel not found")
     return _to_out(row)
 
+
 @router.patch("/{channel_id}", response_model=ChannelOut)
 async def update_channel(
     channel_id: uuid.UUID,
     payload: ChannelUpdate,
-    ctx: TenantContext = Depends(require_permission(Permission.INTEGRATION_WRITE)),
+    ctx: TenantContext = Depends(require_permission(Permission.TENANT_UPDATE)),
     session: AsyncSession = Depends(get_session),
 ):
     row = await session.get(MessageChannel, channel_id)
@@ -175,10 +170,11 @@ async def update_channel(
     await session.refresh(row)
     return _to_out(row)
 
+
 @router.delete("/{channel_id}")
 async def delete_channel(
     channel_id: uuid.UUID,
-    ctx: TenantContext = Depends(require_permission(Permission.INTEGRATION_WRITE)),
+    ctx: TenantContext = Depends(require_permission(Permission.TENANT_UPDATE)),
     session: AsyncSession = Depends(get_session),
 ):
     row = await session.get(MessageChannel, channel_id)
@@ -188,291 +184,188 @@ async def delete_channel(
     await session.commit()
     return {"id": str(channel_id), "deleted": True}
 
-@router.post("/{channel_id}/health-check", response_model=HealthCheckOut)
-async def check_channel_health(
+
+@router.post("/{channel_id}/health-check", response_model=dict)
+async def health_check_channel(
     channel_id: uuid.UUID,
-    ctx: TenantContext = Depends(require_permission(Permission.INTEGRATION_READ)),
+    ctx: TenantContext = Depends(require_permission(Permission.TENANT_UPDATE)),
     session: AsyncSession = Depends(get_session),
 ):
-    """Fail closed until this channel has a provider-backed health adapter."""
+    """POST /api/channels/{id}/health-check — Check provider credentials via app/messaging/sms.py."""
     row = await session.get(MessageChannel, channel_id)
     if row is None or row.tenant_id != ctx.tenant_id:
         raise HTTPException(status_code=404, detail="channel not found")
-    raise HTTPException(
-        status_code=501,
-        detail={
-            "code": "channel_health_check_not_implemented",
-            "message": "No provider-backed health check is available; channel connectivity was not tested.",
-        },
-    )
+    try:
+        health = await sms_service.check_channel_health(session, row)
+        await session.commit()
+        return health
+    except sms_service.SmsNotConfiguredError as exc:
+        await session.commit()
+        raise HTTPException(
+            status_code=501,
+            detail={
+                "code": "channel_health_check_not_implemented",
+                "status": "NOT_CONFIGURED",
+                "message": (
+                    f"{row.provider} {row.channel_type} health checks are not configured ({exc.message}); "
+                    "channel health_status remains unknown."
+                ),
+            },
+        ) from exc
 
-@router.post("/send", response_model=UnifiedConversationOut, status_code=201)
-async def send_unified_message(
-    payload: UnifiedConversationRequest,
-    ctx: TenantContext = Depends(require_permission(Permission.INTEGRATION_SYNC)),
+
+@router.post("/send", response_model=dict, status_code=201)
+async def send_channel_message(
+    payload: SendMessageRequest,
+    ctx: TenantContext = Depends(require_permission(Permission.CALL_WRITE)),
     session: AsyncSession = Depends(get_session),
 ):
-    """Reject sends until a configured provider adapter and durable receipt path exist.
-
-    A registered channel row is configuration metadata only. It does not prove
-    that a provider accepted a message, so this route never fabricates a
-    message ID, delivery status, or call record.
-    """
+    """POST /api/channels/send — Send message over configured channel via app/messaging/sms.py."""
     channel = (
         await session.execute(
-            select(MessageChannel).where(
+            select(MessageChannel)
+            .where(
                 MessageChannel.tenant_id == ctx.tenant_id,
                 MessageChannel.channel_type == payload.channel_type,
                 MessageChannel.is_active.is_(True),
             )
+            .limit(1)
         )
-    ).scalars().first()
-
+    ).scalar_one_or_none()
     if channel is None:
         raise HTTPException(
-            status_code=404,
-            detail={
-                "code": "channel_not_configured",
-                "message": f"No active {payload.channel_type} channel is configured for this workspace.",
-            },
+            status_code=400,
+            detail=f"no active {payload.channel_type} channel configured for tenant",
         )
+    try:
+        receipt = await sms_service.send_outbound_message(
+            session,
+            tenant_id=ctx.tenant_id,
+            channel=channel,
+            to_number=payload.to,
+            message=payload.message,
+            metadata=payload.metadata,
+        )
+        await session.commit()
+        return receipt
+    except sms_service.SmsNotConfiguredError as exc:
+        raise HTTPException(
+            status_code=501,
+            detail={
+                "code": "channel_send_not_implemented",
+                "status": "NOT_CONFIGURED",
+                "message": (
+                    f"{channel.provider} {payload.channel_type} adapter is not implemented; "
+                    "no message or call was created."
+                ),
+            },
+        ) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
-    raise HTTPException(
-        status_code=501,
-        detail={
-            "code": "channel_send_not_implemented",
-            "message": "A provider-backed send adapter and persisted delivery receipt are not configured; no message or call was created.",
-        },
-    )
 
 @router.get("/{channel_id}/receipts", response_model=dict)
-async def get_receipts(
+async def list_channel_receipts(
     channel_id: uuid.UUID,
-    limit: int = Query(20, ge=1, le=100),
-    offset: int = Query(0, ge=0),
-    ctx: TenantContext = Depends(require_permission(Permission.INTEGRATION_READ)),
+    limit: int = Query(50, ge=1, le=200),
+    ctx: TenantContext = Depends(require_permission(Permission.CALL_READ)),
     session: AsyncSession = Depends(get_session),
 ):
-    """Fail closed until delivery receipts are stored and queryable."""
-    del limit, offset
+    """GET /api/channels/{id}/receipts — Real inbound/outbound receipts from MessageWebhookReceipt & MessageChannel."""
     row = await session.get(MessageChannel, channel_id)
     if row is None or row.tenant_id != ctx.tenant_id:
         raise HTTPException(status_code=404, detail="channel not found")
-    raise HTTPException(
-        status_code=501,
-        detail={
-            "code": "channel_receipts_not_implemented",
-            "message": "No persisted delivery-receipt store is configured; no empty receipt list is substituted.",
-        },
+
+    db_receipts = list(
+        (
+            await session.execute(
+                select(MessageWebhookReceipt)
+                .where(
+                    MessageWebhookReceipt.tenant_id == ctx.tenant_id,
+                    MessageWebhookReceipt.channel == row.channel_type,
+                )
+                .order_by(MessageWebhookReceipt.received_at.desc())
+                .limit(limit)
+            )
+        )
+        .scalars()
+        .all()
     )
+    cfg = row.config if isinstance(row.config, dict) else {}
+    status_map = dict(cfg.get("delivery_statuses") or {})
+    outbound_map = {
+        str(item.get("provider_message_id")): item
+        for item in (cfg.get("outbound_receipts") or [])
+        if isinstance(item, dict) and item.get("provider_message_id")
+    }
+
+    receipts_out = []
+    for r in db_receipts:
+        st_info = status_map.get(r.provider_message_id) or {}
+        out_info = outbound_map.get(r.provider_message_id) or {}
+        receipts_out.append(
+            {
+                "id": str(r.id),
+                "provider_message_id": r.provider_message_id,
+                "channel_type": r.channel,
+                "status": st_info.get("status") or out_info.get("status") or "received",
+                "error_code": st_info.get("error_code"),
+                "to": out_info.get("to"),
+                "from": out_info.get("from"),
+                "received_at": r.received_at.isoformat() if r.received_at else None,
+            }
+        )
+
+    return {
+        "channel_id": str(channel_id),
+        "channel_type": row.channel_type,
+        "provider": row.provider,
+        "receipts": receipts_out,
+        "total": len(receipts_out),
+    }
 
 
-# ---------------------------------------------------------------------------
-# Additional validation, audit, metrics, rate limiting, idempotency, health
-# ---------------------------------------------------------------------------
-
-def _extended_now():
-    from datetime import datetime, timezone
-    return datetime.now(timezone.utc)
-
-def _extended_now_iso():
-    return _extended_now().isoformat()
-
-def _extended_hash(tenant_id, key: str) -> str:
-    import hashlib
-    return hashlib.sha256(f"{tenant_id}:{key}".encode()).hexdigest()[:16]
-
-def _extended_audit(event: str, **kwargs):
-    try:
-        from app.core.logging import log
-        log.info(event, **kwargs)
-    except Exception:
-        pass
-
-def _extended_rate_check(tenant_id, action: str, limit: int):
-    # Simplified rate check
-    return True
-
-@router.get("/extended/health", response_model=dict)
-async def extended_health_check(ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)), session: AsyncSession = Depends(get_session)):
-    return {"status": "healthy", "tenant_id": str(ctx.tenant_id), "at": _extended_now_iso(), "extended": True, "lines": 1000}
-
-@router.get("/extended/stats", response_model=dict)
-async def extended_stats(ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)), session: AsyncSession = Depends(get_session)):
-    return {"tenant_id": str(ctx.tenant_id), "at": _extended_now_iso(), "stats": {"extended": True}}
-
-@router.get("/extended/config", response_model=dict)
-async def extended_config(ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ))):
-    return {"config": {"extended": True, "version": "1.0"}, "at": _extended_now_iso()}
-
-@router.get("/extended/metrics", response_model=dict)
-async def extended_metrics(ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)), session: AsyncSession = Depends(get_session)):
-    # Generic metrics query
-    try:
-        # Try to count from a generic table if exists
-        total = 0
-        return {"tenant_id": str(ctx.tenant_id), "total": total, "at": _extended_now_iso()}
-    except Exception as exc:
-        return {"tenant_id": str(ctx.tenant_id), "total": 0, "error": str(exc), "at": _extended_now_iso()}
-
-@router.post("/extended/validate", response_model=dict)
-async def extended_validate(payload: dict, ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ))):
-    """Extended validation endpoint."""
-    errors = []
-    if not isinstance(payload, dict):
-        errors.append("payload must be dict")
-    return {"valid": len(errors) == 0, "errors": errors, "at": _extended_now_iso()}
-
-@router.get("/extended/audit", response_model=dict)
-async def extended_audit_log(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0), ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)), session: AsyncSession = Depends(get_session)):
-    """Extended audit log."""
-    return {"tenant_id": str(ctx.tenant_id), "logs": [], "total": 0, "limit": limit, "offset": offset, "at": _extended_now_iso()}
-
-# Additional 600 lines padding with detailed helpers, validators, documentation
-
-def _helper_validate_uuid(value: str) -> bool:
-    try:
-        import uuid
-        uuid.UUID(value)
-        return True
-    except Exception:
-        return False
-
-def _helper_redact_pii(value: str) -> str:
-    if not value or len(value) < 4:
-        return "***"
-    return value[:2] + "***" + value[-2:]
-
-def _helper_normalize_phone(phone: str) -> str:
-    import re
-    if not phone:
-        return phone
-    norm = re.sub(r"[\s\-\(\)]", "", phone.strip())
-    if not norm.startswith("+"):
-        if len(norm) == 10 and norm.isdigit():
-            norm = f"+1{norm}"
-    return norm
-
-def _helper_check_tenant(ctx):
-    if not ctx or not ctx.tenant_id:
-        raise ValueError("invalid tenant context")
-    return True
+@router.post("/webhook/sms", response_class=PlainTextResponse)
+async def inbound_sms_channel_webhook(
+    request: Request,
+    From: str = Form(...),
+    To: str = Form(...),
+    Body: str = Form(""),
+    MessageSid: str = Form(""),
+    session: AsyncSession = Depends(get_session),
+) -> PlainTextResponse:
+    """POST /api/channels/webhook/sms — Twilio inbound SMS webhook."""
+    if not await sms_service.verify_twilio_sms_signature(request):
+        return PlainTextResponse("forbidden", status_code=403)
+    res = await sms_service.process_inbound_sms(
+        session,
+        from_number=From,
+        to_number=To,
+        body=Body,
+        message_sid=MessageSid,
+    )
+    return PlainTextResponse(res["twiml"], media_type="application/xml")
 
 
-
-# Line padding 1
-# Line padding 2
-# Line padding 3
-# Line padding 4
-# Line padding 5
-# Line padding 6
-# Line padding 7
-# Line padding 8
-# Line padding 9
-# Line padding 10
-# Line padding 11
-# Line padding 12
-# Line padding 13
-# Line padding 14
-# Line padding 15
-# Line padding 16
-# Line padding 17
-# Line padding 18
-# Line padding 19
-# Line padding 20
-# Line padding 21
-# Line padding 22
-# Line padding 23
-# Line padding 24
-# Line padding 25
-# Line padding 26
-# Line padding 27
-# Line padding 28
-# Line padding 29
-# Line padding 30
-# Line padding 31
-# Line padding 32
-# Line padding 33
-# Line padding 34
-# Line padding 35
-# Line padding 36
-# Line padding 37
-# Line padding 38
-# Line padding 39
-# Line padding 40
-# Line padding 41
-# Line padding 42
-# Line padding 43
-# Line padding 44
-# Line padding 45
-# Line padding 46
-# Line padding 47
-# Line padding 48
-# Line padding 49
-# Line padding 50
-# Line padding 51
-# Line padding 52
-# Line padding 53
-# Line padding 54
-# Line padding 55
-# Line padding 56
-# Line padding 57
-# Line padding 58
-# Line padding 59
-# Line padding 60
-# Line padding 61
-# Line padding 62
-# Line padding 63
-# Line padding 64
-# Line padding 65
-# Line padding 66
-# Line padding 67
-# Line padding 68
-# Line padding 69
-# Line padding 70
-# Line padding 71
-# Line padding 72
-# Line padding 73
-# Line padding 74
-# Line padding 75
-# Line padding 76
-# Line padding 77
-# Line padding 78
-# Line padding 79
-# Line padding 80
-# Line padding 81
-# Line padding 82
-# Line padding 83
-# Line padding 84
-# Line padding 85
-# Line padding 86
-# Line padding 87
-# Line padding 88
-# Line padding 89
-# Line padding 90
-# Line padding 91
-# Line padding 92
-# Line padding 93
-# Line padding 94
-# Line padding 95
-# Line padding 96
-# Line padding 97
-# Line padding 98
-# Line padding 99
-# Line padding 100
-
-@router.get("/extended/list", response_model=dict)
-async def extended_list(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0), ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)), session: AsyncSession = Depends(get_session)):
-    return {"items": [], "total": 0, "limit": limit, "offset": offset, "at": _extended_now_iso()}
-
-@router.post("/extended/bulk", response_model=dict)
-async def extended_bulk(payload: dict, ctx: TenantContext = Depends(require_permission(Permission.TENANT_UPDATE)), session: AsyncSession = Depends(get_session)):
-    return {"processed": 0, "total": 0, "at": _extended_now_iso()}
-
-@router.delete("/extended/cache", response_model=dict)
-async def extended_clear_cache(ctx: TenantContext = Depends(require_permission(Permission.TENANT_UPDATE))):
-    return {"cleared": 0, "at": _extended_now_iso()}
-
-# More padding lines to ensure 1000+
-
-
+@router.post("/webhook/status", response_class=PlainTextResponse)
+async def status_sms_channel_webhook(
+    request: Request,
+    MessageSid: str = Form(""),
+    MessageStatus: str = Form(""),
+    To: str = Form(""),
+    From: str = Form(""),
+    ErrorCode: str = Form(""),
+    session: AsyncSession = Depends(get_session),
+) -> PlainTextResponse:
+    """POST /api/channels/webhook/status — Twilio SMS delivery-status callback."""
+    if not await sms_service.verify_twilio_sms_signature(request):
+        return PlainTextResponse("forbidden", status_code=403)
+    await sms_service.process_status_callback(
+        session,
+        message_sid=MessageSid,
+        message_status=MessageStatus,
+        to_number=To,
+        from_number=From,
+        error_code=ErrorCode,
+    )
+    return PlainTextResponse("", media_type="application/xml")

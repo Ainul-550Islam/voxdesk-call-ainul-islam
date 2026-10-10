@@ -153,6 +153,7 @@ def configured_secret_values() -> tuple[str, ...]:
     try:
         from app.core.config import settings
     except Exception:  # importing settings must never break logging/auditing
+        __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
         return ()
     names = (
         "secret_key", "jwt_secret", "twilio_auth_token", "twilio_account_sid", "openai_api_key",

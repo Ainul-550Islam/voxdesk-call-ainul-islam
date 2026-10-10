@@ -1,0 +1,27 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest --collect-only -q tests/workflow/test_workflow_state_machine.py::test_all_states_defined tests/workflow/test_workflow_state_machine.py::test_transition_matrix[created-queued-True] tests/workflow/test_workflow_state_machine.py::test_transition_matrix[created-running-True] tests/workflow/test_workflow_state_machine.py::test_transition_matrix[created-completed-False] tests/workflow/test_workflow_state_machine.py::test_transition_matrix[queued-running-True] tests/workflow/test_workflow_state_machine.py::test_transition_matrix[running-paused-True] tests/workflow/test_workflow_state_machine.py::test_transition_matrix[running-waiting_approval-True] tests/workflow/test_workflow_state_machine.py::test_transition_matrix[running-recovering-True] tests/workflow/test_workflow_state_machine.py::test_transition_matrix[running-completed-True] tests/workflow/test_workflow_state_machine.py::test_transition_matrix[running-timed_out-True] tests/workflow/test_workflow_state_machine.py::test_transition_matrix[paused-running-True] tests/workflow/test_workflow_state_machine.py::test_transition_matrix[paused-completed-False] tests/workflow/test_workflow_state_machine.py::test_transition_matrix[waiting_approval-completed-True] tests/workflow/test_workflow_state_machine.py::test_transition_matrix[waiting_approval-running-True] tests/workflow/test_workflow_state_machine.py::test_transition_matrix[failed-retrying-True] tests/workflow/test_workflow_state_machine.py::test_transition_matrix[failed-recovering-True] tests/workflow/test_workflow_state_machine.py::test_transition_matrix[failed-completed-False] tests/workflow/test_workflow_state_machine.py::test_transition_matrix[completed-running-False] tests/workflow/test_workflow_state_machine.py::test_transition_matrix[cancelled-running-False] tests/workflow/test_workflow_state_machine.py::test_transition_matrix[timed_out-running-False] tests/workflow/test_workflow_state_machine.py::test_transition_matrix[unknown_state-running-False] tests/workflow/test_workflow_state_machine.py::test_terminal_states_and_recovery_paths
+tests/workflow/test_workflow_state_machine.py::test_all_states_defined
+tests/workflow/test_workflow_state_machine.py::test_transition_matrix[created-queued-True]
+tests/workflow/test_workflow_state_machine.py::test_transition_matrix[created-running-True]
+tests/workflow/test_workflow_state_machine.py::test_transition_matrix[created-completed-False]
+tests/workflow/test_workflow_state_machine.py::test_transition_matrix[queued-running-True]
+tests/workflow/test_workflow_state_machine.py::test_transition_matrix[running-paused-True]
+tests/workflow/test_workflow_state_machine.py::test_transition_matrix[running-waiting_approval-True]
+tests/workflow/test_workflow_state_machine.py::test_transition_matrix[running-recovering-True]
+tests/workflow/test_workflow_state_machine.py::test_transition_matrix[running-completed-True]
+tests/workflow/test_workflow_state_machine.py::test_transition_matrix[running-timed_out-True]
+tests/workflow/test_workflow_state_machine.py::test_transition_matrix[paused-running-True]
+tests/workflow/test_workflow_state_machine.py::test_transition_matrix[paused-completed-False]
+tests/workflow/test_workflow_state_machine.py::test_transition_matrix[waiting_approval-completed-True]
+tests/workflow/test_workflow_state_machine.py::test_transition_matrix[waiting_approval-running-True]
+tests/workflow/test_workflow_state_machine.py::test_transition_matrix[failed-retrying-True]
+tests/workflow/test_workflow_state_machine.py::test_transition_matrix[failed-recovering-True]
+tests/workflow/test_workflow_state_machine.py::test_transition_matrix[failed-completed-False]
+tests/workflow/test_workflow_state_machine.py::test_transition_matrix[completed-running-False]
+tests/workflow/test_workflow_state_machine.py::test_transition_matrix[cancelled-running-False]
+tests/workflow/test_workflow_state_machine.py::test_transition_matrix[timed_out-running-False]
+tests/workflow/test_workflow_state_machine.py::test_transition_matrix[unknown_state-running-False]
+tests/workflow/test_workflow_state_machine.py::test_terminal_states_and_recovery_paths
+
+22 tests collected in 0.04s
+
+STDERR:

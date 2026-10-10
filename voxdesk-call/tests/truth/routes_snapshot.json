@@ -1,4 +1,8274 @@
 {
-  "route_count": 1166,
-  "dashboard_build_present": false
+  "dashboard_build_present": false,
+  "route_count": 1182,
+  "routes": [
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "openapi",
+      "path": "/openapi.json"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "swagger_ui_html",
+      "path": "/docs"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "swagger_ui_redirect",
+      "path": "/docs/oauth2-redirect"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "redoc_html",
+      "path": "/redoc"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "incoming_call",
+      "path": "/telephony/voice"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "ivr_step",
+      "path": "/telephony/ivr"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "outbound_answer",
+      "path": "/telephony/outbound-answer"
+    },
+    {
+      "methods": [],
+      "name": "media_stream",
+      "path": "/telephony/ws"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "call_status",
+      "path": "/telephony/status"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "transfer_status",
+      "path": "/telephony/transfer-status"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "inbound_message",
+      "path": "/channels/message"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "message_status",
+      "path": "/channels/status"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "login",
+      "path": "/auth/login"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "signup",
+      "path": "/auth/signup"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "validate_next_route",
+      "path": "/auth/validate-next"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "verify_mfa",
+      "path": "/auth/mfa/verify"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "refresh",
+      "path": "/auth/refresh"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "logout",
+      "path": "/auth/logout"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "logout_everywhere",
+      "path": "/auth/logout-all"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "me",
+      "path": "/auth/me"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "roles",
+      "path": "/auth/roles"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_users",
+      "path": "/api/team/users"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_user",
+      "path": "/api/team/users"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_user",
+      "path": "/api/team/users/{user_id}"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "change_role",
+      "path": "/api/team/users/{user_id}/role"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "set_active",
+      "path": "/api/team/users/{user_id}/active"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_audit",
+      "path": "/api/team/audit"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "upload_document",
+      "path": "/api/knowledge/documents"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_documents",
+      "path": "/api/knowledge/documents"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_document",
+      "path": "/api/knowledge/documents/{document_id}"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_document",
+      "path": "/api/knowledge/documents/{document_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "reindex_document",
+      "path": "/api/knowledge/documents/{document_id}/reindex"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "restore_document",
+      "path": "/api/knowledge/documents/{document_id}/restore"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "search_knowledge",
+      "path": "/api/knowledge/search"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "ingest_url",
+      "path": "/api/knowledge/urls"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "knowledge_stats",
+      "path": "/api/knowledge/stats"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_tools",
+      "path": "/api/api-tools"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_tool",
+      "path": "/api/api-tools"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "execute_tool",
+      "path": "/api/api-tools/{tool_id}/execute"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "servers",
+      "path": "/api/mcp/servers"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_server",
+      "path": "/api/mcp/servers"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "health_server",
+      "path": "/api/mcp/servers/{server_id}/health"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "discover_server",
+      "path": "/api/mcp/servers/{server_id}/discover"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "call_tool",
+      "path": "/api/mcp/servers/{server_id}/tools/{tool_id}/call"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "receive",
+      "path": "/public/webhooks/{endpoint_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "providers",
+      "path": "/api/connectors/providers"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_connectors",
+      "path": "/api/connectors"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_connector",
+      "path": "/api/connectors"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "oauth_start",
+      "path": "/api/connectors/{connector_id}/oauth/start"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "oauth_callback",
+      "path": "/api/connectors/{connector_id}/oauth/callback"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "oauth_refresh",
+      "path": "/api/connectors/{connector_id}/oauth/refresh"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "oauth_disconnect",
+      "path": "/api/connectors/{connector_id}/oauth"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "health",
+      "path": "/api/connectors/{connector_id}/health"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "dispatch_connector",
+      "path": "/api/connectors/{connector_id}/dispatch"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_approvals",
+      "path": "/api/security/approvals"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_approval",
+      "path": "/api/security/approvals"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "decide_approval",
+      "path": "/api/security/approvals/{approval_id}/decision"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_webhook_endpoints",
+      "path": "/api/security/webhook-endpoints"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_webhook_endpoint",
+      "path": "/api/security/webhook-endpoints"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_policy",
+      "path": "/api/security/privacy-policy"
+    },
+    {
+      "methods": [
+        "PUT"
+      ],
+      "name": "put_policy",
+      "path": "/api/security/privacy-policy"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_providers",
+      "path": "/api/integrations/crm/providers"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_integrations",
+      "path": "/api/integrations/crm/"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_integrations",
+      "path": "/api/integrations/crm"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_syncs",
+      "path": "/api/integrations/crm/syncs"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_integration_route",
+      "path": "/api/integrations/crm/{provider}"
+    },
+    {
+      "methods": [
+        "PUT"
+      ],
+      "name": "upsert_integration",
+      "path": "/api/integrations/crm/{provider}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "test_integration",
+      "path": "/api/integrations/crm/{provider}/test"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "disconnect_integration",
+      "path": "/api/integrations/crm/{provider}/disconnect"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_integration",
+      "path": "/api/integrations/crm/{provider}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "receive_webhook",
+      "path": "/api/integrations/crm/inbound/{provider}/{token}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_availability",
+      "path": "/api/appointments/availability"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_appointments",
+      "path": "/api/appointments/"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_appointments",
+      "path": "/api/appointments"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_appointment",
+      "path": "/api/appointments/"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_appointment",
+      "path": "/api/appointments"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_appointment",
+      "path": "/api/appointments/{appointment_id}"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "reschedule_appointment",
+      "path": "/api/appointments/{appointment_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "cancel_appointment",
+      "path": "/api/appointments/{appointment_id}/cancel"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "mark_no_show",
+      "path": "/api/appointments/{appointment_id}/no-show"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_providers",
+      "path": "/api/calendar/providers"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_integrations",
+      "path": "/api/calendar/integrations"
+    },
+    {
+      "methods": [
+        "PUT"
+      ],
+      "name": "upsert_integration",
+      "path": "/api/calendar/integrations/{provider}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "test_integration",
+      "path": "/api/calendar/integrations/{provider}/test"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_integration",
+      "path": "/api/calendar/integrations/{provider}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_scheduling_policy",
+      "path": "/api/calendar/policy"
+    },
+    {
+      "methods": [
+        "PUT"
+      ],
+      "name": "update_scheduling_policy",
+      "path": "/api/calendar/policy"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "receive_calendar_webhook",
+      "path": "/api/calendar/webhooks/{provider}/{token}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_billing",
+      "path": "/api/billing/"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_billing",
+      "path": "/api/billing"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_plans",
+      "path": "/api/billing/plans"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_usage",
+      "path": "/api/billing/usage"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_invoices",
+      "path": "/api/billing/invoices"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "start_checkout",
+      "path": "/api/billing/checkout"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "open_portal",
+      "path": "/api/billing/portal"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "change_plan",
+      "path": "/api/billing/change-plan"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "cancel_subscription",
+      "path": "/api/billing/cancel"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "reconcile",
+      "path": "/api/billing/reconcile"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "receive_webhook",
+      "path": "/api/billing/webhook/{provider}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "overview",
+      "path": "/api/analytics/overview"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "call_analytics",
+      "path": "/api/analytics/calls"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "conversion",
+      "path": "/api/analytics/conversion"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "usage_analytics",
+      "path": "/api/analytics/usage"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_tenant",
+      "path": "/api/tenants"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_tenants",
+      "path": "/api/tenants"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_agent_config",
+      "path": "/api/tenants/{tenant_id}/agent"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "llm_presets",
+      "path": "/api/llm/presets"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_voice_settings",
+      "path": "/api/tenants/{tenant_id}/voice"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_calls",
+      "path": "/api/tenants/{tenant_id}/calls"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "call_detail",
+      "path": "/api/calls/{call_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "call_transfer_detail",
+      "path": "/api/calls/{call_id}/transfer"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "transcript",
+      "path": "/api/calls/{call_id}/transcript"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "stats",
+      "path": "/api/tenants/{tenant_id}/stats"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_languages",
+      "path": "/api/languages"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "add_leads",
+      "path": "/api/tenants/{tenant_id}/leads"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_leads",
+      "path": "/api/tenants/{tenant_id}/leads"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "mark_lead_dnc",
+      "path": "/api/tenants/{tenant_id}/leads/{lead_id}/do-not-call"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_campaign",
+      "path": "/api/tenants/{tenant_id}/campaigns"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_campaigns",
+      "path": "/api/tenants/{tenant_id}/campaigns"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "run_campaign",
+      "path": "/api/tenants/{tenant_id}/campaigns/{campaign_id}/run"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_ivr",
+      "path": "/api/tenants/{tenant_id}/ivr"
+    },
+    {
+      "methods": [
+        "PUT"
+      ],
+      "name": "set_ivr",
+      "path": "/api/tenants/{tenant_id}/ivr"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "validate_ivr",
+      "path": "/api/ivr/validate"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "check_message",
+      "path": "/api/compliance/check-message"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "a2p_checklist",
+      "path": "/api/compliance/a2p-checklist"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "tenant_compliance",
+      "path": "/api/tenants/{tenant_id}/compliance"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "export",
+      "path": "/api/gdpr/export"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "erasure",
+      "path": "/api/gdpr/erasure"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "status",
+      "path": "/api/gdpr/status"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "issue",
+      "path": "/api/billing/license/issue"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "verify",
+      "path": "/api/billing/license/verify"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "identity_status",
+      "path": "/api/identity/status"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "read_policy",
+      "path": "/api/identity/policy"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_policy",
+      "path": "/api/identity/policy"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "reauthenticate",
+      "path": "/api/identity/reauth"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "identity_event_feed",
+      "path": "/api/identity/events"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "mfa_status",
+      "path": "/api/mfa/status"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "enroll",
+      "path": "/api/mfa/enroll"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "confirm_enrollment",
+      "path": "/api/mfa/enroll/confirm"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "step_up",
+      "path": "/api/mfa/verify"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_challenge",
+      "path": "/api/mfa/challenge"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "disable_mfa",
+      "path": "/api/mfa/disable"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "regenerate_recovery_codes",
+      "path": "/api/mfa/recovery-codes/regenerate"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "admin_reset_user_mfa",
+      "path": "/api/mfa/users/{user_id}/reset"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "admin_read_user_mfa",
+      "path": "/api/mfa/users/{user_id}/status"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_sessions",
+      "path": "/api/sessions"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "revoke_session",
+      "path": "/api/sessions/{session_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "revoke_other_sessions",
+      "path": "/api/sessions/revoke-others"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "revoke_all_sessions",
+      "path": "/api/sessions"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "rename_session",
+      "path": "/api/sessions/{session_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "own_security_events",
+      "path": "/api/security/events"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "request_password_reset",
+      "path": "/auth/password-reset/request"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "confirm_password_reset",
+      "path": "/auth/password-reset/confirm"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "request_email_verification",
+      "path": "/auth/email-verification/request"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "confirm_email_verification",
+      "path": "/auth/email-verification/confirm"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "identity_config",
+      "path": "/auth/identity-config"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_api_keys",
+      "path": "/api/api-keys"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "available_scopes",
+      "path": "/api/api-keys/scopes"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_api_key",
+      "path": "/api/api-keys"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "revoke_api_key",
+      "path": "/api/api-keys/{key_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "rotate_api_key",
+      "path": "/api/api-keys/{key_id}/rotate"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_service_accounts",
+      "path": "/api/service-accounts"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_service_account",
+      "path": "/api/service-accounts"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_service_account",
+      "path": "/api/service-accounts/{account_id}"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_service_account",
+      "path": "/api/service-accounts/{account_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "enable_service_account",
+      "path": "/api/service-accounts/{account_id}/enable"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "disable_service_account",
+      "path": "/api/service-accounts/{account_id}/disable"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "emergency_disable_service_account",
+      "path": "/api/service-accounts/{account_id}/emergency-disable"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "clear_emergency_disable",
+      "path": "/api/service-accounts/{account_id}/emergency-clear"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_service_account",
+      "path": "/api/service-accounts/{account_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_credentials",
+      "path": "/api/service-accounts/{account_id}/credentials"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "issue_credential",
+      "path": "/api/service-accounts/{account_id}/credentials"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "rotate_credential",
+      "path": "/api/service-accounts/{account_id}/credentials/{credential_id}/rotate"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "revoke_credential",
+      "path": "/api/service-accounts/{account_id}/credentials/{credential_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_account_keys",
+      "path": "/api/service-accounts/{account_id}/keys"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_account_key",
+      "path": "/api/service-accounts/{account_id}/keys"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_domains",
+      "path": "/api/domains"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "add_domain",
+      "path": "/api/domains"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_domain",
+      "path": "/api/domains/{domain_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "issue_challenge",
+      "path": "/api/domains/{domain_id}/challenge"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "verify_domain",
+      "path": "/api/domains/{domain_id}/verify"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_domain",
+      "path": "/api/domains/{domain_id}"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "remove_domain",
+      "path": "/api/domains/{domain_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_connections",
+      "path": "/api/sso/connections"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_connection",
+      "path": "/api/sso/connections"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_connection",
+      "path": "/api/sso/connections/{connection_id}"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_connection",
+      "path": "/api/sso/connections/{connection_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "set_connection_status",
+      "path": "/api/sso/connections/{connection_id}/status"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_connection",
+      "path": "/api/sso/connections/{connection_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_certificates",
+      "path": "/api/sso/connections/{connection_id}/certificates"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "add_certificate",
+      "path": "/api/sso/connections/{connection_id}/certificates"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "retire_certificate",
+      "path": "/api/sso/connections/{connection_id}/certificates/{certificate_id}"
+    },
+    {
+      "methods": [
+        "PUT"
+      ],
+      "name": "set_mappings",
+      "path": "/api/sso/connections/{connection_id}/mappings"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_account_links",
+      "path": "/api/sso/connections/{connection_id}/links"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "unlink_account",
+      "path": "/api/sso/connections/{connection_id}/links/{link_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "sp_metadata",
+      "path": "/api/sso/connections/{connection_id}/metadata"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "test_connection",
+      "path": "/api/sso/connections/{connection_id}/test"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_attempts",
+      "path": "/api/sso/attempts"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "discover",
+      "path": "/auth/sso/discover"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "start_login",
+      "path": "/auth/sso/{slug}/start"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "start_login",
+      "path": "/auth/sso/{slug}/start"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "oidc_callback",
+      "path": "/auth/sso/{slug}/callback"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "saml_acs",
+      "path": "/auth/sso/{slug}/acs"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "slo",
+      "path": "/auth/sso/{slug}/slo"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "public_metadata",
+      "path": "/auth/sso/{slug}/metadata"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_scim_credentials",
+      "path": "/api/scim/credentials"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_scim_credential",
+      "path": "/api/scim/credentials"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "rotate_scim_credential",
+      "path": "/api/scim/credentials/{credential_id}/rotate"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "revoke_scim_credential",
+      "path": "/api/scim/credentials/{credential_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "service_provider_config",
+      "path": "/scim/v2/{connection_id}/ServiceProviderConfig"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "resource_types",
+      "path": "/scim/v2/{connection_id}/ResourceTypes"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "schema_documents",
+      "path": "/scim/v2/{connection_id}/Schemas"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_users",
+      "path": "/scim/v2/{connection_id}/Users"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_user",
+      "path": "/scim/v2/{connection_id}/Users"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_user",
+      "path": "/scim/v2/{connection_id}/Users/{user_id}"
+    },
+    {
+      "methods": [
+        "PUT"
+      ],
+      "name": "replace_user",
+      "path": "/scim/v2/{connection_id}/Users/{user_id}"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "patch_user",
+      "path": "/scim/v2/{connection_id}/Users/{user_id}"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_user",
+      "path": "/scim/v2/{connection_id}/Users/{user_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_groups",
+      "path": "/scim/v2/{connection_id}/Groups"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_group",
+      "path": "/scim/v2/{connection_id}/Groups"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_group",
+      "path": "/scim/v2/{connection_id}/Groups/{group_id}"
+    },
+    {
+      "methods": [
+        "PUT"
+      ],
+      "name": "replace_group",
+      "path": "/scim/v2/{connection_id}/Groups/{group_id}"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "patch_group",
+      "path": "/scim/v2/{connection_id}/Groups/{group_id}"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_group",
+      "path": "/scim/v2/{connection_id}/Groups/{group_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_organizations",
+      "path": "/api/organizations"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_organization",
+      "path": "/api/organizations"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_organization",
+      "path": "/api/organizations/{organization_id}"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_organization",
+      "path": "/api/organizations/{organization_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "suspend_organization",
+      "path": "/api/organizations/{organization_id}/suspend"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "restore_organization",
+      "path": "/api/organizations/{organization_id}/restore"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "read_only_organization",
+      "path": "/api/organizations/{organization_id}/read-only"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "organization_lifecycle",
+      "path": "/api/organizations/{organization_id}/lifecycle"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "organization_placement",
+      "path": "/api/organizations/{organization_id}/placement"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_organization_tenants",
+      "path": "/api/organizations/{organization_id}/tenants"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_organization_tenant",
+      "path": "/api/organizations/{organization_id}/tenants"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "tenant_hierarchy",
+      "path": "/api/tenants/{tenant_id}/hierarchy"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_tenant_profile",
+      "path": "/api/tenants/{tenant_id}/profile"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "suspend_tenant",
+      "path": "/api/tenants/{tenant_id}/suspend"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "restore_tenant",
+      "path": "/api/tenants/{tenant_id}/restore"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "read_only_tenant",
+      "path": "/api/tenants/{tenant_id}/read-only"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "tenant_lifecycle",
+      "path": "/api/tenants/{tenant_id}/lifecycle"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_environments",
+      "path": "/api/tenants/{tenant_id}/environments"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_environment",
+      "path": "/api/tenants/{tenant_id}/environments"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_environment",
+      "path": "/api/tenants/{tenant_id}/environments/{environment_id}"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_environment",
+      "path": "/api/tenants/{tenant_id}/environments/{environment_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "suspend_environment",
+      "path": "/api/tenants/{tenant_id}/environments/{environment_id}/suspend"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "restore_environment",
+      "path": "/api/tenants/{tenant_id}/environments/{environment_id}/restore"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "archive_environment",
+      "path": "/api/tenants/{tenant_id}/environments/{environment_id}/archive"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "default_environment",
+      "path": "/api/tenants/{tenant_id}/environments/{environment_id}/default"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "record_deployment",
+      "path": "/api/tenants/{tenant_id}/environments/{environment_id}/deployment"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "read_deployment",
+      "path": "/api/tenants/{tenant_id}/environments/{environment_id}/deployment"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "promotion_plan",
+      "path": "/api/tenants/{tenant_id}/environments/{environment_id}/promotion-plan"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "security_posture",
+      "path": "/api/tenants/{tenant_id}/security/posture"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "tenant_settings_view",
+      "path": "/api/tenants/{tenant_id}/settings"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "residency_change",
+      "path": "/api/tenants/{tenant_id}/residency"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "evaluate_flag",
+      "path": "/api/tenants/{tenant_id}/feature-flags/evaluate"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "usage_summary",
+      "path": "/api/tenants/{tenant_id}/usage"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "usage_check",
+      "path": "/api/tenants/{tenant_id}/usage/check"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_providers",
+      "path": "/api/tenants/{tenant_id}/ai/providers"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_providers",
+      "path": "/api/ai/providers"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_models",
+      "path": "/api/tenants/{tenant_id}/ai/models"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_models",
+      "path": "/api/ai/models"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_policy",
+      "path": "/api/tenants/{tenant_id}/ai/policy"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_policy",
+      "path": "/api/ai/policy"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "patch_policy",
+      "path": "/api/tenants/{tenant_id}/ai/policy"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "patch_policy",
+      "path": "/api/ai/policy"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "ai_usage",
+      "path": "/api/tenants/{tenant_id}/ai/usage"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "ai_usage",
+      "path": "/api/ai/usage"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "ai_health",
+      "path": "/api/ai/health"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "ai_costs",
+      "path": "/api/ai/costs"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_policy",
+      "path": "/api/tenants/{tenant_id}/governance/policies"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "publish_policy",
+      "path": "/api/tenants/{tenant_id}/governance/policies/{policy_id}/publish"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "decide_policy",
+      "path": "/api/tenants/{tenant_id}/governance/decisions"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "capture_lineage",
+      "path": "/api/tenants/{tenant_id}/governance/lineage"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "request_residency_intent",
+      "path": "/api/tenants/{tenant_id}/governance/residency/intents"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "verify_residency_intent",
+      "path": "/api/tenants/{tenant_id}/governance/residency/intents/{intent_id}/verify"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_retention_rule",
+      "path": "/api/tenants/{tenant_id}/governance/retention"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "issue_attestation",
+      "path": "/api/tenants/{tenant_id}/governance/attestations"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_attestation",
+      "path": "/api/tenants/{tenant_id}/governance/attestations/{attestation_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_policies",
+      "path": "/api/governance/policies"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_policy",
+      "path": "/api/governance/policies/{policy_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_policy",
+      "path": "/api/governance/policies"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "publish_policy",
+      "path": "/api/governance/policies/{policy_id}/publish"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "retire_policy",
+      "path": "/api/governance/policies/{policy_id}/retire"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "evaluate_policy",
+      "path": "/api/governance/evaluate"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "governance_posture",
+      "path": "/api/governance/posture"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_models",
+      "path": "/api/tenants/{tenant_id}/governance/models"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "register_model",
+      "path": "/api/tenants/{tenant_id}/governance/models"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "register_model_version",
+      "path": "/api/tenants/{tenant_id}/governance/models/{registry_id}/versions"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "evaluate_model_version",
+      "path": "/api/tenants/{tenant_id}/governance/models/versions/{version_id}/evaluate"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "approve_model_version",
+      "path": "/api/tenants/{tenant_id}/governance/models/versions/{version_id}/approve"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "transition_model",
+      "path": "/api/tenants/{tenant_id}/governance/models/{registry_id}/transition"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "transition_version",
+      "path": "/api/tenants/{tenant_id}/governance/models/versions/{version_id}/transition"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_models",
+      "path": "/api/governance/models"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "approved_models",
+      "path": "/api/governance/models/approved"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_model",
+      "path": "/api/governance/models/{model_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_model",
+      "path": "/api/governance/models"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_version",
+      "path": "/api/governance/models/{model_id}/versions"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "approve_model",
+      "path": "/api/governance/models/{model_id}/approve"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "suspend_model",
+      "path": "/api/governance/models/{model_id}/suspend"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "retire_model",
+      "path": "/api/governance/models/{model_id}/retire"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_evidence",
+      "path": "/api/tenants/{tenant_id}/governance/evidence"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_evidence_package",
+      "path": "/api/tenants/{tenant_id}/governance/evidence/packages"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_evidence_package",
+      "path": "/api/tenants/{tenant_id}/governance/evidence/packages/{package_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_events",
+      "path": "/api/governance/evidence"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_event",
+      "path": "/api/governance/evidence/{event_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "verify_events",
+      "path": "/api/governance/evidence/verify"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "package_events",
+      "path": "/api/governance/evidence/package"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_risks",
+      "path": "/api/tenants/{tenant_id}/governance/risks"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_risk",
+      "path": "/api/tenants/{tenant_id}/governance/risks"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "approve_risk",
+      "path": "/api/tenants/{tenant_id}/governance/risks/{risk_id}/approve"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_risk",
+      "path": "/api/governance/risk"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "assess_risk",
+      "path": "/api/governance/risk/assess"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "approve_risk",
+      "path": "/api/governance/risk/{assessment_id}/approve"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "capabilities",
+      "path": "/api/specialized-agents"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "capability",
+      "path": "/api/specialized-agents/{agent_type}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "execute_specialized_agent",
+      "path": "/api/specialized-agents/{agent_type}/execute"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_execution",
+      "path": "/api/specialized-agents/{agent_type}/executions/{execution_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_review",
+      "path": "/api/legal/reviews"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_review",
+      "path": "/api/legal/reviews/{execution_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_clause_library",
+      "path": "/api/legal/clause-library"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_clause_library_entry",
+      "path": "/api/legal/clause-library/{clause_key}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_playbooks",
+      "path": "/api/legal/playbooks"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_playbook",
+      "path": "/api/legal/playbooks"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_playbook",
+      "path": "/api/legal/playbooks/{playbook_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "evaluate_against_playbook",
+      "path": "/api/legal/playbooks/{playbook_id}/evaluate"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_redlines",
+      "path": "/api/legal/redlines"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_redline_artifact",
+      "path": "/api/legal/redlines/{artifact_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "export_redline_audit_package",
+      "path": "/api/legal/redlines/export"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_translation_job",
+      "path": "/api/translation/jobs"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_translation_job",
+      "path": "/api/translation/jobs/{execution_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "analyze",
+      "path": "/api/anomaly/analyze"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_anomaly",
+      "path": "/api/anomaly/{execution_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_review_case",
+      "path": "/api/reviews"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_review_cases",
+      "path": "/api/reviews"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_review_case",
+      "path": "/api/reviews/{case_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "assign_review_case",
+      "path": "/api/reviews/{case_id}/assign"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "start_review_case",
+      "path": "/api/reviews/{case_id}/start"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "decide_review_case",
+      "path": "/api/reviews/{case_id}/decision"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "request_review_changes",
+      "path": "/api/reviews/{case_id}/request-changes"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "cancel_review_case",
+      "path": "/api/reviews/{case_id}/cancel"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "expire_review_case",
+      "path": "/api/reviews/{case_id}/expire"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "analyze_insight",
+      "path": "/api/insight/analyze"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_insight",
+      "path": "/api/insight/{execution_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "forecast",
+      "path": "/api/forecast"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_forecast",
+      "path": "/api/forecast/{execution_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_framework",
+      "path": "/api/compliance/frameworks"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_frameworks",
+      "path": "/api/compliance/frameworks"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "run_check",
+      "path": "/api/compliance/checks"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_findings",
+      "path": "/api/compliance/findings"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_finding",
+      "path": "/api/compliance/findings/{finding_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_remediation",
+      "path": "/api/compliance/findings/{finding_id}/remediations"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_remediations",
+      "path": "/api/compliance/remediations"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "transition_remediation",
+      "path": "/api/compliance/remediations/{remediation_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_qms_providers",
+      "path": "/api/compliance/qms/providers"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "qms_health",
+      "path": "/api/compliance/qms/health"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "qms_list_documents",
+      "path": "/api/compliance/qms/{provider}/documents"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "qms_get_document",
+      "path": "/api/compliance/qms/{provider}/documents/{external_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "qms_traceability",
+      "path": "/api/compliance/qms/{provider}/traceability"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "qms_audit_package",
+      "path": "/api/compliance/qms/{provider}/audit-package"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_templates",
+      "path": "/api/compliance/industry-templates"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "instantiate_template",
+      "path": "/api/compliance/industry-templates/{template_key}/frameworks"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "activate_reviewed_framework",
+      "path": "/api/compliance/industry-templates/frameworks/{framework_id}/activate"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_baseline",
+      "path": "/api/roi/baselines"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_baselines",
+      "path": "/api/roi/baselines"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "record_outcome",
+      "path": "/api/roi/outcomes"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "record_cost",
+      "path": "/api/roi/costs"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "calculate",
+      "path": "/api/roi/calculate"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_result",
+      "path": "/api/roi/results/{result_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_kpi",
+      "path": "/api/roi/kpis"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_kpis",
+      "path": "/api/roi/kpis"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "evaluate",
+      "path": "/api/roi/kpis/{kpi_id}/evaluate"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "measurement",
+      "path": "/api/roi/measurement/{period}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "compare_periods",
+      "path": "/api/roi/compare"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_targets",
+      "path": "/api/deployment/targets"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_target",
+      "path": "/api/deployment/targets"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_target",
+      "path": "/api/deployment/targets/{target_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "validate_target",
+      "path": "/api/deployment/targets/{target_id}/validate"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_readiness",
+      "path": "/api/deployment/{target_id}/readiness"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_revisions",
+      "path": "/api/deployment/targets/{target_id}/revisions"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_revision",
+      "path": "/api/deployment/revisions/{revision_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_revision",
+      "path": "/api/deployment/targets/{target_id}/revisions"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "request_approval",
+      "path": "/api/deployment/revisions/{revision_id}/approve"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "queue_deploy",
+      "path": "/api/deployment/revisions/{revision_id}/deploy"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "record_verification_state",
+      "path": "/api/deployment/revisions/{revision_id}/verification-state"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "suspend",
+      "path": "/api/deployment/revisions/{revision_id}/suspend"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "retire",
+      "path": "/api/deployment/revisions/{revision_id}/retire"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "authoritative_readiness",
+      "path": "/api/deployment/targets/{target_id}/readiness"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "preflight_deployment",
+      "path": "/api/deployment/revisions/{revision_id}/preflight"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "apply_deployment",
+      "path": "/api/deployment/revisions/{revision_id}/apply"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "deployment_status",
+      "path": "/api/deployment/revisions/{revision_id}/status"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "verify_deployment",
+      "path": "/api/deployment/revisions/{revision_id}/verify"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "deployment_verification",
+      "path": "/api/deployment/revisions/{revision_id}/verification"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "queue_authorized_deployment",
+      "path": "/api/deployment/revisions/{revision_id}/enqueue"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "liveness",
+      "path": "/health"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "readiness",
+      "path": "/health/ready"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "dependencies",
+      "path": "/health/dependencies"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_prompts",
+      "path": "/api/tenants/{tenant_id}/ai/prompts"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_draft",
+      "path": "/api/tenants/{tenant_id}/ai/prompts"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_version",
+      "path": "/api/tenants/{tenant_id}/ai/prompts/{prompt_key}/versions/{version}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_publish",
+      "path": "/api/tenants/{tenant_id}/ai/prompts/{prompt_key}/publish"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_rollback",
+      "path": "/api/tenants/{tenant_id}/ai/prompts/{prompt_key}/rollback"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_retire",
+      "path": "/api/tenants/{tenant_id}/ai/prompts/{prompt_key}/retire"
+    },
+    {
+      "methods": [
+        "PUT"
+      ],
+      "name": "put_rollout",
+      "path": "/api/tenants/{tenant_id}/ai/prompts/{prompt_key}/rollout"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_datasets",
+      "path": "/api/tenants/{tenant_id}/ai/evals/datasets"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_dataset",
+      "path": "/api/tenants/{tenant_id}/ai/evals/datasets"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_run",
+      "path": "/api/tenants/{tenant_id}/ai/evals/runs"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_run",
+      "path": "/api/tenants/{tenant_id}/ai/evals/runs/{run_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "cancel_run",
+      "path": "/api/tenants/{tenant_id}/ai/evals/runs/{run_id}/cancel"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_numbers",
+      "path": "/api/tenants/{tenant_id}/phone-numbers"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_numbers",
+      "path": "/api/phone-numbers"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "search_numbers",
+      "path": "/api/tenants/{tenant_id}/phone-numbers/search"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "search_numbers",
+      "path": "/api/phone-numbers/search"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "provision_number",
+      "path": "/api/tenants/{tenant_id}/phone-numbers/provision"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "provision_number",
+      "path": "/api/phone-numbers/provision"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "assign_number",
+      "path": "/api/tenants/{tenant_id}/phone-numbers/{number_id}/assign"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "assign_number",
+      "path": "/api/phone-numbers/{number_id}/assign"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "release_number",
+      "path": "/api/tenants/{tenant_id}/phone-numbers/{number_id}/release"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "release_number",
+      "path": "/api/phone-numbers/{number_id}/release"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "number_capabilities",
+      "path": "/api/tenants/{tenant_id}/phone-numbers/{number_id}/capabilities"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "number_capabilities",
+      "path": "/api/phone-numbers/{number_id}/capabilities"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_queues",
+      "path": "/api/tenants/{tenant_id}/queues"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_queues",
+      "path": "/api/queues"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_queue",
+      "path": "/api/tenants/{tenant_id}/queues"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_queue",
+      "path": "/api/queues"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_one",
+      "path": "/api/tenants/{tenant_id}/queues/{queue_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_one",
+      "path": "/api/queues/{queue_id}"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "patch_queue",
+      "path": "/api/tenants/{tenant_id}/queues/{queue_id}"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "patch_queue",
+      "path": "/api/queues/{queue_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_member",
+      "path": "/api/tenants/{tenant_id}/queues/{queue_id}/members"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_member",
+      "path": "/api/queues/{queue_id}/members"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_member",
+      "path": "/api/tenants/{tenant_id}/queues/{queue_id}/members/{user_id}"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_member",
+      "path": "/api/queues/{queue_id}/members/{user_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_members",
+      "path": "/api/tenants/{tenant_id}/queues/{queue_id}/members"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_members",
+      "path": "/api/queues/{queue_id}/members"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_metrics",
+      "path": "/api/tenants/{tenant_id}/queues/{queue_id}/metrics"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_metrics",
+      "path": "/api/queues/{queue_id}/metrics"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_entry",
+      "path": "/api/tenants/{tenant_id}/queues/{queue_id}/entries"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_entry",
+      "path": "/api/queues/{queue_id}/entries"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_me",
+      "path": "/api/agent-state/me"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_me",
+      "path": "/api/agent-state/me"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_heartbeat",
+      "path": "/api/agent-state/heartbeat"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_accept",
+      "path": "/api/agent-state/accept"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_complete",
+      "path": "/api/agent-state/complete"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_preview",
+      "path": "/api/tenants/{tenant_id}/routing/preview"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_preview",
+      "path": "/api/routing/preview"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_requeue",
+      "path": "/api/tenants/{tenant_id}/routing/requeue"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_requeue",
+      "path": "/api/routing/requeue"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_assign_next",
+      "path": "/api/tenants/{tenant_id}/routing/assign-next"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_assign_next",
+      "path": "/api/routing/assign-next"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_one",
+      "path": "/api/tenants/{tenant_id}/routing/decisions/{decision_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_one",
+      "path": "/api/routing/decisions/{decision_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "monitor",
+      "path": "/api/tenants/{tenant_id}/supervisor/queues/{queue_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "monitor",
+      "path": "/api/supervisor/queues/{queue_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "force_state",
+      "path": "/api/tenants/{tenant_id}/supervisor/agents/{user_id}/state"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "force_state",
+      "path": "/api/supervisor/agents/{user_id}/state"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "release",
+      "path": "/api/tenants/{tenant_id}/supervisor/assignments/{assignment_id}/release"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "release",
+      "path": "/api/supervisor/assignments/{assignment_id}/release"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "reassign",
+      "path": "/api/tenants/{tenant_id}/supervisor/assignments/{assignment_id}/reassign"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "reassign",
+      "path": "/api/supervisor/assignments/{assignment_id}/reassign"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_skills",
+      "path": "/api/tenants/{tenant_id}/skills"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_skills",
+      "path": "/api/skills"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_skill",
+      "path": "/api/tenants/{tenant_id}/skills"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_skill",
+      "path": "/api/skills"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "patch_skill",
+      "path": "/api/tenants/{tenant_id}/skills/{skill_id}"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "patch_skill",
+      "path": "/api/skills/{skill_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_agent_skill",
+      "path": "/api/tenants/{tenant_id}/skills/{skill_id}/agents"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_agent_skill",
+      "path": "/api/skills/{skill_id}/agents"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_members",
+      "path": "/api/organizations/{organization_id}/members"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "add_member",
+      "path": "/api/organizations/{organization_id}/members"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_member",
+      "path": "/api/organizations/{organization_id}/members/{user_id}"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_member_role",
+      "path": "/api/organizations/{organization_id}/members/{user_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "suspend_member",
+      "path": "/api/organizations/{organization_id}/members/{user_id}/suspend"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "reactivate_member",
+      "path": "/api/organizations/{organization_id}/members/{user_id}/reactivate"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "revoke_member",
+      "path": "/api/organizations/{organization_id}/members/{user_id}/revoke"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "invite_member",
+      "path": "/api/organizations/{organization_id}/invitations"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "revoke_invitation",
+      "path": "/api/organizations/{organization_id}/invitations/{invitation_id}/revoke"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "resend_invitation",
+      "path": "/api/organizations/{organization_id}/invitations/{invitation_id}/resend"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "accept_invitation",
+      "path": "/api/organizations/{organization_id}/invitations/accept"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_members",
+      "path": "/api/tenants/{tenant_id}/members"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "add_member",
+      "path": "/api/tenants/{tenant_id}/members"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_member",
+      "path": "/api/tenants/{tenant_id}/members/{user_id}"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_role",
+      "path": "/api/tenants/{tenant_id}/members/{user_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "suspend_member",
+      "path": "/api/tenants/{tenant_id}/members/{user_id}/suspend"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "reactivate_member",
+      "path": "/api/tenants/{tenant_id}/members/{user_id}/reactivate"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "revoke_member",
+      "path": "/api/tenants/{tenant_id}/members/{user_id}/revoke"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "invite",
+      "path": "/api/tenants/{tenant_id}/invitations"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "revoke_invitation",
+      "path": "/api/tenants/{tenant_id}/invitations/{invitation_id}/revoke"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "accept_invitation",
+      "path": "/api/tenants/{tenant_id}/invitations/accept"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_accessible",
+      "path": "/api/tenants/{tenant_id}/access/environments"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "current_environment",
+      "path": "/api/tenants/{tenant_id}/access/current"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "select_current",
+      "path": "/api/tenants/{tenant_id}/access/current"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "inspect_policy",
+      "path": "/api/tenants/{tenant_id}/access/policy"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "update_policy",
+      "path": "/api/tenants/{tenant_id}/access/policy"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "inspect_quota",
+      "path": "/api/tenants/{tenant_id}/access/quota"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "set_environment_quota",
+      "path": "/api/tenants/{tenant_id}/access/quota"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "verify_access",
+      "path": "/api/tenants/{tenant_id}/access/verify"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_supported",
+      "path": "/api/tenants/{tenant_id}/environments/{environment_id}/resources"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_resources",
+      "path": "/api/tenants/{tenant_id}/environments/{environment_id}/resources/{resource_type}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_resource",
+      "path": "/api/tenants/{tenant_id}/environments/{environment_id}/resources/{resource_type}/{resource_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_lead",
+      "path": "/api/tenants/{tenant_id}/environments/{environment_id}/resources/leads"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "archive_resource",
+      "path": "/api/tenants/{tenant_id}/environments/{environment_id}/resources/{resource_type}/{resource_id}/archive"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "export_catalog",
+      "path": "/api/tenants/{tenant_id}/environments/{environment_id}/exports"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "export_page",
+      "path": "/api/tenants/{tenant_id}/environments/{environment_id}/exports/{resource_type}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_voice_providers",
+      "path": "/api/agents/voices"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_model_providers",
+      "path": "/api/agents/models"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_tool_contracts",
+      "path": "/api/agents/tools/catalog"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_flow_json_schema",
+      "path": "/api/agents/flow/schema"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_agent_draft_flow",
+      "path": "/api/agents/{agent_id}/flow"
+    },
+    {
+      "methods": [
+        "PUT"
+      ],
+      "name": "put_agent_draft_flow",
+      "path": "/api/agents/{agent_id}/flow"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "validate_agent_flow",
+      "path": "/api/agents/{agent_id}/flow/validate"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "simulate_agent_flow",
+      "path": "/api/agents/{agent_id}/flow/simulate"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "publish_agent_flow",
+      "path": "/api/agents/{agent_id}/flow/publish"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_agents",
+      "path": "/api/agents"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_agent",
+      "path": "/api/agents"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_agent",
+      "path": "/api/agents/{agent_id}"
+    },
+    {
+      "methods": [
+        "PUT"
+      ],
+      "name": "update_agent_draft",
+      "path": "/api/agents/{agent_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "validate_agent_draft",
+      "path": "/api/agents/{agent_id}/validate"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "publish_agent",
+      "path": "/api/agents/{agent_id}/publish"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_versions",
+      "path": "/api/agents/{agent_id}/versions"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_version",
+      "path": "/api/agents/{agent_id}/versions/{version_number:int}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "rollback_agent",
+      "path": "/api/agents/{agent_id}/rollback"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "test_agent",
+      "path": "/api/agents/{agent_id}/test"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_trigger",
+      "path": "/api/workflows/triggers"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_triggers",
+      "path": "/api/workflows/triggers"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_trigger",
+      "path": "/api/workflows/triggers/{trigger_id}"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_trigger",
+      "path": "/api/workflows/triggers/{trigger_id}"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_trigger",
+      "path": "/api/workflows/triggers/{trigger_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_call_context",
+      "path": "/api/workflows/calls/{call_id}/context"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "outcome_writeback",
+      "path": "/api/workflows/calls/{call_id}/outcome-writeback"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "post_call_executions",
+      "path": "/api/workflows/calls/{call_id}/executions"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_workflow",
+      "path": "/api/workflows"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_workflows",
+      "path": "/api/workflows"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_workflow",
+      "path": "/api/workflows/{workflow_id}"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_workflow",
+      "path": "/api/workflows/{workflow_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "publish_workflow",
+      "path": "/api/workflows/{workflow_id}/publish"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "pause_workflow",
+      "path": "/api/workflows/{workflow_id}/pause"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "resume_workflow",
+      "path": "/api/workflows/{workflow_id}/resume"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "archive_workflow",
+      "path": "/api/workflows/{workflow_id}/archive"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "clone_workflow",
+      "path": "/api/workflows/{workflow_id}/clone"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "workflow_versions",
+      "path": "/api/workflows/{workflow_id}/versions"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "execute_workflow",
+      "path": "/api/workflows/{workflow_id}/execute"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "execution_history",
+      "path": "/api/workflows/{workflow_id}/executions"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "execution_detail",
+      "path": "/api/workflows/{workflow_id}/executions/{execution_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "approve_execution",
+      "path": "/api/workflows/{workflow_id}/executions/{execution_id}/approve"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "cancel_execution",
+      "path": "/api/workflows/{workflow_id}/executions/{execution_id}/cancel"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "retry_execution",
+      "path": "/api/workflows/{workflow_id}/executions/{execution_id}/retry"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_campaign",
+      "path": "/api/campaigns"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_campaigns",
+      "path": "/api/campaigns"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_campaign",
+      "path": "/api/campaigns/{campaign_id}"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_campaign",
+      "path": "/api/campaigns/{campaign_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "schedule_campaign",
+      "path": "/api/campaigns/{campaign_id}/schedule"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "pause_campaign",
+      "path": "/api/campaigns/{campaign_id}/pause"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "resume_campaign",
+      "path": "/api/campaigns/{campaign_id}/resume"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "cancel_campaign",
+      "path": "/api/campaigns/{campaign_id}/cancel"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "audience_preview",
+      "path": "/api/campaigns/{campaign_id}/audience"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "eligibility_preview",
+      "path": "/api/campaigns/{campaign_id}/eligibility"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "execution_status",
+      "path": "/api/campaigns/{campaign_id}/execution-status"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "execution_plan",
+      "path": "/api/campaigns/{campaign_id}/plan"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "campaign_results",
+      "path": "/api/campaigns/{campaign_id}/results"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "campaign_kpis",
+      "path": "/api/campaigns/{campaign_id}/kpis"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_events",
+      "path": "/api/automations/events"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_actions",
+      "path": "/api/automations/actions"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_automation",
+      "path": "/api/automations"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_automations",
+      "path": "/api/automations"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "evaluate_event",
+      "path": "/api/automations/evaluate"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_automation",
+      "path": "/api/automations/{automation_id}"
+    },
+    {
+      "methods": [
+        "PUT"
+      ],
+      "name": "update_automation",
+      "path": "/api/automations/{automation_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "enable_automation",
+      "path": "/api/automations/{automation_id}/enable"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "disable_automation",
+      "path": "/api/automations/{automation_id}/disable"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "run_automation",
+      "path": "/api/automations/{automation_id}/run"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "automation_runs",
+      "path": "/api/automations/{automation_id}/runs"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "automation_stats",
+      "path": "/api/automations/{automation_id}/stats"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "automation_dedupe_key",
+      "path": "/api/automations/{automation_id}/dedupe-key"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_template",
+      "path": "/api/notifications/templates"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_templates",
+      "path": "/api/notifications/templates"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_template",
+      "path": "/api/notifications/templates/{template_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "render_template",
+      "path": "/api/notifications/templates/{template_id}/render"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "check_preferences",
+      "path": "/api/notifications/preferences/check"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_notification",
+      "path": "/api/notifications"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_notifications",
+      "path": "/api/notifications"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_notification",
+      "path": "/api/notifications/{notification_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "mark_read",
+      "path": "/api/notifications/{notification_id}/read"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "mark_unread",
+      "path": "/api/notifications/{notification_id}/unread"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "deliver_notification",
+      "path": "/api/notifications/{notification_id}/deliver"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "retry_notification",
+      "path": "/api/notifications/{notification_id}/retry"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "delivery_summary",
+      "path": "/api/notifications/states/summary"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_threads",
+      "path": "/api/inbox/threads"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "open_thread",
+      "path": "/api/inbox/threads"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_thread",
+      "path": "/api/inbox/threads/{thread_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "thread_messages",
+      "path": "/api/inbox/threads/{thread_id}/messages"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "counts",
+      "path": "/api/inbox/counts"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "unread_counts",
+      "path": "/api/inbox/unread-counts"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "append_message",
+      "path": "/api/inbox/threads/{thread_id}/messages"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "add_note",
+      "path": "/api/inbox/threads/{thread_id}/notes"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "assign_thread",
+      "path": "/api/inbox/threads/{thread_id}/assign"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "set_priority",
+      "path": "/api/inbox/threads/{thread_id}/priority"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "tag_thread",
+      "path": "/api/inbox/threads/{thread_id}/tags"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "mark_read",
+      "path": "/api/inbox/threads/{thread_id}/read"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "mark_unread",
+      "path": "/api/inbox/threads/{thread_id}/unread"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "escalate_thread",
+      "path": "/api/inbox/threads/{thread_id}/escalate"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "close_thread",
+      "path": "/api/inbox/threads/{thread_id}/close"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "reopen_thread",
+      "path": "/api/inbox/threads/{thread_id}/reopen"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "thread_identity",
+      "path": "/api/inbox/threads/{thread_id}/identity"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_reviews",
+      "path": "/api/qa/reviews"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_review",
+      "path": "/api/qa/reviews"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_one",
+      "path": "/api/qa/reviews/{review_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_assign",
+      "path": "/api/qa/reviews/{review_id}/assign"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_scores",
+      "path": "/api/qa/reviews/{review_id}/scores"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_submit",
+      "path": "/api/qa/reviews/{review_id}/submit"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_finalize",
+      "path": "/api/qa/reviews/{review_id}/finalize"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_reopen",
+      "path": "/api/qa/reviews/{review_id}/reopen"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_auto",
+      "path": "/api/qa/reviews/{review_id}/auto-review"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_coaching",
+      "path": "/api/qa/reviews/{review_id}/coaching"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_scorecards",
+      "path": "/api/qa/scorecards"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_scorecard",
+      "path": "/api/qa/scorecards"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_scorecard_one",
+      "path": "/api/qa/scorecards/{scorecard_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_metrics",
+      "path": "/api/qa/metrics"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_export",
+      "path": "/api/qa/exports"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_sample",
+      "path": "/api/qa/sampling/run"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_calibration",
+      "path": "/api/qa/calibration"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_policy",
+      "path": "/api/qa/compliance/policies"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_test_run_qa_scorecard",
+      "path": "/api/qa/test-runs/{run_id}/scorecard"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_agent_qa_summary_endpoint",
+      "path": "/api/qa/agents/{agent_id}/summary"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "compare_agent_versions_qa_endpoint",
+      "path": "/api/qa/agents/{agent_id}/compare-versions"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_automatic_sampling",
+      "path": "/api/qa/sampling/automatic"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_automatic_sampling",
+      "path": "/api/qa/sampling/automatic"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "disable_automatic_sampling",
+      "path": "/api/qa/sampling/automatic/{rule_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_auto_review_status",
+      "path": "/api/qa/reviews/{review_id}/auto-review"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_sentiment",
+      "path": "/api/conversations/{call_id}/sentiment"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_sentiment",
+      "path": "/api/conversations/{call_id}/sentiment"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_topics",
+      "path": "/api/conversations/{call_id}/topics"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_topic",
+      "path": "/api/conversations/{call_id}/topics"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_compliance",
+      "path": "/api/conversations/{call_id}/compliance"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_evidence",
+      "path": "/api/conversations/{call_id}/evidence"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_coaching",
+      "path": "/api/conversations/{call_id}/coaching"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_summary",
+      "path": "/api/conversations/{call_id}/intelligence"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "record_call_outcome",
+      "path": "/api/conversations/{call_id}/outcomes"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_call_outcomes",
+      "path": "/api/conversations/{call_id}/outcomes"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_call_outcome_metrics",
+      "path": "/api/qa/outcomes/metrics"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_lead",
+      "path": "/api/tenants/{tenant_id}/lead-records"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_leads",
+      "path": "/api/tenants/{tenant_id}/lead-records"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_one",
+      "path": "/api/tenants/{tenant_id}/leads/{lead_id}"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "patch_lead",
+      "path": "/api/tenants/{tenant_id}/leads/{lead_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_transition",
+      "path": "/api/tenants/{tenant_id}/leads/{lead_id}/transition"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_owner",
+      "path": "/api/tenants/{tenant_id}/leads/{lead_id}/owner"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_score",
+      "path": "/api/tenants/{tenant_id}/leads/{lead_id}/score"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_duplicates",
+      "path": "/api/tenants/{tenant_id}/leads/{lead_id}/duplicates"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_merge",
+      "path": "/api/tenants/{tenant_id}/lead-merges"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_consent",
+      "path": "/api/tenants/{tenant_id}/leads/{lead_id}/consent"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_enrich",
+      "path": "/api/tenants/{tenant_id}/leads/{lead_id}/enrich"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_activities",
+      "path": "/api/tenants/{tenant_id}/leads/{lead_id}/activities"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_activity",
+      "path": "/api/tenants/{tenant_id}/leads/{lead_id}/activities"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_task",
+      "path": "/api/tenants/{tenant_id}/leads/{lead_id}/tasks"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "patch_task",
+      "path": "/api/tenants/{tenant_id}/lead-tasks/{task_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_import",
+      "path": "/api/tenants/{tenant_id}/lead-imports"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_export",
+      "path": "/api/tenants/{tenant_id}/lead-exports"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_segment",
+      "path": "/api/tenants/{tenant_id}/lead-segments"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_segments",
+      "path": "/api/tenants/{tenant_id}/lead-segments"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_members",
+      "path": "/api/tenants/{tenant_id}/lead-segments/{segment_id}/members"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_one",
+      "path": "/api/tenants/{tenant_id}/lead-segments/{segment_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_jobs",
+      "path": "/api/jobs"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_dlq",
+      "path": "/api/jobs/dlq"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "job_metrics",
+      "path": "/api/jobs/metrics"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_job",
+      "path": "/api/jobs/{job_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "cancel_job",
+      "path": "/api/jobs/{job_id}/cancel"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "retry_job",
+      "path": "/api/jobs/{job_id}/retry"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "replay_job",
+      "path": "/api/jobs/{job_id}/replay"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "quarantine_job",
+      "path": "/api/jobs/{job_id}/quarantine"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "release_job",
+      "path": "/api/jobs/{job_id}/release"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_events",
+      "path": "/api/outbox"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_event",
+      "path": "/api/outbox/{event_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "replay_event",
+      "path": "/api/outbox/{event_id}/replay"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "cancel_event",
+      "path": "/api/outbox/{event_id}/cancel"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "publish_test_event",
+      "path": "/api/outbox/test"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_outbound_call",
+      "path": "/api/calls"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_outbound_calls",
+      "path": "/api/calls"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_outbound_call",
+      "path": "/api/calls/outbound/{call_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "cancel_outbound_call",
+      "path": "/api/calls/{call_id}/cancel"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "retry_outbound_call",
+      "path": "/api/calls/{call_id}/retry"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "bulk_outbound_calls",
+      "path": "/api/calls/bulk"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_web_call",
+      "path": "/api/calls/web-calls"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "revoke_web_call",
+      "path": "/api/calls/web-calls/{call_id}/revoke"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "pause_call",
+      "path": "/api/calls/{call_id}/pause"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "resume_call",
+      "path": "/api/calls/{call_id}/resume"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "end_call",
+      "path": "/api/calls/{call_id}/end"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "reopen_call",
+      "path": "/api/calls/{call_id}/reopen"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_call_analytics",
+      "path": "/api/calls/{call_id}/analytics"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "send_dtmf",
+      "path": "/api/calls/{call_id}/dtmf"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "send_dtmf_batch",
+      "path": "/api/calls/{call_id}/dtmf/batch"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_call_compliance",
+      "path": "/api/calls/{call_id}/compliance"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "provider_health",
+      "path": "/api/calls/health/provider"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "outbound_stats_summary",
+      "path": "/api/calls/stats/summary"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "idempotency_stats",
+      "path": "/api/calls/idempotency/stats"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "clear_idempotency_cache",
+      "path": "/api/calls/idempotency/cache"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "initiate_transfer",
+      "path": "/api/calls/{call_id}/transfer"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_transfer",
+      "path": "/api/calls/{call_id}/transfer-details"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "cancel_transfer",
+      "path": "/api/calls/{call_id}/transfer/cancel"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "retry_transfer",
+      "path": "/api/calls/{call_id}/transfer/retry"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_transfer_history",
+      "path": "/api/calls/transfers/history"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_warm_transfer_context",
+      "path": "/api/calls/{call_id}/transfer/context"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_warm_transfer_context",
+      "path": "/api/calls/{call_id}/transfer/context"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_transfer_summary",
+      "path": "/api/calls/{call_id}/transfer/context/summary"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_transfer_analytics",
+      "path": "/api/calls/{call_id}/transfer/analytics"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "send_whisper",
+      "path": "/api/calls/{call_id}/transfer/whisper"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_bridge_status",
+      "path": "/api/calls/{call_id}/transfer/bridge"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "transfer_stats",
+      "path": "/api/calls/transfers/stats"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "idempotency_stats",
+      "path": "/api/calls/transfers/idempotency/stats"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "clear_idempotency",
+      "path": "/api/calls/transfers/idempotency/cache"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "transfer_templates",
+      "path": "/api/calls/transfers/templates"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "bulk_transfer",
+      "path": "/api/calls/transfers/bulk"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "transfer_health",
+      "path": "/api/calls/transfers/health"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "transfer_config",
+      "path": "/api/calls/transfers/config"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "complete_transfer",
+      "path": "/api/calls/{call_id}/transfer/complete"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "fail_transfer",
+      "path": "/api/calls/{call_id}/transfer/fail"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "transfers_analytics_summary",
+      "path": "/api/calls/transfers/analytics/summary"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "transfer_metrics",
+      "path": "/api/calls/transfers/metrics"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "clear_transfer_cache",
+      "path": "/api/calls/transfers/cache"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "start_warm_transfer_with_briefing",
+      "path": "/api/calls/{call_id}/transfer/warm"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "bridge_warm_transfer",
+      "path": "/api/calls/{call_id}/transfer/warm/bridge"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "abort_warm_transfer",
+      "path": "/api/calls/{call_id}/transfer/warm/abort"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "start_monitoring",
+      "path": "/api/calls/{call_id}/monitor"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_monitoring_sessions",
+      "path": "/api/calls/{call_id}/monitor"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_monitoring_session",
+      "path": "/api/calls/{call_id}/monitor/{session_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "heartbeat_monitoring_session",
+      "path": "/api/calls/{call_id}/monitor/{session_id}/heartbeat"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "end_monitoring",
+      "path": "/api/calls/{call_id}/monitor/{session_id}/end"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "pause_monitoring",
+      "path": "/api/calls/{call_id}/monitor/{session_id}/pause"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "resume_monitoring",
+      "path": "/api/calls/{call_id}/monitor/{session_id}/resume"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "whisper_to_agent",
+      "path": "/api/calls/{call_id}/monitor/{session_id}/whisper"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_whispers",
+      "path": "/api/calls/{call_id}/monitor/{session_id}/whispers"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "human_takeover",
+      "path": "/api/calls/{call_id}/takeover"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_takeovers",
+      "path": "/api/calls/{call_id}/takeover"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "leave_takeover",
+      "path": "/api/calls/{call_id}/takeover/{session_id}/leave"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "transfer_ownership",
+      "path": "/api/calls/{call_id}/takeover/{session_id}/transfer-ownership"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "takeover_audit",
+      "path": "/api/calls/{call_id}/takeover/{session_id}/audit"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "monitor_analytics",
+      "path": "/api/calls/{call_id}/monitor/analytics"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "monitor_health",
+      "path": "/api/calls/monitor/health"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "monitor_config",
+      "path": "/api/calls/monitor/config"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "idempotency_stats",
+      "path": "/api/calls/monitoring/idempotency/stats"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "clear_monitoring_idempotency_cache",
+      "path": "/api/calls/monitoring/idempotency/cache"
+    },
+    {
+      "methods": [],
+      "name": "monitor_call_ws",
+      "path": "/ws/monitor/{call_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "archive_agent",
+      "path": "/api/v1/agents/{agent_id}/archive"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "restore_agent",
+      "path": "/api/v1/agents/{agent_id}/restore"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_agent",
+      "path": "/api/v1/agents/{agent_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "clone_agent",
+      "path": "/api/v1/agents/{agent_id}/clone"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "export_agent",
+      "path": "/api/v1/agents/{agent_id}/export"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "import_agent",
+      "path": "/api/v1/agents/import"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "health_check",
+      "path": "/api/v1/agents/lifecycle/health"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_number",
+      "path": "/api/phone-numbers/{number_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "configure_number",
+      "path": "/api/phone-numbers/{number_id}/configure"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_number",
+      "path": "/api/phone-numbers/{number_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "release_provider_number",
+      "path": "/api/phone-numbers/{number_id}/release-provider"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "rebind_number",
+      "path": "/api/phone-numbers/{number_id}/rebind"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_trust_profile_route",
+      "path": "/api/phone-numbers/{number_id}/trust-profile"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "refresh_trust_profile_route",
+      "path": "/api/phone-numbers/{number_id}/trust-profile/refresh"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_trust_profile_v1_route",
+      "path": "/api/v1/telephony/phone-numbers/{number_id}/trust-profile"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "refresh_trust_profile_v1_route",
+      "path": "/api/v1/telephony/phone-numbers/{number_id}/trust-profile/refresh"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_recordings",
+      "path": "/api/recordings"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_recording_detail",
+      "path": "/api/recordings/{recording_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "request_new_recording",
+      "path": "/api/recordings"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_signed_access",
+      "path": "/api/recordings/{recording_id}/signed-access"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "access_with_token",
+      "path": "/api/recordings/{recording_id}/access/{token}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "purge_single_recording",
+      "path": "/api/recordings/{recording_id}/purge"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "purge_recordings_for_calls",
+      "path": "/api/recordings/purge"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_batch_call",
+      "path": "/api/batch-calls"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_batch_calls",
+      "path": "/api/batch-calls"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_batch_call",
+      "path": "/api/batch-calls/{batch_id}"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_batch_call",
+      "path": "/api/batch-calls/{batch_id}"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_batch_call",
+      "path": "/api/batch-calls/{batch_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "add_recipients",
+      "path": "/api/batch-calls/{batch_id}/recipients"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_recipients",
+      "path": "/api/batch-calls/{batch_id}/recipients"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_recipient",
+      "path": "/api/batch-calls/{batch_id}/recipients/{recipient_id}"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_recipient",
+      "path": "/api/batch-calls/{batch_id}/recipients/{recipient_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "retry_failed_recipients",
+      "path": "/api/batch-calls/{batch_id}/recipients/retry-failed"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "start_batch_call",
+      "path": "/api/batch-calls/{batch_id}/start"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "pause_batch_call",
+      "path": "/api/batch-calls/{batch_id}/pause"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "resume_batch_call",
+      "path": "/api/batch-calls/{batch_id}/resume"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "cancel_batch_call",
+      "path": "/api/batch-calls/{batch_id}/cancel"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_batch_analytics",
+      "path": "/api/batch-calls/{batch_id}/analytics"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "import_recipients_csv",
+      "path": "/api/batch-calls/{batch_id}/import-csv"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "export_recipients_csv",
+      "path": "/api/batch-calls/{batch_id}/export-csv"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "batch_overview_stats",
+      "path": "/api/batch-calls/stats/overview"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_schema",
+      "path": "/api/analysis/schemas"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_schemas",
+      "path": "/api/analysis/schemas"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_schema",
+      "path": "/api/analysis/schemas/{schema_id}"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_schema",
+      "path": "/api/analysis/schemas/{schema_id}"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_schema",
+      "path": "/api/analysis/schemas/{schema_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_results",
+      "path": "/api/analysis/results"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_call_results",
+      "path": "/api/analysis/calls/{call_id}/results"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_backfill",
+      "path": "/api/analysis/backfill"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_backfills",
+      "path": "/api/analysis/backfill"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_backfill",
+      "path": "/api/analysis/backfill/{job_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "extended_health_check",
+      "path": "/api/analysis/extended/health"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "extended_stats",
+      "path": "/api/analysis/extended/stats"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "extended_config",
+      "path": "/api/analysis/extended/config"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "extended_metrics",
+      "path": "/api/analysis/extended/metrics"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "extended_validate",
+      "path": "/api/analysis/extended/validate"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "extended_audit_log",
+      "path": "/api/analysis/extended/audit"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "extended_list",
+      "path": "/api/analysis/extended/list"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "extended_bulk",
+      "path": "/api/analysis/extended/bulk"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "extended_clear_cache",
+      "path": "/api/analysis/extended/cache"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "preview_backfill",
+      "path": "/api/analysis/backfill/preview"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "export_results",
+      "path": "/api/analysis/results/export"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_experiment",
+      "path": "/api/experiments"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_experiments",
+      "path": "/api/experiments"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_experiment",
+      "path": "/api/experiments/{experiment_id}"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_experiment",
+      "path": "/api/experiments/{experiment_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_variants",
+      "path": "/api/experiments/{experiment_id}/variants"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_variant",
+      "path": "/api/experiments/{experiment_id}/variants/{variant_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "start_experiment",
+      "path": "/api/experiments/{experiment_id}/start"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "pause_experiment",
+      "path": "/api/experiments/{experiment_id}/pause"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_assignment",
+      "path": "/api/experiments/{experiment_id}/assignment"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_experiment_outcome",
+      "path": "/api/experiments/{experiment_id}/outcomes"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_experiment_results",
+      "path": "/api/experiments/{experiment_id}/results"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_metrics",
+      "path": "/api/experiments/{experiment_id}/metrics"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "promote_variant",
+      "path": "/api/experiments/{experiment_id}/promote"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "rollback_experiment",
+      "path": "/api/experiments/{experiment_id}/rollback"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_experiment",
+      "path": "/api/ab-testing/experiments"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_experiments",
+      "path": "/api/ab-testing/experiments"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_experiment",
+      "path": "/api/ab-testing/experiments/{experiment_id}"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_experiment",
+      "path": "/api/ab-testing/experiments/{experiment_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_variants",
+      "path": "/api/ab-testing/experiments/{experiment_id}/variants"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_variant",
+      "path": "/api/ab-testing/experiments/{experiment_id}/variants/{variant_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "start_experiment",
+      "path": "/api/ab-testing/experiments/{experiment_id}/start"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "pause_experiment",
+      "path": "/api/ab-testing/experiments/{experiment_id}/pause"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_assignment",
+      "path": "/api/ab-testing/experiments/{experiment_id}/assignment"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_experiment_outcome",
+      "path": "/api/ab-testing/experiments/{experiment_id}/outcomes"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_experiment_results",
+      "path": "/api/ab-testing/experiments/{experiment_id}/results"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_metrics",
+      "path": "/api/ab-testing/experiments/{experiment_id}/metrics"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "promote_variant",
+      "path": "/api/ab-testing/experiments/{experiment_id}/promote"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "rollback_experiment",
+      "path": "/api/ab-testing/experiments/{experiment_id}/rollback"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_or_update_retention_policy",
+      "path": "/api/retention/policies"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_retention_policies",
+      "path": "/api/retention/policies"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_retention_policy",
+      "path": "/api/retention/policies/{policy_id}"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_retention_policy",
+      "path": "/api/retention/policies/{policy_id}"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_retention_policy",
+      "path": "/api/retention/policies/{policy_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "upsert_recording_policy",
+      "path": "/api/retention/recording-policy"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_effective_recording_policy",
+      "path": "/api/retention/recording-policy"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "trigger_purge",
+      "path": "/api/retention/purge"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "retention_status",
+      "path": "/api/retention/status"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_webhook",
+      "path": "/api/webhooks"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_webhooks",
+      "path": "/api/webhooks"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_webhook",
+      "path": "/api/webhooks/{endpoint_id:uuid}"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_webhook",
+      "path": "/api/webhooks/{endpoint_id:uuid}"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_webhook",
+      "path": "/api/webhooks/{endpoint_id:uuid}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "enable_webhook",
+      "path": "/api/webhooks/{endpoint_id:uuid}/enable"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "disable_webhook",
+      "path": "/api/webhooks/{endpoint_id:uuid}/disable"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "rotate_secret",
+      "path": "/api/webhooks/{endpoint_id:uuid}/rotate-secret"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_webhook_events",
+      "path": "/api/webhooks/{endpoint_id:uuid}/events"
+    },
+    {
+      "methods": [
+        "PUT"
+      ],
+      "name": "set_webhook_events",
+      "path": "/api/webhooks/{endpoint_id:uuid}/events"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "subscribe_event",
+      "path": "/api/webhooks/{endpoint_id:uuid}/events/{event_type}"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "unsubscribe_event",
+      "path": "/api/webhooks/{endpoint_id:uuid}/events/{event_type}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_deliveries",
+      "path": "/api/webhooks/{endpoint_id:uuid}/deliveries"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_delivery",
+      "path": "/api/webhooks/{endpoint_id:uuid}/deliveries/{delivery_id:uuid}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "test_webhook",
+      "path": "/api/webhooks/{endpoint_id:uuid}/test"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "retry_delivery",
+      "path": "/api/webhooks/{endpoint_id:uuid}/deliveries/{delivery_id:uuid}/retry"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "replay_webhook",
+      "path": "/api/webhooks/{endpoint_id:uuid}/replay"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_dlq",
+      "path": "/api/webhooks/{endpoint_id:uuid}/dlq"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "replay_all_dlq",
+      "path": "/api/webhooks/{endpoint_id:uuid}/dlq/replay-all"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "verify_signature",
+      "path": "/api/webhooks/{endpoint_id:uuid}/verify-signature"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_webhook_stats",
+      "path": "/api/webhooks/{endpoint_id:uuid}/stats"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "webhooks_summary",
+      "path": "/api/webhooks/stats/summary"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "webhooks_summary",
+      "path": "/api/webhooks/health"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_allowed_events",
+      "path": "/api/webhooks/events/allowed"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_event_categories",
+      "path": "/api/webhooks/events/categories"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "validate_events",
+      "path": "/api/webhooks/events/validate"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "payload_templates",
+      "path": "/api/webhooks/templates/payloads"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "bulk_enable_webhooks",
+      "path": "/api/webhooks/bulk/enable"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "bulk_disable_webhooks",
+      "path": "/api/webhooks/bulk/disable"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "bulk_delete_webhooks",
+      "path": "/api/webhooks/bulk/delete"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "recent_deliveries",
+      "path": "/api/webhooks/deliveries/recent"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "idempotency_stats",
+      "path": "/api/webhooks/idempotency/stats"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "clear_idempotency",
+      "path": "/api/webhooks/idempotency/cache"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "connect_salesforce",
+      "path": "/api/integrations/salesforce/connect"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "oauth_authorize",
+      "path": "/api/integrations/salesforce/oauth/authorize"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "oauth_callback",
+      "path": "/api/integrations/salesforce/oauth/callback"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_connection",
+      "path": "/api/integrations/salesforce/connection"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_connections",
+      "path": "/api/integrations/salesforce/connections"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_connection",
+      "path": "/api/integrations/salesforce/connection"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "disconnect_salesforce",
+      "path": "/api/integrations/salesforce/connection"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "refresh_token",
+      "path": "/api/integrations/salesforce/connection/refresh"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "health_check",
+      "path": "/api/integrations/salesforce/health"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_contacts",
+      "path": "/api/integrations/salesforce/contacts"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_leads",
+      "path": "/api/integrations/salesforce/leads"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_accounts",
+      "path": "/api/integrations/salesforce/accounts"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_cases",
+      "path": "/api/integrations/salesforce/cases"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_opportunities",
+      "path": "/api/integrations/salesforce/opportunities"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_tasks",
+      "path": "/api/integrations/salesforce/tasks"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_entity",
+      "path": "/api/integrations/salesforce/{entity_type}/{entity_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "salesforce_writeback",
+      "path": "/api/integrations/salesforce/writeback"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_writebacks",
+      "path": "/api/integrations/salesforce/writebacks"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "sync_salesforce",
+      "path": "/api/integrations/salesforce/sync"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_writeback",
+      "path": "/api/integrations/salesforce/writebacks/{writeback_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_oauth_states",
+      "path": "/api/integrations/salesforce/oauth/states"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "clear_oauth_states",
+      "path": "/api/integrations/salesforce/oauth/states"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "required_config",
+      "path": "/api/integrations/salesforce/config/required"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "api_limits",
+      "path": "/api/integrations/salesforce/api-limits"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "describe_objects",
+      "path": "/api/integrations/salesforce/objects/describe"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "bulk_writeback",
+      "path": "/api/integrations/salesforce/bulk/writeback"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "salesforce_stats",
+      "path": "/api/integrations/salesforce/stats"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "writeback_disposition",
+      "path": "/api/crm/calls/{call_id}/disposition"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "writeback_task_note",
+      "path": "/api/crm/calls/{call_id}/task"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "writeback_extracted_fields",
+      "path": "/api/crm/calls/{call_id}/fields"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_call_writebacks",
+      "path": "/api/crm/calls/{call_id}/writebacks"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_all_writebacks",
+      "path": "/api/crm/writebacks"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_writeback",
+      "path": "/api/crm/writebacks/{writeback_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "retry_writeback",
+      "path": "/api/crm/writebacks/{writeback_id}/retry"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_writeback",
+      "path": "/api/crm/writebacks/{writeback_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_mapping",
+      "path": "/api/crm/mappings"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_mappings",
+      "path": "/api/crm/mappings"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "backfill_crm",
+      "path": "/api/crm/backfill"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_supported_providers",
+      "path": "/api/crm/providers"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "crm_stats",
+      "path": "/api/crm/stats"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "purge_old_writebacks",
+      "path": "/api/crm/writebacks/purge/older-than"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_collection",
+      "path": "/api/kb/collections"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_collections",
+      "path": "/api/kb/collections"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_collection",
+      "path": "/api/kb/collections/{collection_id}"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_collection",
+      "path": "/api/kb/collections/{collection_id}"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_collection",
+      "path": "/api/kb/collections/{collection_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "add_source",
+      "path": "/api/kb/collections/{collection_id}/sources"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_sources",
+      "path": "/api/kb/collections/{collection_id}/sources"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_source",
+      "path": "/api/kb/collections/{collection_id}/sources/{source_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "bind_agents",
+      "path": "/api/kb/collections/{collection_id}/bind"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "unbind_agents",
+      "path": "/api/kb/collections/{collection_id}/unbind"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_sync_status",
+      "path": "/api/kb/collections/{collection_id}/sync-status"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "reindex_collection",
+      "path": "/api/kb/collections/{collection_id}/reindex"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_simulation",
+      "path": "/api/simulations"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_simulations",
+      "path": "/api/simulations"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_simulation",
+      "path": "/api/simulations/{sim_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "run_simulation",
+      "path": "/api/simulations/{sim_id}/run"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "cancel_simulation",
+      "path": "/api/simulations/{sim_id}/cancel"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "diff_agent_versions",
+      "path": "/api/agents/{agent_id}/versions/diff"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "promote_agent_environment",
+      "path": "/api/agents/{agent_id}/promote"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_agent_environments",
+      "path": "/api/agents/{agent_id}/environments"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_tool",
+      "path": "/api/agents/{agent_id}/tools"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_tools",
+      "path": "/api/agents/{agent_id}/tools"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_tool",
+      "path": "/api/agents/{agent_id}/tools/{tool_id}"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_tool",
+      "path": "/api/agents/{agent_id}/tools/{tool_id}"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_tool",
+      "path": "/api/agents/{agent_id}/tools/{tool_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "enable_tool",
+      "path": "/api/agents/{agent_id}/tools/{tool_id}/enable"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "disable_tool",
+      "path": "/api/agents/{agent_id}/tools/{tool_id}/disable"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "test_tool_execution",
+      "path": "/api/agents/{agent_id}/tools/{tool_id}/test"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_channel",
+      "path": "/api/channels"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_channels",
+      "path": "/api/channels"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_channel",
+      "path": "/api/channels/{channel_id}"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_channel",
+      "path": "/api/channels/{channel_id}"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_channel",
+      "path": "/api/channels/{channel_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "health_check_channel",
+      "path": "/api/channels/{channel_id}/health-check"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "send_channel_message",
+      "path": "/api/channels/send"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_channel_receipts",
+      "path": "/api/channels/{channel_id}/receipts"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "inbound_sms_channel_webhook",
+      "path": "/api/channels/webhook/sms"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "status_sms_channel_webhook",
+      "path": "/api/channels/webhook/status"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "search_calls",
+      "path": "/api/calls/search"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "search_calls_get",
+      "path": "/api/calls/search"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "export_calls",
+      "path": "/api/calls/export"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "export_calls_stream",
+      "path": "/api/calls/export/stream"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_call_replay",
+      "path": "/api/calls/{call_id}/replay"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_call_transcript",
+      "path": "/api/calls/{call_id}/transcript-summary"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_call_timeline",
+      "path": "/api/calls/{call_id}/timeline"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_concurrency_policy",
+      "path": "/api/calls/policies/concurrency"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_concurrency_policies",
+      "path": "/api/calls/policies/concurrency"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_concurrency_policy",
+      "path": "/api/calls/policies/concurrency/{policy_id}"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_concurrency_policy",
+      "path": "/api/calls/policies/concurrency/{policy_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_retry_policy",
+      "path": "/api/calls/policies/retry"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_retry_policies",
+      "path": "/api/calls/policies/retry"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_retry_policy",
+      "path": "/api/calls/policies/retry/{policy_id}"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_retry_policy",
+      "path": "/api/calls/policies/retry/{policy_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_calling_window_policy",
+      "path": "/api/calls/policies/calling-window"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_calling_window_policies",
+      "path": "/api/calls/policies/calling-window"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_calling_window_policy",
+      "path": "/api/calls/policies/calling-window/{policy_id}"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_calling_window_policy",
+      "path": "/api/calls/policies/calling-window/{policy_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "check_dnc",
+      "path": "/api/calls/dnc/check"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "add_dnc_entry",
+      "path": "/api/calls/dnc"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_dnc_entries",
+      "path": "/api/calls/dnc"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_dnc_entry",
+      "path": "/api/calls/dnc/{entry_id}"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_dnc_by_phone",
+      "path": "/api/calls/dnc/phone/{phone}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "check_voice_consent",
+      "path": "/api/calls/consent/check"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "policies_health",
+      "path": "/api/calls/policies/health"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "query_audit_events_legacy_security_audit",
+      "path": "/api/security/audit/events"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "query_audit_events_legacy_audit_trail",
+      "path": "/api/audit-trail/events"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "read_security_posture_legacy",
+      "path": "/api/enterprise-security/posture"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_public_home",
+      "path": "/api/v1/public/home"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_public_analytics_summary",
+      "path": "/api/v1/public/analytics/summary"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_voice_demo_session",
+      "path": "/api/v1/public/voice-demo/session"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_voice_demo_event",
+      "path": "/api/v1/public/voice-demo/session/{session_id}/event"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_voice_demo_session",
+      "path": "/api/v1/public/voice-demo/session/{session_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "public_health",
+      "path": "/api/v1/public/health"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_agent",
+      "path": "/api/v1/agents"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_agents",
+      "path": "/api/v1/agents"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_agent_detail",
+      "path": "/api/v1/agents/{agent_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_agent_builder",
+      "path": "/api/v1/agents/{agent_id}/builder"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_agent_builder",
+      "path": "/api/v1/agents/{agent_id}/builder"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "validate_agent",
+      "path": "/api/v1/agents/{agent_id}/validate"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "publish_agent",
+      "path": "/api/v1/agents/{agent_id}/publish"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_agent_versions",
+      "path": "/api/v1/agents/{agent_id}/versions"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_agent_version",
+      "path": "/api/v1/agents/{agent_id}/versions/{version_number:int}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "rollback_agent",
+      "path": "/api/v1/agents/{agent_id}/rollback"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "health_check",
+      "path": "/api/v1/agents/{agent_id}/health"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_agent_test_session",
+      "path": "/api/v1/agents/{agent_id}/test"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "send_agent_test_event",
+      "path": "/api/v1/agent-tests/{session_id}/events"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_agent_test_session",
+      "path": "/api/v1/agent-tests/{session_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "health_check",
+      "path": "/api/v1/agent-tests/{session_id}/health"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_use_cases",
+      "path": "/api/v1/public/use-cases"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_categories",
+      "path": "/api/v1/public/use-cases/categories"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_use_case_detail",
+      "path": "/api/v1/public/use-cases/{slug}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "health",
+      "path": "/api/v1/public/use-cases/health"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_contact",
+      "path": "/api/contacts"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_contacts",
+      "path": "/api/contacts"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_contact",
+      "path": "/api/contacts/{contact_id}"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_contact",
+      "path": "/api/contacts/{contact_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "archive_contact",
+      "path": "/api/contacts/{contact_id}/archive"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "restore_contact",
+      "path": "/api/contacts/{contact_id}/restore"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_contact",
+      "path": "/api/contacts/{contact_id}"
+    },
+    {
+      "methods": [
+        "PUT"
+      ],
+      "name": "save_contact_memory_entry",
+      "path": "/api/contacts/{contact_id}/memory/{key}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_contact_memory_entries",
+      "path": "/api/contacts/{contact_id}/memory"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_contact_memory_entry",
+      "path": "/api/contacts/{contact_id}/memory/{key}"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_contact_memory_entry",
+      "path": "/api/contacts/{contact_id}/memory/{key}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_chat_agent",
+      "path": "/api/chat-agents"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_chat_agents",
+      "path": "/api/chat-agents"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_chat_agent",
+      "path": "/api/chat-agents/{agent_id}"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_chat_agent",
+      "path": "/api/chat-agents/{agent_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "validate_chat_agent",
+      "path": "/api/chat-agents/{agent_id}/validate"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "publish_chat_agent",
+      "path": "/api/chat-agents/{agent_id}/publish"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_chat_agent_versions",
+      "path": "/api/chat-agents/{agent_id}/versions"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_chat_agent_version",
+      "path": "/api/chat-agents/{agent_id}/versions/{version_number:int}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "rollback_chat_agent_version",
+      "path": "/api/chat-agents/{agent_id}/rollback"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "archive_chat_agent",
+      "path": "/api/chat-agents/{agent_id}/archive"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "restore_chat_agent",
+      "path": "/api/chat-agents/{agent_id}/restore"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_chat_agent_session",
+      "path": "/api/chat-agents/{agent_id}/sessions"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_chat_session_direct",
+      "path": "/api/chat-sessions"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_chat_agent_sessions",
+      "path": "/api/chat-agents/{agent_id}/sessions"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_all_chat_sessions",
+      "path": "/api/chat-sessions"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_chat_session",
+      "path": "/api/chat-sessions/{session_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_chat_session_messages",
+      "path": "/api/chat-sessions/{session_id}/messages"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "send_chat_session_message",
+      "path": "/api/chat-sessions/{session_id}/messages"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "end_chat_session",
+      "path": "/api/chat-sessions/{session_id}/end"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_dynamic_variable",
+      "path": "/api/dynamic-variables"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_dynamic_variables",
+      "path": "/api/dynamic-variables"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_dynamic_variable",
+      "path": "/api/dynamic-variables/{variable_id}"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_dynamic_variable",
+      "path": "/api/dynamic-variables/{variable_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "request_agent_transfer",
+      "path": "/api/agent-transfers"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_agent_transfers",
+      "path": "/api/agent-transfers"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "transition_agent_transfer",
+      "path": "/api/agent-transfers/{transfer_id}/transition"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_retell_test_suites",
+      "path": "/api/test-suites"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_retell_test_runs",
+      "path": "/api/test-runs"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_rule_endpoint",
+      "path": "/api/v1/evaluations/rules"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_rules_endpoint",
+      "path": "/api/v1/evaluations/rules"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_rule_endpoint",
+      "path": "/api/v1/evaluations/rules/{rule_id}"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_rule_endpoint",
+      "path": "/api/v1/evaluations/rules/{rule_id}"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_rule_endpoint",
+      "path": "/api/v1/evaluations/rules/{rule_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_run_evaluation_results_endpoint",
+      "path": "/api/v1/evaluations/runs/{run_id}/results"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "rerun_evaluation_endpoint",
+      "path": "/api/v1/evaluations/runs/{run_id}/rerun"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_suite_endpoint",
+      "path": "/api/v1/testing/suites"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_suites_endpoint",
+      "path": "/api/v1/testing/suites"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_suite_endpoint",
+      "path": "/api/v1/testing/suites/{suite_id}"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_suite_endpoint",
+      "path": "/api/v1/testing/suites/{suite_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "archive_suite_endpoint",
+      "path": "/api/v1/testing/suites/{suite_id}/archive"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_case_endpoint",
+      "path": "/api/v1/testing/cases"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_cases_endpoint",
+      "path": "/api/v1/testing/cases"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_case_endpoint",
+      "path": "/api/v1/testing/cases/{case_id}"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_case_endpoint",
+      "path": "/api/v1/testing/cases/{case_id}"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_case_endpoint",
+      "path": "/api/v1/testing/cases/{case_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "run_single_case_endpoint",
+      "path": "/api/v1/testing/cases/{case_id}/run"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_regression_from_call_endpoint",
+      "path": "/api/v1/testing/regressions/from-call/{call_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "run_batch_suite_endpoint",
+      "path": "/api/v1/testing/suites/{suite_id}/run-batch"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "run_playground_endpoint",
+      "path": "/api/v1/testing/playground/run"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "run_simulation_endpoint",
+      "path": "/api/v1/testing/simulations/run"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "run_simulated_caller_endpoint",
+      "path": "/api/v1/testing/simulations/caller-run"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_testing_kpis_endpoint",
+      "path": "/api/v1/testing/kpis"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_runs_endpoint",
+      "path": "/api/v1/testing/runs"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_run_endpoint",
+      "path": "/api/v1/testing/runs/{run_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "cancel_run_endpoint",
+      "path": "/api/v1/testing/runs/{run_id}/cancel"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_call_test_readiness",
+      "path": "/api/v1/testing/calls/readiness"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_call_test_runs",
+      "path": "/api/v1/testing/calls/runs"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_call_test_run",
+      "path": "/api/v1/testing/calls/runs/{run_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "start_web_call_session_endpoint",
+      "path": "/api/v1/testing/web-calls/sessions"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "send_web_call_event_endpoint",
+      "path": "/api/v1/testing/web-calls/sessions/{run_id}/events"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_web_call_session_endpoint",
+      "path": "/api/v1/testing/web-calls/sessions/{run_id}"
+    },
+    {
+      "methods": [],
+      "name": "web_call_websocket_endpoint",
+      "path": "/telephony/web/ws"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "web_call_webrtc_offer_endpoint",
+      "path": "/telephony/web/offer"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_web_call_server_endpoint",
+      "path": "/api/web-calls"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_web_call_public_endpoint",
+      "path": "/api/public/web-calls"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_web_call_endpoint",
+      "path": "/api/web-calls/{call_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "end_web_call_endpoint",
+      "path": "/api/web-calls/{call_id}/end"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "serve_widget_embed_script",
+      "path": "/widget/embed.js"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "initiate_phone_call_test_endpoint",
+      "path": "/api/v1/testing/phone-calls/run"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_phone_call_test_endpoint",
+      "path": "/api/v1/testing/phone-calls/{run_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_session_endpoint",
+      "path": "/api/v1/conductor/sessions"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_sessions_endpoint",
+      "path": "/api/v1/conductor/sessions"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_session_endpoint",
+      "path": "/api/v1/conductor/sessions/{session_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_scoped_context_endpoint",
+      "path": "/api/v1/conductor/context"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "submit_conductor_request_endpoint",
+      "path": "/api/v1/conductor/proposals"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_proposals_endpoint",
+      "path": "/api/v1/conductor/proposals"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_proposal_endpoint",
+      "path": "/api/v1/conductor/proposals/{proposal_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_proposal_changes_endpoint",
+      "path": "/api/v1/conductor/proposals/{proposal_id}/changes"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_proposal_diff_endpoint",
+      "path": "/api/v1/conductor/proposals/{proposal_id}/diff"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_proposal_evidence_endpoint",
+      "path": "/api/v1/conductor/proposals/{proposal_id}/evidence"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "validate_proposal_endpoint",
+      "path": "/api/v1/conductor/proposals/{proposal_id}/validate"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "simulate_proposal_endpoint",
+      "path": "/api/v1/conductor/proposals/{proposal_id}/simulate"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "approve_change_endpoint",
+      "path": "/api/v1/conductor/proposals/{proposal_id}/changes/{change_id}/approve"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "reject_change_endpoint",
+      "path": "/api/v1/conductor/proposals/{proposal_id}/changes/{change_id}/reject"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "undo_change_endpoint",
+      "path": "/api/v1/conductor/proposals/{proposal_id}/changes/{change_id}/undo"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "approve_proposal_endpoint",
+      "path": "/api/v1/conductor/proposals/{proposal_id}/approve"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "reject_proposal_endpoint",
+      "path": "/api/v1/conductor/proposals/{proposal_id}/reject"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "undo_proposal_endpoint",
+      "path": "/api/v1/conductor/proposals/{proposal_id}/undo"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "apply_proposal_endpoint",
+      "path": "/api/v1/conductor/proposals/{proposal_id}/apply"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_resulting_version_endpoint",
+      "path": "/api/v1/conductor/proposals/{proposal_id}/resulting-version"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_proposal_review_summary_endpoint",
+      "path": "/api/v1/conductor/reviews/proposals/{proposal_id}/summary"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_grouped_changes_endpoint",
+      "path": "/api/v1/conductor/reviews/proposals/{proposal_id}/grouped-changes"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "accept_safe_changes_endpoint",
+      "path": "/api/v1/conductor/reviews/proposals/{proposal_id}/accept-safe"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "accept_single_change_review_endpoint",
+      "path": "/api/v1/conductor/reviews/proposals/{proposal_id}/changes/{change_id}/accept"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "ingest_conductor_webhook_event",
+      "path": "/api/v1/conductor/webhooks/events"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "robots_txt",
+      "path": "/robots.txt"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "sitemap_xml",
+      "path": "/sitemap.xml"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "public_site_manifest",
+      "path": "/api/v1/public/site/manifest"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "public_site_pricing",
+      "path": "/api/v1/public/site/pricing"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "public_site_status",
+      "path": "/api/v1/public/site/status"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "public_route_boundary_check",
+      "path": "/api/v1/public/site/route-boundary"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "submit_contact_sales",
+      "path": "/api/v1/public/contact-sales"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_widget_public_key",
+      "path": "/api/v1/public-keys"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_widget_public_keys",
+      "path": "/api/v1/public-keys"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_widget_public_key",
+      "path": "/api/v1/public-keys/{key_id}"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_widget_public_key",
+      "path": "/api/v1/public-keys/{key_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "rotate_widget_public_key",
+      "path": "/api/v1/public-keys/{key_id}/rotate"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "revoke_widget_public_key",
+      "path": "/api/v1/public-keys/{key_id}/revoke"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_widget_config",
+      "path": "/api/v1/public/widget/config"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_widget_voice_bootstrap",
+      "path": "/api/v1/public/widget/voice-bootstrap"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_widget_embed_js",
+      "path": "/api/v1/public/widget/embed.js"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "start_widget_session",
+      "path": "/api/v1/public/widget/sessions"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "read_widget_session",
+      "path": "/api/v1/public/widget/sessions/{session_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "post_widget_session_message",
+      "path": "/api/v1/public/widget/sessions/{session_id}/messages"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "terminate_widget_session",
+      "path": "/api/v1/public/widget/sessions/{session_id}/end"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_phone_numbers",
+      "path": "/api/v1/telephony/phone-numbers"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_phone_number",
+      "path": "/api/v1/telephony/phone-numbers"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_phone_number",
+      "path": "/api/v1/telephony/phone-numbers/{phone_number_id}"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_phone_number",
+      "path": "/api/v1/telephony/phone-numbers/{phone_number_id}"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_phone_number",
+      "path": "/api/v1/telephony/phone-numbers/{phone_number_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "bind_phone_number_agent",
+      "path": "/api/v1/telephony/phone-numbers/{phone_number_id}/bind-agent"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_sip_connections",
+      "path": "/api/v1/telephony/sip-connections"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_sip_connection",
+      "path": "/api/v1/telephony/sip-connections"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "test_sip_connection",
+      "path": "/api/v1/telephony/sip-connections/{sip_connection_id}/test"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_outbound_call",
+      "path": "/api/v1/telephony/calls/outbound"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_calls",
+      "path": "/api/v1/telephony/calls"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_call",
+      "path": "/api/v1/telephony/calls/{call_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "hangup_call",
+      "path": "/api/v1/telephony/calls/{call_id}/hangup"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "send_call_dtmf",
+      "path": "/api/v1/telephony/calls/{call_id}/dtmf"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "transfer_call",
+      "path": "/api/v1/telephony/calls/{call_id}/transfer"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_call_transfers",
+      "path": "/api/v1/telephony/calls/{call_id}/transfers"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_telephony_health",
+      "path": "/api/v1/telephony/health"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_telephony_usage",
+      "path": "/api/v1/telephony/usage"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "handle_provider_inbound_webhook",
+      "path": "/api/v1/telephony/webhooks/{provider}/inbound"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "handle_provider_status_webhook",
+      "path": "/api/v1/telephony/webhooks/{provider}/status"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "handle_provider_dtmf_webhook",
+      "path": "/api/v1/telephony/webhooks/{provider}/dtmf"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "handle_provider_recording_webhook",
+      "path": "/api/v1/telephony/webhooks/{provider}/recording"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "query_audit_events",
+      "path": "/api/v1/audit/events"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "read_security_posture",
+      "path": "/api/v1/enterprise-security/posture"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_capability_inventory",
+      "path": "/api/v1/parity/capabilities"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_integration_inventory",
+      "path": "/api/v1/parity/integrations"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "inspect_e2e_flow",
+      "path": "/api/v1/parity/e2e/inspect"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_voice_catalog",
+      "path": "/api/voices/catalog"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_all_providers_catalog",
+      "path": "/api/voices/providers"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "clone_voice_endpoint",
+      "path": "/api/voices/clone"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "telnyx_inbound_voice",
+      "path": "/telephony/telnyx/voice"
+    },
+    {
+      "methods": [],
+      "name": "telnyx_media_stream",
+      "path": "/telephony/telnyx/stream/{call_id}"
+    },
+    {
+      "methods": [],
+      "name": "telnyx_ws_root",
+      "path": "/telephony/telnyx/ws"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "run_analytics_query",
+      "path": "/api/v1/analytics/query"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_custom_dashboards",
+      "path": "/api/v1/analytics/dashboards"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_custom_dashboard",
+      "path": "/api/v1/analytics/dashboards"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_shared_custom_dashboard",
+      "path": "/api/v1/analytics/dashboards/shared/{share_token}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_custom_dashboard",
+      "path": "/api/v1/analytics/dashboards/{dashboard_id}"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "update_custom_dashboard",
+      "path": "/api/v1/analytics/dashboards/{dashboard_id}"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_custom_dashboard",
+      "path": "/api/v1/analytics/dashboards/{dashboard_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "evaluate_custom_dashboard",
+      "path": "/api/v1/analytics/dashboards/{dashboard_id}/evaluate"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "share_custom_dashboard",
+      "path": "/api/v1/analytics/dashboards/{dashboard_id}/share"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "export_custom_dashboard_csv",
+      "path": "/api/v1/analytics/dashboards/{dashboard_id}/export.csv"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "twilio_sms_webhook",
+      "path": "/messaging/sms/twilio"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "twilio_sms_webhook",
+      "path": "/messaging/sms/webhook"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "twilio_sms_status_webhook",
+      "path": "/messaging/sms/status"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "send_sms_endpoint",
+      "path": "/messaging/sms/send"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "metrics",
+      "path": "/metrics"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "security_txt",
+      "path": "/security.txt"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "security_txt",
+      "path": "/.well-known/security.txt"
+    }
+  ]
 }

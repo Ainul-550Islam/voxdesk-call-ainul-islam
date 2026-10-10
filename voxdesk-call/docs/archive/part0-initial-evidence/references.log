@@ -1,0 +1,7 @@
+$ grep -rEn "realtime-engine|voxdesk-concurrency-engine|voxdesk-native-audio-engine" . --include=* -l | grep -v docs/archive
+exit=0
+./.prompt8-validation-final/prompt8b-git-status.txt
+./reports/part0/task-commits.log
+./scripts/__pycache__/verify_no_filler.cpython-312.pyc
+./scripts/verify_no_filler.py
+./.cache/part0/before/docker-compose.full.yml

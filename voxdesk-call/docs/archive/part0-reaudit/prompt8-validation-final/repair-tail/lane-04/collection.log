@@ -1,0 +1,7 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest --collect-only -q tests/test_voice_runtime.py::test_agent_loop_uses_final_transcript_and_bounded_sink tests/test_voice_runtime.py::test_agent_loop_rejects_missing_transport_adapter
+tests/test_voice_runtime.py::test_agent_loop_uses_final_transcript_and_bounded_sink
+tests/test_voice_runtime.py::test_agent_loop_rejects_missing_transport_adapter
+
+2 tests collected in 0.06s
+
+STDERR:

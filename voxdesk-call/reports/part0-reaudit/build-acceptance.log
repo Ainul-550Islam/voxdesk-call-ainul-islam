@@ -1,0 +1,19 @@
+
+> voxdesk-dashboard@0.1.0 build
+> vite build
+
+vite v6.4.3 building for production...
+transforming...
+✓ 263 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                            0.27 kB │ gzip:   0.21 kB
+dist/assets/index-jfZjtmwa.css           169.98 kB │ gzip:  17.84 kB
+dist/assets/agent-templates-DBHVoPPD.js    0.56 kB │ gzip:   0.34 kB
+dist/assets/index-BzlF3BlN.js            910.30 kB │ gzip: 220.52 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 2.92s

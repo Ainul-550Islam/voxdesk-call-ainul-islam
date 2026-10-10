@@ -1,0 +1,52 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/auth/test_totp.py::test_verify_refuses_a_code_from_outside_the_window tests/auth/test_totp.py::test_verify_refuses_a_spent_step_even_while_it_is_still_in_the_window tests/auth/test_totp.py::test_verify_refuses_anything_that_is_not_a_code_of_the_right_length[] tests/auth/test_totp.py::test_verify_refuses_anything_that_is_not_a_code_of_the_right_length[12345] tests/auth/test_totp.py::test_verify_refuses_anything_that_is_not_a_code_of_the_right_length[1234567] tests/auth/test_totp.py::test_verify_refuses_anything_that_is_not_a_code_of_the_right_length[abcdef] tests/auth/test_totp.py::test_verify_refuses_anything_that_is_not_a_code_of_the_right_length[12345a] tests/auth/test_totp.py::test_verify_refuses_anything_that_is_not_a_code_of_the_right_length[9428708 ] tests/auth/test_totp.py::test_verify_refuses_anything_that_is_not_a_code_of_the_right_length[  94287  08] tests/auth/test_totp.py::test_verify_strips_spaces_inside_a_code tests/auth/test_totp.py::test_a_code_from_a_different_secret_is_refused tests/auth/test_totp.py::test_an_invalid_secret_is_rejected_rather_than_silently_accepted tests/auth/test_totp.py::test_arguments_are_validated tests/auth/test_totp.py::test_the_code_comparison_is_constant_time tests/auth/test_totp.py::test_the_provisioning_uri_is_what_an_authenticator_app_expects tests/auth/test_totp.py::test_a_secret_is_never_returned_with_padding_or_spaces tests/campaign/test_concurrency.py::test_concurrent_dial_claims_the_lead_exactly_once tests/campaign/test_concurrency.py::test_cross_environment_pair_is_never_claimed_under_a_race tests/campaign/test_concurrency.py::test_concurrent_transitions_are_compare_and_set tests/campaign/test_concurrency.py::test_repeat_transition_after_claim_loss_is_still_valid tests/campaign/test_concurrency.py::test_concurrent_plans_are_deterministic_and_identical tests/campaign/test_concurrency.py::test_concurrent_state_transitions_never_produce_an_illegal_state tests/campaign/test_concurrency.py::test_concurrent_schedule_is_idempotent tests/campaign/test_environment_scope.py::test_campaign_defaults_to_the_active_production_environment tests/campaign/test_environment_scope.py::test_campaign_accepts_an_explicit_same_tenant_environment tests/campaign/test_environment_scope.py::test_lookup_without_environment_uses_default_production tests/campaign/test_environment_scope.py::test_same_tenant_wrong_environment_lookup_is_not_found tests/campaign/test_environment_scope.py::test_cross_tenant_campaign_is_not_found tests/campaign/test_environment_scope.py::test_cross_tenant_environment_fails_closed tests/campaign/test_environment_scope.py::test_lead_from_another_environment_is_rejected tests/campaign/test_environment_scope.py::test_lead_from_another_tenant_is_rejected tests/campaign/test_environment_scope.py::test_segment_from_another_environment_is_rejected tests/campaign/test_environment_scope.py::test_segment_resolution_is_scoped_to_the_campaign_environment tests/campaign/test_environment_scope.py::test_execution_plan_skips_a_cross_environment_lead tests/campaign/test_environment_scope.py::test_archived_environment_refuses_campaign_writes tests/campaign/test_environment_scope.py::test_suspended_environment_refuses_campaign_writes tests/campaign/test_environment_scope.py::test_state_change_in_a_suspended_environment_is_refused tests/campaign/test_environment_scope.py::test_api_create_uses_the_selected_environment tests/campaign/test_environment_scope.py::test_api_create_with_explicit_environment tests/campaign/test_environment_scope.py::test_api_create_with_a_foreign_environment_is_404 tests/campaign/test_environment_scope.py::test_api_defaults_to_production_without_any_context tests/campaign/test_environment_scope.py::test_client_supplied_tenant_cannot_change_the_authenticated_tenant tests/campaign/test_environment_scope.py::test_audience_environment_stamp_is_normalized_never_honored tests/campaign/test_legacy_compatibility.py::test_create_list_get_round_trip tests/campaign/test_legacy_compatibility.py::test_patch_preserves_environment_and_id tests/campaign/test_legacy_compatibility.py::test_state_machine_endpoints_keep_working tests/campaign/test_legacy_compatibility.py::test_plan_results_kpis_audience_eligibility_keep_working tests/campaign/test_legacy_compatibility.py::test_get_by_id_from_a_different_environment_is_404 tests/campaign/test_legacy_compatibility.py::test_legacy_create_and_list_urls_still_work tests/campaign/test_legacy_compatibility.py::test_legacy_list_counts_only_same_environment_leads
+..................................................                       [100%]
+=============================== warnings summary ===============================
+tests/campaign/test_concurrency.py: 7 warnings
+tests/campaign/test_environment_scope.py: 25 warnings
+tests/campaign/test_legacy_compatibility.py: 7 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/campaign/test_concurrency.py: 45 warnings
+tests/campaign/test_environment_scope.py: 88 warnings
+tests/campaign/test_legacy_compatibility.py: 50 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/campaign/test_concurrency.py: 7 warnings
+tests/campaign/test_environment_scope.py: 25 warnings
+tests/campaign/test_legacy_compatibility.py: 7 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/campaign/test_concurrency.py::test_concurrent_dial_claims_the_lead_exactly_once
+tests/campaign/test_concurrency.py::test_concurrent_dial_claims_the_lead_exactly_once
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/outbound.py:251: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/campaign/test_concurrency.py::test_concurrent_dial_claims_the_lead_exactly_once
+tests/campaign/test_concurrency.py::test_concurrent_dial_claims_the_lead_exactly_once
+tests/campaign/test_concurrency.py::test_concurrent_transitions_are_compare_and_set
+tests/campaign/test_concurrency.py::test_repeat_transition_after_claim_loss_is_still_valid
+tests/campaign/test_concurrency.py::test_repeat_transition_after_claim_loss_is_still_valid
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/leads/models.py:25: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow()
+
+tests/campaign/test_environment_scope.py::test_api_create_uses_the_selected_environment
+tests/campaign/test_environment_scope.py::test_api_create_uses_the_selected_environment
+tests/campaign/test_environment_scope.py::test_api_create_uses_the_selected_environment
+tests/campaign/test_environment_scope.py::test_api_create_uses_the_selected_environment
+tests/campaign/test_environment_scope.py::test_api_create_uses_the_selected_environment
+tests/campaign/test_environment_scope.py::test_api_create_uses_the_selected_environment
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/campaign/test_environment_scope.py: 5 warnings
+tests/campaign/test_legacy_compatibility.py: 7 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+50 passed, 286 warnings in 72.00s (0:01:11)
+
+STDERR:

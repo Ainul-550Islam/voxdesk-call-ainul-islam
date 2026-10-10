@@ -1,0 +1,266 @@
+python scripts/strip_generated_tails.py --check dashboard/src dashboard-next
+[]
+python scripts/verify_no_filler.py
+[
+  {
+    "file": "dashboard/src/pages/industries/IndustriesBenefits.tsx",
+    "line": 1,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/industries/IndustriesCTA.tsx",
+    "line": 1,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/industries/IndustriesGrid.tsx",
+    "line": 1,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/industries/IndustriesHero.tsx",
+    "line": 1,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/answering-service/AnsweringServiceAnalytics.tsx",
+    "line": 4,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/answering-service/AnsweringServiceBooking.tsx",
+    "line": 4,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/answering-service/AnsweringServiceCRM.tsx",
+    "line": 4,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/answering-service/AnsweringServiceCTA.tsx",
+    "line": 4,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/answering-service/AnsweringServiceCapabilities.tsx",
+    "line": 4,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/answering-service/AnsweringServiceCustomVoice.tsx",
+    "line": 4,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/answering-service/AnsweringServiceDeveloper.tsx",
+    "line": 4,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/answering-service/AnsweringServiceFAQ.tsx",
+    "line": 4,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/answering-service/AnsweringServiceHero.tsx",
+    "line": 4,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/answering-service/AnsweringServiceLifecycle.tsx",
+    "line": 4,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/answering-service/AnsweringServiceRouting.tsx",
+    "line": 4,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/answering-service/AnsweringServiceSecurity.tsx",
+    "line": 4,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/appointment-setter/AppointmentSetterAnalytics.tsx",
+    "line": 4,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/appointment-setter/AppointmentSetterBooking.tsx",
+    "line": 4,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/appointment-setter/AppointmentSetterCTA.tsx",
+    "line": 4,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/appointment-setter/AppointmentSetterCapabilities.tsx",
+    "line": 4,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/appointment-setter/AppointmentSetterDeveloper.tsx",
+    "line": 4,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/appointment-setter/AppointmentSetterFAQ.tsx",
+    "line": 4,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/appointment-setter/AppointmentSetterHero.tsx",
+    "line": 4,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/appointment-setter/AppointmentSetterHowItWorks.tsx",
+    "line": 4,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/appointment-setter/AppointmentSetterLifecycle.tsx",
+    "line": 4,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/appointment-setter/AppointmentSetterQualification.tsx",
+    "line": 4,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/appointment-setter/AppointmentSetterReminders.tsx",
+    "line": 4,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/appointment-setter/AppointmentSetterReschedule.tsx",
+    "line": 4,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/appointment-setter/AppointmentSetterSecurity.tsx",
+    "line": 4,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/customer-service/CustomerServiceAnalytics.tsx",
+    "line": 6,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/customer-service/CustomerServiceAnalytics.tsx",
+    "line": 308,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/customer-service/CustomerServiceHandoff.tsx",
+    "line": 6,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/customer-service/CustomerServiceHero.tsx",
+    "line": 4,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/customer-service/CustomerServiceKnowledge.tsx",
+    "line": 6,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/customer-service/CustomerServiceKnowledge.tsx",
+    "line": 178,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/telemarketing/TelemarketingAnalytics.tsx",
+    "line": 1,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/telemarketing/TelemarketingCRM.tsx",
+    "line": 1,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/telemarketing/TelemarketingCampaigns.tsx",
+    "line": 1,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/telemarketing/TelemarketingDeveloper.tsx",
+    "line": 1,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/telemarketing/TelemarketingFAQ.tsx",
+    "line": 1,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/telemarketing/TelemarketingFollowUp.tsx",
+    "line": 1,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/telemarketing/TelemarketingLifecycle.tsx",
+    "line": 1,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/telemarketing/TelemarketingQualification.tsx",
+    "line": 1,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/telemarketing/TelemarketingScheduling.tsx",
+    "line": 1,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/telemarketing/TelemarketingSecurity.tsx",
+    "line": 1,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/types/use-case-filter.ts",
+    "line": 382,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/types/use-case-filter.ts",
+    "line": 429,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/types/use-case.ts",
+    "line": 448,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/types/use-case.ts",
+    "line": 547,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/types/use-case.ts",
+    "line": 630,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/types/use-case.ts",
+    "line": 675,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/types/use-case.ts",
+    "line": 728,
+    "reason": "forbidden marker"
+  }
+]
+make: *** [Makefile:59: verify-truth] Error 1

@@ -1,0 +1,112 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/integration/test_agent_version_persistence.py::TestDurableAgentVersionPersistence::test_9_10_archive_restore_guards_and_audit_trail tests/integration/test_ai_lead_campaign_flow.py::test_ai_dnc_decision_holds_through_lifecycle_campaign_and_dialer tests/integration/test_ai_lead_campaign_flow.py::test_cross_tenant_tool_call_never_touches_the_other_tenants_lead tests/integration/test_ai_lead_campaign_flow.py::test_ai_created_staging_lead_is_invisible_to_a_production_campaign tests/integration/test_ai_lead_campaign_flow.py::test_governed_text_reply_records_usage_then_campaign_dials_the_lead tests/integration/test_ai_lead_campaign_flow.py::test_messaging_stop_and_start_never_reverse_the_voice_dnc_for_the_dialer tests/integration/test_batch_testing.py::test_batch_suite_execution_and_version_qa_comparison tests/integration/test_chat_contact_memory_persistence.py::test_contact_and_contact_memory_lifecycle_and_credential_refusal tests/integration/test_chat_contact_memory_persistence.py::test_chat_agent_etag_conflict_publish_versions_and_rollback tests/integration/test_chat_contact_memory_persistence.py::test_durable_chat_session_messages_and_cross_tenant_isolation tests/integration/test_conductor_workflow.py::test_conductor_full_workflow_partial_approve_simulate_and_immutable_apply tests/integration/test_conductor_workflow.py::test_conductor_stale_base_version_conflict_blocks_overwrite tests/integration/test_employee_lifecycle.py::test_a_provisioned_employee_signs_in_through_sso_onto_the_same_account tests/integration/test_employee_lifecycle.py::test_the_employee_sees_and_can_end_their_own_session tests/integration/test_employee_lifecycle.py::test_an_administrator_suspending_the_account_ends_the_sso_session_immediately tests/integration/test_employee_lifecycle.py::test_deprovisioning_in_the_directory_closes_every_door_at_once tests/integration/test_employee_lifecycle.py::test_a_rehire_gets_a_fresh_account_and_not_the_old_session tests/integration/test_employee_lifecycle.py::test_group_membership_through_scim_decides_the_role_sso_also_enforces tests/integration/test_employee_lifecycle.py::test_the_whole_lifecycle_is_scoped_to_one_workspace tests/integration/test_enterprise_policy_flow.py::test_a_domain_is_verified_through_a_real_dns_answer tests/integration/test_enterprise_policy_flow.py::test_enforcement_cannot_be_switched_on_for_an_unverified_domain tests/integration/test_enterprise_policy_flow.py::test_a_verified_domain_can_require_sso_and_the_audit_says_so tests/integration/test_enterprise_policy_flow.py::test_a_policy_that_blocks_password_login_actually_blocks_it tests/integration/test_enterprise_policy_flow.py::test_an_api_key_stops_working_the_moment_the_policy_disables_keys tests/integration/test_enterprise_policy_flow.py::test_only_an_identity_writer_can_change_the_policy tests/integration/test_enterprise_policy_flow.py::test_a_privileged_write_needs_a_fresh_proof_of_presence tests/integration/test_enterprise_policy_flow.py::test_a_verified_login_ends_with_an_mfa_verified_session tests/integration/test_enterprise_policy_flow.py::test_an_unverified_domain_never_refuses_a_login tests/integration/test_evaluation_execution.py::test_zero_assertions_scorecard_and_rerun_evaluation_without_call_rerun tests/integration/test_public_auth_boundary.py::test_anonymous_user_can_access_public_site_routes_without_auth tests/integration/test_public_auth_boundary.py::test_public_home_and_analytics_expose_evidence_without_synthetic_metrics tests/integration/test_public_auth_boundary.py::test_public_contact_sales_persists_durable_record tests/integration/test_public_auth_boundary.py::test_anonymous_user_blocked_from_protected_apis_and_redirected_on_protected_routes tests/integration/test_public_auth_boundary.py::test_open_redirect_next_values_rejected_and_safe_local_next_allowed tests/integration/test_public_widget_security.py::test_public_key_and_widget_session_token_cannot_access_private_or_admin_apis tests/integration/test_public_widget_security.py::test_widget_chat_session_multi_turn_and_honest_voice_not_configured_and_rate_limit tests/integration/test_simulation_persistence.py::test_version_pinning_immutability_and_no_fake_simulation_pass tests/integration/test_tenant_isolation_sweep.py::test_every_identity_resource_is_invisible_from_another_workspace tests/integration/test_tenant_isolation_sweep.py::test_a_user_id_from_another_workspace_cannot_be_acted_on tests/integration/test_tenant_isolation_sweep.py::test_a_session_id_from_another_workspace_cannot_be_revoked tests/integration/test_tenant_isolation_sweep.py::test_machine_credentials_are_confined_to_their_workspace tests/integration/test_tenant_isolation_sweep.py::test_a_service_account_credential_is_not_a_way_into_identity_management tests/integration/test_tenant_isolation_sweep.py::test_a_foreign_id_in_a_create_payload_is_refused tests/jobs/test_queue.py::test_enqueue_and_claim tests/jobs/test_queue.py::test_duplicate_key_returns_existing tests/jobs/test_queue.py::test_claim_next_is_atomic tests/jobs/test_queue.py::test_priority_order tests/jobs/test_queue.py::test_cancel_then_ack_refused tests/jobs/test_queue.py::test_retry_job_and_dlq tests/jobs/test_recovery.py::test_recovery_skipped_documented
+.................................................s                       [100%]
+=============================== warnings summary ===============================
+.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/integration/test_agent_version_persistence.py: 1 warning
+tests/integration/test_ai_lead_campaign_flow.py: 6 warnings
+tests/integration/test_batch_testing.py: 1 warning
+tests/integration/test_chat_contact_memory_persistence.py: 4 warnings
+tests/integration/test_conductor_workflow.py: 2 warnings
+tests/integration/test_employee_lifecycle.py: 8 warnings
+tests/integration/test_enterprise_policy_flow.py: 9 warnings
+tests/integration/test_evaluation_execution.py: 2 warnings
+tests/integration/test_public_auth_boundary.py: 3 warnings
+tests/integration/test_public_widget_security.py: 2 warnings
+tests/integration/test_simulation_persistence.py: 1 warning
+tests/integration/test_tenant_isolation_sweep.py: 12 warnings
+tests/jobs/test_queue.py: 6 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/integration/test_agent_version_persistence.py: 3 warnings
+tests/integration/test_ai_lead_campaign_flow.py: 33 warnings
+tests/integration/test_batch_testing.py: 3 warnings
+tests/integration/test_chat_contact_memory_persistence.py: 12 warnings
+tests/integration/test_conductor_workflow.py: 6 warnings
+tests/integration/test_employee_lifecycle.py: 103 warnings
+tests/integration/test_enterprise_policy_flow.py: 71 warnings
+tests/integration/test_evaluation_execution.py: 6 warnings
+tests/integration/test_public_auth_boundary.py: 12 warnings
+tests/integration/test_public_widget_security.py: 22 warnings
+tests/integration/test_simulation_persistence.py: 3 warnings
+tests/integration/test_tenant_isolation_sweep.py: 62 warnings
+tests/jobs/test_queue.py: 14 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/integration/test_agent_version_persistence.py: 1 warning
+tests/integration/test_ai_lead_campaign_flow.py: 6 warnings
+tests/integration/test_batch_testing.py: 1 warning
+tests/integration/test_chat_contact_memory_persistence.py: 4 warnings
+tests/integration/test_conductor_workflow.py: 2 warnings
+tests/integration/test_employee_lifecycle.py: 8 warnings
+tests/integration/test_enterprise_policy_flow.py: 9 warnings
+tests/integration/test_evaluation_execution.py: 2 warnings
+tests/integration/test_public_auth_boundary.py: 3 warnings
+tests/integration/test_public_widget_security.py: 2 warnings
+tests/integration/test_simulation_persistence.py: 1 warning
+tests/integration/test_tenant_isolation_sweep.py: 12 warnings
+tests/jobs/test_queue.py: 6 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/integration/test_agent_version_persistence.py: 1 warning
+tests/integration/test_batch_testing.py: 1 warning
+tests/integration/test_chat_contact_memory_persistence.py: 4 warnings
+tests/integration/test_conductor_workflow.py: 2 warnings
+tests/integration/test_employee_lifecycle.py: 16 warnings
+tests/integration/test_enterprise_policy_flow.py: 13 warnings
+tests/integration/test_evaluation_execution.py: 2 warnings
+tests/integration/test_public_auth_boundary.py: 2 warnings
+tests/integration/test_public_widget_security.py: 2 warnings
+tests/integration/test_simulation_persistence.py: 1 warning
+tests/integration/test_tenant_isolation_sweep.py: 13 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/integration/test_ai_lead_campaign_flow.py: 16 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/leads/models.py:25: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow()
+
+tests/integration/test_ai_lead_campaign_flow.py::test_ai_dnc_decision_holds_through_lifecycle_campaign_and_dialer
+tests/integration/test_ai_lead_campaign_flow.py::test_ai_created_staging_lead_is_invisible_to_a_production_campaign
+tests/integration/test_ai_lead_campaign_flow.py::test_governed_text_reply_records_usage_then_campaign_dials_the_lead
+tests/integration/test_ai_lead_campaign_flow.py::test_messaging_stop_and_start_never_reverse_the_voice_dnc_for_the_dialer
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/outbound.py:90: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/integration/test_ai_lead_campaign_flow.py::test_governed_text_reply_records_usage_then_campaign_dials_the_lead
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/channels/messaging.py:94: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    cutoff = datetime.utcnow() - timedelta(minutes=THREAD_IDLE_MINUTES)
+
+tests/integration/test_ai_lead_campaign_flow.py::test_governed_text_reply_records_usage_then_campaign_dials_the_lead
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/channels/messaging.py:127: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call_sid=f"{channel}-{customer}-{int(datetime.utcnow().timestamp())}",
+
+tests/integration/test_ai_lead_campaign_flow.py::test_governed_text_reply_records_usage_then_campaign_dials_the_lead
+tests/integration/test_ai_lead_campaign_flow.py::test_governed_text_reply_records_usage_then_campaign_dials_the_lead
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/outbound.py:251: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/integration/test_chat_contact_memory_persistence.py::test_contact_and_contact_memory_lifecycle_and_credential_refusal
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/fastapi/routing.py:328: StarletteDeprecationWarning: 'HTTP_422_UNPROCESSABLE_ENTITY' is deprecated. Use 'HTTP_422_UNPROCESSABLE_CONTENT' instead.
+    return await dependant.call(**values)
+
+tests/integration/test_employee_lifecycle.py: 76 warnings
+tests/integration/test_enterprise_policy_flow.py: 51 warnings
+tests/integration/test_tenant_isolation_sweep.py: 25 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/auth/identity/models.py:69: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+49 passed, 1 skipped, 704 warnings in 100.67s (0:01:40)
+
+STDERR:

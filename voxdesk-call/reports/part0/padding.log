@@ -1,0 +1,3 @@
+$ python scripts/strip_padding_markers.py --check
+exit=0
+{}

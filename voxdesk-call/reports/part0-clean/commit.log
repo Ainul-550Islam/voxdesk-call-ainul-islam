@@ -1,0 +1,9 @@
+[main 1d023b5] P0-08: close authorized truth guard findings with verified regression contracts
+ 27 files changed, 8980 insertions(+), 18224 deletions(-)
+ create mode 100644 voxdesk-call/app/api/conductor_routes.py
+ create mode 100644 voxdesk-call/dashboard-next/tests/enterprise-ui/connection-truth.test.tsx
+ create mode 100644 voxdesk-call/docs/archive/PART0_BEFORE_AUTHORIZED_CLEANUP.zip
+ create mode 100644 voxdesk-call/reports/part0-clean/ACCEPTANCE_SCOPE.md
+ create mode 100644 voxdesk-call/scripts/verify_retired_references.py
+ create mode 100644 voxdesk-call/tests/truth/test_part0_authorized_repairs.py
+ create mode 100644 voxdesk-call/tests/truth/test_retired_references.py

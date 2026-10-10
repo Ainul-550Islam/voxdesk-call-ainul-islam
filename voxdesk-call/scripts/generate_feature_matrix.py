@@ -78,9 +78,10 @@ def render(features, results, verified_date):
 
 
 def main():
+    default_junit = ROOT / 'evidence/junit/feature_evidence.xml'
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--manifest', type=Path, default=ROOT / 'tests/truth/feature_manifest.yaml')
-    parser.add_argument('--junit', type=Path)
+    parser.add_argument('--junit', type=Path, default=default_junit if default_junit.is_file() else None)
     parser.add_argument('--output', type=Path, default=ROOT / 'docs/SALES/FEATURE_MATRIX_VERIFIED.md')
     args = parser.parse_args()
     data = yaml.safe_load(args.manifest.read_text())

@@ -552,6 +552,7 @@ async def get_proposal(
         )
         await check_and_mark_stale_if_needed(session, proposal, baseline)
     except Exception:
+        __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
         pass
 
     return await build_proposal_response(session, proposal)

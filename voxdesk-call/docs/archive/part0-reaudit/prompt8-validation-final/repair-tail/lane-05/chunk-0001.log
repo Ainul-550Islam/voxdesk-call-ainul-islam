@@ -1,0 +1,5 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_voice_streaming.py::test_tts_retries_before_emitting_audio tests/test_voice_streaming.py::test_stt_event_contract_preserves_partial_and_final_flags
+..                                                                       [100%]
+2 passed in 0.11s
+
+STDERR:

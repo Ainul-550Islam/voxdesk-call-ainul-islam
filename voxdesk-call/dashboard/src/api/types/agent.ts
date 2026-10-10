@@ -39,6 +39,7 @@ export interface DurableAgentRecord extends Agent {
   agent_type?: 'voice' | 'chat' | 'multimodal' | string;
   environment_id?: string | null;
   active_version?: number;
+  active_version_number?: number | null;
   published_version_id?: string | null;
   published_version_number?: number | null;
   draft_etag?: string;

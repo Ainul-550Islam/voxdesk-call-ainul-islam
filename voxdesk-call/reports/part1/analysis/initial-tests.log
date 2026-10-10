@@ -1,0 +1,108 @@
+..F................                                                      [100%]
+=================================== FAILURES ===================================
+___________ test_real_worker_governed_http_persists_output_and_usage ___________
+
+db = <sqlalchemy.ext.asyncio.session.AsyncSession object at 0x7f2562341f10>
+tenant_a = <app.db.models.Tenant object at 0x7f25624e59d0>
+sessionmaker_ = async_sessionmaker(class_='AsyncSession', bind=<sqlalchemy.ext.asyncio.engine.AsyncEngine object at 0x7f2563375990>, autoflush=True, expire_on_commit=False)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f25625ff350>
+
+    async def test_real_worker_governed_http_persists_output_and_usage(db, tenant_a, sessionmaker_, monkeypatch):
+        call = await prepared(db, tenant_a, status=CallStatus.IN_PROGRESS)
+        requests = []
+        monkeypatch.setattr(settings, "openai_api_key", "test-post-call-only")
+        monkeypatch.setattr(socket, "getaddrinfo", lambda *a, **k: [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("8.8.8.8", 443))])
+    
+        async def receive(request):
+            assert request.url.host == "api.openai.com"
+            assert request.method == "POST" and request.headers["authorization"] == "Bearer test-post-call-only"
+            data = json.loads(request.content)
+            prompt = data["messages"][0]["content"]
+            assert "Please book Tuesday" in prompt
+            requests.append(data)
+            value = {"summary": "Caller requested Tuesday.", "outcome": "booking_requested"} if '"summary"' in prompt else {"sentiment": "positive"}
+            return httpx.Response(200, json={"choices": [{"message": {"content": json.dumps(value)}}], "usage": {"total_tokens": 13}})
+    
+        await publish_transition(db, call, apply_status(call, CallStatus.COMPLETED))
+        await db.commit()
+        async with httpx.AsyncClient(transport=httpx.MockTransport(receive)) as client:
+            adapter = post_call_llm.StructuredExecutor(post_call_llm.SUMMARY_SCHEMA, client=client)
+            worker = JobWorker(sessionmaker_, handlers={JobType.POST_CALL: make_post_call_handler(sessionmaker_, executor=adapter)}, job_types=(JobType.POST_CALL,))
+            job = await worker.run_once()
+            assert job is not None and job.status == "succeeded"
+            assert await worker.run_once() is None
+            again = await PostCallPipeline(sessionmaker_, executor=adapter).run(call.id, **scope(call, tenant_a))
+            assert again.success
+        await db.refresh(call)
+        assert call.summary == "Caller requested Tuesday."
+        assert call.booked is False  # A model classification is not booking proof.
+        rows = await step_rows(db, call)
+        assert set(rows) == set(CORE_STEPS)
+        assert all(row.status == "completed" and row.attempts == 1 for row in rows.values())
+        assert rows["summary"].output["outcome"] == "booking_requested"
+        assert rows["sentiment"].output == {"sentiment": "positive"}
+        assert "Please book" not in json.dumps(rows["transcript"].output)
+        assert len(requests) == 2
+        usage = list((await db.scalars(select(UsageEvent).where(UsageEvent.tenant_id == tenant_a.id))).all())
+        assert len(usage) == 2
+>       assert all(row.telemetry[0]["tokens"] == 13 for key, row in rows.items() if key != "transcript")
+
+tests/telephony/test_post_call_pipeline.py:135: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+.0 = <dict_itemiterator object at 0x7f256295d030>
+
+>   assert all(row.telemetry[0]["tokens"] == 13 for key, row in rows.items() if key != "transcript")
+E   IndexError: list index out of range
+
+tests/telephony/test_post_call_pipeline.py:135: IndexError
+----------------------------- Captured stdout call -----------------------------
+[2m2026-10-07T07:36:19.688364Z[0m [[32m[1minfo     [0m] [1mcall_state.transition         [0m [36mcall_id[0m=[35m9f210db0-b027-438b-a402-8a34e97dd772[0m [36mcall_sid[0m=[35mCA5c80a03dcc094fc5ac860993431e6acb[0m [36mcurrent[0m=[35mcompleted[0m [36mprevious[0m=[35min_progress[0m [36mreason[0m=[35mNone[0m [36msource[0m=[35munknown[0m
+[2m2026-10-07T07:36:19.759715Z[0m [[32m[1minfo     [0m] [1mruntime.event                 [0m [36mcomponent[0m=[35mqueue[0m [36mduration_ms[0m=[35mNone[0m [36menvironment_id[0m=[35m2d86b0f8-032a-4ffa-b87e-0b2e5277dd5f[0m [36mevent_name[0m=[35mexecution[0m [36mexecution_id[0m=[35m1f55a0d1-28be-4738-9ee9-9dfceb6e43b3[0m [36mjob_id[0m=[35m1f55a0d1-28be-4738-9ee9-9dfceb6e43b3[0m [36moutcome[0m=[35mstarted[0m [36mreason_code[0m=[35mNone[0m [36mrequest_id[0m=[35m1f55a0d1-28be-4738-9ee9-9dfceb6e43b3[0m [36mtenant_id[0m=[35md65c37c2-88fe-4cc4-937d-2cc376140db8[0m [36mtrace_id[0m=[35m1f55a0d1-28be-4738-9ee9-9dfceb6e43b3[0m
+[2m2026-10-07T07:36:19.759968Z[0m [[32m[1minfo     [0m] [1mjobs.execution_started        [0m [36mattempt[0m=[35m1[0m [36menvironment_id[0m=[35m2d86b0f8-032a-4ffa-b87e-0b2e5277dd5f[0m [36mexecution_id[0m=[35m1f55a0d1-28be-4738-9ee9-9dfceb6e43b3[0m [36mjob_id[0m=[35m1f55a0d1-28be-4738-9ee9-9dfceb6e43b3[0m [36mjob_type[0m=[35mpost_call[0m [36morganization_id[0m=[35m0b5ec397-27fb-4f31-9ac7-0fc56caf800b[0m [36mrequest_id[0m=[35m1f55a0d1-28be-4738-9ee9-9dfceb6e43b3[0m [36mtenant_id[0m=[35md65c37c2-88fe-4cc4-937d-2cc376140db8[0m [36mtrace_id[0m=[35m1f55a0d1-28be-4738-9ee9-9dfceb6e43b3[0m
+[2m2026-10-07T07:36:19.803307Z[0m [[31m[1merror    [0m] [1mbilling.no_plan_resolved      [0m [36mmetric[0m=[35mllm_token[0m [36mtenant_id[0m=[35md65c37c2-88fe-4cc4-937d-2cc376140db8[0m
+[2m2026-10-07T07:36:19.812811Z[0m [[32m[1minfo     [0m] [1mbilling.usage_recorded        [0m [36mbilling_period[0m=[35m2026-10[0m [36midempotency_key[0m=[35mllm_token:post-call:13005499-c278-4365-89b9-8ff90b2d6a65:openai[0m [36mmetric[0m=[35mllm_token[0m [36mquantity[0m=[35m13[0m [36mtenant_id[0m=[35md65c37c2-88fe-4cc4-937d-2cc376140db8[0m [36munit[0m=[35mtoken[0m
+[2m2026-10-07T07:36:19.813122Z[0m [[32m[1minfo     [0m] [1mai.governance                 [0m [36mcall_id[0m=[35m9f210db0-b027-438b-a402-8a34e97dd772[0m [36mchannel[0m=[35masync[0m [36mcost_known[0m=[35mFalse[0m [36menvironment_id[0m=[35m2d86b0f8-032a-4ffa-b87e-0b2e5277dd5f[0m [36mexecuted[0m=[35mTrue[0m [36mfallback_used[0m=[35mFalse[0m [36mguardrail[0m=[35mnone[0m [36mlatency_ms[0m=[35m9[0m [36mmodel[0m=[35mgpt-4o-mini[0m [36mprovider[0m=[35mopenai[0m [36mprovider_cost_usd[0m=[35mNone[0m [36mrequest_id[0m=[35mpost-call:13005499-c[phone]b9-8ff90b2d6a65[0m [36mretry_count[0m=[35m0[0m [36mstatus[0m=[35mcompleted[0m [36mtenant_id[0m=[35md65c37c2-88fe-4cc4-937d-2cc376140db8[0m [36mtokens[0m=[35m***[0m [36mtrace_id[0m=[35mb92a1e3d-a26d-4b20-bb80-4c92718143ec[0m
+[2m2026-10-07T07:36:19.826594Z[0m [[31m[1merror    [0m] [1mbilling.no_plan_resolved      [0m [36mmetric[0m=[35mllm_token[0m [36mtenant_id[0m=[35md65c37c2-88fe-4cc4-937d-2cc376140db8[0m
+[2m2026-10-07T07:36:19.830497Z[0m [[32m[1minfo     [0m] [1mbilling.usage_recorded        [0m [36mbilling_period[0m=[35m2026-10[0m [36midempotency_key[0m=[35mllm_token:post-call:5d2e690e-7add-43ad-8e41-f0a9dab665f0:openai[0m [36mmetric[0m=[35mllm_token[0m [36mquantity[0m=[35m13[0m [36mtenant_id[0m=[35md65c37c2-88fe-4cc4-937d-2cc376140db8[0m [36munit[0m=[35mtoken[0m
+[2m2026-10-07T07:36:19.830755Z[0m [[32m[1minfo     [0m] [1mai.governance                 [0m [36mcall_id[0m=[35m9f210db0-b027-438b-a402-8a34e97dd772[0m [36mchannel[0m=[35masync[0m [36mcost_known[0m=[35mFalse[0m [36menvironment_id[0m=[35m2d86b0f8-032a-4ffa-b87e-0b2e5277dd5f[0m [36mexecuted[0m=[35mTrue[0m [36mfallback_used[0m=[35mFalse[0m [36mguardrail[0m=[35mnone[0m [36mlatency_ms[0m=[35m3[0m [36mmodel[0m=[35mgpt-4o-mini[0m [36mprovider[0m=[35mopenai[0m [36mprovider_cost_usd[0m=[35mNone[0m [36mrequest_id[0m=[35mpost-call:5d2e690e-7add-43ad-8e41-f0a9dab665f0[0m [36mretry_count[0m=[35m0[0m [36mstatus[0m=[35mcompleted[0m [36mtenant_id[0m=[35md65c37c2-88fe-4cc4-937d-2cc376140db8[0m [36mtokens[0m=[35m***[0m [36mtrace_id[0m=[35mce3e1e13-4f0b-4704-9d04-d996d101c0f7[0m
+[2m2026-10-07T07:36:19.832208Z[0m [[32m[1minfo     [0m] [1mruntime.event                 [0m [36mcomponent[0m=[35mqueue[0m [36mduration_ms[0m=[35m72.45[0m [36menvironment_id[0m=[35m2d86b0f8-032a-4ffa-b87e-0b2e5277dd5f[0m [36mevent_name[0m=[35mexecution[0m [36mexecution_id[0m=[35m1f55a0d1-28be-4738-9ee9-9dfceb6e43b3[0m [36mjob_id[0m=[35m1f55a0d1-28be-4738-9ee9-9dfceb6e43b3[0m [36moutcome[0m=[35msuccess[0m [36mreason_code[0m=[35mNone[0m [36mrequest_id[0m=[35m1f55a0d1-28be-4738-9ee9-9dfceb6e43b3[0m [36mtenant_id[0m=[35md65c37c2-88fe-4cc4-937d-2cc376140db8[0m [36mtrace_id[0m=[35m1f55a0d1-28be-4738-9ee9-9dfceb6e43b3[0m
+[2m2026-10-07T07:36:19.832404Z[0m [[32m[1minfo     [0m] [1mjobs.execution_finished       [0m [36mjob_id[0m=[35m1f55a0d1-28be-4738-9ee9-9dfceb6e43b3[0m [36mjob_type[0m=[35mpost_call[0m [36mstate[0m=[35m***[0m
+[2m2026-10-07T07:36:19.837648Z[0m [[32m[1minfo     [0m] [1mjobs.cycle                    [0m [36mjob_id[0m=[35m1f55a0d1-28be-4738-9ee9-9dfceb6e43b3[0m [36mjob_type[0m=[35mpost_call[0m [36moutcome[0m=[35msucceeded[0m [36mworker_id[0m=[35mworker-bd0355af401e[0m
+=============================== warnings summary ===============================
+tests/telephony/test_post_call_pipeline.py: 21 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/telephony/test_post_call_pipeline.py: 67 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/telephony/test_post_call_pipeline.py: 21 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/telephony/test_post_call_pipeline.py: 18 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/conftest.py:569: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "started_at": datetime.utcnow(),
+
+tests/telephony/test_post_call_pipeline.py::test_terminal_transition_enqueues_once_in_same_transaction
+tests/telephony/test_post_call_pipeline.py::test_enqueue_failure_rolls_back_terminal_fact
+tests/telephony/test_post_call_pipeline.py::test_real_worker_governed_http_persists_output_and_usage
+tests/telephony/test_post_call_pipeline.py::test_real_status_callback_admits_job
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/call_state.py:261: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call.ended_at = ended_at or datetime.utcnow()
+
+tests/telephony/test_post_call_pipeline.py::test_real_status_callback_admits_job
+tests/telephony/test_post_call_pipeline.py::test_real_status_callback_admits_job
+tests/telephony/test_post_call_pipeline.py::test_real_status_callback_admits_job
+tests/telephony/test_post_call_pipeline.py::test_real_status_callback_admits_job
+tests/telephony/test_post_call_pipeline.py::test_real_status_callback_admits_job
+tests/telephony/test_post_call_pipeline.py::test_real_status_callback_admits_job
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/telephony/test_post_call_pipeline.py::test_real_worker_governed_http_persists_output_and_usage
+1 failed, 18 passed, 137 warnings in 20.72s

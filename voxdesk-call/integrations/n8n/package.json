@@ -1,0 +1,31 @@
+{
+  "name": "n8n-nodes-voxdesk",
+  "version": "0.3.0",
+  "description": "n8n community node package for VoxDesk AI Voice Agents (webhooks + call actions)",
+  "keywords": [
+    "n8n-community-node-package",
+    "voxdesk",
+    "voice-agent",
+    "telephony"
+  ],
+  "license": "MIT",
+  "main": "index.js",
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": [
+      "dist/credentials/VoxDeskApi.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/VoxDesk/VoxDesk.node.js",
+      "dist/nodes/VoxDesk/VoxDeskTrigger.node.js"
+    ]
+  },
+  "files": [
+    "dist",
+    "credentials",
+    "nodes"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}

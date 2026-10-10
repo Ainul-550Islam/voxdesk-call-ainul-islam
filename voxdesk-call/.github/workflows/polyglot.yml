@@ -19,6 +19,10 @@ concurrency:
   group: polyglot-${{ github.ref }}
   cancel-in-progress: true
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   # Wire contract (Phase 0): the protobuf vocabulary every other job in this
   # file is supposed to speak. Compiles with protoc and cross-checks the enum
@@ -55,7 +59,9 @@ jobs:
 
       - name: Build and run both suites
         working-directory: services/media-plane
-        run: make test
+        run: |
+          make test | tee /tmp/cpp-tests.log
+          test "$(grep -Ec '^[1-9][0-9]* checks, 0 failures$' /tmp/cpp-tests.log)" -eq 2
 
   # Phase 2 — Rust control plane (`voxdesk-control` + `voxdesk-signal`).
   control-plane:
@@ -72,7 +78,8 @@ jobs:
         run: |
           cargo fmt --all -- --check
           cargo check --workspace
-          cargo test --workspace
+          cargo test --workspace 2>&1 | tee /tmp/rust-tests.log
+          grep -Eq "test result: ok\. [1-9][0-9]* passed;" /tmp/rust-tests.log
           cargo clippy --workspace --all-targets --all-features -- -D warnings
 
   # Go real-time signaling hub — the differential counterpart of
@@ -92,7 +99,8 @@ jobs:
         run: |
           test -z "$(gofmt -l .)"
           go vet ./...
-          go test -race -count=1 ./...
+          go test -race -count=1 -json ./... | tee /tmp/go-tests.jsonl
+          python3 -c 'import json; rows=[json.loads(s) for s in open("/tmp/go-tests.jsonl")]; assert any(r.get("Action")=="pass" and r.get("Test") for r in rows), "zero passing Go tests"' 
           go build ./...
 
   # Phase 5 — Go ops tooling (`voxops`).
@@ -111,7 +119,8 @@ jobs:
         run: |
           test -z "$(gofmt -l .)"
           go vet ./...
-          go test -race -count=1 ./...
+          go test -race -count=1 -json ./... | tee /tmp/go-tests.jsonl
+          python3 -c 'import json; rows=[json.loads(s) for s in open("/tmp/go-tests.jsonl")]; assert any(r.get("Action")=="pass" and r.get("Test") for r in rows), "zero passing Go tests"' 
           go build ./...
 
   # Phase 1 — Next.js/TypeScript admin console.
@@ -133,3 +142,14 @@ jobs:
           npm test
           npx tsc --noEmit
           npm run build
+
+  media-engine-rs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.90.0
+      - name: Media engine tests must execute
+        working-directory: services/realtime/media-engine-rs
+        run: |
+          cargo test --workspace 2>&1 | tee /tmp/media-tests.log
+          grep -Eq "test result: ok\. [1-9][0-9]* passed;" /tmp/media-tests.log

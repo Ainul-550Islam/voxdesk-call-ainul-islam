@@ -7,14 +7,10 @@ import type {
 } from './types/agent-version';
 
 export async function getAgentVersions(agentId: string): Promise<AgentVersionSnapshot[]> {
-  try {
-    const res = await apiClient.get<any>(
-      `/api/agents/${encodeURIComponent(agentId)}/versions`
-    );
-    return Array.isArray(res) ? res : res?.versions || res?.items || [];
-  } catch {
-    return [];
-  }
+  const res = await apiClient.get<any>(
+    `/api/agents/${encodeURIComponent(agentId)}/versions`
+  );
+  return Array.isArray(res) ? res : res?.versions || res?.items || [];
 }
 
 export const fetchAgentVersions = getAgentVersions;

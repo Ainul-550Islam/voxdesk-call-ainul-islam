@@ -1,0 +1,5 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_calendar_providers.py::TestMicrosoftPayload::test_times_are_naive_utc_with_an_explicit_zone tests/test_calendar_providers.py::TestMicrosoftPayload::test_utc_is_sent_rather_than_a_windows_zone_name tests/test_calendar_providers.py::TestMicrosoftPayload::test_the_transaction_id_carries_the_idempotency_key tests/test_calendar_providers.py::TestMicrosoftPayload::test_the_prefer_header_asks_for_utc_responses tests/test_calendar_providers.py::TestMicrosoftPayload::test_attendee_shape
+.....                                                                    [100%]
+5 passed in 0.07s
+
+STDERR:

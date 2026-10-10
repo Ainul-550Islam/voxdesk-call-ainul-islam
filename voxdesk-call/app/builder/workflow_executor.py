@@ -1,4 +1,10 @@
-"""Durable workflow execution coordinator.
+# File: app/builder/workflow_executor.py — Non-voice background workflow automation coordinator (distinct from real-time voice FlowRunner in app/builder/flow_runner.py)
+"""Durable non-voice workflow automation execution coordinator.
+
+Note: This module executes asynchronous, non-voice workflow automations over the
+durable job queue (`app/jobs/`). For real-time voice/chat conversation flows
+wired into the Pipecat pipeline, see ``app.builder.flow_runner.FlowRunner`` and
+``app.agent.flow_processor.FlowProcessor``.
 
 Loads durable definition/version, validates state transitions via the workflow
 state machine, persists checkpoints and execution state when a repository/store

@@ -7,6 +7,9 @@ Exposes:
     voxdesk_active_calls            (gauge, tracked by the telephony layer)
     voxdesk_provider_errors_total{provider,category}
     voxdesk_db_up                   (gauge, 1/0)
+    voxdesk_voice_e2e_latency_seconds{tenant_plan,llm_provider,tts_provider}
+    voxdesk_voice_ttfb_seconds{stage,provider}
+    voxdesk_voice_interruptions_total{tenant_plan}
 
 The /metrics endpoint is disabled unless METRICS_ENABLED=true. When
 METRICS_TOKEN is set the scrape must present it (Bearer or ?token=), which
@@ -51,6 +54,106 @@ PROVIDER_ERRORS = Counter(
 )
 DB_UP = Gauge("voxdesk_db_up", "Database reachability (1/0)")
 
+# ---- Voice Runtime Latency & Interruption Metrics (2A) ----
+VOICE_LATENCY_BUCKETS = (0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1.0, 1.25, 1.5, 2.0, 3.0)
+VOICE_STAGES = frozenset({"stt", "llm", "tts"})
+VOICE_PLANS = frozenset({"free", "starter", "growth", "pro", "business", "enterprise", "unknown"})
+VOICE_PROVIDER_LABELS = frozenset(
+    {
+        "openai",
+        "anthropic",
+        "google",
+        "groq",
+        "azure_openai",
+        "azure",
+        "bedrock",
+        "elevenlabs",
+        "cartesia",
+        "playht",
+        "deepgram",
+        "assemblyai",
+        "whisper",
+        "polly",
+        "gemini_live",
+        "openai_realtime",
+        "custom",
+        "unknown",
+    }
+)
+
+VOICE_E2E_LATENCY = Histogram(
+    "voxdesk_voice_e2e_latency_seconds",
+    "End-to-end voice turn latency from caller speech end to first bot audio frame",
+    ["tenant_plan", "llm_provider", "tts_provider"],
+    buckets=VOICE_LATENCY_BUCKETS,
+)
+VOICE_TTFB = Histogram(
+    "voxdesk_voice_ttfb_seconds",
+    "Per-stage time-to-first-byte in seconds across STT, LLM, and TTS",
+    ["stage", "provider"],
+    buckets=VOICE_LATENCY_BUCKETS,
+)
+VOICE_INTERRUPTIONS = Counter(
+    "voxdesk_voice_interruptions_total",
+    "Voice barge-in / user interruptions during assistant speech",
+    ["tenant_plan"],
+)
+
+
+def _norm_plan(plan: str | None) -> str:
+    cleaned = (plan or "unknown").strip().lower()
+    return cleaned if cleaned in VOICE_PLANS else "unknown"
+
+
+def _norm_provider(provider: str | None) -> str:
+    cleaned = (provider or "unknown").strip().lower()
+    return cleaned if cleaned in VOICE_PROVIDER_LABELS else "unknown"
+
+
+def observe_voice_e2e_latency(
+    seconds: float,
+    *,
+    tenant_plan: str | None = "unknown",
+    llm_provider: str | None = "unknown",
+    tts_provider: str | None = "unknown",
+) -> None:
+    """Record a single turn's end-to-end voice latency in seconds."""
+    if seconds < 0:
+        return
+    VOICE_E2E_LATENCY.labels(
+        tenant_plan=_norm_plan(tenant_plan),
+        llm_provider=_norm_provider(llm_provider),
+        tts_provider=_norm_provider(tts_provider),
+    ).observe(float(seconds))
+
+
+def observe_voice_ttfb(
+    stage: str,
+    seconds: float,
+    *,
+    provider: str | None = "unknown",
+) -> None:
+    """Record a stage TTFB measurement (stage in {'stt', 'llm', 'tts'})."""
+    stage_norm = (stage or "").strip().lower()
+    if stage_norm not in VOICE_STAGES or seconds < 0:
+        return
+    VOICE_TTFB.labels(
+        stage=stage_norm,
+        provider=_norm_provider(provider),
+    ).observe(float(seconds))
+
+
+def record_voice_interruption(
+    *,
+    tenant_plan: str | None = "unknown",
+    n: int = 1,
+) -> None:
+    """Increment the barge-in / interruption counter."""
+    if n <= 0:
+        return
+    VOICE_INTERRUPTIONS.labels(tenant_plan=_norm_plan(tenant_plan)).inc(n)
+
+
 # Runtime lifecycle signals share this Prometheus registry and bounded labels.
 RUNTIME_COMPONENTS = frozenset({"api", "ai", "workflow", "review", "specialized_job", "provider", "deployment", "queue"})
 RUNTIME_EVENTS = frozenset({"execution", "preflight", "apply", "observation", "verification", "cost", "backlog", "dependency"})
@@ -79,6 +182,34 @@ SIDE_EFFECTS = Counter(
     "External side-effect lifecycle by kind and outcome",
     ["kind", "outcome"],
 )
+
+PROVIDER_FAILOVER_TOTAL = Counter(
+    "voxdesk_provider_failover_total",
+    "Count of voice provider failovers by stage and provider pair",
+    ["stage", "from_provider", "to_provider"],
+)
+
+IVR_NAVIGATION_TOTAL = Counter(
+    "voxdesk_ivr_navigation_total",
+    "Count of IVR navigation outcomes (digits_pressed, speech_spoken, wait, human_detected, goal_completed, fallback)",
+    ["result"],
+)
+
+
+def record_provider_failover(
+    stage: str, from_provider: str, to_provider: str, *, n: int = 1
+) -> None:
+    """Increment the provider failover counter (Sub-Phase 2C)."""
+    PROVIDER_FAILOVER_TOTAL.labels(
+        stage=str(stage or "unknown").lower(),
+        from_provider=str(from_provider or "unknown").lower(),
+        to_provider=str(to_provider or "unknown").lower(),
+    ).inc(n)
+
+
+def record_ivr_navigation(result: str, *, n: int = 1) -> None:
+    """Increment `voxdesk_ivr_navigation_total{result}` (Sub-Phase 2D)."""
+    IVR_NAVIGATION_TOTAL.labels(result=str(result or "unknown").lower()).inc(n)
 
 
 def record_side_effect(kind: str, outcome: str, *, n: int = 1) -> None:

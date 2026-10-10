@@ -89,7 +89,6 @@ export const ROUTES: RouteConfig[] = [
   ...routeAliases(['/contact', '/contact-sales'], { title: 'Contact VoxDesk | VoxDesk', description: 'Submit a persisted contact or sales inquiry. A submission is not a guaranteed response time or enterprise commitment.', component: 'ContactSalesPage', exact: true, category: 'company' }),
   { path: '/book-demo', title: 'Request information about a demo | VoxDesk', description: 'Send an inquiry to ask whether a configured VoxDesk demonstration is available; no live demo provider is implied.', component: 'BookDemoPage', exact: true, category: 'company' },
 
-
   // Auth
   { path: '/login', title: 'Sign In | VoxDesk', description: 'Sign in to your VoxDesk workspace.', component: 'LoginPage', exact: true, category: 'auth' },
   { path: '/signup', title: 'Create Workspace | VoxDesk', description: 'Create your tenant-isolated VoxDesk workspace.', component: 'SignupPage', exact: true, category: 'auth' },

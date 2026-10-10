@@ -2,19 +2,35 @@
 
     python -m scripts.seed_demo_tenant +15550001111
 """
+from __future__ import annotations
+
 import asyncio
 import sys
 from datetime import time
+from pathlib import Path
 
-from app.db.models import Base, Tenant
-from app.db.session import SessionLocal, engine
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from sqlalchemy import select  # noqa: E402
+
+from app.core.config import settings  # noqa: E402
+from app.db.models import Base, Tenant  # noqa: E402
+from app.db.session import SessionLocal, engine  # noqa: E402
 
 
-async def main(number: str):
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+async def main(number: str) -> None:
+    if settings.app_env.lower() in {"development", "test"}:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
 
     async with SessionLocal() as session:
+        existing = (
+            await session.execute(select(Tenant).where(Tenant.twilio_number == number))
+        ).scalar_one_or_none()
+        if existing is not None:
+            print(f"Demo tenant already present: {existing.name} on {existing.twilio_number} ({existing.id})")
+            return
+
         tenant = Tenant(
             name="Bright Smile Dental",
             industry="dental clinic",

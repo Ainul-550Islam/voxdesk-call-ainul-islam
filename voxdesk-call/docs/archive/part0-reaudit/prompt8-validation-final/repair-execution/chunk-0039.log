@@ -1,0 +1,5 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_calendar_providers.py::TestGoogleEvents::test_reconciliation_ignores_a_cancelled_event tests/test_calendar_providers.py::TestGoogleEvents::test_an_event_with_no_times_is_a_validation_error tests/test_calendar_providers.py::TestGoogleOAuth::test_refresh_keeps_the_refresh_token_google_omits tests/test_calendar_providers.py::TestGoogleOAuth::test_a_revoked_grant_is_permanent_not_retryable tests/test_calendar_providers.py::TestGoogleOAuth::test_refreshing_without_a_client_secret_is_a_config_error
+.....                                                                    [100%]
+5 passed in 0.14s
+
+STDERR:

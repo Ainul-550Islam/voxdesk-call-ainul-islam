@@ -13,15 +13,20 @@ from __future__ import annotations
 import random
 import re
 from datetime import datetime
+from typing import Sequence
 
 from app.core.logging import log
 
 # pipecat ছাড়াও যেন টেক্সট ফাংশনগুলো import করা যায় (টেস্ট/স্ক্রিপ্টের জন্য)
 try:
     from pipecat.frames.frames import (
+        BotStartedSpeakingFrame,
+        BotStoppedSpeakingFrame,
         Frame,
         FunctionCallInProgressFrame,
+        InterimTranscriptionFrame,
         TextFrame,
+        TranscriptionFrame,
         TTSSpeakFrame,
         UserStartedSpeakingFrame,
         UserStoppedSpeakingFrame,
@@ -33,6 +38,8 @@ except ImportError:                                   # pragma: no cover
     PIPECAT_AVAILABLE = False
     Frame = FunctionCallInProgressFrame = TextFrame = TTSSpeakFrame = object
     UserStartedSpeakingFrame = UserStoppedSpeakingFrame = object
+    BotStartedSpeakingFrame = BotStoppedSpeakingFrame = object
+    InterimTranscriptionFrame = TranscriptionFrame = object
     FrameDirection = None
 
     class FrameProcessor:                              # noqa: D401 - stub
@@ -172,10 +179,11 @@ class FillerInjector(FrameProcessor):
     ওই ৮০০ms চুপ থাকলে কাস্টমার ভাবে লাইন কেটে গেছে।
     """
 
-    def __init__(self, min_gap_seconds: float = 8.0):
+    def __init__(self, min_gap_seconds: float = 8.0, trigger_ms: int = 800):
         super().__init__()
         self._last_filler_at = 0.0
         self._min_gap = min_gap_seconds
+        self._trigger_ms = max(0, int(trigger_ms))
 
     async def process_frame(self, frame: Frame, direction: FrameDirection):
         await super().process_frame(frame, direction)
@@ -185,7 +193,7 @@ class FillerInjector(FrameProcessor):
             if now - self._last_filler_at > self._min_gap:
                 self._last_filler_at = now
                 filler = random.choice(THINKING_FILLERS)
-                log.info("humanize.filler", text=filler)
+                log.info("humanize.filler", text=filler, trigger_ms=self._trigger_ms)
                 await self.push_frame(TTSSpeakFrame(filler), FrameDirection.DOWNSTREAM)
 
         await self.push_frame(frame, direction)
@@ -194,38 +202,77 @@ class FillerInjector(FrameProcessor):
 # ========================================================= 3. BACKCHANNEL ==
 
 BACKCHANNELS = ["Mm-hmm.", "Right.", "Okay.", "Got it.", "I see."]
+DEFAULT_BACKCHANNEL_WORDS = ("yeah", "uh-huh", "got it", "mm-hmm", "okay")
 
 
 class Backchannel(FrameProcessor):
     """কাস্টমার লম্বা কথা বললে মাঝে ছোট সাড়া দেয় — মানুষ ঠিক এটাই করে।
 
-    সাবধান: বেশি করলে বিরক্তিকর। তাই ৩ সেকেন্ডের বেশি কথা + ১৫s কুলডাউন।
+    Extended in Sub-Phase 2B:
+    - Respects `enabled` (`enable_backchannel`), `frequency` (`0.0..1.0`), and `words` (`backchannel_words`).
+    - Triggers on user pauses after `after_seconds` (default 1.5s when configured via RuntimeConfig,
+      or 3.0s legacy default) without interrupting the user's turn or clearing LLM context.
     """
 
-    def __init__(self, after_seconds: float = 3.0, cooldown: float = 15.0):
+    def __init__(
+        self,
+        after_seconds: float = 1.5,
+        cooldown: float = 6.0,
+        *,
+        enabled: bool = True,
+        frequency: float = 0.5,
+        words: Sequence[str] | None = None,
+        rng: random.Random | None = None,
+    ):
         super().__init__()
-        self._after = after_seconds
-        self._cooldown = cooldown
+        self._after = max(0.5, float(after_seconds))
+        self._cooldown = max(1.0, float(cooldown))
+        self._enabled = bool(enabled)
+        self._frequency = max(0.0, min(1.0, float(frequency)))
+        cleaned_words = [str(w).strip() for w in (words or ()) if str(w).strip()]
+        self._words = cleaned_words if cleaned_words else list(BACKCHANNELS)
+        self._rng = rng or random.Random()
         self._speech_started_at: float | None = None
         self._last_ack_at = 0.0
+        self._bot_speaking = False
+        self.emitted_cues: list[str] = []
 
     async def process_frame(self, frame: Frame, direction: FrameDirection):
         await super().process_frame(frame, direction)
         now = datetime.now().timestamp()
 
-        if isinstance(frame, UserStartedSpeakingFrame):
+        if isinstance(frame, BotStartedSpeakingFrame):
+            self._bot_speaking = True
+        elif isinstance(frame, BotStoppedSpeakingFrame):
+            self._bot_speaking = False
+        elif isinstance(frame, UserStartedSpeakingFrame):
             self._speech_started_at = now
-
-        elif isinstance(frame, UserStoppedSpeakingFrame) and self._speech_started_at:
+        elif isinstance(frame, UserStoppedSpeakingFrame) and self._speech_started_at is not None:
             spoke_for = now - self._speech_started_at
-            if spoke_for > self._after and now - self._last_ack_at > self._cooldown:
-                self._last_ack_at = now
-                ack = random.choice(BACKCHANNELS)
-                log.info("humanize.backchannel", text=ack, after_s=round(spoke_for, 1))
-                await self.push_frame(TTSSpeakFrame(ack), FrameDirection.DOWNSTREAM)
             self._speech_started_at = None
+            if (
+                self._enabled
+                and not self._bot_speaking
+                and self._frequency > 0.0
+                and spoke_for >= self._after
+                and (now - self._last_ack_at) >= self._cooldown
+                and self._rng.random() <= self._frequency
+            ):
+                self._last_ack_at = now
+                ack = self._rng.choice(self._words)
+                self.emitted_cues.append(ack)
+                log.info(
+                    "humanize.backchannel",
+                    text=ack,
+                    after_s=round(spoke_for, 2),
+                    frequency=self._frequency,
+                )
+                await self.push_frame(TTSSpeakFrame(ack), FrameDirection.DOWNSTREAM)
 
         await self.push_frame(frame, direction)
+
+
+BackchannelProcessor = Backchannel
 
 
 # ========================================================== 4. DISFLUENCY ==

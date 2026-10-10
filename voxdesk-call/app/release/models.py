@@ -26,7 +26,7 @@ from enum import Enum
 
 
 class Status(str, Enum):
-    PASS = "PASS"  # nosec B105 -- launch status label, not a credential
+    PASS = "PASS"  # nosec B105
     FAIL = "FAIL"
     BLOCKED = "BLOCKED"
     NOT_RUN = "NOT_RUN"

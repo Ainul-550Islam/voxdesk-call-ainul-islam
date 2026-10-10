@@ -1,0 +1,216 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/deployment/test_readiness_verification.py::test_readiness_reports_approval_residency_monitoring_and_backup_unverified_without_authority tests/deployment/test_readiness_verification.py::test_oci_registry_client_is_pinned_to_configured_host tests/deployment/test_readiness_verification.py::test_verification_requires_fresh_scoped_healthy_artifact_observation tests/deployment/test_readiness_verification.py::test_no_observation_or_boolean_claim_cannot_advance_verification tests/deployment/test_runtime_adapters.py::test_adapter_protocol_and_observation_contract tests/deployment/test_runtime_adapters.py::test_signed_airgap_manifest_is_integrity_only tests/deployment/test_runtime_adapters.py::test_airgap_invalid_signature_and_wrong_identity_fail_closed tests/deployment/test_runtime_adapters.py::test_airgap_missing_offline_prerequisite_and_invalid_mode tests/deployment/test_runtime_adapters.py::test_container_digest_mismatch_or_missing_health_never_verifies tests/deployment/test_runtime_adapters.py::test_container_tenant_environment_revision_and_apply_are_fail_closed tests/deployment/test_runtime_adapters.py::test_kubernetes_missing_client_reports_unavailable tests/deployment/test_runtime_adapters.py::test_kubernetes_live_observation_requires_generation_pods_digest_revision_and_scope tests/deployment/test_runtime_adapters.py::test_registry_declared_versus_verified_and_unavailable tests/deployment/test_runtime_adapters.py::test_oci_client_pins_host_and_digest_header tests/deployment/test_runtime_adapters.py::test_client_boolean_alone_cannot_establish_verified_state tests/e2e/test_agent_builder_to_call_flow.py::test_builder_publishes_persisted_snapshot_then_simulated_call_uses_it tests/e2e/test_calls_analytics_flow.py::test_persisted_call_transcript_replay_and_analytics_read_paths tests/e2e/test_campaign_workflow_flow.py::test_campaign_audience_plan_and_controlled_workflow_lead_action tests/e2e/test_chat_sms_flow.py::test_persisted_chat_message_memory_and_sms_provider_fail_closed tests/e2e/test_conductor_flow.py::test_conductor_full_workflow_partial_approve_simulate_and_immutable_apply tests/e2e/test_conductor_flow.py::test_prompt8_conductor_failure_reproduction_review_and_immutable_apply tests/e2e/test_enterprise_cross_module_auth.py::test_tenant_environment_rbac_api_key_and_module_isolation tests/e2e/test_full_platform_e2e.py::test_master_new_customer_to_simulated_call_and_truthful_cross_module_state tests/e2e/test_full_platform_e2e.py::test_call_pin_keeps_superseded_snapshot_and_unpinned_call_uses_persisted_pointer tests/e2e/test_guardrails_pii_flow.py::test_guardrails_pii_redaction_and_raw_export_authorization tests/e2e/test_knowledge_crm_flow.py::test_ingested_knowledge_builder_association_contact_memory_and_crm_readiness tests/e2e/test_live_monitor_takeover_flow.py::test_live_monitor_and_takeover_actions_are_audited_and_not_faked tests/e2e/test_public_to_dashboard_flow.py::test_public_catalog_signup_environment_and_authenticated_dashboard_api tests/e2e/test_settings_billing_flow.py::test_settings_security_and_billing_read_write_state_are_persisted tests/e2e/test_testing_simulation_flow.py::test_version_pinned_playground_and_failed_scenario_are_persisted_truthfully tests/e2e/test_voice_telephony_flow.py::test_phone_sip_inbound_live_fail_closed_and_simulation_version_binding tests/environments/test_campaign_resource_binding.py::test_campaign_table_matches_the_lead_conventions tests/environments/test_campaign_resource_binding.py::test_lead_and_campaign_use_the_same_column_conventions tests/environments/test_campaign_resource_binding.py::test_legacy_insert_without_environment_binds_production tests/environments/test_campaign_resource_binding.py::test_insert_with_explicit_environment_persists tests/environments/test_campaign_resource_binding.py::test_insert_with_a_cross_tenant_environment_is_denied tests/environments/test_campaign_resource_binding.py::test_insert_into_a_closed_environment_is_denied tests/environments/test_campaign_resource_binding.py::test_campaign_environment_is_immutable_after_insert tests/environments/test_campaign_resource_binding.py::test_service_binds_the_default_production_environment tests/environments/test_campaign_resource_binding.py::test_service_refuses_a_cross_tenant_environment tests/environments/test_campaign_resource_binding.py::test_suspended_environment_refuses_campaign_writes tests/environments/test_campaign_resource_binding.py::test_archived_environment_refuses_campaign_writes tests/environments/test_campaign_resource_binding.py::test_suspended_production_refuses_default_campaign_creation tests/environments/test_campaign_resource_binding.py::test_campaign_lead_pair_must_share_tenant_and_environment tests/environments/test_campaign_resource_binding.py::test_lead_hooks_still_bind_freeze_and_deny tests/environments/test_environment_policy_enforcement.py::test_production_rejects_an_unauthorized_write_and_accepts_an_admin tests/environments/test_environment_policy_enforcement.py::test_staging_and_development_follow_their_role_floors tests/environments/test_environment_policy_enforcement.py::test_suspended_and_archived_block_writes_and_reads_follow_policy tests/environments/test_environment_policy_enforcement.py::test_a_child_environment_cannot_weaken_a_parent_control tests/environments/test_environment_policy_enforcement.py::test_an_automation_worker_cannot_execute_into_another_environment
+..................................................                       [100%]
+=============================== warnings summary ===============================
+.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/e2e/test_agent_builder_to_call_flow.py: 1 warning
+tests/e2e/test_calls_analytics_flow.py: 1 warning
+tests/e2e/test_campaign_workflow_flow.py: 1 warning
+tests/e2e/test_chat_sms_flow.py: 1 warning
+tests/e2e/test_conductor_flow.py: 2 warnings
+tests/e2e/test_enterprise_cross_module_auth.py: 2 warnings
+tests/e2e/test_full_platform_e2e.py: 2 warnings
+tests/e2e/test_guardrails_pii_flow.py: 1 warning
+tests/e2e/test_knowledge_crm_flow.py: 1 warning
+tests/e2e/test_live_monitor_takeover_flow.py: 1 warning
+tests/e2e/test_public_to_dashboard_flow.py: 1 warning
+tests/e2e/test_settings_billing_flow.py: 1 warning
+tests/e2e/test_testing_simulation_flow.py: 1 warning
+tests/e2e/test_voice_telephony_flow.py: 1 warning
+tests/environments/test_campaign_resource_binding.py: 16 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/e2e/test_agent_builder_to_call_flow.py: 16 warnings
+tests/e2e/test_calls_analytics_flow.py: 7 warnings
+tests/e2e/test_campaign_workflow_flow.py: 21 warnings
+tests/e2e/test_chat_sms_flow.py: 5 warnings
+tests/e2e/test_conductor_flow.py: 6 warnings
+tests/e2e/test_enterprise_cross_module_auth.py: 32 warnings
+tests/e2e/test_full_platform_e2e.py: 30 warnings
+tests/e2e/test_guardrails_pii_flow.py: 9 warnings
+tests/e2e/test_knowledge_crm_flow.py: 11 warnings
+tests/e2e/test_live_monitor_takeover_flow.py: 5 warnings
+tests/e2e/test_public_to_dashboard_flow.py: 4 warnings
+tests/e2e/test_settings_billing_flow.py: 20 warnings
+tests/e2e/test_testing_simulation_flow.py: 5 warnings
+tests/e2e/test_voice_telephony_flow.py: 10 warnings
+tests/environments/test_campaign_resource_binding.py: 36 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/e2e/test_agent_builder_to_call_flow.py: 1 warning
+tests/e2e/test_calls_analytics_flow.py: 1 warning
+tests/e2e/test_campaign_workflow_flow.py: 1 warning
+tests/e2e/test_chat_sms_flow.py: 1 warning
+tests/e2e/test_conductor_flow.py: 2 warnings
+tests/e2e/test_enterprise_cross_module_auth.py: 2 warnings
+tests/e2e/test_full_platform_e2e.py: 2 warnings
+tests/e2e/test_guardrails_pii_flow.py: 1 warning
+tests/e2e/test_knowledge_crm_flow.py: 1 warning
+tests/e2e/test_live_monitor_takeover_flow.py: 1 warning
+tests/e2e/test_public_to_dashboard_flow.py: 1 warning
+tests/e2e/test_settings_billing_flow.py: 1 warning
+tests/e2e/test_testing_simulation_flow.py: 1 warning
+tests/e2e/test_voice_telephony_flow.py: 1 warning
+tests/environments/test_campaign_resource_binding.py: 16 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/e2e/test_agent_builder_to_call_flow.py: 1 warning
+tests/e2e/test_calls_analytics_flow.py: 1 warning
+tests/e2e/test_campaign_workflow_flow.py: 2 warnings
+tests/e2e/test_chat_sms_flow.py: 1 warning
+tests/e2e/test_conductor_flow.py: 2 warnings
+tests/e2e/test_enterprise_cross_module_auth.py: 3 warnings
+tests/e2e/test_full_platform_e2e.py: 2 warnings
+tests/e2e/test_guardrails_pii_flow.py: 2 warnings
+tests/e2e/test_knowledge_crm_flow.py: 1 warning
+tests/e2e/test_live_monitor_takeover_flow.py: 1 warning
+tests/e2e/test_public_to_dashboard_flow.py: 1 warning
+tests/e2e/test_settings_billing_flow.py: 2 warnings
+tests/e2e/test_testing_simulation_flow.py: 1 warning
+tests/e2e/test_voice_telephony_flow.py: 1 warning
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/e2e/test_agent_builder_to_call_flow.py::test_builder_publishes_persisted_snapshot_then_simulated_call_uses_it
+tests/e2e/test_full_platform_e2e.py::test_master_new_customer_to_simulated_call_and_truthful_cross_module_state
+tests/e2e/test_knowledge_crm_flow.py::test_ingested_knowledge_builder_association_contact_memory_and_crm_readiness
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/knowledge/ingest.py:227: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    document.processing_started_at = datetime.utcnow()
+
+tests/e2e/test_agent_builder_to_call_flow.py::test_builder_publishes_persisted_snapshot_then_simulated_call_uses_it
+tests/e2e/test_full_platform_e2e.py::test_master_new_customer_to_simulated_call_and_truthful_cross_module_state
+tests/e2e/test_knowledge_crm_flow.py::test_ingested_knowledge_builder_association_contact_memory_and_crm_readiness
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/knowledge/ingest.py:327: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    document.ingested_at = datetime.utcnow()
+
+tests/e2e/test_agent_builder_to_call_flow.py::test_builder_publishes_persisted_snapshot_then_simulated_call_uses_it
+tests/e2e/test_enterprise_cross_module_auth.py::test_tenant_environment_rbac_api_key_and_module_isolation
+tests/e2e/test_full_platform_e2e.py::test_master_new_customer_to_simulated_call_and_truthful_cross_module_state
+tests/e2e/test_full_platform_e2e.py::test_call_pin_keeps_superseded_snapshot_and_unpinned_call_uses_persisted_pointer
+tests/e2e/test_full_platform_e2e.py::test_call_pin_keeps_superseded_snapshot_and_unpinned_call_uses_persisted_pointer
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/runtime.py:401: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/e2e/test_agent_builder_to_call_flow.py::test_builder_publishes_persisted_snapshot_then_simulated_call_uses_it
+tests/e2e/test_enterprise_cross_module_auth.py::test_tenant_environment_rbac_api_key_and_module_isolation
+tests/e2e/test_full_platform_e2e.py::test_master_new_customer_to_simulated_call_and_truthful_cross_module_state
+tests/e2e/test_full_platform_e2e.py::test_call_pin_keeps_superseded_snapshot_and_unpinned_call_uses_persisted_pointer
+tests/e2e/test_full_platform_e2e.py::test_call_pin_keeps_superseded_snapshot_and_unpinned_call_uses_persisted_pointer
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/runtime.py:478: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    occurred_at=datetime.utcnow(),
+
+tests/e2e/test_agent_builder_to_call_flow.py::test_builder_publishes_persisted_snapshot_then_simulated_call_uses_it
+tests/e2e/test_agent_builder_to_call_flow.py::test_builder_publishes_persisted_snapshot_then_simulated_call_uses_it
+tests/e2e/test_voice_telephony_flow.py::test_phone_sip_inbound_live_fail_closed_and_simulation_version_binding
+tests/e2e/test_voice_telephony_flow.py::test_phone_sip_inbound_live_fail_closed_and_simulation_version_binding
+tests/e2e/test_voice_telephony_flow.py::test_phone_sip_inbound_live_fail_closed_and_simulation_version_binding
+tests/e2e/test_voice_telephony_flow.py::test_phone_sip_inbound_live_fail_closed_and_simulation_version_binding
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/call_session.py:331: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = occurred_at or datetime.utcnow()
+
+tests/e2e/test_agent_builder_to_call_flow.py::test_builder_publishes_persisted_snapshot_then_simulated_call_uses_it
+tests/e2e/test_voice_telephony_flow.py::test_phone_sip_inbound_live_fail_closed_and_simulation_version_binding
+tests/e2e/test_voice_telephony_flow.py::test_phone_sip_inbound_live_fail_closed_and_simulation_version_binding
+  <string>:16: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+
+tests/e2e/test_agent_builder_to_call_flow.py::test_builder_publishes_persisted_snapshot_then_simulated_call_uses_it
+tests/e2e/test_voice_telephony_flow.py::test_phone_sip_inbound_live_fail_closed_and_simulation_version_binding
+tests/e2e/test_voice_telephony_flow.py::test_phone_sip_inbound_live_fail_closed_and_simulation_version_binding
+  <string>:17: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+
+tests/e2e/test_agent_builder_to_call_flow.py::test_builder_publishes_persisted_snapshot_then_simulated_call_uses_it
+tests/e2e/test_voice_telephony_flow.py::test_phone_sip_inbound_live_fail_closed_and_simulation_version_binding
+tests/e2e/test_voice_telephony_flow.py::test_phone_sip_inbound_live_fail_closed_and_simulation_version_binding
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/call_session.py:204: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    ts = (occurred_at or datetime.utcnow()).isoformat()
+
+tests/e2e/test_agent_builder_to_call_flow.py::test_builder_publishes_persisted_snapshot_then_simulated_call_uses_it
+tests/e2e/test_agent_builder_to_call_flow.py::test_builder_publishes_persisted_snapshot_then_simulated_call_uses_it
+tests/e2e/test_agent_builder_to_call_flow.py::test_builder_publishes_persisted_snapshot_then_simulated_call_uses_it
+tests/e2e/test_voice_telephony_flow.py::test_phone_sip_inbound_live_fail_closed_and_simulation_version_binding
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/call_session.py:237: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "timestamp": (occurred_at or datetime.utcnow()).isoformat(),
+
+tests/e2e/test_agent_builder_to_call_flow.py::test_builder_publishes_persisted_snapshot_then_simulated_call_uses_it
+tests/e2e/test_agent_builder_to_call_flow.py::test_builder_publishes_persisted_snapshot_then_simulated_call_uses_it
+tests/e2e/test_voice_telephony_flow.py::test_phone_sip_inbound_live_fail_closed_and_simulation_version_binding
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/media_gateway.py:174: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    session.last_activity_at = datetime.utcnow()
+
+tests/e2e/test_agent_builder_to_call_flow.py::test_builder_publishes_persisted_snapshot_then_simulated_call_uses_it
+tests/e2e/test_full_platform_e2e.py::test_master_new_customer_to_simulated_call_and_truthful_cross_module_state
+tests/e2e/test_full_platform_e2e.py::test_call_pin_keeps_superseded_snapshot_and_unpinned_call_uses_persisted_pointer
+tests/e2e/test_full_platform_e2e.py::test_call_pin_keeps_superseded_snapshot_and_unpinned_call_uses_persisted_pointer
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/runtime.py:575: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/e2e/test_agent_builder_to_call_flow.py::test_builder_publishes_persisted_snapshot_then_simulated_call_uses_it
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/media_gateway.py:215: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    session.closed_at = datetime.utcnow()
+
+tests/e2e/test_agent_builder_to_call_flow.py::test_builder_publishes_persisted_snapshot_then_simulated_call_uses_it
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/runtime.py:601: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    occurred_at=datetime.utcnow(),
+
+tests/e2e/test_agent_builder_to_call_flow.py::test_builder_publishes_persisted_snapshot_then_simulated_call_uses_it
+tests/e2e/test_full_platform_e2e.py::test_master_new_customer_to_simulated_call_and_truthful_cross_module_state
+tests/e2e/test_full_platform_e2e.py::test_call_pin_keeps_superseded_snapshot_and_unpinned_call_uses_persisted_pointer
+tests/e2e/test_full_platform_e2e.py::test_call_pin_keeps_superseded_snapshot_and_unpinned_call_uses_persisted_pointer
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/telephony_usage.py:113: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    recorded_at=datetime.utcnow(),
+
+tests/e2e/test_campaign_workflow_flow.py::test_campaign_audience_plan_and_controlled_workflow_lead_action
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/leads/models.py:25: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow()
+
+tests/e2e/test_enterprise_cross_module_auth.py::test_tenant_environment_rbac_api_key_and_module_isolation
+tests/e2e/test_enterprise_cross_module_auth.py::test_tenant_environment_rbac_api_key_and_module_isolation
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/conftest.py:569: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "started_at": datetime.utcnow(),
+
+tests/e2e/test_enterprise_cross_module_auth.py::test_tenant_environment_rbac_api_key_and_module_isolation
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/auth/identity/models.py:69: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow()
+
+tests/e2e/test_full_platform_e2e.py::test_master_new_customer_to_simulated_call_and_truthful_cross_module_state
+tests/e2e/test_voice_telephony_flow.py::test_phone_sip_inbound_live_fail_closed_and_simulation_version_binding
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/phone_numbers.py:195: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/e2e/test_voice_telephony_flow.py::test_phone_sip_inbound_live_fail_closed_and_simulation_version_binding
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/phone_numbers.py:371: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    row.updated_at = datetime.utcnow()
+
+tests/e2e/test_voice_telephony_flow.py::test_phone_sip_inbound_live_fail_closed_and_simulation_version_binding
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/sip.py:104: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/e2e/test_voice_telephony_flow.py::test_phone_sip_inbound_live_fail_closed_and_simulation_version_binding
+tests/e2e/test_voice_telephony_flow.py::test_phone_sip_inbound_live_fail_closed_and_simulation_version_binding
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/pydantic/main.py:214: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+tests/e2e/test_voice_telephony_flow.py::test_phone_sip_inbound_live_fail_closed_and_simulation_version_binding
+tests/e2e/test_voice_telephony_flow.py::test_phone_sip_inbound_live_fail_closed_and_simulation_version_binding
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/idempotency.py:154: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    received_at=datetime.utcnow(),
+
+tests/e2e/test_voice_telephony_flow.py::test_phone_sip_inbound_live_fail_closed_and_simulation_version_binding
+tests/e2e/test_voice_telephony_flow.py::test_phone_sip_inbound_live_fail_closed_and_simulation_version_binding
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/webhooks.py:292: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+50 passed, 372 warnings in 80.40s (0:01:20)
+
+STDERR:

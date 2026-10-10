@@ -28,6 +28,7 @@ class ContainerAdapter:
             self.client = docker.from_env()
             self.client.ping()
         except Exception:
+            __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
             return None
         return self.client
 
@@ -39,6 +40,7 @@ class ContainerAdapter:
             container = await asyncio.to_thread(client.containers.get, request.resource_name or request.target_id)
             await asyncio.to_thread(container.reload)
         except Exception as exc:
+            __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
             if type(exc).__name__ == "NotFound":
                 return DeploymentObservation(self.name, True, False, False, "not_found", reason="container was not found")
             return DeploymentObservation(self.name, False, False, False, "observation_failed", reason="container runtime inspection failed")
@@ -62,6 +64,7 @@ class ContainerAdapter:
             health = state.get("Health", {}) or {}
             health_state = "healthy" if health.get("Status") == "healthy" else "unhealthy"
         except Exception:
+            __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
             return DeploymentObservation(self.name, False, False, False, "observation_failed", reason="container metadata could not be safely observed")
         fingerprint_match = fingerprint == request.manifest_fingerprint
         running = state.get("Running") is True and state.get("Status") == "running"

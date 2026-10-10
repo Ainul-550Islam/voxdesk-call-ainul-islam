@@ -1,0 +1,33 @@
+{
+  "name": "@voxdesk/web-sdk",
+  "version": "0.3.0",
+  "description": "Browser WebSocket Protobuf and SmallWebRTC Voice Client SDK for VoxDesk",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs,iife --global-name VoxDeskWebSDK --dts --clean",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "jsdom": "24.1.3",
+    "tsup": "^8.3.5",
+    "typescript": "5.9.3",
+    "vitest": "3.2.7"
+  }
+}

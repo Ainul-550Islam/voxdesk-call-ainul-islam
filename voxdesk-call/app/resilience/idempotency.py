@@ -230,6 +230,63 @@ async def fail_request(
     return receipt
 
 
+async def get_idempotent_resource_id(
+    session: AsyncSession,
+    *,
+    tenant_id: uuid.UUID | str,
+    operation: str,
+    key: str | None,
+) -> str | None:
+    """Return the persisted ``resource_id`` for a completed idempotent operation, if any."""
+    if not key or not key.strip():
+        return None
+    tenant_uuid = tenant_id if isinstance(tenant_id, uuid.UUID) else uuid.UUID(str(tenant_id))
+    key_hash = _key_digest(key.strip())
+    existing = await session.scalar(
+        select(RequestIdempotencyReceipt).where(
+            RequestIdempotencyReceipt.tenant_id == tenant_uuid,
+            RequestIdempotencyReceipt.environment_scope == "tenant",
+            RequestIdempotencyReceipt.operation == operation,
+            RequestIdempotencyReceipt.key_digest == key_hash,
+            RequestIdempotencyReceipt.status == "succeeded",
+        )
+    )
+    if existing is None or not existing.resource_id:
+        return None
+    return existing.resource_id
+
+
+async def store_idempotent_resource_id(
+    session: AsyncSession,
+    *,
+    tenant_id: uuid.UUID | str,
+    operation: str,
+    key: str | None,
+    resource_type: str,
+    resource_id: str | uuid.UUID,
+    request_data: Any = None,
+) -> RequestIdempotencyReceipt | None:
+    """Persist a completed ``RequestIdempotencyReceipt`` in the caller's transaction."""
+    if not key or not key.strip():
+        return None
+    claim = await claim_request(
+        session,
+        tenant_id=tenant_id,
+        environment_id=None,
+        operation=operation,
+        key=key.strip(),
+        request_data=request_data if request_data is not None else {"resource_id": str(resource_id)},
+    )
+    if claim.replayed:
+        return claim.receipt
+    return await complete_request(
+        session,
+        claim.receipt,
+        resource_type=resource_type,
+        resource_id=str(resource_id),
+    )
+
+
 __all__ = [
     "IdempotencyConflict",
     "IdempotencyError",
@@ -240,5 +297,7 @@ __all__ = [
     "claim_request",
     "complete_request",
     "fail_request",
+    "get_idempotent_resource_id",
     "request_digest",
+    "store_idempotent_resource_id",
 ]

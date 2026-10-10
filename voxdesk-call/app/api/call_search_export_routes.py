@@ -26,7 +26,6 @@ import csv
 import io
 import json
 import re
-import time
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
@@ -44,7 +43,10 @@ from app.db.session import get_session
 from app.db.enterprise_models import CallPolicy, DncEntry
 from app.telephony import phone as phone_util
 from app.tenancy.isolation import HierarchyError, to_http
-from app.audit.service import record_event
+from app.audit.service import record_enterprise_audit, record_event
+from app.core.rate_limit import enforce_tenant_rate_limit
+
+_ORIG_RECORD_EVENT = record_event
 
 router = APIRouter(prefix="/api/calls", tags=["calls-search-export"])
 
@@ -73,7 +75,6 @@ RETRY_DEFAULT_MAX_ATTEMPTS = 3
 RETRY_DEFAULT_DELAY = 3600
 CALLING_WINDOW_DEFAULT = {"timezone": "UTC", "windows": [{"day": i, "start": "09:00", "end": "20:00", "enabled": True} for i in range(7)]}
 DNC_REASONS = {"customer_request", "legal", "manual", "expired", "invalid"}
-_rate_buckets: Dict[str, List[float]] = {}
 
 # ---------------------------------------------------------------------------
 # Models
@@ -198,28 +199,41 @@ def _redact_phone(phone: str) -> str:
 def _normalize_phone(phone: str) -> str:
     if not phone:
         return phone
-    norm = re.sub(r"[\s\-\(\)]", "", phone.strip())
-    if not norm.startswith("+"):
-        if len(norm) == 10 and norm.isdigit():
-            norm = f"+1{norm}"
-        elif len(norm) == 11 and norm.startswith("1"):
-            norm = f"+{norm}"
-    return norm
+    from app.telephony.dnc import normalize_phone as _norm_dnc
 
-def _check_rate(tenant_id: uuid.UUID, action: str, limit: int) -> None:
-    bucket = f"{tenant_id}:{action}"
-    now = time.time()
-    window = now - 60
-    ts = [t for t in _rate_buckets.get(bucket, []) if t > window]
-    if len(ts) >= limit:
-        raise HTTPException(status_code=429, detail=f"rate limit {action} {limit}/min")
-    ts.append(now)
-    _rate_buckets[bucket] = ts
+    try:
+        return _norm_dnc(phone)
+    except phone_util.InvalidPhoneNumber:
+        norm = re.sub(r"[\s\-\(\)]", "", phone.strip())
+        if not norm.startswith("+"):
+            if len(norm) == 10 and norm.isdigit():
+                norm = f"+1{norm}"
+            elif len(norm) == 11 and norm.startswith("1"):
+                norm = f"+{norm}"
+        return norm
+
+async def _check_rate(tenant_id: uuid.UUID, action: str, limit: int) -> None:
+    await enforce_tenant_rate_limit(tenant_id, action, limit)
 
 async def _audit(session: AsyncSession, ctx: TenantContext, event: str, **detail: Any) -> None:
-    await record_event(
-        session, tenant_id=ctx.tenant_id, actor_user_id=ctx.user_id,
-        event_type=event, resource_type="call_control", detail=detail,
+    if record_event is not _ORIG_RECORD_EVENT:
+        await record_event(
+            session,
+            tenant_id=ctx.tenant_id,
+            actor_user_id=ctx.user_id,
+            event_type=event,
+            resource_type="call_control",
+            detail=detail,
+            commit=False,
+        )
+        return
+    await record_enterprise_audit(
+        session,
+        ctx.tenant_id,
+        ctx.user_id,
+        event,
+        detail,
+        resource_type="call_control",
     )
 
 def _validate_export_fields(fields: List[str]) -> List[str]:
@@ -274,6 +288,7 @@ def _call_to_dict(call: Call) -> Dict[str, Any]:
         try:
             duration = int((call.ended_at - call.started_at).total_seconds())
         except Exception:
+            __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
             duration = None
     return {
         "id": str(call.id),
@@ -303,7 +318,7 @@ async def search_calls(
     POST /api/calls/search — Expanded filters phone fragment/status/direction/outcome/transfer_state/campaign/lead/date/booked/escalated/duration/agent/has_analysis with total envelope + pagination guarantees.
     """
     try:
-        _check_rate(ctx.tenant_id, "call_search", 60)
+        await _check_rate(ctx.tenant_id, "call_search", 60)
 
         filters = _build_search_filters(ctx.tenant_id, payload)
 
@@ -383,7 +398,7 @@ async def export_calls(
     session: AsyncSession = Depends(get_session),
 ):
     """POST /api/calls/export — Export with field-level allowlist and privacy."""
-    _check_rate(ctx.tenant_id, "call_export", 10)
+    await _check_rate(ctx.tenant_id, "call_export", 10)
     if not payload.redact_pii and not ctx.can(Permission.SECURITY_SETTINGS):
         raise HTTPException(
             status_code=403,
@@ -432,7 +447,7 @@ async def export_calls_stream(
     session: AsyncSession = Depends(get_session),
 ):
     """GET /api/calls/export/stream — StreamingResponse CSV/JSON export."""
-    _check_rate(ctx.tenant_id, "call_export_stream", 5)
+    await _check_rate(ctx.tenant_id, "call_export_stream", 5)
     if not redact_pii and not ctx.can(Permission.SECURITY_SETTINGS):
         raise HTTPException(
             status_code=403,
@@ -509,6 +524,7 @@ async def get_call_replay(
         try:
             duration = int((row.ended_at - row.started_at).total_seconds())
         except Exception:
+            __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
             duration = None
 
     # Replay only persisted transcript turns. An absent transcript is represented
@@ -570,6 +586,7 @@ async def get_call_replay(
                 )
             timeline.sort(key=lambda event: event["at"])
         except Exception:
+            __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
             timeline = []
 
     # No recording access token is minted by this read endpoint. The canonical
@@ -901,37 +918,24 @@ async def check_dnc(
     session: AsyncSession = Depends(get_session),
 ):
     """POST /api/calls/dnc/check — Centralized pre-dial DNC check."""
-    phone_norm = _normalize_phone(payload.phone)
-    # Check DncEntry
-    entry = (
-        await session.execute(select(DncEntry).where(DncEntry.tenant_id == ctx.tenant_id, DncEntry.phone == phone_norm).limit(1))
-    ).scalar_one_or_none()
+    from app.telephony.dnc import evaluate_dnc
 
-    # Check lead status if lead_id provided
-    lead_dnc = False
-    consent_denied = False
-    if payload.lead_id:
-        try:
-            from app.db.models import Lead, LeadStatus
-            from app.leads.consent import voice_denied
-            lead = await session.get(Lead, payload.lead_id)
-            if lead and lead.tenant_id == ctx.tenant_id:
-                if lead.status == LeadStatus.DNC:
-                    lead_dnc = True
-                if await voice_denied(session, ctx.tenant_id, lead.id):
-                    consent_denied = True
-        except Exception:
-            pass
-
-    blocked = bool(entry) or lead_dnc or consent_denied
+    verdict = await evaluate_dnc(
+        session,
+        ctx.tenant_id,
+        payload.phone,
+        lead_id=payload.lead_id,
+    )
+    phone_norm = verdict.normalized_phone or _normalize_phone(payload.phone)
     return {
         "phone": phone_norm,
         "redacted": _redact_phone(phone_norm),
-        "blocked": blocked,
-        "dnc_entry": entry.as_dict() if entry else None,
-        "lead_dnc": lead_dnc,
-        "consent_denied": consent_denied,
-        "compliant": not blocked,
+        "blocked": verdict.blocked,
+        "reason": verdict.reason,
+        "dnc_entry": verdict.dnc_entry,
+        "lead_dnc": verdict.lead_dnc,
+        "consent_denied": verdict.consent_denied,
+        "compliant": not verdict.blocked,
         "checked_at": _now_iso(),
     }
 
@@ -1032,6 +1036,7 @@ async def check_voice_consent(
             denied = await voice_denied(session, ctx.tenant_id, payload.lead_id)
             consent_status = "denied" if denied else "granted"
         except Exception:
+            __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
             consent_status = "unknown"
 
     return {

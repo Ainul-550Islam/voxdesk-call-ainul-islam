@@ -1,7 +1,11 @@
 """
 app/api/v1/telephony_routes.py
-Authenticated API endpoints + WebSocket media gateway for Prompt 6 — Telephony / Voice Runtime.
+Authenticated API endpoints for Prompt 6 — Telephony / Voice Runtime.
 Enforces tenant isolation (`organization_id` / `tenant_id`), RBAC, and strict schema validation.
+
+Note (PART 3 / F-05 closure): The legacy mock media-stream WebSocket handler and
+media-event / media-token routes have been removed. Real browser audio uses
+`/telephony/web/ws` (`app/telephony/web_transport.py`).
 """
 
 from __future__ import annotations
@@ -14,17 +18,13 @@ from fastapi import (
     Depends,
     HTTPException,
     Query,
-    WebSocket,
-    WebSocketDisconnect,
     status,
 )
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import app.db.models  # noqa: F401 - ensure ORM registry is initialized before auth imports
 from app.auth.dependencies import Permission, TenantContext, require_permission
 from app.auth.rbac import has_permission
-from app.auth.jwt import decode_access_token
 from app.db.session import get_session
 from app.environments.membership import resolve as resolve_environment_membership
 from app.environments.resource_scope import resolve_scope
@@ -33,16 +33,9 @@ from app.resilience.idempotency import (
     IdempotencyInProgress,
     IdempotencyPreviousFailure,
 )
-from app.db.telephony_models import TelephonyCallSession
 from app.services.telephony_usage import TelephonyUsageService
 from app.telephony.call_session import CallSessionManager, serialize_call_session
-from app.telephony.exceptions import MediaSessionError
 from app.telephony.phone_numbers import PhoneNumberService
-from app.telephony.realtime import (
-    RealtimeVoiceSessionOrchestrator,
-    issue_media_stream_token,
-    verify_media_stream_token,
-)
 from app.telephony.runtime import TelephonyRuntimeService
 from app.telephony.schemas import (
     CallDtmfRequest,
@@ -402,120 +395,6 @@ async def list_call_transfers(
         tenant_id=ctx.tenant_id,
         call_session_id=call_id,
     )
-
-
-@router.post("/calls/{call_id}/media-token")
-async def create_call_media_token(
-    call_id: UUID,
-    ctx: TenantContext = Depends(require_permission(Permission.TENANT_UPDATE)),
-    session: AsyncSession = Depends(get_session),
-) -> dict[str, Any]:
-    mgr = CallSessionManager(session)
-    row = await mgr.get_call_session(tenant_id=ctx.tenant_id, call_id=call_id)
-    token = issue_media_stream_token(call_id=row.id, tenant_id=ctx.tenant_id)
-    return {
-        "call_id": str(row.id),
-        "stream_token": token,
-        "ws_path": f"/api/v1/telephony/calls/{row.id}/media-stream?token={token}",
-    }
-
-
-@router.post("/calls/{call_id}/media-event")
-async def post_call_media_event(
-    call_id: UUID,
-    message: dict[str, Any],
-    ctx: TenantContext = Depends(require_permission(Permission.TENANT_UPDATE)),
-    session: AsyncSession = Depends(get_session),
-) -> dict[str, Any]:
-    mgr = CallSessionManager(session)
-    row = await mgr.get_call_session(tenant_id=ctx.tenant_id, call_id=call_id)
-    orchestrator = RealtimeVoiceSessionOrchestrator(session)
-    response = await orchestrator.handle_ws_message(
-        call_session=row,
-        message=message,
-    )
-    await session.commit()
-    return response
-
-
-# ---------------------------------------------------------------------------
-# Real-Time Media Gateway WebSocket Endpoint
-# ---------------------------------------------------------------------------
-
-
-@router.websocket("/calls/{call_id}/media-stream")
-async def call_media_stream_ws(
-    websocket: WebSocket,
-    call_id: UUID,
-    token: str | None = Query(default=None),
-    session: AsyncSession = Depends(get_session),
-) -> None:
-    resolved_tenant_id: UUID | None = None
-    auth_header = websocket.headers.get("authorization") or ""
-    if auth_header.lower().startswith("bearer "):
-        jwt_str = auth_header.split(" ", 1)[1].strip()
-        try:
-            claims = decode_access_token(jwt_str)
-            tid_raw = getattr(claims, "tenant_id", None)
-            if tid_raw:
-                resolved_tenant_id = UUID(str(tid_raw))
-        except Exception:
-            resolved_tenant_id = None
-
-    row = (
-        await session.execute(
-            select(TelephonyCallSession).where(TelephonyCallSession.id == call_id)
-        )
-    ).scalar_one_or_none()
-    if row is None:
-        await websocket.close(code=4404, reason="Call session not found")
-        return
-
-    token_ok = bool(
-        token and verify_media_stream_token(token, call_id=row.id, tenant_id=row.tenant_id)
-    )
-    jwt_ok = bool(resolved_tenant_id and resolved_tenant_id == row.tenant_id)
-    if not (token_ok or jwt_ok):
-        await websocket.close(code=4401, reason="Unauthorized media stream session")
-        return
-
-    await websocket.accept()
-    orchestrator = RealtimeVoiceSessionOrchestrator(session)
-    try:
-        while True:
-            data = await websocket.receive_json()
-            if not isinstance(data, dict):
-                await websocket.send_json(
-                    {"type": "media.error", "error": "Payload must be a JSON object"}
-                )
-                continue
-            try:
-                reply = await orchestrator.handle_ws_message(
-                    call_session=row,
-                    message=data,
-                )
-                await session.commit()
-                await websocket.send_json(reply)
-                if reply.get("type") == "media.stopped":
-                    break
-            except MediaSessionError as exc:
-                await session.rollback()
-                await websocket.send_json(
-                    {
-                        "type": "media.error",
-                        "code": exc.code,
-                        "error": str(exc),
-                    }
-                )
-    except WebSocketDisconnect:
-        orchestrator_stop = {"type": "media.stop"}
-        try:
-            await orchestrator.handle_ws_message(
-                call_session=row, message=orchestrator_stop
-            )
-            await session.commit()
-        except Exception:
-            await session.rollback()
 
 
 # ---------------------------------------------------------------------------

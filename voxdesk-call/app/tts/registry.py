@@ -47,8 +47,14 @@ class TTSRegistry:
         try:
             capabilities = self.resolve(provider).capabilities
         except Exception:
+            __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
             return False
         return sample_rate in capabilities.sample_rates and encoding in capabilities.encodings
+
+    def catalog(self) -> list[dict]:
+        from app.agent.providers.registry import list_provider_catalog
+
+        return list_provider_catalog("tts")
 
 
 def build_tts_registry(configured_settings=app_settings) -> TTSRegistry:

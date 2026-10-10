@@ -19,6 +19,7 @@ from app.integrations.crm.providers import (
     GoHighLevelProvider,
     HubSpotProvider,
     JobberProvider,
+    SalesforceProvider,
     WebhookProvider,
 )
 
@@ -26,6 +27,7 @@ PROVIDERS: dict[CrmProviderType, type[CrmProvider]] = {
     CrmProviderType.GOHIGHLEVEL: GoHighLevelProvider,
     CrmProviderType.HUBSPOT: HubSpotProvider,
     CrmProviderType.JOBBER: JobberProvider,
+    CrmProviderType.SALESFORCE: SalesforceProvider,
     CrmProviderType.WEBHOOK: WebhookProvider,
 }
 

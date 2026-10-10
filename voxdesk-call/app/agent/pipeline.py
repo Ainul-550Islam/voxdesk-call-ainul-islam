@@ -1,35 +1,37 @@
 """THE CORE FILE — এখানেই সব হয়।
 
-অডিও চেইন:
-  Twilio (mu-law 8kHz)
-    -> Silero VAD          কে কখন থামল          ~ 30ms
-    -> Deepgram STT        কথা -> টেক্সট         ~150ms
-    -> Backchannel         "mm-hmm" (মানুষের মতো)
-    -> LLM  (ChatGPT / Claude / Gemini — tenant বেছে নেয়)   ~250-300ms
+অডিও চেইন (measured latency documented in `docs/LATENCY_BENCHMARK.md`):
+  Twilio / Telnyx / Plivo / SIP (mu-law / PCM 8kHz)
+    -> NoisereduceFilter   caller background denoise (2G)
+    -> Silero VAD + SmartTurn V3 (2B)
+    -> Multi-Provider STT + Failover (2C)
+    -> Backchannel & Idle Reminder (2B)
+    -> LLM (OpenAI / Anthropic / Gemini / Groq / Bedrock + Failover)
     -> FillerInjector      tool চলার সময় "let me check"
     -> TextNormalizer      "$150" -> "one hundred fifty dollars"
-    -> ElevenLabs TTS      টেক্সট -> কথা          ~ 90ms
-    -> Twilio out
-                           মোট প্রথম শব্দ: ~550-750ms
+    -> Multi-Provider TTS + Failover (2C)
+    -> SoundfileMixer      ambient background bed (2G)
+    -> Carrier Serializer out (2F)
+    -> LatencyObserver + TurnTrackingObserver  per-turn STT/LLM/TTS TTFB & E2E p50/p95/p99 (2A/2B)
 """
 from __future__ import annotations
 
 from fastapi import WebSocket
-from pipecat.audio.vad.silero import SileroVADAnalyzer
-from pipecat.audio.vad.vad_analyzer import VADParams
+from pipecat.observers.turn_tracking_observer import TurnTrackingObserver
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.runner import PipelineRunner
 from pipecat.pipeline.task import PipelineParams, PipelineTask
 from pipecat.frames.frames import InterimTranscriptionFrame, TextFrame, TranscriptionFrame
 from pipecat.processors.aggregators.openai_llm_context import OpenAILLMContext
 from pipecat.processors.frame_processor import FrameDirection, FrameProcessor
-from pipecat.serializers.twilio import TwilioFrameSerializer
 from pipecat.transports.websocket.fastapi import (
     FastAPIWebsocketParams,
     FastAPIWebsocketTransport,
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.agent.audio import build_ambient_mixer, build_denoise_filter
+from app.agent.flow_processor import build_flow_processor_for_runtime
 from app.agent.functions import TOOL_SCHEMAS, FunctionHandlers
 from app.agent.humanize import (
     Backchannel,
@@ -37,15 +39,22 @@ from app.agent.humanize import (
     TextNormalizer,
     vary_greeting,
 )
+from app.agent.idle_reminders import build_idle_reminder_processor
+from app.agent.language import resolve_language_config
+from app.agent.latency import LatencyObserver, LatencyTrackingProcessor
 from app.agent.llm_factory import governed_entry
+from app.agent.monitor_tap import MonitorTap
 from app.agent.prompts import build_system_prompt
-from app.agent.stt import build_stt
-from app.agent.tts import build_tts
+from app.agent.stt import build_stt, build_stt_for_runtime
+from app.agent.tts import build_tts, build_tts_for_runtime
+from app.agent.turn_taking import build_turn_config
 from app.agent.usage_tracker import UsageTracker
 from app.core.config import settings
-from app.core.i18n import llm_language_instruction
 from app.core.logging import log
-from app.db.models import Call, Speaker, Tenant, Turn
+from app.db.models import Call, CallStatus, Speaker, Tenant, Turn
+from app.runtime.agent_config_resolver import RuntimeConfig, resolve_runtime_config
+from app.telephony.media.serializers import build_serializer
+from app.telephony.takeover import is_takeover_pending
 
 
 #: STEP 9 (item N): ceiling on tool invocations per live call. The text path
@@ -87,6 +96,55 @@ class GovernedSpeech(FrameProcessor):
         await self.push_frame(frame, direction)
 
 
+async def handle_pipeline_disconnect(
+    call: Call,
+    task: PipelineTask | None = None,
+    session: AsyncSession | None = None,
+) -> bool:
+    """Handle client WebSocket disconnect, checking ``call.takeover_pending`` first.
+
+    Returns ``False`` when ``call.takeover_pending`` is True (so a takeover is
+    NOT finalized as a hang-up), and ``True`` when the call is finalized as a
+    normal caller disconnect.
+    """
+    from datetime import datetime, timezone
+
+    if session is not None and not is_takeover_pending(call):
+        try:
+            await session.refresh(call)
+        except Exception:
+            __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
+            pass
+
+    if is_takeover_pending(call):
+        log.info(
+            "call.disconnected_for_takeover",
+            call_sid=getattr(call, "call_sid", ""),
+            call_id=str(getattr(call, "id", "")),
+        )
+        if getattr(call, "status", None) in (CallStatus.COMPLETED, CallStatus.FAILED):
+            call.status = CallStatus.IN_PROGRESS
+        call.ended_at = None
+        if task is not None:
+            if hasattr(task, "stop_when_done"):
+                await task.stop_when_done()
+            elif hasattr(task, "cancel"):
+                await task.cancel()
+        return False
+
+    log.info("call.disconnected", call_sid=getattr(call, "call_sid", ""))
+    if getattr(call, "status", None) in (CallStatus.RINGING, CallStatus.IN_PROGRESS):
+        call.status = CallStatus.COMPLETED
+        call.ended_at = getattr(call, "ended_at", None) or datetime.now(timezone.utc)
+        if not getattr(call, "end_reason", None):
+            call.end_reason = "caller_hangup"
+        if session is not None:
+            await session.flush()
+    if task is not None and hasattr(task, "cancel"):
+        await task.cancel()
+    return True
+
+
 async def run_voice_agent(
     websocket: WebSocket,
     stream_sid: str,
@@ -94,6 +152,9 @@ async def run_voice_agent(
     session: AsyncSession,
     tenant: Tenant,
     call: Call,
+    *,
+    runtime_config: RuntimeConfig | None = None,
+    carrier_provider: str = "twilio",
 ) -> None:
     """Run the voice pipeline inside a call-scoped correlation context.
 
@@ -108,7 +169,14 @@ async def run_voice_agent(
         call_sid=call_sid, call_id=str(call.id), tenant_id=str(tenant.id)
     ):
         await _run_voice_agent(
-            websocket, stream_sid, call_sid, session, tenant, call
+            websocket,
+            stream_sid,
+            call_sid,
+            session,
+            tenant,
+            call,
+            runtime_config=runtime_config,
+            carrier_provider=carrier_provider,
         )
 
 
@@ -119,8 +187,14 @@ async def _run_voice_agent(
     session: AsyncSession,
     tenant: Tenant,
     call: Call,
+    *,
+    runtime_config: RuntimeConfig | None = None,
+    carrier_provider: str = "twilio",
 ) -> None:
     """একটা ফোন কল শুরু থেকে শেষ পর্যন্ত চালায়।"""
+
+    # ---------------------------------------------------- 2E RuntimeConfig --
+    runtime_cfg = runtime_config or await resolve_runtime_config(session, call, tenant=tenant)
 
     # ---------------------------------------------------- LLM নির্বাচন ----
     # Policy, budget, circuit, prompt and timeout run before the media path.
@@ -132,8 +206,8 @@ async def _run_voice_agent(
         session,
         tenant,
         call,
-        temperature=tenant.temperature,
-        max_tokens=110,
+        temperature=runtime_cfg.temperature,
+        max_tokens=runtime_cfg.max_tokens or 110,
     )
     choice = prepared.choice
     log.info(
@@ -147,35 +221,41 @@ async def _run_voice_agent(
         timeout_ms=prepared.timeout_ms,
         prompt_version=prepared.prompt_version,
         approval_state=prepared.approval_state,
+        agent_id=str(runtime_cfg.agent_id) if runtime_cfg.agent_id else None,
+        agent_version_id=str(runtime_cfg.agent_version_id) if runtime_cfg.agent_version_id else None,
     )
 
-    # ---------------------------------------------------------- transport --
+    # ---------------------------------------------------------- 2B/2F/2G ---
+    turn_cfg = build_turn_config(runtime_cfg)
+    serializer = build_serializer(
+        carrier_provider,
+        stream_sid=stream_sid,
+        call_sid=call_sid,
+        auto_hang_up=True,
+    )
+    denoise_filter = build_denoise_filter(runtime_cfg.denoise_enabled)
+    ambient_mixer = build_ambient_mixer(
+        runtime_cfg.ambient_sound,
+        ambient_volume=runtime_cfg.ambient_volume,
+    )
+
+    transport_kwargs = {
+        "audio_in_enabled": True,
+        "audio_out_enabled": True,
+        "add_wav_header": False,
+        "serializer": serializer,
+        "vad_analyzer": turn_cfg.vad_analyzer,
+    }
+    if turn_cfg.turn_analyzer is not None:
+        transport_kwargs["turn_analyzer"] = turn_cfg.turn_analyzer
+    if denoise_filter is not None:
+        transport_kwargs["audio_in_filter"] = denoise_filter
+    if ambient_mixer is not None:
+        transport_kwargs["audio_out_mixer"] = ambient_mixer
+
     transport = FastAPIWebsocketTransport(
         websocket=websocket,
-        params=FastAPIWebsocketParams(
-            audio_in_enabled=True,
-            audio_out_enabled=True,
-            add_wav_header=False,
-            serializer=TwilioFrameSerializer(
-                stream_sid=stream_sid,
-                call_sid=call_sid,
-                account_sid=settings.twilio_account_sid,
-                auth_token=settings.twilio_auth_token,
-            ),
-            # ==== barge-in এখানে ====
-            vad_analyzer=SileroVADAnalyzer(
-                params=VADParams(
-                    # stop_secs = সবচেয়ে গুরুত্বপূর্ণ নব
-                    #   0.30 -> খুব দ্রুত, কিন্তু কাস্টমারের কথা কেটে দেবে
-                    #   0.45 -> ভারসাম্য (ডিফল্ট)
-                    #   0.70 -> নিরাপদ, কিন্তু ধীর/মৃত মনে হবে
-                    stop_secs=tenant.vad_stop_secs,
-                    start_secs=0.15,
-                    confidence=0.7,
-                    min_volume=0.6,
-                )
-            ),
-        ),
+        params=FastAPIWebsocketParams(**transport_kwargs),
     )
 
     # ---------------------------------------------------------- services ---
@@ -183,19 +263,38 @@ async def _run_voice_agent(
     # ProviderError (configuration_error / unsupported_feature) *before* any
     # network activity, so a misconfigured deployment fails fast instead of
     # starting a call that can never work.
-    stt = build_stt(tenant)
+    if (
+        runtime_cfg.stt_provider != "deepgram"
+        or runtime_cfg.stt_fallback_providers
+        or runtime_cfg.boosted_keywords
+    ):
+        stt = build_stt_for_runtime(runtime_cfg)
+    else:
+        stt = build_stt(tenant)
 
-    # LLM service was built by voice_llm after policy admission. A missing key
-    # does not fall back to a provider the tenant policy did not allow.
-
-    # অ-ইংরেজি হলে multilingual মডেল বাধ্যতামূলক, নইলে ইংরেজি টানে পড়বে।
-    # The whole ElevenLabs mapping (model/voice resolution, voice settings,
-    # speech speed) lives in app/agent/tts.py so the provider contract is
-    # isolated from the pipeline.
-    tts = build_tts(tenant)
+    if (
+        runtime_cfg.tts_provider != "elevenlabs"
+        or runtime_cfg.tts_fallback_providers
+        or runtime_cfg.voice_settings
+    ):
+        tts = build_tts_for_runtime(runtime_cfg)
+    else:
+        tts = build_tts(tenant)
 
     # ------------------------------------------------------ tool wiring ---
-    handlers = FunctionHandlers(session=session, tenant=tenant, call=call)
+    task: PipelineTask | None = None
+
+    async def _push_frame_to_task(frame):
+        if task is not None:
+            await task.queue_frames([frame])
+
+    handlers = FunctionHandlers(
+        session=session,
+        tenant=tenant,
+        call=call,
+        runtime_config=runtime_cfg,
+        frame_pusher=_push_frame_to_task,
+    )
 
     # escalate_to_human is withheld when there is no usable destination or the
     # call cannot be transferred -- see FunctionHandlers.available_tools().
@@ -223,12 +322,16 @@ async def _run_voice_agent(
             return
         from app.ai.guardrails.tool_policy import agent_runtime_decision
 
-        verdict = agent_runtime_decision(params.function_name)
-        if not verdict.allowed:
-            await params.result_callback(
-                {"ok": False, "message": "That action is not allowed."}
-            )
-            return
+        custom_names = {t.get("name") for t in runtime_cfg.custom_tools} | {
+            t.get("qualified_name") or t.get("name") for t in runtime_cfg.mcp_tools
+        }
+        if params.function_name not in custom_names:
+            verdict = agent_runtime_decision(params.function_name)
+            if not verdict.allowed:
+                await params.result_callback(
+                    {"ok": False, "message": "That action is not allowed."}
+                )
+                return
         result = await handlers.dispatch(params.function_name, params.arguments or {})
         log.info("tool.called", name=params.function_name, ok=result.get("ok"),
                  outcome=result.get("outcome"))
@@ -248,15 +351,24 @@ async def _run_voice_agent(
         llm.register_function(schema["function"]["name"], _tool_bridge)
 
     # --------------------------------------------------------- context ----
-    greeting = vary_greeting(tenant.greeting, tenant.name, tenant.agent_name)
+    greeting = vary_greeting(
+        runtime_cfg.greeting or tenant.greeting,
+        tenant.name,
+        tenant.agent_name,
+    )
+    lang_profile = resolve_language_config(runtime_cfg.language or tenant.language)
 
     context = OpenAILLMContext(
         messages=[
             {
                 "role": "system",
                 "content": (
-                    (prepared.system_prompt or build_system_prompt(tenant, choice.provider))
-                    + llm_language_instruction(tenant.language)
+                    (
+                        runtime_cfg.system_prompt
+                        or prepared.system_prompt
+                        or build_system_prompt(tenant, choice.provider)
+                    )
+                    + lang_profile.llm_instruction
                 ),
             },
             {"role": "assistant", "content": greeting},
@@ -267,10 +379,30 @@ async def _run_voice_agent(
 
     # ------------------------------------------------- মানুষের মতো লেয়ার --
     humanizers = []
-    if tenant.humanize:
-        humanizers = [
-            Backchannel(after_seconds=3.0, cooldown=15.0),   # STT-এর পরে
-        ]
+    if tenant.humanize or runtime_cfg.backchannel_enabled:
+        humanizers.append(
+            Backchannel(
+                after_seconds=3.0,
+                cooldown=15.0,
+                enabled=runtime_cfg.backchannel_enabled,
+                frequency=runtime_cfg.backchannel_frequency,
+                words=list(runtime_cfg.backchannel_words) if runtime_cfg.backchannel_words else None,
+            )
+        )
+    idle_proc = build_idle_reminder_processor(runtime_cfg)
+    idle_frame_proc = idle_proc[0] if isinstance(idle_proc, tuple) else idle_proc
+    if idle_frame_proc is not None:
+        humanizers.append(idle_frame_proc)
+
+    # -------------------------------------------------------- 2A latency ---
+    latency_observer = LatencyObserver(
+        tenant_plan=getattr(tenant.plan, "value", str(tenant.plan)),
+        stt_provider=runtime_cfg.stt_provider,
+        llm_provider=choice.provider,
+        tts_provider=runtime_cfg.tts_provider,
+    )
+    latency_tracker = LatencyTrackingProcessor(latency_observer)
+    turn_tracking_observer = TurnTrackingObserver()
 
     # -------------------------------------------------------- pipeline ----
     # Step 7 usage trackers. Pass-through processors that tally the measured
@@ -279,6 +411,20 @@ async def _run_voice_agent(
     # frame — see app/agent/usage_tracker.py.
     stt_usage = UsageTracker(track_stt=True)
     voice_usage = UsageTracker(track_voice=True, provider=choice.provider)
+    monitor_tap = MonitorTap(
+        call_id=call.id,
+        tenant_id=tenant.id,
+        context=context,
+        frame_pusher=_push_frame_to_task,
+    )
+    flow_proc = build_flow_processor_for_runtime(
+        runtime_config=runtime_cfg,
+        handlers=handlers,
+        call=call,
+        context=context,
+        available_tools=active_tools,
+    )
+    flow_processors = [flow_proc] if flow_proc is not None else []
 
     pipeline = Pipeline(
         [
@@ -286,14 +432,18 @@ async def _run_voice_agent(
             stt,
             stt_usage,                       # measured transcription characters
             GovernedHearing(),               # input guardrail: drop a refused transcript
-            *humanizers,                     # "mm-hmm" মাঝপথে
+            monitor_tap,                     # 4: live monitor caller tap + whisper-to-AI
+            *flow_processors,                # 5: conversation flow node/edge runner
+            *humanizers,                     # "mm-hmm" মাঝপথে + idle reminders
             context_aggregator.user(),
             llm,
             FillerInjector(),                # tool চলাকালীন "let me check"
             TextNormalizer(),                # সংখ্যা/markdown ঠিক করা
             GovernedSpeech(blocked_substrings=prepared.blocked_output),
             tts,
+            monitor_tap.output_tap(),        # 4: live monitor agent PCM + transcript tap
             voice_usage,                     # measured LLM tokens + TTS characters
+            latency_tracker,                 # 2A stage TTFB + E2E turn latency
             transport.output(),
             context_aggregator.assistant(),
         ]
@@ -302,12 +452,13 @@ async def _run_voice_agent(
     task = PipelineTask(
         pipeline,
         params=PipelineParams(
-            allow_interruptions=True,        # <-- barge-in ON
+            allow_interruptions=turn_cfg.allow_interruptions,  # <-- barge-in ON
             enable_metrics=True,
             enable_usage_metrics=True,
             audio_in_sample_rate=8000,
             audio_out_sample_rate=8000,
         ),
+        observers=[latency_observer, turn_tracking_observer],
     )
 
     # ------------------------------------------------------- lifecycle ----
@@ -319,16 +470,17 @@ async def _run_voice_agent(
 
     @transport.event_handler("on_client_disconnected")
     async def _on_disconnected(_transport, _client):
-        log.info("call.disconnected", call_sid=call_sid)
-        await task.cancel()
+        await handle_pipeline_disconnect(call, task=task, session=session)
 
     async def _persist_turns() -> None:
         """
-        Flush the conversation to `turns`.
+        Flush the conversation to `turns` and persist `CallLatencyStat` (2A).
 
         SYSTEM turns written by the transfer service are never touched here --
         this only appends user/assistant utterances.
         """
+        from app.telephony.transcription import redact_turn_text
+
         for msg in context.get_messages():
             role, content = msg.get("role"), msg.get("content")
             if not content or role == "system":
@@ -336,6 +488,7 @@ async def _run_voice_agent(
             spoken = content if isinstance(content, str) else str(content)
             if role != "user":
                 spoken = guard_spoken_text(spoken, blocked_substrings=prepared.blocked_output)
+            spoken = await redact_turn_text(session, call, spoken)
             session.add(
                 Turn(
                     call_id=call.id,
@@ -344,6 +497,11 @@ async def _run_voice_agent(
                 )
             )
         call.llm_used = f"{choice.provider}/{choice.model}"
+        try:
+            await latency_observer.persist(session, call)
+        except Exception as exc:
+            log.warning("voice.latency.persist_failed", error=str(exc)[:160])
+
         # Step 7: the single-call AI-usage trace. Model string and counts are
         # log fields (correlation), never Prometheus labels — that is what
         # makes a per-call trace possible without unbounded cardinality.
@@ -366,7 +524,7 @@ async def _run_voice_agent(
                 measured_llm_tokens = usage["llm_tokens"]
                 if isinstance(measured_llm_tokens, int) and not isinstance(measured_llm_tokens, bool):
                     await on_llm_tokens(session, tenant, call_id=call.id, tokens=measured_llm_tokens, turn=0, provider=choice.provider)
-                await on_tts_characters(session, tenant, call_id=call.id, characters=int(usage["tts_chars"] or 0), turn=0, provider=settings.tts_provider)
+                await on_tts_characters(session, tenant, call_id=call.id, characters=int(usage["tts_chars"] or 0), turn=0, provider=runtime_cfg.tts_provider or settings.tts_provider)
         except Exception as exc:
             log.warning("billing.measured_usage_persist_failed", error_type=type(exc).__name__)
         measured_tokens = usage["llm_tokens"]
@@ -397,6 +555,12 @@ async def _run_voice_agent(
         # Persisting turns is best-effort cleanup. It must never mask the
         # primary outcome of the call (a provider crash, a hangup) and never
         # turn a finished call into a crash for the caller.
+        try:
+            await monitor_tap.close()
+            if not is_takeover_pending(call):
+                await monitor_tap.bus.publish_call_ended(call.id)
+        except Exception:
+            log.warning("pipeline.monitor_tap_cleanup_failed", call_sid=call_sid)
         try:
             await _persist_turns()
         except Exception:

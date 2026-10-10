@@ -1,166 +1,279 @@
 features:
 - id: 1
   name: End-to-end latency
-  status: PLANNED
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/agent/test_latency_observer.py::test_latency_observer_computes_percentiles_and_metrics
+  - tests/agent/test_latency_observer.py::test_latency_observer_on_push_frame_and_persist
 - id: 2
   name: Turn-taking & interruption controls
-  status: API_ONLY
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/agent/test_turn_taking_config.py::test_responsiveness_and_interruption_sensitivity_mapping
+  - tests/agent/test_turn_taking_config.py::test_smart_turn_holds_on_incomplete_utterance_fixtures
+  - tests/agent/test_turn_taking_config.py::test_idle_reminder_fires_max_count_then_ends_call
+  - tests/agent/test_turn_taking_config.py::test_backchannel_emits_cue_on_long_pause_when_enabled
 - id: 3
   name: LLMs and speech-to-speech
   status: API_ONLY
-  evidence_tests: []
+  evidence_tests:
+  - tests/agent/test_failover.py::test_failover_switches_after_two_failures_and_increments_metric
+  - tests/agent/test_s2s_smoke.py::test_s2s_provider_roundtrip_emits_audio_tool_call_and_latency[openai_realtime]
 - id: 4
   name: STT / TTS provider choice
-  status: API_ONLY
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/agent/test_provider_registry.py::test_missing_api_key_raises_provider_not_configured
+  - tests/agent/test_provider_registry.py::test_configured_providers_instantiate_and_format_boosted_keywords
+  - tests/agent/test_failover.py::test_failover_handles_error_frame_from_primary_tts
 - id: 5
   name: Voice cloning / voice library
-  status: PLANNED
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/agent/test_provider_registry.py::test_voice_catalog_and_elevenlabs_voice_clone_endpoint
+  - tests/test_voice_clone.py::test_clone_audio_validation_accepts_pcm_wav
+  - tests/test_voice_clone.py::test_clone_fingerprint_is_tenant_and_input_bound
 - id: 6
   name: Voice controls (speed, volume, pronunciation, boosted keywords, ambient sound,
     denoise)
-  status: API_ONLY
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/agent/test_voice_settings_mapping.py::test_map_voice_settings_across_all_tts_providers
+  - tests/agent/test_ambient_denoise_flags.py::test_ambient_mixer_loads_all_five_presets_and_mixes_audio
+  - tests/agent/test_ambient_denoise_flags.py::test_denoise_filter_toggle_and_filtering
 - id: 7
   name: Multilingual / language switching
-  status: API_ONLY
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/agent/test_voice_settings_mapping.py::test_multilingual_auto_detect_and_boosted_keywords
+  - tests/test_i18n.py::test_non_english_forces_multilingual_model
+  - tests/test_i18n.py::test_non_english_instruction_forbids_drifting_to_english
 - id: 8
   name: Visual conversation-flow builder
-  status: PLANNED
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/builder/test_flow_runner.py::test_flow_runner_transitions_equations_fake_judge_and_action_nodes
+  - tests/builder/test_flow_runner.py::test_e2e_flow_published_bound_to_number_drives_call_timeline_and_w12_bindings
+  - tests/builder/test_flow_validation.py::test_valid_flow_passes_with_zero_errors
+  - tests/agent/test_flow_processor.py::test_flow_processor_swaps_prompt_and_tools_through_fake_pipeline
 - id: 9
   name: Agent versions / publish / rollback
-  status: API_ONLY
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/integration/test_agent_version_persistence.py::TestDurableAgentVersionPersistence::test_4_5_6_publish_immutability_version_lookup_diff_and_rollback
+  - tests/integration/test_agent_version_persistence.py::TestDurableAgentVersionPersistence::test_8_cross_tenant_isolation_enforced_everywhere
 - id: 10
   name: Agent bound to phone number
-  status: PLANNED
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/telephony/test_agent_binding.py::test_patch_phone_number_binds_agents_and_routes_calls_distinctly
+  - tests/telephony/test_agent_binding.py::test_patch_phone_number_rejects_cross_tenant_agent
 - id: 11
   name: Custom functions (HTTP tools)
-  status: API_ONLY
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/agent/test_http_tools.py::test_http_tool_interpolation_secret_header_and_ssrf_guard
 - id: 12
   name: MCP tools
-  status: PLANNED
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/agent/test_http_tools.py::test_mcp_tool_schema_and_execution
 - id: 13
   name: Cold/warm transfer + AI briefing to human
-  status: API_ONLY
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/telephony/test_warm_transfer_briefing.py::test_warm_transfer_briefing_and_conference_bridge_flow
+  - tests/telephony/test_warm_transfer_briefing.py::test_warm_transfer_abort_returns_caller_to_ai
+  - tests/test_transfer_control_hardening.py::test_transfer_request_accepts_only_valid_e164_destinations
 - id: 14
   name: Agent-to-agent transfer
-  status: API_ONLY
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/telephony/test_warm_transfer_briefing.py::test_warm_transfer_briefing_and_conference_bridge_flow
+  - tests/test_transfer_control_hardening.py::test_whisper_sanitizer_removes_credential_assignments_and_phone_digits
 - id: 15
   name: IVR navigation (press digits on external phone trees)
-  status: PLANNED
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/agent/test_ivr_navigation.py::test_two_level_ivr_navigation_reaches_billing_extension
+  - tests/agent/test_ivr_navigation.py::test_ivr_navigation_detects_human_pickup_and_falls_back
 - id: 16
   name: DTMF
-  status: API_ONLY
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/agent/test_tools_dtmf_end_call.py::test_send_dtmf_emits_keypad_frames_and_rejects_invalid_digits
+  - tests/agent/test_tools_dtmf_end_call.py::test_send_dtmf_urgent_and_dual_tone_pcm_and_tool_ceiling
+  - tests/agent/test_tools_dtmf_end_call.py::test_end_call_emits_farewell_and_end_frames_and_calls_provider
 - id: 17
   name: Voicemail detection + message
-  status: API_ONLY
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/agent/test_voicemail_flow.py::test_voicemail_hangup_action
+  - tests/agent/test_voicemail_flow.py::test_voicemail_leave_message_action
+  - tests/agent/test_voicemail_flow.py::test_voicemail_ignore_action
 - id: 18
   name: 'Numbers: buy / import / SIP trunk'
-  status: API_ONLY
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/telephony/test_number_provisioning.py::test_purchase_requires_billing_and_then_assigns_once
+  - tests/telephony/test_number_provisioning.py::test_cross_tenant_assign_and_release_are_not_found
+  - tests/telephony/test_sip_connection.py::test_sip_digest_auth_and_cidr_ip_acl
+  - tests/telephony/test_sip_connection.py::test_sip_connection_lifecycle_and_inbound_invite_routing
 - id: 19
   name: Multi-carrier live media
-  status: API_ONLY
-  evidence_tests: []
+  status: NOT_CONFIGURED
+  evidence_tests:
+  - tests/telephony/test_telnyx_media_path.py::test_multi_carrier_serializers_twilio_telnyx_plivo_sip_and_vonage_honesty
+  - tests/telephony/test_telnyx_media_path.py::test_telnyx_inbound_voice_webhook_binds_agent_and_returns_stream
 - id: 20
   name: Branded caller ID / verified numbers
-  status: PLANNED
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/telephony/test_number_trust.py::test_unconfigured_provider_returns_unverified_and_refresh_returns_501_not_configured
+  - tests/telephony/test_number_trust.py::test_twilio_trust_hub_refresh_persists_carrier_response_and_audit_log
 - id: 21
   name: Batch calls / power dialer
-  status: API_ONLY
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/campaign/test_batch_dialing.py::test_batch_call_creates_campaign_leads_and_dials_real_calls
+  - tests/campaign/test_concurrency.py::test_concurrent_dial_claims_the_lead_exactly_once
+  - tests/campaign/test_dnc_enforcement.py::test_dnc_entry_normalizes_phone_on_insert_and_blocks_all_paths
 - id: 22
   name: Web calls, widget, web SDK
-  status: PLANNED
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/telephony/test_web_call_flow.py::test_web_call_create_ws_protobuf_roundtrip_and_usage_persistence
+  - tests/telephony/test_web_call_flow.py::test_widget_embed_js_and_python_sdk_helpers
+  - tests/telephony/test_web_call_security.py::test_origin_mismatch_rejected_on_public_web_call_and_websocket
+  - tests/telephony/test_web_call_security.py::test_single_use_jwt_cannot_be_replayed
 - id: 23
   name: Chat / SMS agents
-  status: PLANNED
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/messaging/test_sms_flow.py::test_inbound_sms_routes_to_chat_agent_and_returns_twiml_reply
+  - tests/messaging/test_sms_flow.py::test_inbound_sms_stop_keyword_adds_dnc_and_blocks_outbound
+  - tests/e2e/test_chat_sms_flow.py::test_persisted_chat_message_memory_and_sms_provider_fail_closed
 - id: 24
   name: Knowledge base (RAG)
-  status: API_ONLY
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/test_knowledge_pipeline.py::test_the_agent_answers_from_an_uploaded_document
+  - tests/test_knowledge_pipeline.py::test_the_agent_cannot_answer_from_another_tenants_documents
+  - tests/test_knowledge_retrieval.py::test_the_relevant_chunk_is_returned
 - id: 25
   name: Webhooks (call started/ended/analyzed)
-  status: API_ONLY
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/webhooks/test_webhook_lifecycle_real.py::test_callback_delivers_signed_bytes_to_local_receiver
+  - tests/webhooks/test_webhook_lifecycle_real.py::test_http_failures_retry_then_exhaust_to_dlq
+  - tests/webhooks/test_call_event_bridge.py::test_transition_and_replay_publish_one_fact
 - id: 26
   name: Post-call analysis (summary, sentiment, custom fields)
-  status: PLANNED
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/telephony/test_post_call_pipeline.py::test_terminal_transition_enqueues_once_in_same_transaction
+  - tests/telephony/test_post_call_pipeline.py::test_real_worker_governed_http_persists_output_and_usage
+  - tests/telephony/test_custom_analysis.py::test_api_versions_and_tenant_isolation
 - id: 27
   name: Automated QA on all calls
-  status: API_ONLY
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/qa/test_post_call_runtime.py::test_terminal_pipeline_admits_once_then_http_worker_suggests_only
+  - tests/qa/test_post_call_runtime.py::test_api_rules_scope_rbac_and_durable_receipt
+  - tests/qa/test_auto_review.py::test_enqueue_is_idempotent_and_a_missing_executor_is_not_a_score
 - id: 28
   name: Simulation testing & regression from production calls
-  status: API_ONLY
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/services/test_simulation_caller.py::test_simulated_caller_run_judges_goal_and_criteria
+  - tests/services/test_regression_from_calls.py::test_create_regression_test_from_real_call_redacts_pii_and_marks_needs_review
 - id: 29
   name: A/B test agent versions
-  status: API_ONLY
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/telephony/test_experiment_assignment.py::test_deterministic_hash_assignment_and_distribution
+  - tests/telephony/test_experiment_assignment.py::test_runtime_call_setup_persists_experiment_and_variant_and_results_compute_stats
+  - tests/test_ab_testing_routes.py::test_experiment_create_list_and_read_use_persisted_tenant_scope
 - id: 30
   name: Analytics & custom dashboards
-  status: API_ONLY
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/services/test_custom_dashboards.py::test_analytics_aggregation_correctness_and_group_by_dimensions
+  - tests/services/test_custom_dashboards.py::test_custom_dashboards_tenant_scoping_limits_share_and_csv
 - id: 31
   name: Live call monitoring / takeover
-  status: API_ONLY
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/telephony/test_takeover.py::test_takeover_sends_twiml_replacement_to_provider_fake
+  - tests/telephony/test_monitor_bus.py::test_monitor_tap_zero_overhead_when_inactive_and_injects_guidance
+  - tests/api/test_live_monitoring_authz.py::test_live_monitoring_rbac_enforces_calls_monitor_and_audits_denial
+  - tests/api/test_live_monitoring_authz.py::test_live_monitoring_tenant_isolation
 - id: 32
   name: AI copilot (Conductor)
-  status: PLANNED
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/e2e/test_conductor_flow.py::test_conductor_full_workflow_partial_approve_simulate_and_immutable_apply
+  - tests/services/test_regression_from_calls.py::test_conductor_rejects_fabricated_call_evidence_and_applies_real_evidence_to_draft
 - id: 33
   name: CRM (Salesforce/HubSpot)
-  status: API_ONLY
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/integrations/test_salesforce_provider.py::test_oauth_pkce_and_code_exchange
+  - tests/integrations/test_salesforce_provider.py::test_contact_upsert_and_call_task_logging_and_case_and_opportunity
+  - tests/integrations/test_salesforce_provider.py::test_salesforce_and_crm_writeback_routes_persist_real_external_id
+  - tests/integrations/test_crm_live_matrix.py::test_crm_provider_capability_matrix_complete
 - id: 34
   name: Calendar booking
-  status: API_ONLY
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/test_calendar_booking.py::TestBooking::test_a_successful_booking_writes_exact_state
+  - tests/test_calendar_booking.py::TestReschedule::test_a_successful_reschedule_moves_everything
+  - tests/test_calendar_booking.py::TestCancel::test_a_successful_cancellation_records_everything
 - id: 35
   name: HIPAA / SOC 2 Type II / GDPR / ISO 27001
   status: PLANNED
-  evidence_tests: []
+  evidence_tests:
+  - tests/compliance/test_retention_enforcement.py::test_per_agent_and_tenant_default_retention_and_legal_hold
+  - tests/compliance/test_pii_redaction_pipeline.py::test_turn_persistence_llm_input_and_webhook_payload_redact_pii
+  - tests/compliance/test_recording_consent_flow.py::test_two_party_and_explicit_consent_gate_recording_and_prepend_disclosure
 - id: 36
   name: SSO / SCIM / RBAC / PII redaction
-  status: API_ONLY
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/security/test_sso_oidc_keycloak.py::test_keycloak_oidc_login_jit_provisioning_role_mapping_and_logout
+  - tests/security/test_sso_saml_keycloak.py::test_keycloak_saml_login_jit_provisioning_and_role_mapping
+  - tests/security/test_scim_conformance.py::test_scim_conformance_users_create_patch_deactivate_filters_and_pagination
+  - tests/compliance/test_pii_redaction_pipeline.py::test_guardrails_pii_delegates_to_gdpr_redact_with_luhn_and_ssn
 - id: 37
   name: SDKs
-  status: PLANNED
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/telephony/test_web_call_flow.py::test_widget_embed_js_and_python_sdk_helpers
 - id: 38
   name: Automation connectors
-  status: PLANNED
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/operations/test_automation_durability.py::test_staging_automation_cannot_target_production
+  - tests/operations/test_automation_durability.py::test_other_tenant_automation_is_not_found
+  - tests/operations/test_automation_durability.py::test_action_receipt_is_unique
 - id: 39
   name: Scale & reliability evidence
-  status: PLANNED
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/resilience/test_chaos_calls.py::test_concurrent_voice_calls_survive_provider_faults_and_fall_back
+  - tests/resilience/test_chaos_calls.py::test_database_and_redis_faults_during_active_calls_and_readiness_probes
+  - tests/resilience/test_chaos_calls.py::test_graceful_drain_finishes_in_flight_calls_while_rejecting_new_calls
+  - tests/resilience/test_idempotency.py::test_receipt_rejects_in_progress_retry_and_replays_success
 - id: 40
   name: Billing & metering
-  status: API_ONLY
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/test_billing_metering.py::TestUsageRecording::test_a_usage_event_is_written
+  - tests/test_billing_metering.py::TestIdempotency::test_the_same_key_twice_records_once
+  - tests/test_billing_metering.py::TestOverage::test_one_second_over_bills_one_minute
 - id: 41
   name: Contact memory & dynamic variables
-  status: API_ONLY
-  evidence_tests: []
+  status: LIVE
+  evidence_tests:
+  - tests/integration/test_chat_contact_memory_persistence.py::test_contact_and_contact_memory_lifecycle_and_credential_refusal
+  - tests/integration/test_chat_contact_memory_persistence.py::test_durable_chat_session_messages_and_cross_tenant_isolation

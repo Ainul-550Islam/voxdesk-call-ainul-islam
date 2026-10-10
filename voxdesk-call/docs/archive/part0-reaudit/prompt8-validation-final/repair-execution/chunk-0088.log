@@ -1,0 +1,45 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_transfer_pipeline.py::test_handler_method_exists_for_every_declared_tool tests/test_transfer_pipeline.py::test_escalation_tool_offered_when_a_destination_exists tests/test_transfer_pipeline.py::test_escalation_tool_withheld_without_a_destination tests/test_transfer_pipeline.py::test_escalation_tool_withheld_once_a_transfer_is_in_flight tests/test_transfer_pipeline.py::test_escalation_tool_withheld_on_a_finished_call
+.....                                                                    [100%]
+=============================== warnings summary ===============================
+tests/test_transfer_pipeline.py::test_escalation_tool_offered_when_a_destination_exists
+tests/test_transfer_pipeline.py::test_escalation_tool_withheld_without_a_destination
+tests/test_transfer_pipeline.py::test_escalation_tool_withheld_once_a_transfer_is_in_flight
+tests/test_transfer_pipeline.py::test_escalation_tool_withheld_on_a_finished_call
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_transfer_pipeline.py::test_escalation_tool_offered_when_a_destination_exists
+tests/test_transfer_pipeline.py::test_escalation_tool_withheld_without_a_destination
+tests/test_transfer_pipeline.py::test_escalation_tool_withheld_once_a_transfer_is_in_flight
+tests/test_transfer_pipeline.py::test_escalation_tool_withheld_once_a_transfer_is_in_flight
+tests/test_transfer_pipeline.py::test_escalation_tool_withheld_once_a_transfer_is_in_flight
+tests/test_transfer_pipeline.py::test_escalation_tool_withheld_on_a_finished_call
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/test_transfer_pipeline.py::test_escalation_tool_offered_when_a_destination_exists
+tests/test_transfer_pipeline.py::test_escalation_tool_withheld_without_a_destination
+tests/test_transfer_pipeline.py::test_escalation_tool_withheld_once_a_transfer_is_in_flight
+tests/test_transfer_pipeline.py::test_escalation_tool_withheld_on_a_finished_call
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_transfer_pipeline.py::test_escalation_tool_offered_when_a_destination_exists
+tests/test_transfer_pipeline.py::test_escalation_tool_withheld_without_a_destination
+tests/test_transfer_pipeline.py::test_escalation_tool_withheld_once_a_transfer_is_in_flight
+tests/test_transfer_pipeline.py::test_escalation_tool_withheld_on_a_finished_call
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/test_transfer.py:43: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    started_at=datetime.utcnow(),
+
+tests/test_transfer_pipeline.py::test_escalation_tool_withheld_once_a_transfer_is_in_flight
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/transfer_service.py:288: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_transfer_pipeline.py::test_escalation_tool_withheld_once_a_transfer_is_in_flight
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/transfer_service.py:340: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call.transfer_started_at = datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+5 passed, 20 warnings in 3.00s
+
+STDERR:

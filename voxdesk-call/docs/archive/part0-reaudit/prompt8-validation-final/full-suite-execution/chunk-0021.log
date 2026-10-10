@@ -1,0 +1,114 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/qa/test_isolation.py::test_revoked_environment_membership_cannot_assign tests/qa/test_sampling.py::test_percentage_and_count_are_stable_and_idempotent tests/qa/test_sampling.py::test_targeted_rules_use_stored_facts_not_guesses tests/qa/test_sampling.py::test_foreign_call_is_not_found tests/qa/test_scoring.py::test_same_inputs_always_produce_the_same_integers tests/qa/test_scoring.py::test_na_is_excluded_and_a_missing_required_item_fails tests/qa/test_scoring.py::test_non_integer_score_is_rejected tests/qa/test_scoring.py::test_human_override_keeps_the_ai_value_and_records_the_actor tests/qa/test_sentiment.py::test_labels_confidence_and_duplicate_scope tests/qa/test_sentiment.py::test_turn_majority_beats_a_stored_conversation_label tests/qa/test_sentiment.py::test_unknown_when_nothing_is_stored_and_foreign_call_is_missing tests/resilience/test_idempotency.py::test_receipt_rejects_in_progress_retry_and_replays_success tests/resilience/test_idempotency.py::test_reusing_key_with_different_request_is_a_conflict tests/resilience/test_idempotency.py::test_receipts_are_scoped_to_tenant_environment_and_operation tests/resilience/test_idempotency.py::test_environment_scope_must_belong_to_tenant tests/resilience/test_idempotency.py::test_only_a_key_digest_is_stored tests/review/test_review_service.py::test_create_filter_assign_start_approve_and_audit_evidence tests/review/test_review_service.py::test_reject_request_changes_cancel_expire_and_stale_transition tests/review/test_review_service.py::test_tenant_and_environment_boundaries_and_self_review_policy tests/review/test_review_service.py::test_review_routes_use_existing_auth_and_permission_dependencies tests/roi/test_roi_service.py::test_baseline_outcome_result_persistence_missing_costs_and_scope tests/roi/test_roi_service.py::test_kpi_definition_and_measurement_are_data_quality_gated tests/roi/test_roi_service.py::test_cost_capacity_and_kpi_pure_deterministic_unavailable_behavior tests/security/test_audit_redaction.py::test_token_lifetime_metadata_remains_auditable_but_token_values_are_redacted tests/security/test_audit_redaction.py::test_token_digest_and_credential_fields_stay_sensitive tests/security/test_authorization_matrix.py::test_the_default_policy_changes_nothing_for_an_existing_tenant tests/security/test_authorization_matrix.py::test_a_policy_that_requires_mfa_demands_it_for_everyone_including_owners tests/security/test_authorization_matrix.py::test_admin_only_mfa_does_not_touch_agents tests/security/test_authorization_matrix.py::test_a_per_user_value_wins_in_both_directions tests/security/test_authorization_matrix.py::test_a_tenant_that_requires_sso_refuses_password_logins tests/security/test_authorization_matrix.py::test_a_verified_domain_can_require_sso_and_an_unverified_one_cannot tests/security/test_authorization_matrix.py::test_an_address_outside_the_allowed_domains_is_refused tests/security/test_authorization_matrix.py::test_privileged_actions_need_fresh_proof tests/security/test_authorization_matrix.py::test_a_tenant_that_requires_no_reauth_is_not_slowed_down tests/security/test_authorization_matrix.py::test_a_machine_credential_is_never_privileged_enough_for_identity_settings tests/security/test_authorization_matrix.py::test_scope_grants_never_exceed_the_creator tests/security/test_authorization_matrix.py::test_an_unknown_scope_is_refused_rather_than_ignored tests/security/test_authorization_matrix.py::test_api_credentials_can_be_switched_off_per_tenant tests/security/test_authorization_matrix.py::test_a_disabled_sso_connection_cannot_be_used_even_when_the_tenant_allows_sso tests/security/test_authorization_matrix.py::test_jit_requires_both_the_tenant_and_the_connection_to_allow_it tests/security/test_authorization_matrix.py::test_an_anonymous_caller_gets_401_not_403[/api/identity/policy] tests/security/test_authorization_matrix.py::test_an_anonymous_caller_gets_401_not_403[/api/identity/events] tests/security/test_authorization_matrix.py::test_an_anonymous_caller_gets_401_not_403[/api/api-keys] tests/security/test_authorization_matrix.py::test_an_anonymous_caller_gets_401_not_403[/api/service-accounts] tests/security/test_authorization_matrix.py::test_an_anonymous_caller_gets_401_not_403[/api/domains] tests/security/test_authorization_matrix.py::test_an_anonymous_caller_gets_401_not_403[/api/sso/connections] tests/security/test_authorization_matrix.py::test_an_anonymous_caller_gets_401_not_403[/api/sso/attempts] tests/security/test_authorization_matrix.py::test_an_anonymous_caller_gets_401_not_403[/api/scim/credentials] tests/security/test_authorization_matrix.py::test_an_anonymous_caller_gets_401_not_403[/api/identity/status] tests/security/test_authorization_matrix.py::test_an_anonymous_caller_gets_401_not_403[/api/mfa/status]
+..................................................                       [100%]
+=============================== warnings summary ===============================
+tests/qa/test_isolation.py: 1 warning
+tests/qa/test_sampling.py: 4 warnings
+tests/qa/test_scoring.py: 1 warning
+tests/qa/test_sentiment.py: 4 warnings
+tests/resilience/test_idempotency.py: 7 warnings
+tests/review/test_review_service.py: 5 warnings
+tests/roi/test_roi_service.py: 3 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/qa/test_isolation.py: 7 warnings
+tests/qa/test_sampling.py: 6 warnings
+tests/qa/test_scoring.py: 3 warnings
+tests/qa/test_sentiment.py: 7 warnings
+tests/resilience/test_idempotency.py: 16 warnings
+tests/review/test_review_service.py: 33 warnings
+tests/roi/test_roi_service.py: 9 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/qa/test_isolation.py: 1 warning
+tests/qa/test_sampling.py: 4 warnings
+tests/qa/test_scoring.py: 1 warning
+tests/qa/test_sentiment.py: 4 warnings
+tests/resilience/test_idempotency.py: 7 warnings
+tests/review/test_review_service.py: 5 warnings
+tests/roi/test_roi_service.py: 3 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/qa/test_isolation.py: 2 warnings
+tests/qa/test_sampling.py: 1 warning
+tests/qa/test_scoring.py: 1 warning
+tests/review/test_review_service.py: 11 warnings
+tests/roi/test_roi_service.py: 3 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/review/test_review_service.py::test_review_routes_use_existing_auth_and_permission_dependencies
+tests/review/test_review_service.py::test_review_routes_use_existing_auth_and_permission_dependencies
+tests/review/test_review_service.py::test_review_routes_use_existing_auth_and_permission_dependencies
+tests/review/test_review_service.py::test_review_routes_use_existing_auth_and_permission_dependencies
+tests/review/test_review_service.py::test_review_routes_use_existing_auth_and_permission_dependencies
+tests/review/test_review_service.py::test_review_routes_use_existing_auth_and_permission_dependencies
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/security/test_authorization_matrix.py::test_the_default_policy_changes_nothing_for_an_existing_tenant
+  tests/security/test_authorization_matrix.py:92: PytestWarning: The test <Function test_the_default_policy_changes_nothing_for_an_existing_tenant> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    @pytest.mark.unit
+
+tests/security/test_authorization_matrix.py::test_a_policy_that_requires_mfa_demands_it_for_everyone_including_owners
+  tests/security/test_authorization_matrix.py:104: PytestWarning: The test <Function test_a_policy_that_requires_mfa_demands_it_for_everyone_including_owners> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    @pytest.mark.unit
+
+tests/security/test_authorization_matrix.py::test_admin_only_mfa_does_not_touch_agents
+  tests/security/test_authorization_matrix.py:115: PytestWarning: The test <Function test_admin_only_mfa_does_not_touch_agents> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    @pytest.mark.unit
+
+tests/security/test_authorization_matrix.py::test_a_per_user_value_wins_in_both_directions
+  tests/security/test_authorization_matrix.py:124: PytestWarning: The test <Function test_a_per_user_value_wins_in_both_directions> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    @pytest.mark.unit
+
+tests/security/test_authorization_matrix.py::test_a_tenant_that_requires_sso_refuses_password_logins
+  tests/security/test_authorization_matrix.py:142: PytestWarning: The test <Function test_a_tenant_that_requires_sso_refuses_password_logins> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    @pytest.mark.unit
+
+tests/security/test_authorization_matrix.py::test_a_verified_domain_can_require_sso_and_an_unverified_one_cannot
+  tests/security/test_authorization_matrix.py:153: PytestWarning: The test <Function test_a_verified_domain_can_require_sso_and_an_unverified_one_cannot> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    @pytest.mark.unit
+
+tests/security/test_authorization_matrix.py::test_an_address_outside_the_allowed_domains_is_refused
+  tests/security/test_authorization_matrix.py:173: PytestWarning: The test <Function test_an_address_outside_the_allowed_domains_is_refused> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    @pytest.mark.unit
+
+tests/security/test_authorization_matrix.py::test_privileged_actions_need_fresh_proof
+  tests/security/test_authorization_matrix.py:182: PytestWarning: The test <Function test_privileged_actions_need_fresh_proof> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    @pytest.mark.unit
+
+tests/security/test_authorization_matrix.py::test_a_tenant_that_requires_no_reauth_is_not_slowed_down
+  tests/security/test_authorization_matrix.py:220: PytestWarning: The test <Function test_a_tenant_that_requires_no_reauth_is_not_slowed_down> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    @pytest.mark.unit
+
+tests/security/test_authorization_matrix.py::test_a_machine_credential_is_never_privileged_enough_for_identity_settings
+  tests/security/test_authorization_matrix.py:227: PytestWarning: The test <Function test_a_machine_credential_is_never_privileged_enough_for_identity_settings> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    @pytest.mark.unit
+
+tests/security/test_authorization_matrix.py::test_scope_grants_never_exceed_the_creator
+  tests/security/test_authorization_matrix.py:236: PytestWarning: The test <Function test_scope_grants_never_exceed_the_creator> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    @pytest.mark.unit
+
+tests/security/test_authorization_matrix.py::test_an_unknown_scope_is_refused_rather_than_ignored
+  tests/security/test_authorization_matrix.py:256: PytestWarning: The test <Function test_an_unknown_scope_is_refused_rather_than_ignored> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    @pytest.mark.unit
+
+tests/security/test_authorization_matrix.py::test_api_credentials_can_be_switched_off_per_tenant
+  tests/security/test_authorization_matrix.py:267: PytestWarning: The test <Function test_api_credentials_can_be_switched_off_per_tenant> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    @pytest.mark.unit
+
+tests/security/test_authorization_matrix.py::test_a_disabled_sso_connection_cannot_be_used_even_when_the_tenant_allows_sso
+  tests/security/test_authorization_matrix.py:278: PytestWarning: The test <Function test_a_disabled_sso_connection_cannot_be_used_even_when_the_tenant_allows_sso> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    @pytest.mark.unit
+
+tests/security/test_authorization_matrix.py::test_jit_requires_both_the_tenant_and_the_connection_to_allow_it
+  tests/security/test_authorization_matrix.py:286: PytestWarning: The test <Function test_jit_requires_both_the_tenant_and_the_connection_to_allow_it> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    @pytest.mark.unit
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+50 passed, 170 warnings in 63.63s (0:01:03)
+
+STDERR:

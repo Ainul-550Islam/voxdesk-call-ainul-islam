@@ -1,0 +1,5 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_calendar_contract.py::test_raised_errors_do_not_expose_configured_credentials[microsoft] tests/test_calendar_contract.py::test_raised_errors_do_not_expose_configured_credentials[calcom] tests/test_calendar_contract.py::test_raised_errors_do_not_expose_configured_credentials[internal] tests/test_calendar_contract.py::test_a_401_body_is_never_included_in_the_message[google] tests/test_calendar_contract.py::test_a_401_body_is_never_included_in_the_message[google_service_account]
+.....                                                                    [100%]
+5 passed in 0.15s
+
+STDERR:

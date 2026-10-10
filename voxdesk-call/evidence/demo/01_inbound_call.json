@@ -1,0 +1,38 @@
+{
+  "recording_id": "demo-01-inbound-call",
+  "feature_matrix_ids": [
+    1,
+    2,
+    4,
+    6,
+    10
+  ],
+  "captured_at_utc": "2026-10-08T18:04:35.448063+00:00",
+  "endpoint": "/telephony/ws",
+  "audio_artifact": "evidence/demo/01_inbound_call_audio.wav",
+  "audio_sha256": "ba52bc5877b45f8446a6a9f8d689a1a55db503c441f5f4768f3c17cbcfe1e3bc",
+  "execution_result": {
+    "call_id": "d590bde0-ae67-4c18-a2ec-8d769a198f05",
+    "call_sid": "CAd590bde0ae674c18a2ec8d769a198f",
+    "stream_sid": "MZd590bde0ae674c18a2ec8d769a198f",
+    "provider_fakes": true,
+    "fallback_events": [],
+    "turns": 3,
+    "inbound_frames": 12,
+    "outbound_frames": 3,
+    "filtered_audio_bytes": 3840,
+    "stt_ttfb_p50_ms": 68.625,
+    "stt_ttfb_p95_ms": 74.54,
+    "llm_ttfb_p50_ms": 122.347,
+    "llm_ttfb_p95_ms": 151.576,
+    "tts_ttfb_p50_ms": 72.658,
+    "tts_ttfb_p95_ms": 79.537,
+    "e2e_p50_ms": 270.201,
+    "e2e_p95_ms": 290.655,
+    "e2e_p99_ms": 292.473,
+    "e2e_max_ms": 292.928,
+    "wall_ms": 226.63,
+    "ws_accepted": true,
+    "outbound_ws_messages": 3
+  }
+}

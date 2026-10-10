@@ -63,5 +63,13 @@ node_modules/
 var/
 *.log
 *.patch
-*REPORT*.md
-*AUDIT*.md
+!docs/archive/**
+!reports/**
+reports/check/*.json
+reports/check/*.csv
+reports/check/*.log
+reports/check/*.txt
+reports/check/chunks/*.xml
+reports/check/junit/
+!reports/check/.gitkeep
+!reports/check/*.md

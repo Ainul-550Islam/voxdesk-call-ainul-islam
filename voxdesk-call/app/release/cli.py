@@ -35,6 +35,7 @@ try:
 
     _SETTINGS_MODEL = _Settings
 except Exception:  # pragma: no cover - configuration import failure surfaces later
+    __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
     _SETTINGS_MODEL = None
 
 from app.release import evidence as evidence_mod

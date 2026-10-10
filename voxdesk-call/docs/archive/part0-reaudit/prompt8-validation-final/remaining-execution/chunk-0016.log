@@ -1,0 +1,75 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_enterprise_persistence.py::TestNotificationsSurviveRestart::test_render_still_uses_the_single_brace_syntax_after_a_restart tests/test_enterprise_persistence.py::TestInboxSurvivesRestart::test_overlay_state_outlives_the_process tests/test_enterprise_persistence.py::TestInboxSurvivesRestart::test_messages_are_still_ordered_and_notes_still_internal tests/test_enterprise_persistence.py::TestInboxSurvivesRestart::test_escalation_and_reopen_still_follow_the_transition_table tests/test_enterprise_persistence.py::TestHydrationIsTenantScoped::test_one_tenants_rows_never_appear_in_anothers_view tests/test_enterprise_persistence.py::TestTenantScope::test_the_scope_clears_the_registry_when_the_handler_raises tests/test_enterprise_persistence.py::TestTenantScope::test_unknown_events_are_still_refused_by_the_domain tests/test_enum_consistency.py::test_call_status_has_exactly_the_expected_members tests/test_enum_consistency.py::test_speaker_has_exactly_the_expected_members tests/test_enum_consistency.py::test_no_answer_exists_on_the_python_enum tests/test_enum_consistency.py::test_transferred_was_not_removed tests/test_enum_consistency.py::test_speaker_has_no_legacy_aliases_left tests/test_enum_consistency.py::test_enum_names_are_unique_and_have_no_duplicate_values tests/test_enum_consistency.py::test_migration_declares_the_same_call_status_values tests/test_enum_consistency.py::test_migration_declares_the_same_speaker_values tests/test_enum_consistency.py::test_baseline_speaker_type_already_matches_python tests/test_enum_consistency.py::test_migration_adds_every_value_the_baseline_was_missing tests/test_enum_consistency.py::test_legacy_speaker_map_only_targets_valid_members tests/test_enum_consistency.py::test_migration_chain_is_linked_to_the_baseline tests/test_enum_consistency.py::test_no_answer_can_be_stored_and_retrieved tests/test_enum_consistency.py::test_every_call_status_round_trips[ringing] tests/test_enum_consistency.py::test_every_call_status_round_trips[in_progress] tests/test_enum_consistency.py::test_every_call_status_round_trips[completed] tests/test_enum_consistency.py::test_every_call_status_round_trips[failed] tests/test_enum_consistency.py::test_every_call_status_round_trips[no_answer] tests/test_enum_consistency.py::test_every_call_status_round_trips[transferred] tests/test_enum_consistency.py::test_every_call_status_round_trips[cancelled] tests/test_enum_consistency.py::test_every_speaker_round_trips[user] tests/test_enum_consistency.py::test_every_speaker_round_trips[assistant] tests/test_enum_consistency.py::test_every_speaker_round_trips[system]
+.......F.....F................                                           [100%]
+=================================== FAILURES ===================================
+______________ test_call_status_has_exactly_the_expected_members _______________
+
+    def test_call_status_has_exactly_the_expected_members():
+>       assert {e.name for e in CallStatus} == EXPECTED_CALL_STATUS
+E       AssertionError: assert {'CANCELLED',...RINGING', ...} == {'COMPLETED',...'TRANSFERRED'}
+E         
+E         Extra items in the left set:
+E         'CANCELLED'
+E         Use -v to get more diff
+
+tests/test_enum_consistency.py:79: AssertionError
+_____________ test_migration_declares_the_same_call_status_values ______________
+
+    def test_migration_declares_the_same_call_status_values():
+        declared = _string_literals_in_assignment(ENUM_FIX, "CALL_STATUS_VALUES")
+>       assert declared == {e.name for e in CallStatus}
+E       AssertionError: assert {'COMPLETED',...'TRANSFERRED'} == {'CANCELLED',...RINGING', ...}
+E         
+E         Extra items in the right set:
+E         'CANCELLED'
+E         Use -v to get more diff
+
+tests/test_enum_consistency.py:116: AssertionError
+=============================== warnings summary ===============================
+tests/test_enterprise_persistence.py::TestNotificationsSurviveRestart::test_render_still_uses_the_single_brace_syntax_after_a_restart
+tests/test_enterprise_persistence.py::TestNotificationsSurviveRestart::test_render_still_uses_the_single_brace_syntax_after_a_restart
+tests/test_enterprise_persistence.py::TestNotificationsSurviveRestart::test_render_still_uses_the_single_brace_syntax_after_a_restart
+tests/test_enterprise_persistence.py::TestNotificationsSurviveRestart::test_render_still_uses_the_single_brace_syntax_after_a_restart
+tests/test_enterprise_persistence.py::TestNotificationsSurviveRestart::test_render_still_uses_the_single_brace_syntax_after_a_restart
+tests/test_enterprise_persistence.py::TestNotificationsSurviveRestart::test_render_still_uses_the_single_brace_syntax_after_a_restart
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/test_enterprise_persistence.py: 6 warnings
+tests/test_enum_consistency.py: 11 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_enterprise_persistence.py: 59 warnings
+tests/test_enum_consistency.py: 25 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/test_enterprise_persistence.py: 6 warnings
+tests/test_enum_consistency.py: 11 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_enterprise_persistence.py::TestNotificationsSurviveRestart::test_render_still_uses_the_single_brace_syntax_after_a_restart
+tests/test_enterprise_persistence.py::TestInboxSurvivesRestart::test_overlay_state_outlives_the_process
+tests/test_enterprise_persistence.py::TestInboxSurvivesRestart::test_overlay_state_outlives_the_process
+tests/test_enterprise_persistence.py::TestInboxSurvivesRestart::test_messages_are_still_ordered_and_notes_still_internal
+tests/test_enterprise_persistence.py::TestInboxSurvivesRestart::test_escalation_and_reopen_still_follow_the_transition_table
+tests/test_enterprise_persistence.py::TestHydrationIsTenantScoped::test_one_tenants_rows_never_appear_in_anothers_view
+tests/test_enterprise_persistence.py::TestHydrationIsTenantScoped::test_one_tenants_rows_never_appear_in_anothers_view
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_enterprise_persistence.py::TestInboxSurvivesRestart::test_overlay_state_outlives_the_process
+tests/test_enterprise_persistence.py::TestInboxSurvivesRestart::test_messages_are_still_ordered_and_notes_still_internal
+tests/test_enterprise_persistence.py::TestInboxSurvivesRestart::test_escalation_and_reopen_still_follow_the_transition_table
+tests/test_enterprise_persistence.py::TestHydrationIsTenantScoped::test_one_tenants_rows_never_appear_in_anothers_view
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/inbox_service.py:126: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call_sid=f"inbox-{int(datetime.utcnow().timestamp()*1000)}",
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_enum_consistency.py::test_call_status_has_exactly_the_expected_members
+FAILED tests/test_enum_consistency.py::test_migration_declares_the_same_call_status_values
+2 failed, 28 passed, 135 warnings in 66.27s (0:01:06)
+
+STDERR:

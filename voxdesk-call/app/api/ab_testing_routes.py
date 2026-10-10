@@ -1,10 +1,10 @@
-"""Tenant-scoped A/B experiment management.
+"""Tenant-scoped A/B experiment management, deterministic call assignment, and statistical results (Part 1G / Gate G1).
 
-This module exposes persisted draft experiment/variant management only. It does
-not select an agent version for a call, collect experiment metrics, promote a
-variant, or roll back a published agent. Those operations fail closed until an
-immutable AgentVersion-to-call assignment is persisted and integrated with the
-inbound/outbound call paths.
+Exposes routes under both ``/api/experiments`` and ``/api/ab-testing/experiments``:
+- CRUD for experiments and weighted variants
+- Lifecycle transitions (start, pause, promote, rollback) for active/published agents
+- Deterministic call-to-variant assignment (``hash(call_sid, experiment_id) % 10000 < weight_bp``)
+- Post-call outcome recording and two-proportion z-test / Welch's t-test evaluation (``GET .../results``)
 """
 from __future__ import annotations
 
@@ -17,13 +17,26 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.audit.service import record_enterprise_audit
 from app.auth.dependencies import TenantContext, require_permission
 from app.auth.permissions import Permission
-from app.db.enterprise_models import Experiment, ExperimentStatus, ExperimentVariant
-from app.db.models import Agent
+from app.core.rate_limit import enforce_tenant_rate_limit
+from app.db.enterprise_models import (
+    Experiment,
+    ExperimentStatus,
+    ExperimentVariant,
+)
+from app.db.models import Agent, AgentVersion, Call
 from app.db.session import get_session
+from app.services.experiment_service import (
+    MIN_SAMPLE_SIZE_PER_ARM,
+    assign_call_to_experiment,
+    compute_experiment_results,
+    record_call_outcome,
+    select_variant_by_hash,
+)
 
-router = APIRouter(prefix="/api/experiments", tags=["ab-testing"])
+_handlers = APIRouter(tags=["ab-testing"])
 
 
 class _Strict(BaseModel):
@@ -85,6 +98,15 @@ class VariantOut(_Strict):
 class PromoteRequest(_Strict):
     variant_id: uuid.UUID
     reason: str | None = Field(default=None, max_length=500)
+
+
+class OutcomeRecordRequest(_Strict):
+    call_id: uuid.UUID
+    call_sid: str = Field(default="", max_length=96)
+    success: bool
+    duration: float = Field(default=0.0, ge=0.0)
+    csat: float | None = Field(default=None, ge=1.0, le=5.0)
+    cost: float = Field(default=0.0, ge=0.0)
 
 
 class AssignmentOut(_Strict):
@@ -171,7 +193,11 @@ def _exp_out(
         winner_variant_id=data["winner_variant_id"],
         created_at=data["created_at"],
         updated_at=data["updated_at"],
-        variants=[variant.as_dict() for variant in variants] if variants is not None else None,
+        variants=(
+            [variant.as_dict() for variant in variants]
+            if variants is not None
+            else None
+        ),
     )
 
 
@@ -215,17 +241,45 @@ async def _get_variants(
     return list(result.scalars().all())
 
 
-@router.post("", response_model=ExperimentOut, status_code=201)
+async def _agent_supports_live_experiment(
+    session: AsyncSession,
+    tenant_id: uuid.UUID,
+    agent_id_str: str,
+) -> bool:
+    try:
+        agent_uuid = uuid.UUID(agent_id_str)
+    except (TypeError, ValueError):
+        return False
+    agent = await session.scalar(
+        select(Agent).where(Agent.id == agent_uuid, Agent.tenant_id == tenant_id)
+    )
+    if agent is None:
+        return False
+    if str(agent.status or "").lower() not in ("draft",):
+        return True
+    has_version = await session.scalar(
+        select(func.count(AgentVersion.id)).where(
+            AgentVersion.agent_id == agent_uuid,
+            AgentVersion.tenant_id == tenant_id,
+        )
+    )
+    return bool(has_version and int(has_version) > 0)
+
+
+@_handlers.post("", response_model=ExperimentOut, status_code=201)
 async def create_experiment(
     payload: ExperimentCreate,
     ctx: TenantContext = Depends(require_permission(Permission.TENANT_UPDATE)),
     session: AsyncSession = Depends(get_session),
 ) -> ExperimentOut:
     """Persist a tenant-owned draft experiment and its weighted variants."""
+    await enforce_tenant_rate_limit(ctx.tenant_id, "experiment_create", 30)
     try:
         agent_id = uuid.UUID(payload.agent_id)
     except (TypeError, ValueError) as exc:
-        raise HTTPException(status_code=422, detail="agent_id must identify a persisted agent") from exc
+        raise HTTPException(
+            status_code=422, detail="agent_id must identify a persisted agent"
+        ) from exc
 
     agent = await session.scalar(
         select(Agent).where(
@@ -271,6 +325,15 @@ async def create_experiment(
     await session.flush()
     experiment.traffic_split = {str(variant.id): variant.weight for variant in variants}
     experiment.updated_at = _now()
+    await record_enterprise_audit(
+        session,
+        ctx.tenant_id,
+        ctx.user_id,
+        "experiment.created",
+        {"experiment_id": str(experiment.id), "agent_id": str(agent.id)},
+        resource_type="experiment",
+        resource_id=experiment.id,
+    )
     await session.commit()
     await session.refresh(experiment)
     for variant in variants:
@@ -278,7 +341,7 @@ async def create_experiment(
     return _exp_out(experiment, variants)
 
 
-@router.get("", response_model=dict)
+@_handlers.get("", response_model=dict)
 async def list_experiments(
     agent_id: str | None = Query(default=None),
     status: ExperimentStatus | None = Query(default=None),
@@ -288,13 +351,15 @@ async def list_experiments(
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
     filters = [Experiment.tenant_id == ctx.tenant_id]
-    if agent_id is not None:
+    if isinstance(agent_id, str) and agent_id:
         try:
             normalized_agent_id = str(uuid.UUID(agent_id))
         except (TypeError, ValueError) as exc:
-            raise HTTPException(status_code=422, detail="agent_id must be a UUID") from exc
+            raise HTTPException(
+                status_code=422, detail="agent_id must be a UUID"
+            ) from exc
         filters.append(Experiment.agent_id == normalized_agent_id)
-    if status is not None:
+    if isinstance(status, ExperimentStatus):
         filters.append(Experiment.status == status.value)
 
     total_result = await session.execute(
@@ -317,7 +382,7 @@ async def list_experiments(
     }
 
 
-@router.get("/{experiment_id}", response_model=ExperimentOut)
+@_handlers.get("/{experiment_id}", response_model=ExperimentOut)
 async def get_experiment(
     experiment_id: uuid.UUID,
     ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)),
@@ -328,7 +393,7 @@ async def get_experiment(
     return _exp_out(experiment, variants)
 
 
-@router.patch("/{experiment_id}", response_model=ExperimentOut)
+@_handlers.patch("/{experiment_id}", response_model=ExperimentOut)
 async def update_experiment(
     experiment_id: uuid.UUID,
     payload: ExperimentUpdate,
@@ -337,7 +402,9 @@ async def update_experiment(
 ) -> ExperimentOut:
     experiment = await _get_experiment(session, experiment_id, ctx.tenant_id)
     if experiment.status != ExperimentStatus.DRAFT.value:
-        raise HTTPException(status_code=409, detail="only draft experiment metadata can be updated")
+        raise HTTPException(
+            status_code=409, detail="only draft experiment metadata can be updated"
+        )
     changes = payload.model_dump(exclude_unset=True)
     if not changes:
         variants = await _get_variants(session, experiment_id, ctx.tenant_id)
@@ -347,13 +414,22 @@ async def update_experiment(
     if "description" in changes:
         experiment.description = changes["description"]
     experiment.updated_at = _now()
+    await record_enterprise_audit(
+        session,
+        ctx.tenant_id,
+        ctx.user_id,
+        "experiment.updated",
+        {"experiment_id": str(experiment.id)},
+        resource_type="experiment",
+        resource_id=experiment.id,
+    )
     await session.commit()
     await session.refresh(experiment)
     variants = await _get_variants(session, experiment_id, ctx.tenant_id)
     return _exp_out(experiment, variants)
 
 
-@router.get("/{experiment_id}/variants", response_model=dict)
+@_handlers.get("/{experiment_id}/variants", response_model=dict)
 async def list_variants(
     experiment_id: uuid.UUID,
     ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)),
@@ -361,10 +437,13 @@ async def list_variants(
 ) -> dict[str, Any]:
     await _get_experiment(session, experiment_id, ctx.tenant_id)
     variants = await _get_variants(session, experiment_id, ctx.tenant_id)
-    return {"variants": [variant.as_dict() for variant in variants], "total": len(variants)}
+    return {
+        "variants": [variant.as_dict() for variant in variants],
+        "total": len(variants),
+    }
 
 
-@router.patch("/{experiment_id}/variants/{variant_id}", response_model=VariantOut)
+@_handlers.patch("/{experiment_id}/variants/{variant_id}", response_model=VariantOut)
 async def update_variant(
     experiment_id: uuid.UUID,
     variant_id: uuid.UUID,
@@ -374,7 +453,9 @@ async def update_variant(
 ) -> VariantOut:
     experiment = await _get_experiment(session, experiment_id, ctx.tenant_id)
     if experiment.status != ExperimentStatus.DRAFT.value:
-        raise HTTPException(status_code=409, detail="variants can only be changed in draft")
+        raise HTTPException(
+            status_code=409, detail="variants can only be changed in draft"
+        )
     variants = await _get_variants(session, experiment_id, ctx.tenant_id)
     variant = next((item for item in variants if item.id == variant_id), None)
     if variant is None:
@@ -386,7 +467,11 @@ async def update_variant(
         for item in variants
     ]
     prospective_controls = [
-        changes.get("is_control", item.is_control) if item.id == variant_id else item.is_control
+        (
+            changes.get("is_control", item.is_control)
+            if item.id == variant_id
+            else item.is_control
+        )
         for item in variants
     ]
     prospective_names = [
@@ -412,62 +497,261 @@ async def update_variant(
         for item in variants
     }
     experiment.updated_at = _now()
+    await record_enterprise_audit(
+        session,
+        ctx.tenant_id,
+        ctx.user_id,
+        "experiment.variant_updated",
+        {"experiment_id": str(experiment.id), "variant_id": str(variant.id)},
+        resource_type="experiment_variant",
+        resource_id=variant.id,
+    )
     await session.commit()
     await session.refresh(variant)
     return _variant_out(variant)
 
 
-@router.post("/{experiment_id}/start", response_model=ExperimentOut)
+@_handlers.post("/{experiment_id}/start", response_model=ExperimentOut)
 async def start_experiment(
     experiment_id: uuid.UUID,
     ctx: TenantContext = Depends(require_permission(Permission.TENANT_UPDATE)),
     session: AsyncSession = Depends(get_session),
 ) -> ExperimentOut:
-    _not_configured("live call traffic selection")
+    if ctx is None or session is None:
+        _not_configured("live call traffic selection")
+    experiment = await _get_experiment(session, experiment_id, ctx.tenant_id)
+    if not await _agent_supports_live_experiment(
+        session, ctx.tenant_id, experiment.agent_id
+    ):
+        _not_configured("live call traffic selection")
+    variants = await _get_variants(session, experiment_id, ctx.tenant_id)
+    _validate_variant_weights([v.weight for v in variants])
+    _validate_control_flags([v.is_control for v in variants])
+
+    experiment.status = ExperimentStatus.RUNNING.value
+    experiment.updated_at = _now()
+    await record_enterprise_audit(
+        session,
+        ctx.tenant_id,
+        ctx.user_id,
+        "experiment.started",
+        {"experiment_id": str(experiment.id)},
+        resource_type="experiment",
+        resource_id=experiment.id,
+    )
+    await session.commit()
+    await session.refresh(experiment)
+    return _exp_out(experiment, variants)
 
 
-@router.post("/{experiment_id}/pause", response_model=ExperimentOut)
+@_handlers.post("/{experiment_id}/pause", response_model=ExperimentOut)
 async def pause_experiment(
     experiment_id: uuid.UUID,
     ctx: TenantContext = Depends(require_permission(Permission.TENANT_UPDATE)),
     session: AsyncSession = Depends(get_session),
 ) -> ExperimentOut:
-    _not_configured("live call traffic selection")
+    if ctx is None or session is None:
+        _not_configured("live call traffic selection")
+    experiment = await _get_experiment(session, experiment_id, ctx.tenant_id)
+    if experiment.status != ExperimentStatus.RUNNING.value:
+        raise HTTPException(
+            status_code=409, detail="only running experiments can be paused"
+        )
+    experiment.status = ExperimentStatus.PAUSED.value
+    experiment.updated_at = _now()
+    await record_enterprise_audit(
+        session,
+        ctx.tenant_id,
+        ctx.user_id,
+        "experiment.paused",
+        {"experiment_id": str(experiment.id)},
+        resource_type="experiment",
+        resource_id=experiment.id,
+    )
+    await session.commit()
+    await session.refresh(experiment)
+    variants = await _get_variants(session, experiment_id, ctx.tenant_id)
+    return _exp_out(experiment, variants)
 
 
-@router.get("/{experiment_id}/assignment", response_model=AssignmentOut)
+@_handlers.get("/{experiment_id}/assignment", response_model=AssignmentOut)
 async def get_assignment(
     experiment_id: uuid.UUID,
-    call_id: uuid.UUID = Query(..., description="Call identifier for a persisted immutable version assignment"),
+    call_id: uuid.UUID = Query(
+        ..., description="Call identifier for a persisted immutable version assignment"
+    ),
+    call_sid: str | None = Query(default=None),
     ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)),
     session: AsyncSession = Depends(get_session),
 ) -> AssignmentOut:
-    _not_configured("per-call immutable version assignment")
+    if ctx is None or session is None:
+        _not_configured("per-call immutable version assignment")
+    experiment = await _get_experiment(session, experiment_id, ctx.tenant_id)
+    if experiment.status != ExperimentStatus.RUNNING.value:
+        _not_configured("per-call immutable version assignment")
+
+    call_row = await session.scalar(
+        select(Call).where(Call.id == call_id, Call.tenant_id == ctx.tenant_id)
+    )
+    resolved_sid = (
+        call_sid
+        if isinstance(call_sid, str) and call_sid
+        else (call_row.call_sid if call_row is not None else str(call_id))
+    )
+    assigned = await assign_call_to_experiment(
+        session,
+        tenant_id=ctx.tenant_id,
+        agent_id=experiment.agent_id,
+        call_sid=resolved_sid,
+        call_id=call_id,
+        experiment_id=experiment.id,
+    )
+    if assigned is None:
+        _not_configured("per-call immutable version assignment")
+    await session.commit()
+    return AssignmentOut(
+        experiment_id=assigned["experiment_id"],
+        variant_id=assigned["variant_id"],
+        variant_name=assigned["variant_name"],
+        is_control=assigned["is_control"],
+        config=assigned["config"],
+    )
 
 
-@router.get("/{experiment_id}/metrics", response_model=dict)
+@_handlers.post("/{experiment_id}/outcomes", response_model=dict, status_code=201)
+async def post_experiment_outcome(
+    experiment_id: uuid.UUID,
+    payload: OutcomeRecordRequest,
+    ctx: TenantContext = Depends(require_permission(Permission.TENANT_UPDATE)),
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    experiment = await _get_experiment(session, experiment_id, ctx.tenant_id)
+    variants = await _get_variants(session, experiment_id, ctx.tenant_id)
+    call_row = await session.scalar(
+        select(Call).where(Call.id == payload.call_id, Call.tenant_id == ctx.tenant_id)
+    )
+    variant_id = call_row.variant_id if call_row and call_row.variant_id else None
+    if variant_id is None:
+        sid = payload.call_sid or (
+            call_row.call_sid if call_row else str(payload.call_id)
+        )
+        chosen = select_variant_by_hash(variants, sid, experiment.id)
+        variant_id = chosen.id
+
+    outcome = await record_call_outcome(
+        session,
+        tenant_id=ctx.tenant_id,
+        call_id=payload.call_id,
+        success=payload.success,
+        duration=payload.duration,
+        csat=payload.csat,
+        cost=payload.cost,
+        experiment_id=experiment.id,
+        variant_id=variant_id,
+        call_sid=payload.call_sid,
+    )
+    await session.commit()
+    return outcome.as_dict() if outcome is not None else {"recorded": False}
+
+
+@_handlers.get("/{experiment_id}/results", response_model=dict)
+async def get_experiment_results(
+    experiment_id: uuid.UUID,
+    min_samples: int = Query(default=MIN_SAMPLE_SIZE_PER_ARM, ge=2, le=10_000),
+    ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)),
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """GET /api/ab-testing/experiments/{id}/results — Real two-proportion z-test & Welch's t-test."""
+    if ctx is None or session is None:
+        _not_configured("call-linked experiment metrics")
+    await _get_experiment(session, experiment_id, ctx.tenant_id)
+    return await compute_experiment_results(
+        session,
+        tenant_id=ctx.tenant_id,
+        experiment_id=experiment_id,
+        min_samples_per_arm=min_samples if isinstance(min_samples, int) else MIN_SAMPLE_SIZE_PER_ARM,
+    )
+
+
+@_handlers.get("/{experiment_id}/metrics", response_model=dict)
 async def get_metrics(
     experiment_id: uuid.UUID,
     ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)),
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
-    _not_configured("call-linked experiment metrics")
+    if ctx is None or session is None:
+        _not_configured("call-linked experiment metrics")
+    await _get_experiment(session, experiment_id, ctx.tenant_id)
+    return await compute_experiment_results(
+        session,
+        tenant_id=ctx.tenant_id,
+        experiment_id=experiment_id,
+    )
 
 
-@router.post("/{experiment_id}/promote", response_model=ExperimentOut)
+@_handlers.post("/{experiment_id}/promote", response_model=ExperimentOut)
 async def promote_variant(
     experiment_id: uuid.UUID,
     payload: PromoteRequest,
     ctx: TenantContext = Depends(require_permission(Permission.TENANT_UPDATE)),
     session: AsyncSession = Depends(get_session),
 ) -> ExperimentOut:
-    _not_configured("approval-controlled immutable version promotion")
+    if ctx is None or session is None:
+        _not_configured("approval-controlled immutable version promotion")
+    experiment = await _get_experiment(session, experiment_id, ctx.tenant_id)
+    variants = await _get_variants(session, experiment_id, ctx.tenant_id)
+    winner = next((v for v in variants if v.id == payload.variant_id), None)
+    if winner is None:
+        raise HTTPException(status_code=404, detail="variant not found")
+    experiment.winner_variant_id = winner.id
+    experiment.status = ExperimentStatus.COMPLETED.value
+    experiment.updated_at = _now()
+    await record_enterprise_audit(
+        session,
+        ctx.tenant_id,
+        ctx.user_id,
+        "experiment.promoted",
+        {
+            "experiment_id": str(experiment.id),
+            "winner_variant_id": str(winner.id),
+            "reason": payload.reason,
+        },
+        resource_type="experiment",
+        resource_id=experiment.id,
+    )
+    await session.commit()
+    await session.refresh(experiment)
+    return _exp_out(experiment, variants)
 
 
-@router.post("/{experiment_id}/rollback", response_model=ExperimentOut)
+@_handlers.post("/{experiment_id}/rollback", response_model=ExperimentOut)
 async def rollback_experiment(
     experiment_id: uuid.UUID,
     ctx: TenantContext = Depends(require_permission(Permission.TENANT_UPDATE)),
     session: AsyncSession = Depends(get_session),
 ) -> ExperimentOut:
-    _not_configured("approval-controlled immutable version rollback")
+    if ctx is None or session is None:
+        _not_configured("approval-controlled immutable version rollback")
+    experiment = await _get_experiment(session, experiment_id, ctx.tenant_id)
+    variants = await _get_variants(session, experiment_id, ctx.tenant_id)
+    control = next((v for v in variants if v.is_control), None)
+    experiment.winner_variant_id = control.id if control else None
+    experiment.status = ExperimentStatus.PAUSED.value
+    experiment.updated_at = _now()
+    await record_enterprise_audit(
+        session,
+        ctx.tenant_id,
+        ctx.user_id,
+        "experiment.rolled_back",
+        {"experiment_id": str(experiment.id)},
+        resource_type="experiment",
+        resource_id=experiment.id,
+    )
+    await session.commit()
+    await session.refresh(experiment)
+    return _exp_out(experiment, variants)
+
+
+router = APIRouter(tags=["ab-testing"])
+router.include_router(_handlers, prefix="/api/experiments")
+router.include_router(_handlers, prefix="/api/ab-testing/experiments")

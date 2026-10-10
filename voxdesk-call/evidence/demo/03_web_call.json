@@ -1,0 +1,20 @@
+{
+  "recording_id": "demo-03-web-call",
+  "feature_matrix_ids": [
+    22,
+    37
+  ],
+  "captured_at_utc": "2026-10-08T18:04:35.448063+00:00",
+  "endpoints": [
+    "POST /api/v1/telephony/web-calls",
+    "WS /api/v1/telephony/web-calls/{call_id}/ws",
+    "GET /widget/v1/embed.js"
+  ],
+  "audio_artifact": "evidence/demo/03_web_call_audio.wav",
+  "audio_sha256": "262d2db245dcac1d23b1e04b61f7db3e2c97b5c464ff6f8f56776733cdf8ab1e",
+  "verified_by_tests": [
+    "tests/telephony/test_web_call_flow.py::test_web_call_create_ws_protobuf_roundtrip_and_usage_persistence",
+    "tests/telephony/test_web_call_security.py::test_origin_mismatch_rejected_on_public_web_call_and_websocket",
+    "tests/telephony/test_web_call_security.py::test_single_use_jwt_cannot_be_replayed"
+  ]
+}

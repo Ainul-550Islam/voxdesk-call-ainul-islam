@@ -1,0 +1,5 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_crm_credentials.py::test_a_ciphertext_from_a_retired_key_reports_why tests/test_crm_credentials.py::test_ciphertext_copied_to_another_tenant_will_not_decrypt tests/test_crm_credentials.py::test_ciphertext_moved_to_another_provider_will_not_decrypt tests/test_crm_credentials.py::test_key_rotation_keeps_old_ciphertext_readable tests/test_crm_credentials.py::test_a_bare_key_with_no_id_is_accepted
+.....                                                                    [100%]
+5 passed in 0.07s
+
+STDERR:

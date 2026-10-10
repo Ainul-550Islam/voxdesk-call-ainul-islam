@@ -1,0 +1,5 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_calendar_providers.py::TestGoogleEvents::test_a_409_with_nothing_behind_it_still_conflicts tests/test_calendar_providers.py::TestGoogleEvents::test_update_does_not_resend_the_immutable_id tests/test_calendar_providers.py::TestGoogleEvents::test_cancelling_a_missing_event_succeeds tests/test_calendar_providers.py::TestGoogleEvents::test_a_410_gone_also_counts_as_cancelled tests/test_calendar_providers.py::TestGoogleEvents::test_a_cancelled_tombstone_is_reported_as_cancelled
+.....                                                                    [100%]
+5 passed in 0.15s
+
+STDERR:

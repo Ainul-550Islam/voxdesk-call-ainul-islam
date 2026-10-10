@@ -1,0 +1,32 @@
+VoxDesk Voice AI Platform (`voxdesk-call`)
+Copyright (c) 2026 Ainul Islam. All rights reserved.
+
+This product includes software developed for the VoxDesk multi-tenant Voice AI
+Platform across Python (FastAPI, SQLAlchemy, Alembic, Pipecat 0.0.94), TypeScript
+(React/Vite Dashboard, Next.js Enterprise Console, `@voxdesk/web-sdk`,
+`@voxdesk/node-sdk`, `@voxdesk/widget`), Go (`gateway-go`, `signal-go`, `voxops`),
+Rust (`voxdesk-control`, `voxdesk-signal`, `media-engine-rs`), and C++17
+(`media-plane`).
+
+Third-Party Notices and Attribution
+-----------------------------------
+Complete dependency inventories and license texts are documented in:
+  - `THIRD_PARTY_LICENSES.md`
+  - `sbom/python-backend.cdx.json`
+  - `sbom/node-dashboard.cdx.json`
+  - `sbom/go-services.cdx.json`
+  - `sbom/rust-services.cdx.json`
+
+Vendored Crate Notice (`services/realtime/media-engine-rs/vendor/dimpl`)
+------------------------------------------------------------------------
+The Rust WebRTC media engine (`services/realtime/media-engine-rs`) vendors
+`dimpl` v0.7.3 (Copyright (c) Martin Algesten, licensed under MIT OR Apache-2.0)
+with a single configuration builder extension (`ConfigBuilder::srtp_profiles`)
+for explicit RFC 5764 DTLS-SRTP profile negotiation.
+
+Synthesized Audio Assets (`app/assets/ambient/*.wav`)
+-----------------------------------------------------
+The 5 ambient background audio beds (`office.wav`, `call_center.wav`,
+`coffee_shop.wav`, `convention_hall.wav`, `summer_outdoor.wav`) are procedural
+PCM waveforms synthesized mathematically in Python without external audio
+samples and are dedicated to the public domain (`CC0-1.0`).

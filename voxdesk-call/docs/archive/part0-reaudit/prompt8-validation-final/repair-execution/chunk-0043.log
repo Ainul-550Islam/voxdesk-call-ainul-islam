@@ -1,0 +1,5 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_calendar_providers.py::TestMicrosoftEvents::test_cancel_falls_back_to_delete tests/test_calendar_providers.py::TestMicrosoftEvents::test_a_cancelled_event_is_reported_as_such tests/test_calendar_providers.py::TestMicrosoftEvents::test_reconciliation_matches_on_transaction_id tests/test_calendar_providers.py::TestMicrosoftEvents::test_a_failed_reconciliation_raises_rather_than_claiming_absence tests/test_calendar_providers.py::TestMicrosoftEvents::test_reconciliation_skips_a_cancelled_match
+.....                                                                    [100%]
+5 passed in 0.14s
+
+STDERR:

@@ -448,12 +448,17 @@ export async function listTelephonyCallTransfers(
 
 export async function postTelephonyCallMediaEvent(
   callId: string,
-  message: Record<string, unknown>
+  _message: Record<string, unknown>
 ): Promise<Record<string, unknown>> {
-  return client.post<Record<string, unknown>>(
-    `/api/v1/telephony/calls/${encodeURIComponent(callId)}/media-event`,
-    message
+  const session = await client.get<CallSessionRecord>(
+    `/api/v1/telephony/calls/${encodeURIComponent(callId)}`
   );
+  return {
+    call_id: session.id,
+    media_state: session.media_state,
+    status: session.status,
+    websocket_path: `/ws/monitor/${encodeURIComponent(callId)}`,
+  };
 }
 
 // ---------------------------------------------------------------------------

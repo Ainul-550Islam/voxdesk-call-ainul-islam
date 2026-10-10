@@ -1,0 +1,85 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/campaign/test_legacy_compatibility.py::test_legacy_run_url_still_works tests/campaign/test_legacy_compatibility.py::test_legacy_run_dry_run_on_active_campaign tests/campaign/test_legacy_compatibility.py::test_legacy_run_refuses_a_campaign_from_another_environment tests/campaign/test_legacy_compatibility.py::test_campaigns_created_via_legacy_route_are_visible_in_the_modern_api tests/campaign/test_legacy_compatibility.py::test_campaigns_created_via_modern_api_are_visible_in_legacy_list tests/campaign/test_legacy_compatibility.py::test_other_tenants_campaigns_never_leak tests/campaign/test_live_run_billing_enforcement.py::test_live_campaign_run_is_blocked_before_lead_claim_and_provider_call tests/compliance/test_industry_templates.py::test_starter_profile_creates_only_explicit_source_bound_boolean_checks[healthcare-operations-basic-healthcare-field_names0] tests/compliance/test_industry_templates.py::test_starter_profile_creates_only_explicit_source_bound_boolean_checks[manufacturing-operations-basic-manufacturing-field_names1] tests/compliance/test_industry_templates.py::test_starter_profile_creates_only_explicit_source_bound_boolean_checks[retail-operations-basic-retail-field_names2] tests/compliance/test_industry_templates.py::test_template_rejects_missing_extra_and_blank_source_references tests/compliance/test_industry_templates.py::test_templates_disclose_their_non_regulatory_and_non_clinical_scope tests/compliance/test_qms_ocg.py::test_qms_document_status_revision_evidence_and_source_are_explainable tests/compliance/test_qms_ocg.py::test_ocg_rule_states_are_deterministic_and_source_bound tests/compliance/test_qms_ocg.py::test_requested_agent_catalog_and_industry_checks_are_registered_and_non_clinical tests/compliance/test_qms_ocg.py::test_compliance_findings_remediation_review_and_scope_isolation tests/contact_center/test_agent_state.py::test_illegal_and_duplicate_transitions tests/contact_center/test_agent_state.py::test_heartbeat_does_not_make_offline_available tests/contact_center/test_agent_state.py::test_stale_available_agent_is_not_offered_work tests/contact_center/test_agent_state.py::test_agent_cannot_disable_self tests/contact_center/test_agent_state.py::test_same_state_is_a_duplicate tests/contact_center/test_concurrency.py::test_capacity_one_rejects_a_second_item tests/contact_center/test_concurrency.py::test_concurrent_sessions_award_one_owner tests/contact_center/test_overflow.py::test_missing_escalation_number_is_not_success tests/contact_center/test_overflow.py::test_callback_is_requested_only_when_the_job_exists tests/contact_center/test_overflow.py::test_escalate_success_requires_telephony_acceptance tests/contact_center/test_queue.py::test_create_queue_and_member_does_not_mark_available tests/contact_center/test_queue.py::test_duplicate_queue_name_is_rejected tests/contact_center/test_queue.py::test_escalate_policy_requires_a_number tests/contact_center/test_queue.py::test_client_tenant_cannot_override_queue_create tests/contact_center/test_queue.py::test_other_tenant_queue_is_missing tests/contact_center/test_queue.py::test_unknown_user_cannot_join tests/contact_center/test_routing.py::test_least_loaded_is_stable_and_not_random tests/contact_center/test_routing.py::test_rejected_agent_is_explained tests/contact_center/test_routing.py::test_enqueue_assigns_one_inbox_owner tests/contact_center/test_routing.py::test_second_enqueue_does_not_create_a_second_owner tests/contact_center/test_routing.py::test_missing_skill_is_not_assigned tests/contact_center/test_routing.py::test_least_loaded_prefers_the_idle_agent tests/contact_center/test_skills.py::test_proficiency_bounds_and_required_skill_routes tests/contact_center/test_skills.py::test_disabled_skill_blocks_assignment tests/contact_center/test_skills.py::test_skill_is_tenant_scoped tests/contact_center/test_skills.py::test_viewer_cannot_create_a_skill tests/contact_center/test_supervisor.py::test_viewer_cannot_force_state tests/contact_center/test_supervisor.py::test_disable_releases_work_and_repeat_release_is_duplicate tests/contact_center/test_supervisor.py::test_manager_can_read_supervisor_monitor_but_not_write tests/deployment/test_deployment_service.py::test_target_idempotency_preflight_revision_integrity_and_fail_closed_verification tests/deployment/test_deployment_service.py::test_unsupported_target_fails_before_persistence tests/deployment/test_deployment_service.py::test_public_verify_route_dispatches_to_authoritative_runtime_verifier tests/deployment/test_readiness_verification.py::test_readiness_keeps_registry_result_distinct_from_runtime_verification tests/deployment/test_readiness_verification.py::test_readiness_detects_missing_environment_revision_and_artifact
+..................................................                       [100%]
+=============================== warnings summary ===============================
+tests/campaign/test_legacy_compatibility.py::test_legacy_run_url_still_works
+tests/campaign/test_legacy_compatibility.py::test_legacy_run_url_still_works
+tests/campaign/test_legacy_compatibility.py::test_legacy_run_url_still_works
+tests/campaign/test_legacy_compatibility.py::test_legacy_run_url_still_works
+tests/campaign/test_legacy_compatibility.py::test_legacy_run_url_still_works
+tests/campaign/test_legacy_compatibility.py::test_legacy_run_url_still_works
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/campaign/test_legacy_compatibility.py: 7 warnings
+tests/campaign/test_live_run_billing_enforcement.py: 1 warning
+tests/compliance/test_qms_ocg.py: 2 warnings
+tests/contact_center/test_agent_state.py: 4 warnings
+tests/contact_center/test_concurrency.py: 2 warnings
+tests/contact_center/test_overflow.py: 2 warnings
+tests/contact_center/test_queue.py: 8 warnings
+tests/contact_center/test_routing.py: 4 warnings
+tests/contact_center/test_skills.py: 5 warnings
+tests/contact_center/test_supervisor.py: 3 warnings
+tests/deployment/test_deployment_service.py: 4 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/campaign/test_legacy_compatibility.py: 44 warnings
+tests/campaign/test_live_run_billing_enforcement.py: 7 warnings
+tests/compliance/test_qms_ocg.py: 6 warnings
+tests/contact_center/test_agent_state.py: 14 warnings
+tests/contact_center/test_concurrency.py: 20 warnings
+tests/contact_center/test_overflow.py: 9 warnings
+tests/contact_center/test_queue.py: 14 warnings
+tests/contact_center/test_routing.py: 28 warnings
+tests/contact_center/test_skills.py: 18 warnings
+tests/contact_center/test_supervisor.py: 21 warnings
+tests/deployment/test_deployment_service.py: 12 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/campaign/test_legacy_compatibility.py: 7 warnings
+tests/campaign/test_live_run_billing_enforcement.py: 1 warning
+tests/compliance/test_qms_ocg.py: 2 warnings
+tests/contact_center/test_agent_state.py: 4 warnings
+tests/contact_center/test_concurrency.py: 2 warnings
+tests/contact_center/test_overflow.py: 2 warnings
+tests/contact_center/test_queue.py: 8 warnings
+tests/contact_center/test_routing.py: 4 warnings
+tests/contact_center/test_skills.py: 5 warnings
+tests/contact_center/test_supervisor.py: 3 warnings
+tests/deployment/test_deployment_service.py: 4 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/campaign/test_legacy_compatibility.py: 7 warnings
+tests/campaign/test_live_run_billing_enforcement.py: 1 warning
+tests/compliance/test_qms_ocg.py: 2 warnings
+tests/contact_center/test_agent_state.py: 4 warnings
+tests/contact_center/test_concurrency.py: 2 warnings
+tests/contact_center/test_queue.py: 2 warnings
+tests/contact_center/test_routing.py: 5 warnings
+tests/contact_center/test_skills.py: 3 warnings
+tests/contact_center/test_supervisor.py: 5 warnings
+tests/deployment/test_deployment_service.py: 4 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/campaign/test_legacy_compatibility.py::test_legacy_run_dry_run_on_active_campaign
+tests/campaign/test_live_run_billing_enforcement.py::test_live_campaign_run_is_blocked_before_lead_claim_and_provider_call
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/outbound.py:90: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/campaign/test_legacy_compatibility.py::test_legacy_run_dry_run_on_active_campaign
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/outbound.py:251: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/campaign/test_legacy_compatibility.py::test_legacy_run_dry_run_on_active_campaign
+tests/campaign/test_legacy_compatibility.py::test_legacy_run_dry_run_on_active_campaign
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/leads/models.py:25: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+50 passed, 323 warnings in 80.84s (0:01:20)
+
+STDERR:

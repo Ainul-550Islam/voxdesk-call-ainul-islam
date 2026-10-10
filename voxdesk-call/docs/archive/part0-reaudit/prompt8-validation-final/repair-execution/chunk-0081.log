@@ -1,0 +1,5 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_enum_consistency.py::test_only_live_statuses_block_a_slot tests/test_enum_consistency.py::test_migration_0007_creates_every_new_model_column tests/test_enum_consistency.py::test_migration_0007_declares_the_constraints_that_carry_the_guarantees tests/test_enum_consistency.py::test_migration_0007_backfills_rather_than_leaving_existing_rows_wrong tests/test_enum_consistency.py::test_migration_0007_follows_0006
+.....                                                                    [100%]
+5 passed in 0.08s
+
+STDERR:

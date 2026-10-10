@@ -1,0 +1,42 @@
+.......................                                                  [100%]
+=============================== warnings summary ===============================
+tests/webhooks/test_call_event_publish.py::test_transition_and_replay_publish_one_fact
+tests/webhooks/test_call_event_publish.py::test_rollback_removes_event_and_state
+tests/webhooks/test_call_event_publish.py::test_rejected_transition_publishes_nothing
+tests/webhooks/test_call_event_publish.py::test_payload_cannot_override_scope_or_leak_transcript
+tests/outbox/test_delivery.py::test_publish_and_duplicate
+tests/outbox/test_isolation.py::test_tenant_isolation_not_client_controlled
+tests/outbox/test_isolation.py::test_tenant_isolation_not_client_controlled
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/webhooks/test_call_event_publish.py: 10 warnings
+tests/outbox/test_delivery.py: 5 warnings
+tests/outbox/test_isolation.py: 6 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/webhooks/test_call_event_publish.py::test_transition_and_replay_publish_one_fact
+tests/webhooks/test_call_event_publish.py::test_rollback_removes_event_and_state
+tests/webhooks/test_call_event_publish.py::test_rejected_transition_publishes_nothing
+tests/webhooks/test_call_event_publish.py::test_payload_cannot_override_scope_or_leak_transcript
+tests/outbox/test_delivery.py::test_publish_and_duplicate
+tests/outbox/test_isolation.py::test_tenant_isolation_not_client_controlled
+tests/outbox/test_isolation.py::test_tenant_isolation_not_client_controlled
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/webhooks/test_call_event_publish.py::test_transition_and_replay_publish_one_fact
+tests/webhooks/test_call_event_publish.py::test_rollback_removes_event_and_state
+tests/webhooks/test_call_event_publish.py::test_rejected_transition_publishes_nothing
+tests/webhooks/test_call_event_publish.py::test_payload_cannot_override_scope_or_leak_transcript
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/conftest.py:569: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "started_at": datetime.utcnow(),
+
+tests/webhooks/test_call_event_publish.py::test_transition_and_replay_publish_one_fact
+tests/webhooks/test_call_event_publish.py::test_rollback_removes_event_and_state
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/call_state.py:260: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call.ended_at = ended_at or datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+23 passed, 41 warnings in 4.06s

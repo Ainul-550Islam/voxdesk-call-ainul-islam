@@ -221,6 +221,7 @@ async def get_public_status_summary(
         await db.execute(select(1))
         db_ok = True
     except Exception:
+        __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
         db_ok = False
 
     if app is None:

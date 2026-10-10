@@ -1,0 +1,36 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_auth_login.py::test_invalid_password_fails tests/test_auth_login.py::test_inactive_user_cannot_login tests/test_auth_login.py::test_unknown_and_wrong_password_are_indistinguishable tests/test_auth_login.py::test_login_response_never_contains_password_hash tests/test_auth_login.py::test_account_locks_after_repeated_failures tests/test_auth_login.py::test_missing_token_is_rejected tests/test_auth_login.py::test_malformed_authorization_header_is_rejected tests/test_auth_login.py::test_me_returns_user_tenant_and_permissions tests/test_auth_login.py::test_deactivating_a_user_invalidates_their_live_token tests/test_auth_login.py::test_refresh_rotates_and_returns_a_new_access_token tests/test_auth_login.py::test_reusing_an_old_refresh_token_is_detected_and_kills_the_chain tests/test_auth_login.py::test_logout_revokes_the_refresh_token tests/test_auth_login.py::test_login_success_and_failure_are_audited tests/test_auth_login.py::test_audit_log_never_stores_the_password tests/test_availability.py::test_offers_at_most_three_slots tests/test_availability.py::test_busy_slots_are_excluded tests/test_availability.py::test_morning_filter tests/test_availability.py::test_double_booking_is_rejected tests/test_availability.py::test_booking_creates_calendar_event tests/test_availability.py::test_bad_date_does_not_crash tests/test_availability.py::test_unknown_function_is_safe tests/test_availability.py::test_prompt_enforces_short_answers tests/test_availability.py::test_prompt_forbids_admitting_it_is_ai tests/test_availability.py::test_prompt_demands_contractions tests/test_availability.py::test_prompt_tuned_per_provider[openai] tests/test_availability.py::test_prompt_tuned_per_provider[anthropic] tests/test_availability.py::test_prompt_tuned_per_provider[google] tests/test_backend_runtime_closure.py::test_application_routes_preserve_required_backend_surfaces tests/test_backend_runtime_closure.py::test_dependency_health_module_imports_in_a_clean_process tests/test_backend_runtime_closure.py::test_canonical_registry_bootstrap_and_persisted_job_context tests/test_backend_runtime_closure.py::test_job_runtime_enforces_timeout_and_cleans_context tests/test_backend_runtime_closure.py::test_provider_matrix_separates_config_install_capability_and_reachability tests/test_backend_runtime_closure.py::test_configuration_validation_and_health_are_secret_safe tests/test_backend_runtime_closure.py::test_dependency_health_does_not_import_optional_sdk_surfaces tests/test_backend_runtime_closure.py::test_stt_missing_credentials_raise_typed_error_not_fake_transcript tests/test_backend_runtime_closure.py::test_no_fake_deployment_verification_from_client_boolean tests/test_backend_runtime_closure.py::test_dashboard_security_settings_is_wired_to_live_identity_apis tests/test_billing_api.py::TestBillingRead::test_the_status_summary tests/test_billing_api.py::TestBillingRead::test_the_plan_catalogue tests/test_billing_api.py::TestBillingRead::test_the_catalogue_does_not_publish_price_ids tests/test_billing_api.py::TestBillingRead::test_the_usage_endpoint tests/test_billing_api.py::TestBillingRead::test_invoices_are_served_from_the_local_mirror tests/test_billing_api.py::TestBillingWrite::test_checkout_takes_only_a_plan_code tests/test_billing_api.py::TestBillingWrite::test_checkout_does_not_activate_a_subscription tests/test_billing_api.py::TestBillingWrite::test_a_client_cannot_smuggle_a_price[payload0] tests/test_billing_api.py::TestBillingWrite::test_a_client_cannot_smuggle_a_price[payload1] tests/test_billing_api.py::TestBillingWrite::test_a_client_cannot_smuggle_a_price[payload2] tests/test_billing_api.py::TestBillingWrite::test_a_client_cannot_smuggle_a_price[payload3] tests/test_billing_api.py::TestBillingWrite::test_an_unknown_plan_is_404 tests/test_billing_api.py::TestBillingWrite::test_an_inactive_plan_is_404_like_a_missing_one
+..................................................                       [100%]
+=============================== warnings summary ===============================
+tests/test_auth_login.py::test_invalid_password_fails
+tests/test_auth_login.py::test_invalid_password_fails
+tests/test_auth_login.py::test_invalid_password_fails
+tests/test_auth_login.py::test_invalid_password_fails
+tests/test_auth_login.py::test_invalid_password_fails
+tests/test_auth_login.py::test_invalid_password_fails
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/test_auth_login.py: 12 warnings
+tests/test_billing_api.py: 13 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_auth_login.py: 69 warnings
+tests/test_billing_api.py: 193 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/test_auth_login.py: 12 warnings
+tests/test_billing_api.py: 13 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_auth_login.py: 13 warnings
+tests/test_billing_api.py: 13 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+50 passed, 344 warnings in 72.24s (0:01:12)
+
+STDERR:

@@ -1,0 +1,118 @@
+........................................................................ [ 50%]
+.......................................................................  [100%]
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:295
+.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:295
+.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:295
+.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:295
+.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:295
+.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:295
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+app/db/retell_models.py:608
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/retell_models.py:608: PytestCollectionWarning: cannot collect test class 'TestCase' because it has a __init__ constructor (from: tests/integration/test_conductor_workflow.py)
+    class TestCase(Base):
+
+app/db/retell_models.py:663
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/retell_models.py:663: PytestCollectionWarning: cannot collect test class 'TestRun' because it has a __init__ constructor (from: tests/integration/test_conductor_workflow.py)
+    class TestRun(Base):
+
+tests/truth/test_part0_authorized_repairs.py: 4 warnings
+tests/leads/test_concurrency.py: 2 warnings
+tests/leads/test_dedup.py: 7 warnings
+tests/leads/test_environment_scope.py: 16 warnings
+tests/leads/test_import.py: 2 warnings
+tests/leads/test_isolation.py: 3 warnings
+tests/leads/test_lifecycle.py: 57 warnings
+tests/leads/test_scoring.py: 2 warnings
+tests/leads/test_segments.py: 3 warnings
+tests/leads/test_service.py: 9 warnings
+tests/security/test_conductor_security.py: 3 warnings
+tests/integration/test_conductor_workflow.py: 2 warnings
+tests/e2e/test_conductor_flow.py: 2 warnings
+tests/compliance/test_qms_ocg.py: 2 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/truth/test_part0_authorized_repairs.py: 18 warnings
+tests/leads/test_concurrency.py: 6 warnings
+tests/leads/test_dedup.py: 31 warnings
+tests/leads/test_environment_scope.py: 56 warnings
+tests/leads/test_import.py: 9 warnings
+tests/leads/test_isolation.py: 15 warnings
+tests/leads/test_lifecycle.py: 250 warnings
+tests/leads/test_scoring.py: 7 warnings
+tests/leads/test_segments.py: 19 warnings
+tests/leads/test_service.py: 34 warnings
+tests/security/test_conductor_security.py: 12 warnings
+tests/integration/test_conductor_workflow.py: 6 warnings
+tests/e2e/test_conductor_flow.py: 6 warnings
+tests/compliance/test_qms_ocg.py: 6 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/truth/test_part0_authorized_repairs.py: 4 warnings
+tests/leads/test_concurrency.py: 2 warnings
+tests/leads/test_dedup.py: 7 warnings
+tests/leads/test_environment_scope.py: 16 warnings
+tests/leads/test_import.py: 2 warnings
+tests/leads/test_isolation.py: 3 warnings
+tests/leads/test_lifecycle.py: 57 warnings
+tests/leads/test_scoring.py: 2 warnings
+tests/leads/test_segments.py: 3 warnings
+tests/leads/test_service.py: 9 warnings
+tests/security/test_conductor_security.py: 3 warnings
+tests/integration/test_conductor_workflow.py: 2 warnings
+tests/e2e/test_conductor_flow.py: 2 warnings
+tests/compliance/test_qms_ocg.py: 2 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/truth/test_part0_authorized_repairs.py: 4 warnings
+tests/leads/test_isolation.py: 2 warnings
+tests/leads/test_service.py: 2 warnings
+tests/security/test_conductor_security.py: 4 warnings
+tests/integration/test_conductor_workflow.py: 2 warnings
+tests/e2e/test_conductor_flow.py: 2 warnings
+tests/compliance/test_qms_ocg.py: 2 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/leads/test_concurrency.py::test_two_sessions_cannot_both_claim
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/leads/test_concurrency.py:27: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/leads/test_concurrency.py: 4 warnings
+tests/leads/test_dedup.py: 34 warnings
+tests/leads/test_environment_scope.py: 8 warnings
+tests/leads/test_import.py: 6 warnings
+tests/leads/test_isolation.py: 6 warnings
+tests/leads/test_lifecycle.py: 125 warnings
+tests/leads/test_scoring.py: 8 warnings
+tests/leads/test_segments.py: 26 warnings
+tests/leads/test_service.py: 25 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/leads/models.py:25: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow()
+
+tests/leads/test_concurrency.py: 1 warning
+tests/leads/test_dedup.py: 2 warnings
+tests/leads/test_lifecycle.py: 1 warning
+tests/leads/test_scoring.py: 1 warning
+tests/leads/test_segments.py: 4 warnings
+tests/leads/test_service.py: 4 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/leads/repository.py:272: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    identity.updated_at = moment or datetime.utcnow()
+
+tests/leads/test_import.py::test_csv_import_is_idempotent
+tests/leads/test_import.py::test_invalid_row_is_reported_and_oversized_body_is_rejected
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/leads/importers.py:123: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    job.completed_at = datetime.utcnow()
+
+tests/leads/test_lifecycle.py::test_ai_tool_dnc_goes_through_consent_and_history
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/conftest.py:569: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "started_at": datetime.utcnow(),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /home/user/voxdesk-call-ainul-islam/voxdesk-call/reports/part0-clean/regression.xml -
+143 passed, 988 warnings in 84.11s (0:01:24)

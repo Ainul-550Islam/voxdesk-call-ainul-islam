@@ -1,0 +1,101 @@
+.......................sF..............                                  [100%]
+=================================== FAILURES ===================================
+___________ test_gateway_fallback_uses_real_second_provider_contract ___________
+
+db = <sqlalchemy.ext.asyncio.session.AsyncSession object at 0x7f63675d3ef0>
+tenant_a = <app.db.models.Tenant object at 0x7f63677797f0>
+owner_a = <app.db.models.User object at 0x7f6367367bc0>, configured = None
+
+    async def test_gateway_fallback_uses_real_second_provider_contract(db, tenant_a, owner_a, configured):
+        seen = []
+    
+        async def receiver(request):
+            seen.append(request.url.host)
+            if request.url.host == "api.openai.com":
+                return httpx.Response(503)
+            assert request.url.host == "generativelanguage.googleapis.com"
+            return httpx.Response(200, json={"candidates": [{"content": {"parts": [{"text": '{"booked":true}'}]}}], "usageMetadata": {"totalTokenCount": 11}})
+    
+        async with httpx.AsyncClient(transport=httpx.MockTransport(receiver)) as client:
+>           output = await llm.extract_fields(db, ctx(tenant_a, owner_a), SCHEMA, "Booking confirmed", executor=llm.StructuredExecutor(SCHEMA, client=client))
+
+tests/ai/test_post_call_llm.py:227: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+app/ai/post_call_llm.py:212: in extract_fields
+    response = await gateway.govern(
+app/ai/gateway.py:207: in govern
+    produced = await executor(current, text, timeout_ms)
+app/ai/post_call_llm.py:121: in __call__
+    raw = await self._request(self.client, url, headers, payload, timeout_ms, provider)
+app/ai/post_call_llm.py:152: in _request
+    async with client.stream("POST", url, headers=headers, json=payload,
+../../.local/share/uv/python/cpython-3.12.15-linux-x86_64-gnu/lib/python3.12/contextlib.py:210: in __aenter__
+    return await anext(self.gen)
+.venv/lib/python3.12/site-packages/httpx/_client.py:1583: in stream
+    response = await self.send(
+.venv/lib/python3.12/site-packages/httpx/_client.py:1629: in send
+    response = await self._send_handling_auth(
+.venv/lib/python3.12/site-packages/httpx/_client.py:1657: in _send_handling_auth
+    response = await self._send_handling_redirects(
+.venv/lib/python3.12/site-packages/httpx/_client.py:1694: in _send_handling_redirects
+    response = await self._send_single_request(request)
+.venv/lib/python3.12/site-packages/httpx/_client.py:1730: in _send_single_request
+    response = await transport.handle_async_request(request)
+.venv/lib/python3.12/site-packages/httpx/_transports/mock.py:41: in handle_async_request
+    response = await response
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+request = <Request('POST', 'https://api.anthropic.com/v1/messages')>
+
+    async def receiver(request):
+        seen.append(request.url.host)
+        if request.url.host == "api.openai.com":
+            return httpx.Response(503)
+>       assert request.url.host == "generativelanguage.googleapis.com"
+E       AssertionError: assert 'api.anthropic.com' == 'generativela...oogleapis.com'
+E         
+E         - generativelanguage.googleapis.com
+E         + api.anthropic.com
+
+tests/ai/test_post_call_llm.py:223: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[2m2026-10-07T04:49:09.468002Z[0m [[31m[1merror    [0m] [1mbilling.no_plan_resolved      [0m [36mmetric[0m=[35mllm_token[0m [36mtenant_id[0m=[35m3afd4334-e2da-4f0a-aeb2-0b4cf05b37de[0m
+=============================== warnings summary ===============================
+tests/ai/test_post_call_llm.py: 14 warnings
+tests/ai/test_gateway.py: 6 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/ai/test_post_call_llm.py: 59 warnings
+tests/ai/test_gateway.py: 23 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/ai/test_post_call_llm.py: 14 warnings
+tests/ai/test_gateway.py: 6 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/ai/test_post_call_llm.py: 13 warnings
+tests/ai/test_gateway.py: 4 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/ai/test_gateway.py::test_telemetry_drops_secrets
+  tests/ai/test_gateway.py:158: PytestWarning: The test <Function test_telemetry_drops_secrets> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_telemetry_drops_secrets():
+
+tests/ai/test_gateway.py::test_policy_http_is_owner_only
+tests/ai/test_gateway.py::test_policy_http_is_owner_only
+tests/ai/test_gateway.py::test_policy_http_is_owner_only
+tests/ai/test_gateway.py::test_policy_http_is_owner_only
+tests/ai/test_gateway.py::test_policy_http_is_owner_only
+tests/ai/test_gateway.py::test_policy_http_is_owner_only
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /home/user/voxdesk-call-ainul-islam/voxdesk-call/reports/part1/continuation/post-call-gateway.xml -
+=========================== short test summary info ============================
+FAILED tests/ai/test_post_call_llm.py::test_gateway_fallback_uses_real_second_provider_contract
+1 failed, 37 passed, 1 skipped, 146 warnings in 19.36s

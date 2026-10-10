@@ -1,0 +1,44 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/auth/test_service_accounts.py::test_rotating_a_credential_revokes_the_previous_one tests/auth/test_service_accounts.py::test_disabling_an_account_stops_its_credentials_and_enabling_restores_them tests/auth/test_service_accounts.py::test_the_emergency_stop_cannot_be_undone_by_enable tests/auth/test_service_accounts.py::test_lifting_an_emergency_stop_needs_an_owner_and_a_reason tests/auth/test_service_accounts.py::test_deleting_an_account_revokes_its_credentials tests/auth/test_service_accounts.py::test_a_machine_credential_cannot_manage_machine_credentials tests/auth/test_service_accounts.py::test_a_credential_cannot_be_granted_more_than_its_creator_holds tests/auth/test_service_accounts.py::test_another_tenants_admin_cannot_touch_the_account tests/auth/test_session_revocation.py::test_the_session_list_marks_the_caller_and_hides_nothing_else tests/auth/test_session_revocation.py::test_revoking_one_session_leaves_the_others_alone tests/auth/test_session_revocation.py::test_revoking_others_keeps_the_caller_signed_in tests/auth/test_session_revocation.py::test_revoking_all_ends_the_callers_session_too tests/auth/test_session_revocation.py::test_a_revoked_refresh_token_cannot_mint_a_new_access_token tests/auth/test_session_revocation.py::test_another_users_session_id_is_not_revocable tests/auth/test_session_revocation.py::test_a_session_can_be_renamed_without_revoking_it tests/auth/test_sessions.py::test_an_idle_session_is_not_live_once_its_deadline_passes tests/auth/test_sessions.py::test_a_session_also_ends_at_its_absolute_deadline tests/auth/test_sessions.py::test_touching_a_live_session_pushes_the_idle_deadline_out tests/auth/test_sessions.py::test_the_concurrent_session_ceiling_evicts_the_least_recently_used tests/auth/test_sessions.py::test_evicting_a_session_also_kills_its_refresh_tokens tests/auth/test_sessions.py::test_a_change_of_password_keeps_this_session_and_ends_the_others tests/auth/test_sessions.py::test_a_second_factor_change_ends_every_other_session tests/auth/test_sessions.py::test_a_first_login_from_a_new_place_is_not_an_event tests/auth/test_sessions.py::test_a_second_login_from_an_unseen_address_is_recorded tests/auth/test_sessions.py::test_the_event_never_blocks_the_login tests/auth/test_sessions.py::test_devices_are_described_without_a_parser_dependency tests/auth/test_sessions.py::test_a_caller_cannot_revoke_a_session_it_does_not_own tests/auth/test_sessions.py::test_counts_reflect_only_live_sessions tests/auth/test_sessions.py::test_a_session_records_how_it_was_authenticated tests/auth/test_totp.py::test_the_rfc_seed_encodes_to_the_expected_base32 tests/auth/test_totp.py::test_hotp_matches_rfc_4226_appendix_d[0-755224] tests/auth/test_totp.py::test_hotp_matches_rfc_4226_appendix_d[1-287082] tests/auth/test_totp.py::test_hotp_matches_rfc_4226_appendix_d[2-359152] tests/auth/test_totp.py::test_hotp_matches_rfc_4226_appendix_d[3-969429] tests/auth/test_totp.py::test_hotp_matches_rfc_4226_appendix_d[4-338314] tests/auth/test_totp.py::test_hotp_matches_rfc_4226_appendix_d[5-254676] tests/auth/test_totp.py::test_hotp_matches_rfc_4226_appendix_d[6-287922] tests/auth/test_totp.py::test_hotp_matches_rfc_4226_appendix_d[7-162583] tests/auth/test_totp.py::test_hotp_matches_rfc_4226_appendix_d[8-399871] tests/auth/test_totp.py::test_hotp_matches_rfc_4226_appendix_d[9-520489] tests/auth/test_totp.py::test_totp_matches_rfc_6238_appendix_b[59-94287082] tests/auth/test_totp.py::test_totp_matches_rfc_6238_appendix_b[1111111109-07081804] tests/auth/test_totp.py::test_totp_matches_rfc_6238_appendix_b[1111111111-14050471] tests/auth/test_totp.py::test_totp_matches_rfc_6238_appendix_b[1234567890-89005924] tests/auth/test_totp.py::test_totp_matches_rfc_6238_appendix_b[2000000000-69279037] tests/auth/test_totp.py::test_totp_matches_rfc_6238_appendix_b[20000000000-65353130] tests/auth/test_totp.py::test_a_generated_secret_is_base32_and_at_least_160_bits tests/auth/test_totp.py::test_a_short_secret_is_refused tests/auth/test_totp.py::test_verify_finds_the_current_step tests/auth/test_totp.py::test_verify_accepts_one_step_of_skew_on_each_side
+..................................................                       [100%]
+=============================== warnings summary ===============================
+tests/auth/test_service_accounts.py::test_rotating_a_credential_revokes_the_previous_one
+tests/auth/test_service_accounts.py::test_rotating_a_credential_revokes_the_previous_one
+tests/auth/test_service_accounts.py::test_rotating_a_credential_revokes_the_previous_one
+tests/auth/test_service_accounts.py::test_rotating_a_credential_revokes_the_previous_one
+tests/auth/test_service_accounts.py::test_rotating_a_credential_revokes_the_previous_one
+tests/auth/test_service_accounts.py::test_rotating_a_credential_revokes_the_previous_one
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/auth/test_service_accounts.py: 9 warnings
+tests/auth/test_session_revocation.py: 8 warnings
+tests/auth/test_sessions.py: 14 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/auth/test_service_accounts.py: 51 warnings
+tests/auth/test_session_revocation.py: 50 warnings
+tests/auth/test_sessions.py: 43 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/auth/test_service_accounts.py: 9 warnings
+tests/auth/test_session_revocation.py: 8 warnings
+tests/auth/test_sessions.py: 14 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/auth/test_service_accounts.py: 11 warnings
+tests/auth/test_session_revocation.py: 8 warnings
+tests/auth/test_sessions.py: 14 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/auth/test_service_accounts.py: 26 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/auth/identity/models.py:69: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+50 passed, 271 warnings in 75.40s (0:01:15)
+
+STDERR:

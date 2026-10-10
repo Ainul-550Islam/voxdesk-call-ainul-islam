@@ -167,7 +167,13 @@ export function useAgentTools(agentId?: string): UseAgentToolsResult {
           ? await enableAgentTool(agentId, toolId)
           : await disableAgentTool(agentId, toolId);
         if (!mounted.current) return;
-        setTools((current) => current.map((tool) => (tool.id === toolId ? updated : tool)));
+        setTools((current) =>
+          current.map((tool) =>
+            tool.id === toolId
+              ? { ...tool, ...updated, is_enabled: updated?.is_enabled ?? enabled }
+              : tool,
+          ),
+        );
       } catch (err) {
         if (mounted.current) {
           setError(err instanceof Error ? err.message : 'Failed to change tool state');

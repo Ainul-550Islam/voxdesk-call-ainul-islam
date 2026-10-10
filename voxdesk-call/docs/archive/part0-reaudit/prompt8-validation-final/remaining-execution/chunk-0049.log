@@ -1,0 +1,325 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_team_management.py::test_the_last_owner_cannot_be_demoted tests/test_team_management.py::test_the_last_owner_cannot_be_deactivated tests/test_team_management.py::test_a_second_owner_makes_demotion_possible tests/test_team_management.py::test_admin_cannot_deactivate_an_owner tests/test_team_management.py::test_deactivated_user_cannot_log_in_again tests/test_team_management.py::test_user_list_is_free_of_sensitive_fields tests/test_team_management.py::test_management_actions_are_audited tests/test_team_management.py::test_audit_feed_is_scoped_to_the_tenant tests/test_telephony_runtime_e2e.py::test_phone_number_lifecycle_e164_validation_and_agent_binding tests/test_telephony_runtime_e2e.py::test_sip_connection_validation_secret_hashing_and_test_probe tests/test_telephony_runtime_e2e.py::test_inbound_webhook_call_routing_and_unconfigured_agent_failure tests/test_telephony_runtime_e2e.py::test_outbound_call_lifecycle_and_provider_readiness_honesty tests/test_telephony_runtime_e2e.py::test_call_state_machine_valid_and_illegal_transitions tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers tests/test_telephony_security_idempotency.py::test_webhook_signature_verification_tamper_and_replay_rejection tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing tests/test_telephony_security_idempotency.py::test_cross_organization_isolation_across_telephony_resources tests/test_tenant_isolation.py::test_attack_1_tenant_id_swap_in_path tests/test_tenant_isolation.py::test_attack_2_cross_tenant_call_id tests/test_tenant_isolation.py::test_own_transcript_is_still_readable tests/test_tenant_isolation.py::test_attack_3_body_tenant_id_is_ignored tests/test_tenant_isolation.py::test_attack_4_self_role_escalation_via_body tests/test_tenant_isolation.py::test_admin_cannot_promote_anyone_to_owner tests/test_tenant_isolation.py::test_attack_5_cross_tenant_patch tests/test_tenant_isolation.py::test_attack_6_viewer_mutation_is_denied tests/test_tenant_isolation.py::test_attack_7_agent_manage_users tests/test_tenant_isolation.py::test_attack_8_admin_cross_tenant_user_management tests/test_tenant_isolation.py::test_team_list_only_shows_own_tenant tests/test_tenant_isolation.py::test_attack_9_anonymous_access_is_refused_everywhere tests/test_tenant_isolation.py::test_list_tenants_returns_only_your_own
+..........FF..................                                           [100%]
+=================================== FAILURES ===================================
+_______ test_inbound_webhook_call_routing_and_unconfigured_agent_failure _______
+
+client = <httpx.AsyncClient object at 0x7fcf76f00f50>
+db = <sqlalchemy.ext.asyncio.session.AsyncSession object at 0x7fcf7bee61b0>
+
+    @pytest.mark.asyncio
+    async def test_inbound_webhook_call_routing_and_unconfigured_agent_failure(
+        client: AsyncClient,
+        db: AsyncSession,
+    ):
+        tenant = await make_tenant(db, "Inbound Call Org")
+        admin = await make_user(db, tenant, role=UserRole.ADMIN)
+        headers = await auth_headers(client, admin)
+        agent = await _seed_agent(db, tenant_id=tenant.id, name="Inbound Triage Agent")
+    
+        # 1. Create phone number WITHOUT inbound agent bound
+        num_resp = await client.post(
+            "/api/v1/telephony/phone-numbers",
+            json={
+                "number": "+14155550160",
+                "provider": "SIMULATED",
+            },
+            headers=headers,
+        )
+        assert num_resp.status_code == 201
+        phone_id = num_resp.json()["id"]
+    
+        # 2. Inbound webhook to unbound number fails deterministically (never fabricates fake agent)
+        unconfigured_payload = {
+            "provider_event_id": "evt_inbound_unbound_001",
+            "provider_call_id": "call_unbound_001",
+            "event_type": "call.ringing",
+            "direction": "inbound",
+            "from_number": "+14155559999",
+            "to_number": "+14155550160",
+        }
+        raw_body, wh_headers = _signed_webhook_headers(
+            unconfigured_payload, org_id=str(tenant.id)
+        )
+        unbound_wh = await client.post(
+            "/api/v1/telephony/webhooks/simulated/inbound",
+            content=raw_body,
+            headers=wh_headers,
+        )
+        assert unbound_wh.status_code == 422
+        assert "no bound inbound agent" in unbound_wh.text.lower()
+    
+        # 3. Bind the durable agent to the phone number
+        bind_resp = await client.post(
+            f"/api/v1/telephony/phone-numbers/{phone_id}/bind-agent",
+            json={"inbound_agent_id": str(agent.id)},
+            headers=headers,
+        )
+        assert bind_resp.status_code == 200
+    
+        # 4. Inbound webhook now routes to bound agent and progresses RINGING -> ANSWERED -> IN_PROGRESS -> COMPLETED
+        for idx, (evt_type, status_val) in enumerate(
+            [
+                ("call.ringing", "ringing"),
+                ("call.answered", "answered"),
+                ("call.in_progress", "in_progress"),
+                ("call.completed", "completed"),
+            ],
+            start=1,
+        ):
+            payload = {
+                "provider_event_id": f"evt_inbound_ok_{idx}",
+                "provider_call_id": "call_inbound_live_002",
+                "event_type": evt_type,
+                "status": status_val,
+                "direction": "inbound",
+                "from_number": "+14155558888",
+                "to_number": "+14155550160",
+                "duration_seconds": 42 if status_val == "completed" else None,
+            }
+            raw_b, wh_h = _signed_webhook_headers(payload, org_id=str(tenant.id))
+            endpoint = "inbound" if idx == 1 else "status"
+            res = await client.post(
+                f"/api/v1/telephony/webhooks/simulated/{endpoint}",
+                content=raw_b,
+                headers=wh_h,
+            )
+>           assert res.status_code == 200, res.text
+E           AssertionError: {"error":{"code":"AGENT_VERSION_ENVIRONMENT_MISMATCH","message":"The inbound call has no persisted environment binding.","request_id":"d1c74498221349ecb957a6e0a7307b3e","detail":{"agent_id":"40e4d01e-a582-4c11-bd6f-360ddacae8e8","call_session_id":"2aee52a1-2266-4366-a990-ea68d7c06059","status":"FAILED"}}}
+E           assert 422 == 200
+E            +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+
+tests/test_telephony_runtime_e2e.py:313: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[2m2026-10-06T15:01:28.876832Z[0m [[32m[1minfo     [0m] [1midentity.email_rendered       [0m [36mbody_chars[0m=[35m269[0m [36mrequest_id[0m=[35mff77fa234a9b4217b360c79906fc6307[0m [36msubject[0m=[35mNew sign-in to your account - Inbound Call Org[0m [36mto[0m=[35ma***@example.com[0m [36mtransport[0m=[35mlog[0m
+[2m2026-10-06T15:01:28.932174Z[0m [[33m[1mwarning  [0m] [1mapp_error                     [0m [36mcode[0m=[35mTELEPHONY_NOT_CONFIGURED[0m [36mmessage[0m=[35mPhone number +14155550160 has no bound inbound agent.[0m [36mrequest_id[0m=[35mee61af263b9f46ea81ba08b17d189185[0m [36mstatus[0m=[35m422[0m
+[2m2026-10-06T15:01:28.981108Z[0m [[33m[1mwarning  [0m] [1mapp_error                     [0m [36mcode[0m=[35mAGENT_VERSION_ENVIRONMENT_MISMATCH[0m [36mmessage[0m=[35mThe inbound call has no persisted environment binding.[0m [36mrequest_id[0m=[35md1c74498221349ecb957a6e0a7307b3e[0m [36mstatus[0m=[35m422[0m
+_________ test_outbound_call_lifecycle_and_provider_readiness_honesty __________
+
+client = <httpx.AsyncClient object at 0x7fcf73847f20>
+db = <sqlalchemy.ext.asyncio.session.AsyncSession object at 0x7fcf80088350>
+
+    @pytest.mark.asyncio
+    async def test_outbound_call_lifecycle_and_provider_readiness_honesty(
+        client: AsyncClient,
+        db: AsyncSession,
+    ):
+        tenant = await make_tenant(db, "Outbound Dialer Org")
+        admin = await make_user(db, tenant, role=UserRole.ADMIN)
+        headers = await auth_headers(client, admin)
+        agent = await _seed_agent(db, tenant_id=tenant.id, name="Outbound Sales Agent")
+    
+        # 1. Requesting a live TWILIO outbound call when Twilio credentials are not configured
+        # fails honestly with 422 TELEPHONY_NOT_CONFIGURED instead of faking a live carrier call
+        unconf_resp = await client.post(
+            "/api/v1/telephony/calls/outbound",
+            json={
+                "to_number": "+14155550199",
+                "from_number": "+14155550101",
+                "agent_id": str(agent.id),
+                "provider": "TWILIO",
+                "is_simulation": False,
+            },
+            headers=headers,
+        )
+>       assert unconf_resp.status_code == 422
+E       assert 400 == 422
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests/test_telephony_runtime_e2e.py:357: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[2m2026-10-06T15:01:29.825323Z[0m [[32m[1minfo     [0m] [1midentity.email_rendered       [0m [36mbody_chars[0m=[35m272[0m [36mrequest_id[0m=[35m56d1206d180745f3950715250f495ead[0m [36msubject[0m=[35mNew sign-in to your account - Outbound Dialer Org[0m [36mto[0m=[35ma***@example.com[0m [36mtransport[0m=[35mlog[0m
+[2m2026-10-06T15:01:29.874982Z[0m [[33m[1mwarning  [0m] [1mapp_error                     [0m [36mactor_type[0m=[35mhuman[0m [36mactor_user_id[0m=[35mebeeaa6a-9873-4290-b759-f0b844d0181a[0m [36mcode[0m=[35mIDEMPOTENCY_KEY_REQUIRED[0m [36mmessage[0m=[35mIdempotency-Key is required for outbound calls.[0m [36mrequest_id[0m=[35m0205ef2e72c84431bf5550c89ed4ce25[0m [36mstatus[0m=[35m400[0m [36mtenant_id[0m=[35m1fae85ee-60ff-4770-9897-5a72292f3614[0m
+=============================== warnings summary ===============================
+tests/test_team_management.py::test_the_last_owner_cannot_be_demoted
+tests/test_team_management.py::test_the_last_owner_cannot_be_demoted
+tests/test_team_management.py::test_the_last_owner_cannot_be_demoted
+tests/test_team_management.py::test_the_last_owner_cannot_be_demoted
+tests/test_team_management.py::test_the_last_owner_cannot_be_demoted
+tests/test_team_management.py::test_the_last_owner_cannot_be_demoted
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/test_team_management.py: 9 warnings
+tests/test_telephony_runtime_e2e.py: 5 warnings
+tests/test_telephony_security_idempotency.py: 4 warnings
+tests/test_tenant_isolation.py: 20 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_team_management.py: 59 warnings
+tests/test_telephony_runtime_e2e.py: 58 warnings
+tests/test_telephony_security_idempotency.py: 36 warnings
+tests/test_tenant_isolation.py: 89 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/test_team_management.py: 9 warnings
+tests/test_telephony_runtime_e2e.py: 5 warnings
+tests/test_telephony_security_idempotency.py: 4 warnings
+tests/test_tenant_isolation.py: 20 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_team_management.py: 14 warnings
+tests/test_telephony_runtime_e2e.py: 5 warnings
+tests/test_telephony_security_idempotency.py: 3 warnings
+tests/test_tenant_isolation.py: 18 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_telephony_runtime_e2e.py::test_phone_number_lifecycle_e164_validation_and_agent_binding
+tests/test_telephony_runtime_e2e.py::test_inbound_webhook_call_routing_and_unconfigured_agent_failure
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+tests/test_telephony_security_idempotency.py::test_cross_organization_isolation_across_telephony_resources
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/phone_numbers.py:195: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_telephony_runtime_e2e.py::test_phone_number_lifecycle_e164_validation_and_agent_binding
+tests/test_telephony_runtime_e2e.py::test_inbound_webhook_call_routing_and_unconfigured_agent_failure
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/phone_numbers.py:371: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    row.updated_at = datetime.utcnow()
+
+tests/test_telephony_runtime_e2e.py::test_sip_connection_validation_secret_hashing_and_test_probe
+tests/test_telephony_security_idempotency.py::test_cross_organization_isolation_across_telephony_resources
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/sip.py:104: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_telephony_runtime_e2e.py::test_sip_connection_validation_secret_hashing_and_test_probe
+tests/test_telephony_runtime_e2e.py::test_sip_connection_validation_secret_hashing_and_test_probe
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/sip.py:178: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_telephony_runtime_e2e.py::test_inbound_webhook_call_routing_and_unconfigured_agent_failure
+tests/test_telephony_runtime_e2e.py::test_inbound_webhook_call_routing_and_unconfigured_agent_failure
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/pydantic/main.py:214: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+tests/test_telephony_runtime_e2e.py::test_inbound_webhook_call_routing_and_unconfigured_agent_failure
+tests/test_telephony_runtime_e2e.py::test_inbound_webhook_call_routing_and_unconfigured_agent_failure
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/idempotency.py:154: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    received_at=datetime.utcnow(),
+
+tests/test_telephony_runtime_e2e.py::test_inbound_webhook_call_routing_and_unconfigured_agent_failure
+tests/test_telephony_runtime_e2e.py::test_inbound_webhook_call_routing_and_unconfigured_agent_failure
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/webhooks.py:292: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+tests/test_telephony_security_idempotency.py::test_cross_organization_isolation_across_telephony_resources
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/runtime.py:401: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+tests/test_telephony_security_idempotency.py::test_cross_organization_isolation_across_telephony_resources
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/runtime.py:478: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    occurred_at=datetime.utcnow(),
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/call_session.py:331: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = occurred_at or datetime.utcnow()
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  <string>:16: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  <string>:17: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/call_session.py:204: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    ts = (occurred_at or datetime.utcnow()).isoformat()
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/call_session.py:237: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "timestamp": (occurred_at or datetime.utcnow()).isoformat(),
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/media_gateway.py:174: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    session.last_activity_at = datetime.utcnow()
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/media_gateway.py:198: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    session.last_activity_at = datetime.utcnow()
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/media_gateway.py:142: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    session.last_activity_at = datetime.utcnow()
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/dtmf.py:94: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/transfer.py:278: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/transfer.py:345: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    occurred_at=datetime.utcnow(),
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/transfer.py:401: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    completed_at=datetime.utcnow(),
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/transfer.py:405: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    completed_at = datetime.utcnow()
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/runtime.py:575: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/media_gateway.py:215: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    session.closed_at = datetime.utcnow()
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/runtime.py:601: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    occurred_at=datetime.utcnow(),
+
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/telephony_usage.py:113: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    recorded_at=datetime.utcnow(),
+
+tests/test_tenant_isolation.py::test_attack_1_tenant_id_swap_in_path
+tests/test_tenant_isolation.py::test_attack_2_cross_tenant_call_id
+tests/test_tenant_isolation.py::test_own_transcript_is_still_readable
+tests/test_tenant_isolation.py::test_attack_9_anonymous_access_is_refused_everywhere
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/test_tenant_isolation.py:37: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    started_at=datetime.utcnow(),
+
+tests/test_tenant_isolation.py::test_attack_3_body_tenant_id_is_ignored
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/leads/models.py:25: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_telephony_runtime_e2e.py::test_inbound_webhook_call_routing_and_unconfigured_agent_failure
+FAILED tests/test_telephony_runtime_e2e.py::test_outbound_call_lifecycle_and_provider_readiness_honesty
+2 failed, 28 passed, 431 warnings in 84.02s (0:01:24)
+
+STDERR:

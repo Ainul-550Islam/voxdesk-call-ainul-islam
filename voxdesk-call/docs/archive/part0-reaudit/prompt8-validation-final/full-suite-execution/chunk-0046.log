@@ -1,0 +1,150 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_call_callbacks.py::test_unknown_provider_status_does_not_terminate_the_call tests/test_call_callbacks.py::test_duplicate_completed_callbacks_bill_the_minutes_once tests/test_call_callbacks.py::test_duplicate_completed_callbacks_are_otherwise_no_ops tests/test_call_callbacks.py::test_case_a_transfer_then_stream_close_then_completed_then_dial_callback tests/test_call_callbacks.py::test_case_b_dial_callback_then_completed tests/test_call_callbacks.py::test_case_c_no_answer_after_another_terminal_callback tests/test_call_callbacks.py::test_case_d_duplicate_completed_callbacks tests/test_call_callbacks.py::test_call_ending_while_still_dialing_marks_the_transfer_failed tests/test_call_callbacks.py::test_busy_human_leg_leaves_the_customer_call_alive tests/test_call_callbacks.py::test_out_of_order_dial_callback_before_any_transfer_is_ignored tests/test_call_callbacks.py::test_duplicate_callbacks_do_not_regrade_a_lead tests/test_call_callbacks.py::test_provider_reported_failure_is_not_overridden_by_a_later_connect tests/test_call_callbacks.py::test_outbound_answer_webhook_requires_a_signature tests/test_call_callbacks.py::test_outbound_answer_works_in_development tests/test_call_state.py::test_legal_transitions_are_applied[ringing-in_progress] tests/test_call_state.py::test_legal_transitions_are_applied[ringing-no_answer] tests/test_call_state.py::test_legal_transitions_are_applied[ringing-failed] tests/test_call_state.py::test_legal_transitions_are_applied[in_progress-completed] tests/test_call_state.py::test_legal_transitions_are_applied[in_progress-transferred] tests/test_call_state.py::test_legal_transitions_are_applied[in_progress-failed] tests/test_call_state.py::test_legal_transitions_are_applied[transferred-completed] tests/test_call_state.py::test_legal_transitions_are_applied[transferred-failed] tests/test_call_state.py::test_illegal_transitions_are_rejected[completed-ringing] tests/test_call_state.py::test_illegal_transitions_are_rejected[completed-in_progress] tests/test_call_state.py::test_illegal_transitions_are_rejected[failed-in_progress] tests/test_call_state.py::test_illegal_transitions_are_rejected[failed-completed] tests/test_call_state.py::test_illegal_transitions_are_rejected[no_answer-in_progress] tests/test_call_state.py::test_illegal_transitions_are_rejected[in_progress-ringing] tests/test_call_state.py::test_illegal_transitions_are_rejected[transferred-in_progress] tests/test_call_state.py::test_illegal_transitions_are_rejected[transferred-ringing] tests/test_call_state.py::test_terminal_states_are_terminal tests/test_call_state.py::test_every_status_has_a_transition_entry tests/test_call_state.py::test_duplicate_status_is_a_no_op_but_not_an_error tests/test_call_state.py::test_repeated_completed_callbacks_keep_one_ended_at tests/test_call_state.py::test_terminal_state_survives_a_stale_callback tests/test_call_state.py::test_duration_never_shrinks tests/test_call_state.py::test_ended_at_can_be_supplied_explicitly tests/test_call_state.py::test_non_terminal_transition_does_not_set_ended_at tests/test_call_state.py::test_provider_status_mapping[completed-completed] tests/test_call_state.py::test_provider_status_mapping[no-answer-no_answer] tests/test_call_state.py::test_provider_status_mapping[busy-failed] tests/test_call_state.py::test_provider_status_mapping[failed-failed] tests/test_call_state.py::test_provider_status_mapping[canceled-failed] tests/test_call_state.py::test_provider_status_mapping[cancelled-failed] tests/test_call_state.py::test_provider_status_mapping[in-progress-in_progress] tests/test_call_state.py::test_provider_status_mapping[ringing-ringing] tests/test_call_state.py::test_provider_status_mapping[queued-ringing] tests/test_call_state.py::test_provider_status_mapping[initiated-ringing] tests/test_call_state.py::test_provider_status_mapping[COMPLETED-completed] tests/test_call_state.py::test_provider_status_mapping[ busy -failed]
+...............................F..........FF......                       [100%]
+=================================== FAILURES ===================================
+___________________ test_every_status_has_a_transition_entry ___________________
+
+    def test_every_status_has_a_transition_entry():
+>       assert set(call_state.ALLOWED_TRANSITIONS) == set(CallStatus)
+E       AssertionError: assert {<CallStatus....transferred'>} == {<CallStatus....inging'>, ...}
+E         
+E         Extra items in the right set:
+E         <CallStatus.CANCELLED: 'cancelled'>
+E         Use -v to get more diff
+
+tests/test_call_state.py:83: AssertionError
+________________ test_provider_status_mapping[canceled-failed] _________________
+
+raw = 'canceled', expected = <CallStatus.FAILED: 'failed'>
+
+    @pytest.mark.parametrize("raw,expected", [
+        ("completed", CallStatus.COMPLETED),
+        ("no-answer", CallStatus.NO_ANSWER),
+        ("busy", CallStatus.FAILED),
+        ("failed", CallStatus.FAILED),
+        ("canceled", CallStatus.FAILED),
+        ("cancelled", CallStatus.FAILED),
+        ("in-progress", CallStatus.IN_PROGRESS),
+        ("ringing", CallStatus.RINGING),
+        ("queued", CallStatus.RINGING),
+        ("initiated", CallStatus.RINGING),
+        ("COMPLETED", CallStatus.COMPLETED),      # case-insensitive
+        (" busy ", CallStatus.FAILED),            # whitespace tolerant
+    ])
+    def test_provider_status_mapping(raw, expected):
+>       assert call_state.map_provider_status(raw) is expected
+E       AssertionError: assert <CallStatus.CANCELLED: 'cancelled'> is <CallStatus.FAILED: 'failed'>
+E        +  where <CallStatus.CANCELLED: 'cancelled'> = <function map_provider_status at 0x7fb3f2269800>('canceled')
+E        +    where <function map_provider_status at 0x7fb3f2269800> = call_state.map_provider_status
+
+tests/test_call_state.py:157: AssertionError
+________________ test_provider_status_mapping[cancelled-failed] ________________
+
+raw = 'cancelled', expected = <CallStatus.FAILED: 'failed'>
+
+    @pytest.mark.parametrize("raw,expected", [
+        ("completed", CallStatus.COMPLETED),
+        ("no-answer", CallStatus.NO_ANSWER),
+        ("busy", CallStatus.FAILED),
+        ("failed", CallStatus.FAILED),
+        ("canceled", CallStatus.FAILED),
+        ("cancelled", CallStatus.FAILED),
+        ("in-progress", CallStatus.IN_PROGRESS),
+        ("ringing", CallStatus.RINGING),
+        ("queued", CallStatus.RINGING),
+        ("initiated", CallStatus.RINGING),
+        ("COMPLETED", CallStatus.COMPLETED),      # case-insensitive
+        (" busy ", CallStatus.FAILED),            # whitespace tolerant
+    ])
+    def test_provider_status_mapping(raw, expected):
+>       assert call_state.map_provider_status(raw) is expected
+E       AssertionError: assert <CallStatus.CANCELLED: 'cancelled'> is <CallStatus.FAILED: 'failed'>
+E        +  where <CallStatus.CANCELLED: 'cancelled'> = <function map_provider_status at 0x7fb3f2269800>('cancelled')
+E        +    where <function map_provider_status at 0x7fb3f2269800> = call_state.map_provider_status
+
+tests/test_call_state.py:157: AssertionError
+=============================== warnings summary ===============================
+tests/test_call_callbacks.py::test_unknown_provider_status_does_not_terminate_the_call
+tests/test_call_callbacks.py::test_unknown_provider_status_does_not_terminate_the_call
+tests/test_call_callbacks.py::test_unknown_provider_status_does_not_terminate_the_call
+tests/test_call_callbacks.py::test_unknown_provider_status_does_not_terminate_the_call
+tests/test_call_callbacks.py::test_unknown_provider_status_does_not_terminate_the_call
+tests/test_call_callbacks.py::test_unknown_provider_status_does_not_terminate_the_call
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/test_call_callbacks.py: 12 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_call_callbacks.py: 54 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/test_call_callbacks.py: 12 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_call_callbacks.py: 11 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/test_transfer.py:43: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    started_at=datetime.utcnow(),
+
+tests/test_call_callbacks.py: 8 warnings
+tests/test_call_state.py: 10 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/call_state.py:259: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call.ended_at = ended_at or datetime.utcnow()
+
+tests/test_call_callbacks.py::test_case_a_transfer_then_stream_close_then_completed_then_dial_callback
+tests/test_call_callbacks.py::test_case_b_dial_callback_then_completed
+tests/test_call_callbacks.py::test_case_d_duplicate_completed_callbacks
+tests/test_call_callbacks.py::test_call_ending_while_still_dialing_marks_the_transfer_failed
+tests/test_call_callbacks.py::test_busy_human_leg_leaves_the_customer_call_alive
+tests/test_call_callbacks.py::test_provider_reported_failure_is_not_overridden_by_a_later_connect
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/transfer_service.py:288: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_call_callbacks.py::test_case_a_transfer_then_stream_close_then_completed_then_dial_callback
+tests/test_call_callbacks.py::test_case_b_dial_callback_then_completed
+tests/test_call_callbacks.py::test_case_d_duplicate_completed_callbacks
+tests/test_call_callbacks.py::test_call_ending_while_still_dialing_marks_the_transfer_failed
+tests/test_call_callbacks.py::test_busy_human_leg_leaves_the_customer_call_alive
+tests/test_call_callbacks.py::test_provider_reported_failure_is_not_overridden_by_a_later_connect
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/transfer_service.py:340: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call.transfer_started_at = datetime.utcnow()
+
+tests/test_call_callbacks.py::test_case_a_transfer_then_stream_close_then_completed_then_dial_callback
+tests/test_call_callbacks.py::test_call_ending_while_still_dialing_marks_the_transfer_failed
+tests/test_call_callbacks.py::test_busy_human_leg_leaves_the_customer_call_alive
+tests/test_call_callbacks.py::test_provider_reported_failure_is_not_overridden_by_a_later_connect
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/transfer_service.py:469: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call.transfer_failed_at = datetime.utcnow()
+
+tests/test_call_callbacks.py::test_case_a_transfer_then_stream_close_then_completed_then_dial_callback
+tests/test_call_callbacks.py::test_case_b_dial_callback_then_completed
+tests/test_call_callbacks.py::test_case_d_duplicate_completed_callbacks
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/transfer_service.py:408: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call.transfer_completed_at = datetime.utcnow()
+
+tests/test_call_callbacks.py::test_duplicate_callbacks_do_not_regrade_a_lead
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/test_call_callbacks.py:312: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    started_at=datetime.utcnow(), lead_id=lead.id, lead_score=80,
+
+tests/test_call_callbacks.py::test_duplicate_callbacks_do_not_regrade_a_lead
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/leads/models.py:25: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow()
+
+tests/test_call_state.py: 22 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/test_call_state.py:27: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    started_at=datetime.utcnow(),
+
+tests/test_call_state.py::test_ended_at_can_be_supplied_explicitly
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/test_call_state.py:129: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    when = datetime.utcnow() - timedelta(minutes=5)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_call_state.py::test_every_status_has_a_transition_entry - A...
+FAILED tests/test_call_state.py::test_provider_status_mapping[canceled-failed]
+FAILED tests/test_call_state.py::test_provider_status_mapping[cancelled-failed]
+3 failed, 47 passed, 157 warnings in 60.52s (0:01:00)
+
+STDERR:

@@ -1,0 +1,24 @@
+{
+  "recording_id": "demo-06-webhook-delivery",
+  "feature_matrix_ids": [
+    25,
+    38
+  ],
+  "captured_at_utc": "2026-10-08T18:04:35.448063+00:00",
+  "events_verified": [
+    "call_started",
+    "call_ended",
+    "call_analyzed",
+    "transfer_started",
+    "transfer_completed",
+    "voicemail_detected",
+    "dtmf_received",
+    "recording_ready"
+  ],
+  "signature_header": "X-VoxDesk-Signature: t=<unix_ts>,v1=<hmac_sha256>",
+  "verified_by_tests": [
+    "tests/webhooks/test_webhook_lifecycle_real.py::test_callback_delivers_signed_bytes_to_local_receiver",
+    "tests/webhooks/test_webhook_lifecycle_real.py::test_http_failures_retry_then_exhaust_to_dlq",
+    "tests/webhooks/test_call_event_bridge.py::test_transition_and_replay_publish_one_fact"
+  ]
+}

@@ -63,6 +63,7 @@ CREDENTIAL_FIELDS: dict[CrmProviderType, tuple[str, ...]] = {
     CrmProviderType.GOHIGHLEVEL: ("access_token",),
     CrmProviderType.HUBSPOT: ("access_token",),
     CrmProviderType.JOBBER: ("access_token", "refresh_token"),
+    CrmProviderType.SALESFORCE: ("access_token", "refresh_token", "client_id", "client_secret"),
     CrmProviderType.WEBHOOK: ("signing_secret",),
 }
 
@@ -72,6 +73,7 @@ CONFIG_FIELDS: dict[CrmProviderType, tuple[str, ...]] = {
     CrmProviderType.GOHIGHLEVEL: ("location_id", "calendar_id", "base_url", "post_call_analysis_environment_id"),
     CrmProviderType.HUBSPOT: ("base_url", "post_call_analysis_environment_id"),
     CrmProviderType.JOBBER: ("api_version", "base_url", "post_call_analysis_environment_id"),
+    CrmProviderType.SALESFORCE: ("instance_url", "api_version", "base_url", "login_url", "post_call_analysis_environment_id"),
     CrmProviderType.WEBHOOK: ("url", "post_call_analysis_environment_id"),
 }
 

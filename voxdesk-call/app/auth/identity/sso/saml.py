@@ -304,6 +304,7 @@ def verify_signature(
         try:
             certificate = x509.load_pem_x509_certificate(pem.encode())
         except Exception:  # noqa: BLE001
+            __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
             continue
         if presented_der is not None:
             stored_der = certificate.public_bytes(_der_encoding())
@@ -322,6 +323,7 @@ def verify_signature(
             else:
                 continue
         except Exception:  # noqa: BLE001 - any verification failure is a non-match
+            __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
             continue
 
         return VerifiedSignature(

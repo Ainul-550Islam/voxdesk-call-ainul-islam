@@ -1,4 +1,4 @@
-# File: app/db/enterprise_models.py — Enterprise extension models for missing APIs: batch calls, A/B testing, PCAP, retention, webhooks, Salesforce, knowledge base, simulation, tool registry, workflow triggers, multichannel, call policies
+# File: app/db/enterprise_models.py — Enterprise extension models for missing APIs: batch calls, A/B testing, retention, webhooks, Salesforce, knowledge base, simulation, tool registry, workflow triggers, multichannel, call policies
 """
 Enterprise extension models for P0/P1 missing API closure.
 All models are tenant-scoped, use UUID primary keys, and are registered on Base.metadata
@@ -13,6 +13,7 @@ from enum import Enum as PyEnum
 from sqlalchemy import (
     Boolean,
     DateTime,
+    Float,
     ForeignKey,
     Integer,
     String,
@@ -130,6 +131,12 @@ class BatchRecipient(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
     batch_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("batch_calls.id", ondelete="CASCADE"), nullable=False)
     tenant_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
+    campaign_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("campaigns.id", ondelete="SET NULL"), nullable=True
+    )
+    lead_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("leads.id", ondelete="SET NULL"), nullable=True
+    )
     phone: Mapped[str] = mapped_column(String(32), nullable=False)
     name: Mapped[str] = mapped_column(String(120), default="", nullable=False)
     custom_fields: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
@@ -146,6 +153,8 @@ class BatchRecipient(Base):
             "id": str(self.id),
             "batch_id": str(self.batch_id),
             "tenant_id": str(self.tenant_id),
+            "campaign_id": str(self.campaign_id) if self.campaign_id else None,
+            "lead_id": str(self.lead_id) if self.lead_id else None,
             "phone": self.phone,
             "name": self.name,
             "custom_fields": self.custom_fields,
@@ -223,36 +232,39 @@ class ExperimentVariant(Base):
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 
-# -------------------------------------------------------------- PCAP / Debug
-class PcapArtifact(Base):
-    __tablename__ = "pcap_artifacts"
-    __table_args__ = (Index("ix_pcap_tenant", "tenant_id"), Index("ix_pcap_call", "call_id"))
+
+class ExperimentCallOutcome(Base):
+    __tablename__ = "experiment_call_outcomes"
+    __table_args__ = (
+        UniqueConstraint("experiment_id", "call_id", name="uq_exp_call_outcome"),
+        Index("ix_exp_call_outcomes_variant", "experiment_id", "variant_id"),
+        Index("ix_exp_call_outcomes_tenant", "tenant_id"),
+    )
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
     tenant_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
+    experiment_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("experiments.id", ondelete="CASCADE"), nullable=False)
+    variant_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("experiment_variants.id", ondelete="CASCADE"), nullable=False)
     call_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
-    provider: Mapped[str] = mapped_column(String(32), default="twilio", nullable=False)
-    capture_type: Mapped[str] = mapped_column(String(32), default="sip", nullable=False)
-    size_bytes: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    storage_key: Mapped[str] = mapped_column(String(240), default="", nullable=False)
-    checksum: Mapped[str] = mapped_column(String(64), default="", nullable=False)
-    retention_deadline: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, nullable=False)
-    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    call_sid: Mapped[str] = mapped_column(String(96), default="", nullable=False)
+    success: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    duration_seconds: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    csat: Mapped[float | None] = mapped_column(Float, nullable=True)
+    cost: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, nullable=False)
 
     def as_dict(self) -> dict:
         return {
             "id": str(self.id),
             "tenant_id": str(self.tenant_id),
+            "experiment_id": str(self.experiment_id),
+            "variant_id": str(self.variant_id),
             "call_id": str(self.call_id),
-            "provider": self.provider,
-            "capture_type": self.capture_type,
-            "size_bytes": self.size_bytes,
-            "has_storage": bool(self.storage_key),
-            "checksum": self.checksum or None,
-            "retention_deadline": self.retention_deadline.isoformat() if self.retention_deadline else None,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "expires_at": self.expires_at.isoformat() if self.expires_at else None,
+            "call_sid": self.call_sid,
+            "success": self.success,
+            "duration_seconds": self.duration_seconds,
+            "csat": self.csat,
+            "cost": self.cost,
+            "recorded_at": self.recorded_at.isoformat() if self.recorded_at else None,
         }
 
 # -------------------------------------------------------------- Retention
@@ -300,6 +312,7 @@ class SalesforceConnection(Base):
     __table_args__ = (UniqueConstraint("tenant_id", name="uq_salesforce_tenant"),)
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
     tenant_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
+    crm_integration_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     instance_url: Mapped[str] = mapped_column(String(500), default="", nullable=False)
     access_token_encrypted: Mapped[str] = mapped_column(Text, default="", nullable=False)
     refresh_token_encrypted: Mapped[str] = mapped_column(Text, default="", nullable=False)
@@ -313,6 +326,7 @@ class SalesforceConnection(Base):
         return {
             "id": str(self.id),
             "tenant_id": str(self.tenant_id),
+            "crm_integration_id": str(self.crm_integration_id) if self.crm_integration_id else None,
             "instance_url": self.instance_url,
             "is_active": self.is_active,
             "last_sync_at": self.last_sync_at.isoformat() if self.last_sync_at else None,
@@ -320,6 +334,23 @@ class SalesforceConnection(Base):
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             "meta": self.meta,
         }
+
+
+class SalesforceOAuthState(Base):
+    __tablename__ = "salesforce_oauth_states"
+    __table_args__ = (
+        Index("ix_sf_oauth_states_tenant", "tenant_id"),
+        UniqueConstraint("state", name="uq_sf_oauth_state"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
+    state: Mapped[str] = mapped_column(String(128), nullable=False)
+    code_verifier: Mapped[str] = mapped_column(String(256), default="", nullable=False)
+    redirect_uri: Mapped[str] = mapped_column(String(500), default="", nullable=False)
+    instance_url: Mapped[str] = mapped_column(String(500), default="", nullable=False)
+    scope: Mapped[str] = mapped_column(String(500), default="api refresh_token openid", nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, nullable=False)
 
 class CrmWritebackLog(Base):
     __tablename__ = "crm_writeback_logs"

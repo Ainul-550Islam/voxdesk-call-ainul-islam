@@ -1,0 +1,5 @@
+$ make contracts-check
+exit=0
+python scripts/verify_contracts.py
+contracts: 5 .proto files
+OK: contracts compile; enum vocabulary matches app.db.models; every operational message is tenant-scoped.

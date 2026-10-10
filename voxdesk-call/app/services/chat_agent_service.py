@@ -806,6 +806,57 @@ async def list_messages(
     return list((await session.execute(stmt)).scalars().all())
 
 
+async def resolve_chat_runtime_config(
+    session: AsyncSession,
+    tenant: Tenant | UUID,
+    agent: ChatAgent,
+    *,
+    version_number: int | None = None,
+):
+    """Resolve an immutable ``RuntimeConfig`` from ``ChatAgentVersion`` (Sub-Phase 2E).
+
+    Never reads legacy ``Tenant`` prompt/greeting/model columns.
+    """
+    from app.runtime.agent_config_resolver import RuntimeConfig
+
+    tid = _tenant_id(tenant)
+    target_version = (
+        int(version_number)
+        if version_number is not None
+        else int(agent.published_version or agent.draft_version or 1)
+    )
+    ver_row = await get_version(session, tid, agent.id, target_version)
+    if ver_row is not None and isinstance(ver_row.config, dict):
+        cfg = dict(ver_row.config)
+        ver_id = ver_row.id
+        source = "chat_agent_version"
+    else:
+        cfg = dict(
+            agent.published_config
+            if agent.published_config is not None
+            else (agent.draft_config or {})
+        )
+        ver_id = None
+        source = "chat_agent_config"
+
+    sys_prompt = str(cfg.get("system_prompt") or f"You are {agent.name}.").strip()
+    first_msg = str(cfg.get("first_message") or cfg.get("greeting") or "").strip()
+    model = str(cfg.get("model") or "gpt-4o-mini").strip()
+    provider = str(cfg.get("provider") or "openai").strip()
+
+    return RuntimeConfig(
+        tenant_id=tid,
+        agent_id=agent.id,
+        agent_version_id=ver_id,
+        agent_version_number=target_version,
+        source=source,
+        system_prompt=sys_prompt,
+        greeting=first_msg,
+        llm_provider=provider,
+        llm_model=model,
+    )
+
+
 def _build_assistant_reply(
     agent: ChatAgent,
     user_text: str,
@@ -813,9 +864,13 @@ def _build_assistant_reply(
     contact: Contact | None,
     memory_facts: dict[str, str],
     dynamic_variables: dict[str, Any],
+    runtime_config: Any | None = None,
 ) -> str:
-    cfg = agent.published_config if agent.published_config is not None else (agent.draft_config or {})
-    system_prompt = str(cfg.get("system_prompt") or f"You are {agent.name}.").strip()
+    if runtime_config is not None and getattr(runtime_config, "system_prompt", None):
+        system_prompt = str(runtime_config.system_prompt).strip()
+    else:
+        cfg = agent.published_config if agent.published_config is not None else (agent.draft_config or {})
+        system_prompt = str(cfg.get("system_prompt") or f"You are {agent.name}.").strip()
 
     context_parts: list[str] = []
     if contact and contact.name:
@@ -910,12 +965,19 @@ async def send_message(
             for e in entries:
                 memory_facts[e.key] = e.value
 
+    rt_cfg = await resolve_chat_runtime_config(
+        session,
+        tid,
+        agent,
+        version_number=chat_sess.chat_agent_version,
+    )
     reply_text = _build_assistant_reply(
         agent,
         payload.content,
         contact=contact,
         memory_facts=memory_facts,
         dynamic_variables=chat_sess.dynamic_variables or {},
+        runtime_config=rt_cfg,
     )
     tool_calls_log = (
         [{"tool": "save_contact_memory", "keys": memory_keys_saved}]

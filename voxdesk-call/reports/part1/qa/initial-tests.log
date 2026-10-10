@@ -1,0 +1,229 @@
+.FF...........................F................                          [100%]
+=================================== FAILURES ===================================
+__________ test_suggestion_does_not_finalize_or_replace_a_human_score __________
+
+db = <sqlalchemy.ext.asyncio.session.AsyncSession object at 0x7f77168d3050>
+tenant_a = <app.db.models.Tenant object at 0x7f77168d1be0>
+owner_a = <app.db.models.User object at 0x7f77168d3a70>, billing_plans = None
+
+    @pytest.mark.asyncio
+    async def test_suggestion_does_not_finalize_or_replace_a_human_score(
+        db, tenant_a, owner_a, billing_plans
+    ):
+        review = await _review(db, tenant_a, owner_a)
+        await assign_review(
+            db,
+            tenant_id=tenant_a.id,
+            review_id=review.id,
+            assignee_id=owner_a.id,
+            actor_id=owner_a.id,
+        )
+        held = await review_items(db, tenant_a.id, review.id)
+        await save_scores(
+            db,
+            tenant_id=tenant_a.id,
+            review_id=review.id,
+            actor_id=owner_a.id,
+            scores=[{"item_id": held[0].item_id, "score": 70, "override_reason": "heard it"}],
+        )
+        run, _ = await enqueue(db, tenant_id=tenant_a.id, review=review)
+        item_id = held[0].item_id
+    
+        async def executor(choice, text, timeout_ms):
+            assert "sk-" not in text
+            return {
+                "text": json.dumps({"items": [{"item_id": str(item_id), "score": 10, "turn_ids": []}]}),
+                "tokens": 2,
+            }
+    
+        ctx = await context_for(db, tenant_a.id, owner_a.id)
+        done = await process_run(db, tenant_id=tenant_a.id, run_id=run.id, ctx=ctx, executor=executor)
+>       assert done.status == "completed"
+E       AssertionError: assert 'failed' == 'completed'
+E         
+E         - completed
+E         + failed
+
+tests/qa/test_auto_review.py:94: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[2m2026-10-07T08:34:09.237606Z[0m [[32m[1minfo     [0m] [1mreview.created                [0m [36mreview_id[0m=[35m815e0245-c130-4741-9a41-77453634160e[0m [36mtenant_id[0m=[35mb5bd4410-78eb-45aa-9ddf-f438bcee8f04[0m
+[2m2026-10-07T08:34:09.243905Z[0m [[32m[1minfo     [0m] [1mreview.assigned               [0m [36mreview_id[0m=[35m815e0245-c130-4741-9a41-77453634160e[0m [36mtenant_id[0m=[35mb5bd4410-78eb-45aa-9ddf-f438bcee8f04[0m
+[2m2026-10-07T08:34:09.257502Z[0m [[32m[1minfo     [0m] [1mreview.auto_review_requested  [0m [36mreview_id[0m=[35m815e0245-c130-4741-9a41-77453634160e[0m [36mtenant_id[0m=[35mb5bd4410-78eb-45aa-9ddf-f438bcee8f04[0m
+______________ test_bad_evidence_and_auth_failures_are_permanent _______________
+
+db = <sqlalchemy.ext.asyncio.session.AsyncSession object at 0x7f77169a1280>
+tenant_a = <app.db.models.Tenant object at 0x7f77169f42f0>
+owner_a = <app.db.models.User object at 0x7f77169502f0>, billing_plans = None
+
+    @pytest.mark.asyncio
+    async def test_bad_evidence_and_auth_failures_are_permanent(db, tenant_a, owner_a, billing_plans):
+        review = await _review(db, tenant_a, owner_a)
+        run, _ = await enqueue(db, tenant_id=tenant_a.id, review=review)
+        held = await review_items(db, tenant_a.id, review.id)
+        ctx = await context_for(db, tenant_a.id, owner_a.id)
+    
+        async def cite_other(choice, text, timeout_ms):
+            return {
+                "text": json.dumps(
+                    {
+                        "items": [
+                            {
+                                "item_id": str(held[0].item_id),
+                                "score": 10,
+                                "turn_ids": [str(uuid.uuid4())],
+                            }
+                        ]
+                    }
+                ),
+                "tokens": 1,
+            }
+    
+        bad = await process_run(db, tenant_id=tenant_a.id, run_id=run.id, ctx=ctx, executor=cite_other)
+>       assert bad.status == "permanent_failure"
+E       AssertionError: assert 'failed' == 'permanent_failure'
+E         
+E         - permanent_failure
+E         + failed
+
+tests/qa/test_auto_review.py:129: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[2m2026-10-07T08:34:09.938114Z[0m [[32m[1minfo     [0m] [1mreview.created                [0m [36mreview_id[0m=[35m84521ea7-3e26-4604-bec3-7a515f484af6[0m [36mtenant_id[0m=[35m43e73cca-942b-41a0-b00c-287198cffde5[0m
+[2m2026-10-07T08:34:09.947251Z[0m [[32m[1minfo     [0m] [1mreview.auto_review_requested  [0m [36mreview_id[0m=[35m84521ea7-3e26-4604-bec3-7a515f484af6[0m [36mtenant_id[0m=[35m43e73cca-942b-41a0-b00c-287198cffde5[0m
+___________ test_real_worker_governed_http_persists_output_and_usage ___________
+
+db = <sqlalchemy.ext.asyncio.session.AsyncSession object at 0x7f7701592f00>
+tenant_a = <app.db.models.Tenant object at 0x7f7701467cb0>
+sessionmaker_ = async_sessionmaker(class_='AsyncSession', bind=<sqlalchemy.ext.asyncio.engine.AsyncEngine object at 0x7f770140c050>, autoflush=True, expire_on_commit=False)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f77016a8fb0>
+
+    async def test_real_worker_governed_http_persists_output_and_usage(db, tenant_a, sessionmaker_, monkeypatch):
+        call = await prepared(db, tenant_a, status=CallStatus.IN_PROGRESS)
+        requests = []
+        monkeypatch.setattr(settings, "openai_api_key", "test-post-call-only")
+        monkeypatch.setattr(socket, "getaddrinfo", lambda *a, **k: [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("8.8.8.8", 443))])
+    
+        async def receive(request):
+            assert request.url.host == "api.openai.com"
+            assert request.method == "POST" and request.headers["authorization"] == "Bearer test-post-call-only"
+            data = json.loads(request.content)
+            prompt = data["messages"][0]["content"]
+            assert "Please book Tuesday" in prompt
+            requests.append(data)
+            value = {"summary": "Caller requested Tuesday.", "outcome": "booking_requested"} if '"summary"' in prompt else {"sentiment": "positive"}
+            return httpx.Response(200, json={"choices": [{"message": {"content": json.dumps(value)}}], "usage": {"total_tokens": 13}})
+    
+        await publish_transition(db, call, apply_status(call, CallStatus.COMPLETED))
+        await db.commit()
+        async with httpx.AsyncClient(transport=httpx.MockTransport(receive)) as client:
+            adapter = post_call_llm.StructuredExecutor(post_call_llm.SUMMARY_SCHEMA, client=client)
+            worker = JobWorker(sessionmaker_, handlers={JobType.POST_CALL: make_post_call_handler(sessionmaker_, executor=adapter)}, job_types=(JobType.POST_CALL,))
+            job = await worker.run_once()
+            assert job is not None and job.status == "succeeded"
+            assert await worker.run_once() is None
+            again = await PostCallPipeline(sessionmaker_, executor=adapter).run(call.id, **scope(call, tenant_a))
+            assert again.success
+        await db.refresh(call)
+        assert call.summary == "Caller requested Tuesday."
+        assert call.booked is False  # A model classification is not booking proof.
+        rows = await step_rows(db, call)
+>       assert set(rows) == set(CORE_STEPS) | {"analyzed_webhook"}
+E       AssertionError: assert {'analysis_pl... 'transcript'} == {'analysis_pl... 'transcript'}
+E         
+E         Extra items in the left set:
+E         'qa_sampling'
+E         Use -v to get more diff
+
+tests/telephony/test_post_call_pipeline.py:127: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[2m2026-10-07T08:34:32.441161Z[0m [[32m[1minfo     [0m] [1mcall_state.transition         [0m [36mcall_id[0m=[35m0d10242f-ab9c-4f06-849d-0cb398c2e22a[0m [36mcall_sid[0m=[35mCA80069d1bba6548bab8bf6f4d50c09413[0m [36mcurrent[0m=[35mcompleted[0m [36mprevious[0m=[35min_progress[0m [36mreason[0m=[35mNone[0m [36msource[0m=[35munknown[0m
+[2m2026-10-07T08:34:32.486292Z[0m [[32m[1minfo     [0m] [1mruntime.event                 [0m [36mcomponent[0m=[35mqueue[0m [36mduration_ms[0m=[35mNone[0m [36menvironment_id[0m=[35me63747df-8b93-4760-9b3c-be4be48e5adf[0m [36mevent_name[0m=[35mexecution[0m [36mexecution_id[0m=[35m53c889fa-af8e-494b-b507-ecf5f8513500[0m [36mjob_id[0m=[35m53c889fa-af8e-494b-b507-ecf5f8513500[0m [36moutcome[0m=[35mstarted[0m [36mreason_code[0m=[35mNone[0m [36mrequest_id[0m=[35m53c889fa-af8e-494b-b507-ecf5f8513500[0m [36mtenant_id[0m=[35m36f3b2a5-9765-4b34-b4e9-d5900ba2e8dc[0m [36mtrace_id[0m=[35m53c889fa-af8e-494b-b507-ecf5f8513500[0m
+[2m2026-10-07T08:34:32.486486Z[0m [[32m[1minfo     [0m] [1mjobs.execution_started        [0m [36mattempt[0m=[35m1[0m [36menvironment_id[0m=[35me63747df-8b93-4760-9b3c-be4be48e5adf[0m [36mexecution_id[0m=[35m53c889fa-af8e-494b-b507-ecf5f8513500[0m [36mjob_id[0m=[35m53c889fa-af8e-494b-b507-ecf5f8513500[0m [36mjob_type[0m=[35mpost_call[0m [36morganization_id[0m=[35m45b445a6-7952-465f-92bc-44d651a380a3[0m [36mrequest_id[0m=[35m53c889fa-af8e-494b-b507-ecf5f8513500[0m [36mtenant_id[0m=[35m36f3b2a5-9765-4b34-b4e9-d5900ba2e8dc[0m [36mtrace_id[0m=[35m53c889fa-af8e-494b-b507-ecf5f8513500[0m
+[2m2026-10-07T08:34:32.528838Z[0m [[31m[1merror    [0m] [1mbilling.no_plan_resolved      [0m [36mmetric[0m=[35mllm_token[0m [36mtenant_id[0m=[35m36f3b2a5-9765-4b34-b4e9-d5900ba2e8dc[0m
+[2m2026-10-07T08:34:32.537890Z[0m [[32m[1minfo     [0m] [1mbilling.usage_recorded        [0m [36mbilling_period[0m=[35m2026-10[0m [36midempotency_key[0m=[35mllm_token:post-call:1e2965e5-bead-476c-9240-72925b2bd58e:openai[0m [36mmetric[0m=[35mllm_token[0m [36mquantity[0m=[35m13[0m [36mtenant_id[0m=[35m36f3b2a5-9765-4b34-b4e9-d5900ba2e8dc[0m [36munit[0m=[35mtoken[0m
+[2m2026-10-07T08:34:32.538245Z[0m [[32m[1minfo     [0m] [1mai.governance                 [0m [36mcall_id[0m=[35m0d10242f-ab9c-4f06-849d-0cb398c2e22a[0m [36mchannel[0m=[35masync[0m [36mcost_known[0m=[35mFalse[0m [36menvironment_id[0m=[35me63747df-8b93-4760-9b3c-be4be48e5adf[0m [36mexecuted[0m=[35mTrue[0m [36mfallback_used[0m=[35mFalse[0m [36mguardrail[0m=[35mnone[0m [36mlatency_ms[0m=[35m9[0m [36mmodel[0m=[35mgpt-4o-mini[0m [36mprovider[0m=[35mopenai[0m [36mprovider_cost_usd[0m=[35mNone[0m [36mrequest_id[0m=[35mpost-call:1e2965e5-bead-476c-[phone]b2bd58e[0m [36mretry_count[0m=[35m0[0m [36mstatus[0m=[35mcompleted[0m [36mtenant_id[0m=[35m36f3b2a5-9765-4b34-b4e9-d5900ba2e8dc[0m [36mtokens[0m=[35m***[0m [36mtrace_id[0m=[35m1d311160-0b24-4a01-bd1d-87d1bac4869a[0m
+[2m2026-10-07T08:34:32.552856Z[0m [[31m[1merror    [0m] [1mbilling.no_plan_resolved      [0m [36mmetric[0m=[35mllm_token[0m [36mtenant_id[0m=[35m36f3b2a5-9765-4b34-b4e9-d5900ba2e8dc[0m
+[2m2026-10-07T08:34:32.556436Z[0m [[32m[1minfo     [0m] [1mbilling.usage_recorded        [0m [36mbilling_period[0m=[35m2026-10[0m [36midempotency_key[0m=[35mllm_token:post-call:b4a3406c-5879-46c7-8697-1b9802f131f5:openai[0m [36mmetric[0m=[35mllm_token[0m [36mquantity[0m=[35m13[0m [36mtenant_id[0m=[35m36f3b2a5-9765-4b34-b4e9-d5900ba2e8dc[0m [36munit[0m=[35mtoken[0m
+[2m2026-10-07T08:34:32.556686Z[0m [[32m[1minfo     [0m] [1mai.governance                 [0m [36mcall_id[0m=[35m0d10242f-ab9c-4f06-849d-0cb398c2e22a[0m [36mchannel[0m=[35masync[0m [36mcost_known[0m=[35mFalse[0m [36menvironment_id[0m=[35me63747df-8b93-4760-9b3c-be4be48e5adf[0m [36mexecuted[0m=[35mTrue[0m [36mfallback_used[0m=[35mFalse[0m [36mguardrail[0m=[35mnone[0m [36mlatency_ms[0m=[35m3[0m [36mmodel[0m=[35mgpt-4o-mini[0m [36mprovider[0m=[35mopenai[0m [36mprovider_cost_usd[0m=[35mNone[0m [36mrequest_id[0m=[35mpost-call:b4a3406c-5879-46c7-8697-1b9802f131f5[0m [36mretry_count[0m=[35m0[0m [36mstatus[0m=[35mcompleted[0m [36mtenant_id[0m=[35m36f3b2a5-9765-4b34-b4e9-d5900ba2e8dc[0m [36mtokens[0m=[35m***[0m [36mtrace_id[0m=[35m4faea5b0-f259-4b68-8a2c-291a916429f4[0m
+[2m2026-10-07T08:34:32.581237Z[0m [[32m[1minfo     [0m] [1mruntime.event                 [0m [36mcomponent[0m=[35mqueue[0m [36mduration_ms[0m=[35m94.87[0m [36menvironment_id[0m=[35me63747df-8b93-4760-9b3c-be4be48e5adf[0m [36mevent_name[0m=[35mexecution[0m [36mexecution_id[0m=[35m53c889fa-af8e-494b-b507-ecf5f8513500[0m [36mjob_id[0m=[35m53c889fa-af8e-494b-b507-ecf5f8513500[0m [36moutcome[0m=[35msuccess[0m [36mreason_code[0m=[35mNone[0m [36mrequest_id[0m=[35m53c889fa-af8e-494b-b507-ecf5f8513500[0m [36mtenant_id[0m=[35m36f3b2a5-9765-4b34-b4e9-d5900ba2e8dc[0m [36mtrace_id[0m=[35m53c889fa-af8e-494b-b507-ecf5f8513500[0m
+[2m2026-10-07T08:34:32.581438Z[0m [[32m[1minfo     [0m] [1mjobs.execution_finished       [0m [36mjob_id[0m=[35m53c889fa-af8e-494b-b507-ecf5f8513500[0m [36mjob_type[0m=[35mpost_call[0m [36mstate[0m=[35m***[0m
+[2m2026-10-07T08:34:32.587156Z[0m [[32m[1minfo     [0m] [1mjobs.cycle                    [0m [36mjob_id[0m=[35m53c889fa-af8e-494b-b507-ecf5f8513500[0m [36mjob_type[0m=[35mpost_call[0m [36moutcome[0m=[35msucceeded[0m [36mworker_id[0m=[35mworker-1c16b7f40f26[0m
+=============================== warnings summary ===============================
+tests/qa/test_auto_review.py: 4 warnings
+tests/qa/test_calibration.py: 1 warning
+tests/qa/test_call_outcomes.py: 2 warnings
+tests/qa/test_coaching.py: 3 warnings
+tests/qa/test_compliance.py: 2 warnings
+tests/qa/test_concurrency.py: 4 warnings
+tests/qa/test_isolation.py: 5 warnings
+tests/qa/test_sampling.py: 4 warnings
+tests/qa/test_scoring.py: 1 warning
+tests/qa/test_sentiment.py: 4 warnings
+tests/telephony/test_post_call_pipeline.py: 21 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/qa/test_auto_review.py: 39 warnings
+tests/qa/test_calibration.py: 5 warnings
+tests/qa/test_call_outcomes.py: 8 warnings
+tests/qa/test_coaching.py: 11 warnings
+tests/qa/test_compliance.py: 4 warnings
+tests/qa/test_concurrency.py: 17 warnings
+tests/qa/test_isolation.py: 30 warnings
+tests/qa/test_sampling.py: 6 warnings
+tests/qa/test_scoring.py: 3 warnings
+tests/qa/test_sentiment.py: 7 warnings
+tests/telephony/test_post_call_pipeline.py: 75 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/qa/test_auto_review.py: 4 warnings
+tests/qa/test_calibration.py: 1 warning
+tests/qa/test_call_outcomes.py: 2 warnings
+tests/qa/test_coaching.py: 3 warnings
+tests/qa/test_compliance.py: 2 warnings
+tests/qa/test_concurrency.py: 4 warnings
+tests/qa/test_isolation.py: 5 warnings
+tests/qa/test_sampling.py: 4 warnings
+tests/qa/test_scoring.py: 1 warning
+tests/qa/test_sentiment.py: 4 warnings
+tests/telephony/test_post_call_pipeline.py: 21 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/qa/test_auto_review.py: 4 warnings
+tests/qa/test_calibration.py: 2 warnings
+tests/qa/test_call_outcomes.py: 2 warnings
+tests/qa/test_coaching.py: 4 warnings
+tests/qa/test_concurrency.py: 6 warnings
+tests/qa/test_isolation.py: 7 warnings
+tests/qa/test_sampling.py: 1 warning
+tests/qa/test_scoring.py: 1 warning
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/qa/test_isolation.py::test_other_tenant_cannot_see_a_review_scorecard_or_export
+tests/qa/test_isolation.py::test_other_tenant_cannot_see_a_review_scorecard_or_export
+tests/qa/test_isolation.py::test_other_tenant_cannot_see_a_review_scorecard_or_export
+tests/qa/test_isolation.py::test_other_tenant_cannot_see_a_review_scorecard_or_export
+tests/qa/test_isolation.py::test_other_tenant_cannot_see_a_review_scorecard_or_export
+tests/qa/test_isolation.py::test_other_tenant_cannot_see_a_review_scorecard_or_export
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/telephony/test_post_call_pipeline.py: 18 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/conftest.py:569: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "started_at": datetime.utcnow(),
+
+tests/telephony/test_post_call_pipeline.py::test_terminal_transition_enqueues_once_in_same_transaction
+tests/telephony/test_post_call_pipeline.py::test_enqueue_failure_rolls_back_terminal_fact
+tests/telephony/test_post_call_pipeline.py::test_real_worker_governed_http_persists_output_and_usage
+tests/telephony/test_post_call_pipeline.py::test_real_status_callback_admits_job
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/call_state.py:261: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call.ended_at = ended_at or datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/qa/test_auto_review.py::test_suggestion_does_not_finalize_or_replace_a_human_score
+FAILED tests/qa/test_auto_review.py::test_bad_evidence_and_auth_failures_are_permanent
+FAILED tests/telephony/test_post_call_pipeline.py::test_real_worker_governed_http_persists_output_and_usage
+3 failed, 44 passed, 362 warnings in 33.48s

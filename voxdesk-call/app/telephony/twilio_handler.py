@@ -2,7 +2,8 @@
 
 Flow:
   1. Someone dials the tenant's number.
-  2. Twilio POSTs /telephony/voice  -> we answer with TwiML containing <Stream>.
+  2. Twilio POSTs /telephony/voice  -> we resolve the Tenant and bound Agent/AgentVersion
+     via :func:`resolve_runtime_config` (Sub-Phase 2E) and answer with TwiML containing <Stream>.
   3. Twilio opens a WebSocket to /telephony/ws and pumps raw audio both ways.
 """
 
@@ -20,6 +21,7 @@ from twilio.twiml.voice_response import Connect, VoiceResponse
 
 from app.agent.errors import ProviderError
 from app.agent.provider_observability import record_provider_error
+from app.billing import hooks as billing_hooks
 from app.core import metrics
 from app.core.config import settings
 from app.core.logging import log
@@ -33,17 +35,18 @@ from app.db.models import (
 )
 from app.db.session import get_session, get_sessionmaker
 from app.integrations import crm
-from app.billing import hooks as billing_hooks
 from app.integrations.crm import hooks as crm_hooks
 from app.realtime import events as realtime_events
+from app.runtime.agent_config_resolver import resolve_runtime_config
 from app.telephony import call_state, e2e_guard, phone, transfer_service
-from app.webhooks.call_event_bridge import publish_call_event
 from app.telephony.ivr import DEFAULT_FLOW, next_node, render_node
+from app.telephony.number_provisioning import find_tenant_for_called_number
 from app.telephony.stream_auth import (
     create_stream_token,
     verify_stream_token,
     verify_twilio_request,
 )
+from app.webhooks.call_event_bridge import publish_call_event
 
 router = APIRouter(prefix="/telephony", tags=["telephony"])
 
@@ -60,12 +63,25 @@ async def incoming_call(
     To: str = Form(...),
     session: AsyncSession = Depends(get_session),
 ):
+    from app.core.graceful_shutdown import is_draining
+
+    if is_draining():
+        log.warning("call.rejected_node_draining", call_sid=CallSid)
+        return PlainTextResponse(
+            '<?xml version="1.0" encoding="UTF-8"?><Response><Reject reason="busy"/></Response>',
+            status_code=503,
+            media_type="application/xml",
+            headers={"Retry-After": "5", "X-VoxDesk-Drain": "draining"},
+        )
+
     if not await _verify_twilio(request):
         return PlainTextResponse("forbidden", status_code=403)
 
-    tenant = (
-        await session.execute(select(Tenant).where(Tenant.twilio_number == To))
-    ).scalar_one_or_none()
+    tenant = await find_tenant_for_called_number(session, To)
+    if tenant is None:
+        tenant = (
+            await session.execute(select(Tenant).where(Tenant.twilio_number == To))
+        ).scalar_one_or_none()
 
     # Step 5 (scale-compliance): the real-call E2E guard. A no-op unless the
     # operator armed E2E mode; when armed, only an explicit, allowlisted,
@@ -96,23 +112,6 @@ async def incoming_call(
         response.hangup()
         return PlainTextResponse(str(response), media_type="application/xml")
 
-    # STEP 7 removed the usage cap that used to live here.
-    #
-    # It compared a **lifetime** counter (`minutes_used`, which nothing ever
-    # reset -- audit F2) against a **monthly** allowance, so a tenant on 500
-    # included minutes got 750 minutes ever and was then permanently answered
-    # with "This account has reached its usage limit".
-    #
-    # It was also the wrong lever. Hanging up on a dentist's patients because
-    # the dentist owes forty dollars punishes the one party who has no way to
-    # fix it, and costs the business far more than the debt. Entitlement is
-    # now enforced where the spend actually originates -- outbound calls and
-    # account-level features, via `billing.hooks.may_place_outbound_call` --
-    # and inbound calls, which are the customer's revenue, are never blocked.
-    #
-    # `tenant.is_active`, checked above, remains the deliberate off switch for
-    # an account that genuinely must stop.
-
     # Idempotent call creation: Twilio may re-deliver /voice for the same
     # CallSid (network retry). The unique index on call_sid already prevents a
     # duplicate row, but the naive insert turned that into a 500 and another
@@ -133,6 +132,7 @@ async def incoming_call(
         session.add(call)
         try:
             await session.flush()
+            await resolve_runtime_config(session, call, tenant)
             await publish_call_event(session, call, "call_started")
             await session.commit()
             created_call = True
@@ -183,6 +183,8 @@ async def incoming_call(
         to=phone.redact(To),
         tenant=tenant.name,
         call_sid=CallSid,
+        agent_id=str(call.agent_id) if (call and call.agent_id) else None,
+        agent_version_id=str(call.agent_version_id) if (call and call.agent_version_id) else None,
         e2e_test=bool(e2e_ctx),
     )
     return PlainTextResponse(str(response), media_type="application/xml")
@@ -293,6 +295,14 @@ async def media_stream(websocket: WebSocket):
     token we minted into the <Stream> URL, NOT by a user JWT.
     """
     token = websocket.query_params.get("token")
+    from app.core.graceful_shutdown import is_draining, track_active_call
+
+    if is_draining():
+        await websocket.accept()
+        log.warning("ws.rejected_node_draining")
+        await websocket.close(code=1012)
+        return
+
     await websocket.accept()
 
     # Twilio sends "connected" then "start" before any audio. Bound this with
@@ -346,21 +356,17 @@ async def media_stream(websocket: WebSocket):
         # the pipeline crashes.
         metrics.ACTIVE_CALLS.inc()
         try:
-            await run_voice_agent(
-                websocket=websocket,
-                stream_sid=stream_sid,
-                call_sid=call_sid,
-                session=session,
-                tenant=tenant,
-                call=call,
-            )
+            with track_active_call(call_sid):
+                await run_voice_agent(
+                    websocket=websocket,
+                    stream_sid=stream_sid,
+                    call_sid=call_sid,
+                    session=session,
+                    tenant=tenant,
+                    call=call,
+                )
         except Exception as exc:
             if isinstance(exc, ProviderError):
-                # A typed provider failure: record the category and
-                # retryability so dashboards/alerts can group them, and log
-                # only the safe, fixed message (never a payload or secret).
-                # The counter labels are normalised to a closed set, so this
-                # cannot mint unbounded Prometheus series.
                 record_provider_error(exc.provider, exc.category)
                 log.error(
                     "call.crashed",
@@ -375,10 +381,6 @@ async def media_stream(websocket: WebSocket):
                 log.error(
                     "call.crashed", call_sid=call_sid, tenant_id=str(call.tenant_id), error=str(exc)
                 )
-            # A transfer tears our stream down on purpose -- Twilio replaces
-            # the TwiML and the socket dies. That is a successful handoff, not
-            # a crashed call, so it must not be recorded as FAILED. Going
-            # through call_state also protects an already-terminal status.
             await session.refresh(call)
             if call.transfer_state is TransferState.NONE:
                 transition = call_state.apply_status(
@@ -415,10 +417,6 @@ async def call_status(
     run twice and must never regress a terminal state. All of that logic lives
     in `app.telephony.call_state`; this function only decides what a *changed*
     status means for billing, leads and the CRM.
-
-    Previously this route had no signature check at all, which meant anyone
-    who could reach the URL could terminate any call and inflate a tenant's
-    billed minutes.
     """
     if not await _verify_twilio(request):
         return PlainTextResponse("forbidden", status_code=403)
@@ -439,9 +437,6 @@ async def call_status(
     except ValueError:
         duration = 0.0
 
-    # `previous_duration` used to be captured here for the delta-billing that
-    # STEP 7 removed. Nothing reads it now: billing takes the final absolute
-    # duration once, which is what makes it order-independent.
     result = call_state.apply_provider_status(
         call, CallStatus_, duration_seconds=duration, source="twilio_status"
     )
@@ -453,8 +448,6 @@ async def call_status(
     # A transfer that was still dialling when the call ended never connected.
     if result.applied and call_state.is_terminal(call.status):
         if call.transfer_state in (TransferState.REQUESTED, TransferState.DIALING):
-            # An inference, not a provider verdict: the <Dial> callback may
-            # still arrive and correct it. See transfer_service.INFERRED_PREFIX.
             await transfer_service.mark_transfer_failed(
                 session,
                 call,
@@ -462,35 +455,9 @@ async def call_status(
                 f"call ended while {call.transfer_state.value}",
             )
 
-    # STEP 7: bill from the *final absolute duration*, once, through an
-    # immutable idempotency-keyed usage event.
-    #
-    # The old line here was `minutes_used += duration - previous_duration`,
-    # which subtracted whatever an earlier callback had stamped. Duplicates
-    # were handled correctly, but *ordered* callbacks were not: the same
-    # 120-second call billed 2.00, 1.00 or 0.50 minutes depending on whether
-    # Twilio sent an intermediate `in-progress` or `answered` payload
-    # carrying a duration. Measured, not theorised -- see
-    # `docs/BILLING-AUDIT.md` F1. Direction of the error was *under*-billing,
-    # so nobody complained and it was never found.
-    #
-    # `on_call_finalized` keys on the call id, so ordering stops mattering:
-    # the first terminal callback records the full duration and every
-    # subsequent one is a no-op at the database's unique constraint.
     if result.applied and call_state.is_terminal(call.status) and tenant:
         await billing_hooks.on_call_finalized(session, tenant, call)
 
-    # Outbound: record how the attempt went so the dialer stops or retries.
-    # Guarded by `result.applied` so a retried webhook cannot re-grade a lead.
-    #
-    # Batch 06: the grade goes through the canonical lead lifecycle — no
-    # direct ``lead.status`` write — and only when the call and the lead
-    # agree on tenant *and* environment. A lead whose environment does not
-    # match the call's is left untouched (logged, never silently updated),
-    # and a racing/repeated grade loses the lifecycle's compare-and-set
-    # instead of overwriting state. Existing call terminal-state handling,
-    # billing and CRM call events below are unchanged; the lifecycle fires
-    # the lead-update CRM hook exactly once per applied transition.
     if result.applied and call.lead_id:
         lead = await session.get(Lead, call.lead_id)
         if lead is not None and (
@@ -525,38 +492,20 @@ async def call_status(
                         environment_id=call.environment_id,
                     )
                 except (InvalidTransition, ClaimConflict):
-                    # Repeated or racing callback: `result.applied` already
-                    # gates duplicates, and the lifecycle's compare-and-set
-                    # arbitrates the rest. Never force a grade.
                     log.info(
                         "status.lead_grade_skipped",
                         call_sid=CallSid, lead=str(lead.id),
                     )
 
-    # STEP 5: record the CRM event *inside this transaction*, before the
-    # commit. The old code committed first, set `crm_synced = True`, committed
-    # again, and only then fired an unawaited `asyncio.create_task` -- so a
-    # process death between the flag and the POST marked the call synced and
-    # never sent it. Now the event is part of the same commit as the call's
-    # final state: either both land or neither does, and delivery is the
-    # worker's problem.
     if result.applied and call_state.is_terminal(call.status) and not call.crm_synced:
         if call.status is CallStatus.COMPLETED:
             emitted = await crm_hooks.on_call_completed(session, tenant, call)
         else:
-            # NO_ANSWER / FAILED. Commercially the more valuable of the two
-            # for a home-service business: somebody should call back.
             emitted = await crm_hooks.on_call_missed(session, tenant, call)
-        # The flag now means "an event exists for this call", which is a fact
-        # about our own database rather than a guess about a remote system.
         call.crm_synced = call.crm_synced or emitted
 
     await session.commit()
 
-    # Realtime: announce the APPLIED status change, after the commit, exactly
-    # once per logical transition — a retried callback fails result.applied
-    # and emits nothing, and the gateway's replay cache covers the remaining
-    # crash-between-commit-and-publish window via the deterministic event id.
     if result.applied:
         await realtime_events.emit_call_event(call, kind="call.updated")
 
@@ -573,14 +522,6 @@ async def transfer_status(
 ):
     """
     Outcome of the <Dial> leg to the human.
-
-    This is what turns "we asked Twilio to transfer" into "a human actually
-    picked up". Without it the application could never honestly distinguish a
-    connected transfer from one that rang out, which is exactly the guarantee
-    STEP 3 is about.
-
-    Point Twilio's Dial `action` at this URL. It is idempotent: a retried
-    callback neither re-writes state nor duplicates transcript events.
     """
     if not await _verify_twilio(request):
         return PlainTextResponse("forbidden", status_code=403)
@@ -607,10 +548,6 @@ async def transfer_status(
 
     if outcome in ("answered", "completed"):
         changed = await transfer_service.mark_transfer_connected(session, call)
-        # A human actually picked up. Emitted here rather than on call
-        # completion because "was transferred" and "the transfer connected"
-        # are different facts, and a CRM that conflates them tells the
-        # business somebody spoke to the customer when nobody did.
         if changed:
             tenant = await session.get(Tenant, call.tenant_id)
             await crm_hooks.on_transfer_completed(session, tenant, call)
@@ -621,8 +558,6 @@ async def transfer_status(
         )
         changed = await transfer_service.mark_transfer_failed(session, call, outcome)
         if inferred_failure:
-            # A provider verdict replaces our earlier guess. Otherwise a later
-            # answered callback could wrongly "correct" a confirmed failure.
             call.transfer_error = outcome
             await publish_call_event(session, call, "transfer_failed")
             changed = True
@@ -630,7 +565,7 @@ async def transfer_status(
         TransferState.REQUESTED, TransferState.DIALING,
     ):
         await publish_call_event(session, call, "transfer_started")
-        changed = False  # Ringing is not a successful connection.
+        changed = False
     else:
         changed = False
         log.warning(
@@ -642,10 +577,6 @@ async def transfer_status(
 
     await session.commit()
 
-    # Realtime: transfers are the moment a wallboard most needs live — and
-    # only a state that genuinely CHANGED is announced (a retried callback
-    # makes mark_transfer_* return False, which is the same idempotency the
-    # transcript events already honour).
     if outcome in ("answered", "completed"):
         if changed:
             await realtime_events.emit_call_event(
@@ -657,8 +588,6 @@ async def transfer_status(
                 call, kind="call.transfer", extra={"transfer_outcome": outcome}
             )
 
-    # Empty TwiML: let the rest of the original <Dial> verb's document run
-    # (our transfer TwiML falls through to voicemail when nobody answers).
     return PlainTextResponse("<Response/>", media_type="application/xml")
 
 

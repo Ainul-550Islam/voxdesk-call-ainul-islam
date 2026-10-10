@@ -1,0 +1,5 @@
+$ /usr/local/bin/python -m pytest -q tests/test_ssrf.py::test_public_https_urls_are_accepted[https://api.getjobber.com/api/graphql] tests/test_ssrf.py::test_public_https_urls_are_accepted[https://www.googleapis.com/calendar/v3] tests/test_ssrf.py::test_public_https_urls_are_accepted[https://login.microsoftonline.com/common/oauth2/v2.0/token] tests/test_ssrf.py::test_public_https_urls_are_accepted[https://api.cal.com/v2] tests/test_ssrf.py::test_public_https_urls_are_accepted[https://ghl.test] tests/test_ssrf.py::test_public_https_urls_are_accepted[https://hubspot.test] tests/test_ssrf.py::test_public_https_urls_are_accepted[https://jobber.test/graphql] tests/test_ssrf.py::test_public_https_urls_are_accepted[https://gcal.test/v3] tests/test_ssrf.py::test_public_https_urls_are_accepted[https://oauth.test/token] tests/test_ssrf.py::test_public_https_urls_are_accepted[https://example.com:8443/join/room?token=abc]
+..........                                                               [100%]
+10 passed in 0.07s
+
+STDERR:

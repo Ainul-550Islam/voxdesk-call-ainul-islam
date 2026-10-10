@@ -215,6 +215,7 @@ class TelephonyWebhookProcessor:
                     )
                 ).scalar_one_or_none()
             except Exception:
+                __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
                 phone_row = None
 
         if phone_row is None and normalized.from_number:
@@ -228,6 +229,7 @@ class TelephonyWebhookProcessor:
                     )
                 ).scalar_one_or_none()
             except Exception:
+                __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
                 phone_row = None
 
         if phone_row is not None and tenant_id is None:

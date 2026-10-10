@@ -61,6 +61,7 @@ class AirGapAdapter:
             Ed25519PublicKey.from_public_bytes(self.public_key).verify(signature, canonical)
             return True
         except Exception:
+            __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
             return False
 
     async def inspect(self, request: DeploymentRequest) -> DeploymentObservation:

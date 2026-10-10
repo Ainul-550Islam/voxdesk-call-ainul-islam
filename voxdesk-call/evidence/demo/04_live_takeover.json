@@ -1,0 +1,18 @@
+{
+  "recording_id": "demo-04-live-takeover",
+  "feature_matrix_ids": [
+    31
+  ],
+  "captured_at_utc": "2026-10-08T18:04:35.448063+00:00",
+  "endpoints": [
+    "POST /api/calls/{call_id}/monitor/listen",
+    "WS /api/calls/{call_id}/monitor/ws",
+    "POST /api/calls/{call_id}/monitor/whisper",
+    "POST /api/calls/{call_id}/monitor/takeover"
+  ],
+  "verified_by_tests": [
+    "tests/telephony/test_takeover.py::test_takeover_sends_twiml_replacement_to_provider_fake",
+    "tests/telephony/test_monitor_bus.py::test_monitor_tap_zero_overhead_when_inactive_and_injects_guidance",
+    "tests/api/test_live_monitoring_authz.py::test_live_monitoring_rbac_enforces_calls_monitor_and_audits_denial"
+  ]
+}

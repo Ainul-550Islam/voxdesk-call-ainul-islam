@@ -1,0 +1,5 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_calendar_contract.py::test_http_status_maps_identically_for_every_provider[503-CalendarTemporaryError-True-microsoft] tests/test_calendar_contract.py::test_http_status_maps_identically_for_every_provider[503-CalendarTemporaryError-True-calcom] tests/test_calendar_contract.py::test_http_status_maps_identically_for_every_provider[503-CalendarTemporaryError-True-internal] tests/test_calendar_contract.py::test_a_403_that_is_really_a_throttle_becomes_retryable[google] tests/test_calendar_contract.py::test_a_403_that_is_really_a_throttle_becomes_retryable[google_service_account]
+.....                                                                    [100%]
+5 passed in 0.15s
+
+STDERR:

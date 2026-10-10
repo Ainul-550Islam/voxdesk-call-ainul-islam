@@ -1,0 +1,27 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_prompt6_runtime.py::test_health_and_runtime_routers_are_registered_in_application_source tests/test_prompt6_runtime.py::test_deployment_job_type_is_registered_vocabulary tests/test_prompt6_runtime.py::test_job_state_terminal_and_active_sets_are_disjoint tests/test_prompt6_runtime.py::test_non_production_config_validation_is_nonfatal_for_optional_providers tests/test_provider_lifecycle.py::test_retryability_flags_match_the_policy[ProviderConfigurationError-False] tests/test_provider_lifecycle.py::test_retryability_flags_match_the_policy[ProviderAuthenticationError-False] tests/test_provider_lifecycle.py::test_retryability_flags_match_the_policy[ProviderAuthorizationError-False] tests/test_provider_lifecycle.py::test_retryability_flags_match_the_policy[ProviderRateLimitedError-True] tests/test_provider_lifecycle.py::test_retryability_flags_match_the_policy[ProviderTimeoutError-True] tests/test_provider_lifecycle.py::test_retryability_flags_match_the_policy[ProviderUnavailableError-True] tests/test_provider_lifecycle.py::test_retryability_flags_match_the_policy[ProviderInvalidRequestError-False] tests/test_provider_lifecycle.py::test_retryability_flags_match_the_policy[UnsupportedProviderFeatureError-False] tests/test_provider_lifecycle.py::test_retryability_flags_match_the_policy[ProviderRuntimeError-False] tests/test_provider_lifecycle.py::test_the_category_set_is_closed tests/test_provider_lifecycle.py::test_rate_limited_error_carries_a_retry_delay tests/test_provider_lifecycle.py::test_a_provider_error_never_renders_its_detail tests/test_provider_lifecycle.py::test_provider_error_is_a_runtime_error tests/test_provider_lifecycle.py::test_build_tts_rejects_a_missing_key tests/test_provider_lifecycle.py::test_build_stt_rejects_a_missing_key tests/test_provider_lifecycle.py::test_build_llm_rejects_an_unknown_provider tests/test_provider_lifecycle.py::test_build_llm_rejects_when_no_provider_has_a_key tests/test_provider_lifecycle.py::test_build_llm_constructs_every_provider[openai-gpt-4o-mini] tests/test_provider_lifecycle.py::test_build_llm_constructs_every_provider[anthropic-claude-haiku-4-5] tests/test_provider_lifecycle.py::test_build_llm_constructs_every_provider[google-gemini-2.0-flash] tests/test_provider_lifecycle.py::test_build_stt_resolves_the_model_for_the_language tests/test_provider_lifecycle.py::test_build_stt_hands_pipecat_a_live_options_object tests/test_provider_lifecycle.py::test_build_llm_fallback_logs_no_key tests/test_provider_lifecycle.py::test_build_stt_never_stores_the_key_in_settings tests/test_provider_lifecycle.py::test_configuration_errors_carry_fixed_safe_messages tests/test_provider_lifecycle.py::test_startup_provider_failure_marks_the_call_failed
+..............................                                           [100%]
+=============================== warnings summary ===============================
+tests/test_provider_lifecycle.py::test_startup_provider_failure_marks_the_call_failed
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_provider_lifecycle.py::test_startup_provider_failure_marks_the_call_failed
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/test_provider_lifecycle.py::test_startup_provider_failure_marks_the_call_failed
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_provider_lifecycle.py::test_startup_provider_failure_marks_the_call_failed
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/test_transfer.py:43: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    started_at=datetime.utcnow(),
+
+tests/test_provider_lifecycle.py::test_startup_provider_failure_marks_the_call_failed
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/call_state.py:260: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call.ended_at = ended_at or datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+30 passed, 5 warnings in 6.70s
+
+STDERR:

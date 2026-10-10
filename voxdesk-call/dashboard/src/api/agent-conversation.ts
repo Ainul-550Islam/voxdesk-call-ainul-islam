@@ -1,4 +1,27 @@
-/** dashboard/src/api/agent-conversation.ts — Real backend API wrapper */
+/**
+ * dashboard/src/api/agent-conversation.ts
+ *
+ * Agent conversation flow & call-handling configuration client, backed by
+ * `GET /api/agents/{agent_id}/flow` (`app/api/agent_flow_routes.py`) and
+ * `GET /api/agents` (`app/api/agent_routes.py`).
+ */
+
 import { apiClient } from './client';
-export async function getAgentConversation(agentId: string): Promise<any> { try{ const res=await apiClient.get(`/api/agents/${agentId}/agent-conversation`); return res; } catch{ return null; } }
-export async function listAgentConversation(): Promise<any[]> { try{ const res=await apiClient.get(`/api/agent-conversation`); return res.items||[]; } catch{ return []; } }
+
+export async function getAgentConversation(agentId: string): Promise<Record<string, unknown>> {
+  return apiClient.get<Record<string, unknown>>(
+    `/api/agents/${encodeURIComponent(agentId)}/flow`,
+  );
+}
+
+export async function listAgentConversation(): Promise<Array<Record<string, unknown>>> {
+  const res = await apiClient.get<unknown>('/api/agents');
+  if (Array.isArray(res)) {
+    return res as Array<Record<string, unknown>>;
+  }
+  const obj = res as {
+    items?: Array<Record<string, unknown>>;
+    agents?: Array<Record<string, unknown>>;
+  } | null;
+  return obj?.items ?? obj?.agents ?? [];
+}

@@ -1,0 +1,66 @@
+..............                                                           [100%]
+=============================== warnings summary ===============================
+tests/e2e/test_calls_analytics_flow.py::test_persisted_call_transcript_replay_and_analytics_read_paths
+tests/e2e/test_calls_analytics_flow.py::test_persisted_call_transcript_replay_and_analytics_read_paths
+tests/e2e/test_calls_analytics_flow.py::test_persisted_call_transcript_replay_and_analytics_read_paths
+tests/e2e/test_calls_analytics_flow.py::test_persisted_call_transcript_replay_and_analytics_read_paths
+tests/e2e/test_calls_analytics_flow.py::test_persisted_call_transcript_replay_and_analytics_read_paths
+tests/e2e/test_calls_analytics_flow.py::test_persisted_call_transcript_replay_and_analytics_read_paths
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/e2e/test_calls_analytics_flow.py::test_persisted_call_transcript_replay_and_analytics_read_paths
+tests/e2e/test_enterprise_cross_module_auth.py::test_tenant_environment_rbac_api_key_and_module_isolation
+tests/e2e/test_enterprise_cross_module_auth.py::test_tenant_environment_rbac_api_key_and_module_isolation
+tests/truth/test_part0_authorized_repairs.py::test_legacy_test_creation_is_scoped_and_cannot_issue_fake_session
+tests/truth/test_part0_authorized_repairs.py::test_legacy_test_creation_is_scoped_and_cannot_issue_fake_session
+tests/truth/test_part0_authorized_repairs.py::test_dnc_and_audit_commit_together
+tests/truth/test_part0_authorized_repairs.py::test_failed_audit_cannot_commit_dnc
+tests/truth/test_part0_authorized_repairs.py::test_qms_http_unavailable_is_not_empty_success_and_is_tenant_scoped
+tests/truth/test_part0_authorized_repairs.py::test_qms_http_unavailable_is_not_empty_success_and_is_tenant_scoped
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/e2e/test_calls_analytics_flow.py: 7 warnings
+tests/e2e/test_enterprise_cross_module_auth.py: 32 warnings
+tests/truth/test_part0_authorized_repairs.py: 28 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/e2e/test_calls_analytics_flow.py::test_persisted_call_transcript_replay_and_analytics_read_paths
+tests/e2e/test_enterprise_cross_module_auth.py::test_tenant_environment_rbac_api_key_and_module_isolation
+tests/e2e/test_enterprise_cross_module_auth.py::test_tenant_environment_rbac_api_key_and_module_isolation
+tests/truth/test_part0_authorized_repairs.py::test_legacy_test_creation_is_scoped_and_cannot_issue_fake_session
+tests/truth/test_part0_authorized_repairs.py::test_legacy_test_creation_is_scoped_and_cannot_issue_fake_session
+tests/truth/test_part0_authorized_repairs.py::test_dnc_and_audit_commit_together
+tests/truth/test_part0_authorized_repairs.py::test_failed_audit_cannot_commit_dnc
+tests/truth/test_part0_authorized_repairs.py::test_qms_http_unavailable_is_not_empty_success_and_is_tenant_scoped
+tests/truth/test_part0_authorized_repairs.py::test_qms_http_unavailable_is_not_empty_success_and_is_tenant_scoped
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/e2e/test_calls_analytics_flow.py: 1 warning
+tests/e2e/test_enterprise_cross_module_auth.py: 3 warnings
+tests/truth/test_part0_authorized_repairs.py: 6 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/e2e/test_enterprise_cross_module_auth.py::test_tenant_environment_rbac_api_key_and_module_isolation
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/runtime.py:401: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/e2e/test_enterprise_cross_module_auth.py::test_tenant_environment_rbac_api_key_and_module_isolation
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/runtime.py:478: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    occurred_at=datetime.utcnow(),
+
+tests/e2e/test_enterprise_cross_module_auth.py::test_tenant_environment_rbac_api_key_and_module_isolation
+tests/e2e/test_enterprise_cross_module_auth.py::test_tenant_environment_rbac_api_key_and_module_isolation
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/conftest.py:569: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "started_at": datetime.utcnow(),
+
+tests/e2e/test_enterprise_cross_module_auth.py::test_tenant_environment_rbac_api_key_and_module_isolation
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/auth/identity/models.py:69: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+14 passed, 106 warnings in 13.38s

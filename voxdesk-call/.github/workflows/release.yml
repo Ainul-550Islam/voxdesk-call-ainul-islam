@@ -1,0 +1,143 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  quickstart-clean-runner:
+    name: Verify Clean-VM Quickstart (docs/QUICKSTART.md)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: voxdesk
+          POSTGRES_PASSWORD: voxdesk_ci_password
+          POSTGRES_DB: voxdesk
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql+asyncpg://voxdesk:voxdesk_ci_password@localhost:5432/voxdesk
+      SYNC_DATABASE_URL: postgresql+psycopg2://voxdesk:voxdesk_ci_password@localhost:5432/voxdesk
+      REDIS_URL: redis://localhost:6379/0
+      JWT_SECRET: ci-release-jwt-secret-key-minimum-32-bytes-long
+      VOXDESK_ENCRYPTION_KEYS: k1:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install backend requirements
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest pytest-asyncio aiosqlite respx fakeredis
+      - name: Migrate database, seed demo tenant, and verify readiness
+        run: |
+          alembic upgrade head
+          python -m scripts.seed_demo_tenant
+          nohup uvicorn app.main:app --host 127.0.0.1 --port 8000 > /tmp/uvicorn.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8000/health/ready; then
+              break
+            fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:8000/health/ready | grep -q '"status":"ready"'
+          python loadtest/voice_ws_user.py --self-test
+
+  release-gate-and-pack:
+    name: Build Images, Verify Sale Gate & Attach Due-Diligence Pack
+    needs: [quickstart-clean-runner]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Set up Go 1.23
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - name: Set up Rust 1.90.0
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.90.0"
+
+      - name: Install system and Python dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq protobuf-compiler cmake g++ redis-server
+          sudo service redis-server start
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest pytest-asyncio aiosqlite respx fakeredis soundfile==0.13.1 noisereduce==3.0.3
+          cd dashboard && npm ci
+          cd ../dashboard-next && npm ci
+
+      - name: Run full verify-sale gate (truth, tests, SBOMs, feature matrix, due-diligence zip)
+        run: |
+          make verify-sale
+          ls -lh dist/due-diligence-*.zip dist/SHA256SUMS sbom/*.cdx.json
+
+      - name: Build production Docker image
+        run: |
+          docker build -t voxdesk-api:${{ github.ref_name }} .
+
+      - name: Upload Due-Diligence Pack & SBOMs artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: due-diligence-pack-${{ github.ref_name }}
+          path: |
+            dist/due-diligence-*.zip
+            dist/SHA256SUMS
+            sbom/*.cdx.json
+          retention-days: 90
+
+      - name: Attach Due-Diligence Pack and SBOMs to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/due-diligence-*.zip
+            dist/SHA256SUMS
+            sbom/python-backend.cdx.json
+            sbom/node-dashboard.cdx.json
+            sbom/go-services.cdx.json
+            sbom/rust-services.cdx.json
+          generate_release_notes: true

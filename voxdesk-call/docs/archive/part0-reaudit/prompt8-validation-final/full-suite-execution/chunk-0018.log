@@ -1,0 +1,48 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[qualified-do_not_call] tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[qualified-unqualified] tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[queued-called] tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[queued-do_not_call] tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[queued-failed] tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[queued-new] tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[queued-qualified] tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[queued-unqualified] tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[unqualified-do_not_call] tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[unqualified-qualified] tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[unqualified-queued] tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[called-called] tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[called-new] tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[do_not_call-called] tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[do_not_call-do_not_call] tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[do_not_call-failed] tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[do_not_call-new] tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[do_not_call-qualified] tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[do_not_call-queued] tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[do_not_call-unqualified] tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[failed-called] tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[failed-failed] tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[failed-new] tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[failed-qualified] tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[new-new] tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[qualified-failed] tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[qualified-new] tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[qualified-qualified] tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[qualified-queued] tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[queued-queued] tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[unqualified-called] tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[unqualified-failed] tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[unqualified-new] tests/leads/test_lifecycle.py::test_every_invalid_transition_is_refused[unqualified-unqualified] tests/leads/test_lifecycle.py::test_do_not_call_is_terminal tests/leads/test_lifecycle.py::test_aliases_store_the_canonical_value tests/leads/test_lifecycle.py::test_compare_and_set_rejects_a_stale_belief tests/leads/test_lifecycle.py::test_api_status_change_writes_history tests/leads/test_lifecycle.py::test_workflow_status_action_writes_history tests/leads/test_lifecycle.py::test_workflow_cannot_reverse_do_not_call tests/leads/test_lifecycle.py::test_ai_tool_dnc_goes_through_consent_and_history tests/leads/test_lifecycle.py::test_messaging_stop_sets_dnc_and_start_never_reverses tests/leads/test_lifecycle.py::test_no_direct_lead_status_assignments_outside_the_lifecycle tests/leads/test_lifecycle.py::test_only_the_lifecycle_mirrors_status_onto_the_model tests/leads/test_scoring.py::test_score_is_stable_and_versioned tests/leads/test_scoring.py::test_scoring_does_not_clear_do_not_call tests/leads/test_segments.py::test_segment_returns_only_matching_leads_in_scope tests/leads/test_segments.py::test_raw_sql_and_unknown_fields_are_rejected tests/leads/test_segments.py::test_member_pagination tests/leads/test_service.py::test_create_stamps_tenant_and_environment
+..................................................                       [100%]
+=============================== warnings summary ===============================
+tests/leads/test_lifecycle.py: 42 warnings
+tests/leads/test_scoring.py: 2 warnings
+tests/leads/test_segments.py: 3 warnings
+tests/leads/test_service.py: 1 warning
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/leads/test_lifecycle.py: 186 warnings
+tests/leads/test_scoring.py: 7 warnings
+tests/leads/test_segments.py: 19 warnings
+tests/leads/test_service.py: 3 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/leads/test_lifecycle.py: 42 warnings
+tests/leads/test_scoring.py: 2 warnings
+tests/leads/test_segments.py: 3 warnings
+tests/leads/test_service.py: 1 warning
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/leads/test_lifecycle.py: 91 warnings
+tests/leads/test_scoring.py: 8 warnings
+tests/leads/test_segments.py: 26 warnings
+tests/leads/test_service.py: 3 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/leads/models.py:25: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow()
+
+tests/leads/test_lifecycle.py::test_api_status_change_writes_history
+tests/leads/test_scoring.py::test_scoring_does_not_clear_do_not_call
+tests/leads/test_segments.py::test_segment_returns_only_matching_leads_in_scope
+tests/leads/test_segments.py::test_member_pagination
+tests/leads/test_segments.py::test_member_pagination
+tests/leads/test_segments.py::test_member_pagination
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/leads/repository.py:272: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    identity.updated_at = moment or datetime.utcnow()
+
+tests/leads/test_lifecycle.py::test_ai_tool_dnc_goes_through_consent_and_history
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/conftest.py:569: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "started_at": datetime.utcnow(),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+50 passed, 446 warnings in 36.61s
+
+STDERR:

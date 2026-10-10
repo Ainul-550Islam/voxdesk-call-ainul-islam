@@ -1,0 +1,50 @@
+$ /usr/local/bin/python -m pytest -q tests/auth/test_api_keys.py::test_an_unknown_key_and_a_garbage_key_look_the_same tests/auth/test_api_keys.py::test_using_a_dead_key_is_recorded_for_the_operator tests/auth/test_api_keys.py::test_an_unknown_key_is_refused_without_flooding_the_trail tests/test_rate_limit.py::test_sliding_window_allows_up_to_limit tests/test_rate_limit.py::test_sliding_window_slides tests/test_rate_limit.py::test_middleware_rejects_when_enabled tests/test_rate_limit.py::test_middleware_passes_through_when_disabled tests/test_rate_limit.py::test_client_ip_ignores_untrusted_forwarded_header tests/test_ssrf.py::test_public_https_urls_are_accepted[https://api.hubapi.com/crm/v3/objects/contacts] tests/test_ssrf.py::test_public_https_urls_are_accepted[https://services.leadconnectorhq.com/contacts/]
+..........                                                               [100%]
+=============================== warnings summary ===============================
+tests/auth/test_api_keys.py::test_an_unknown_key_and_a_garbage_key_look_the_same
+tests/auth/test_api_keys.py::test_an_unknown_key_and_a_garbage_key_look_the_same
+tests/auth/test_api_keys.py::test_an_unknown_key_and_a_garbage_key_look_the_same
+tests/auth/test_api_keys.py::test_an_unknown_key_and_a_garbage_key_look_the_same
+tests/auth/test_api_keys.py::test_an_unknown_key_and_a_garbage_key_look_the_same
+tests/auth/test_api_keys.py::test_an_unknown_key_and_a_garbage_key_look_the_same
+  /usr/local/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/auth/test_api_keys.py::test_an_unknown_key_and_a_garbage_key_look_the_same
+tests/auth/test_api_keys.py::test_using_a_dead_key_is_recorded_for_the_operator
+tests/auth/test_api_keys.py::test_an_unknown_key_is_refused_without_flooding_the_trail
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/auth/test_api_keys.py::test_an_unknown_key_and_a_garbage_key_look_the_same
+tests/auth/test_api_keys.py::test_an_unknown_key_and_a_garbage_key_look_the_same
+tests/auth/test_api_keys.py::test_an_unknown_key_and_a_garbage_key_look_the_same
+tests/auth/test_api_keys.py::test_using_a_dead_key_is_recorded_for_the_operator
+tests/auth/test_api_keys.py::test_using_a_dead_key_is_recorded_for_the_operator
+tests/auth/test_api_keys.py::test_using_a_dead_key_is_recorded_for_the_operator
+tests/auth/test_api_keys.py::test_using_a_dead_key_is_recorded_for_the_operator
+tests/auth/test_api_keys.py::test_using_a_dead_key_is_recorded_for_the_operator
+tests/auth/test_api_keys.py::test_an_unknown_key_is_refused_without_flooding_the_trail
+  /usr/local/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/auth/test_api_keys.py::test_an_unknown_key_and_a_garbage_key_look_the_same
+tests/auth/test_api_keys.py::test_using_a_dead_key_is_recorded_for_the_operator
+tests/auth/test_api_keys.py::test_an_unknown_key_is_refused_without_flooding_the_trail
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/auth/test_api_keys.py::test_an_unknown_key_and_a_garbage_key_look_the_same
+tests/auth/test_api_keys.py::test_using_a_dead_key_is_recorded_for_the_operator
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/auth/test_api_keys.py::test_using_a_dead_key_is_recorded_for_the_operator
+tests/auth/test_api_keys.py::test_using_a_dead_key_is_recorded_for_the_operator
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/auth/identity/models.py:69: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+10 passed, 25 warnings in 53.15s
+
+STDERR:

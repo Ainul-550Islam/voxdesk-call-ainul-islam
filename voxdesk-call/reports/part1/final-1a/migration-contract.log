@@ -1,0 +1,1 @@
+PASS: seeded migration, missing-key rollback, sealed legacy preservation, quarantine, idempotent head, downgrade/re-upgrade, one head

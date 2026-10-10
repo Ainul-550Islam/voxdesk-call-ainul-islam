@@ -229,6 +229,7 @@ class SpecializedExecutor:
             )
             return lineage.id
         except Exception:
+            __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
             return None
 
     async def execute(

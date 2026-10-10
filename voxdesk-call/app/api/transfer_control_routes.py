@@ -303,6 +303,7 @@ def _redact_destination(dest: str) -> str:
                 user, host = user_host.split("@", 1)
                 return f"sip:{user[:2]}***@{host}"
         except Exception:
+            __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
             pass
         return dest[:8] + "***"
     if dest.startswith("+"):
@@ -325,11 +326,13 @@ def _call_duration(call: Call) -> Optional[int]:
         try:
             return int((call.ended_at - call.started_at).total_seconds())
         except Exception:
+            __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
             return None
     if call.started_at:
         try:
             return int((_now() - call.started_at).total_seconds())
         except Exception:
+            __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
             return None
     return None
 
@@ -843,6 +846,7 @@ async def get_warm_transfer_context(
         if hasattr(call, "sentiment"):
             sentiment = getattr(call, "sentiment")
     except Exception:
+        __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
         pass
 
     return WarmTransferContextOut(
@@ -1239,4 +1243,77 @@ async def clear_transfer_cache(
     raise HTTPException(
         status_code=410,
         detail={"code": "transfer_cache_removed", "message": "Process-local transfer caches were removed. Durable idempotency receipts are intentionally retained."},
+    )
+
+
+class WarmTransferBriefingRequest(_Strict):
+    destination: str = Field(min_length=8, max_length=MAX_DESTINATION_LENGTH)
+    reason: Optional[str] = Field(default="customer_requested", max_length=MAX_REASON_LENGTH)
+    summary: Optional[str] = Field(default=None, max_length=MAX_SUMMARY_LENGTH)
+    caller_name: Optional[str] = Field(default=None, max_length=120)
+    sentiment: Optional[str] = Field(default=None, max_length=64)
+
+
+@router.post("/{call_id}/transfer/warm", status_code=201)
+async def start_warm_transfer_with_briefing(
+    call_id: uuid.UUID,
+    payload: WarmTransferBriefingRequest,
+    ctx: TenantContext = Depends(require_permission(Permission.CALL_WRITE)),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    """Initiate a Warm Transfer with Conference Hold and Whispered Briefing to the human leg (2D)."""
+    from app.telephony.transfer_service import initiate_warm_transfer
+
+    call = await _get_call(
+        session, ctx, call_id, permission=Permission.CALL_WRITE, for_write=True
+    )
+    transcript_excerpt = await _build_transcript_excerpt(session, call.id, max_turns=6)
+    res = await initiate_warm_transfer(
+        session,
+        tenant=ctx.tenant,
+        call=call,
+        destination_override=_normalize_destination(payload.destination),
+        reason=payload.reason or DEFAULT_TRANSFER_REASON,
+        summary=payload.summary,
+        caller_name=payload.caller_name,
+        sentiment=payload.sentiment,
+        transcript_excerpt=transcript_excerpt,
+    )
+    if not res.get("ok"):
+        raise HTTPException(status_code=422, detail=res)
+    return res
+
+
+@router.post("/{call_id}/transfer/warm/bridge")
+async def bridge_warm_transfer(
+    call_id: uuid.UUID,
+    ctx: TenantContext = Depends(require_permission(Permission.CALL_WRITE)),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    """Unhold the caller and bridge caller + human in the conference after briefing completes (2D)."""
+    from app.telephony.transfer_service import complete_warm_transfer
+
+    call = await _get_call(
+        session, ctx, call_id, permission=Permission.CALL_WRITE, for_write=True
+    )
+    return await complete_warm_transfer(session, call=call)
+
+
+@router.post("/{call_id}/transfer/warm/abort")
+async def abort_warm_transfer(
+    call_id: uuid.UUID,
+    payload: TransferCancelRequest,
+    ctx: TenantContext = Depends(require_permission(Permission.CALL_WRITE)),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    """Take caller off conference hold and return conversation to the AI agent when human declines/no-answers (2D)."""
+    from app.telephony.transfer_service import abort_warm_transfer_to_ai
+
+    call = await _get_call(
+        session, ctx, call_id, permission=Permission.CALL_WRITE, for_write=True
+    )
+    return await abort_warm_transfer_to_ai(
+        session,
+        call=call,
+        reason=payload.reason or "no_answer",
     )

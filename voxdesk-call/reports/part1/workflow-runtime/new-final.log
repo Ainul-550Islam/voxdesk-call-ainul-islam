@@ -1,0 +1,41 @@
+.........................                                                [100%]
+=============================== warnings summary ===============================
+tests/telephony/test_post_call_workflow.py::test_real_effect_pinned_version_and_replay
+tests/telephony/test_post_call_workflow.py::test_real_effect_pinned_version_and_replay
+tests/telephony/test_post_call_workflow.py::test_real_effect_pinned_version_and_replay
+tests/telephony/test_post_call_workflow.py::test_real_effect_pinned_version_and_replay
+tests/telephony/test_post_call_workflow.py::test_real_effect_pinned_version_and_replay
+tests/telephony/test_post_call_workflow.py::test_real_effect_pinned_version_and_replay
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/telephony/test_post_call_workflow.py: 21 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/telephony/test_post_call_workflow.py: 330 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/telephony/test_post_call_workflow.py: 21 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/telephony/test_post_call_workflow.py: 21 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/telephony/test_post_call_workflow.py: 18 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/conftest.py:569: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "started_at": datetime.utcnow(),
+
+tests/telephony/test_post_call_workflow.py::test_real_effect_pinned_version_and_replay
+tests/telephony/test_post_call_workflow.py::test_audit_failure_rolls_back_effect_and_execution
+tests/telephony/test_post_call_workflow.py::test_execution_read_scope_and_checkpoint_ack_separation
+tests/telephony/test_post_call_workflow.py::test_graph_failure_rolls_back_prior_actions
+tests/telephony/test_post_call_workflow.py::test_complete_call_has_analysis_qa_workflow_and_signed_webhook
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/leads/models.py:25: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+25 passed, 422 warnings in 22.21s

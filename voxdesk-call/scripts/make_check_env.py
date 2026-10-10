@@ -1,0 +1,192 @@
+#!/usr/bin/env python3
+"""Generate `.env.check` (mode 0600) for the local Docker run check.
+
+Builds `.env.check` from `.env.example` + every `${VAR:?}` required by
+`docker-compose.prod.yml` with cryptographically random secrets (`JWT_SECRET`,
+`REALTIME_GATEWAY_INGEST_SECRET` >= 16 chars, `POSTGRES_PASSWORD`,
+`GRAFANA_ADMIN_PASSWORD`, `CONDUCTOR_WEBHOOK_SECRET`, `SECRET_KEY`),
+`APP_ENV=staging`, `TRUSTED_HOSTS=localhost,127.0.0.1,api`,
+`MEDIA_ENGINE_PUBLIC_IP=127.0.0.1`, and external provider keys blank.
+Never prints secret values to stdout or stderr.
+"""
+from __future__ import annotations
+
+import argparse
+import os
+import secrets
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
+
+def _parse_env_keys(path: Path) -> list[str]:
+    keys: list[str] = []
+    if not path.exists():
+        return keys
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key = line.split("=", 1)[0].strip()
+        if key and key not in keys:
+            keys.append(key)
+    return keys
+
+
+def _ensure_git_exclude(repo_root: Path, pattern: str) -> None:
+    exclude = repo_root / ".git" / "info" / "exclude"
+    if not exclude.parent.exists():
+        return
+    existing = exclude.read_text(encoding="utf-8") if exclude.exists() else ""
+    lines = [line.strip() for line in existing.splitlines()]
+    if pattern not in lines:
+        with exclude.open("a", encoding="utf-8") as fh:
+            if existing and not existing.endswith("\n"):
+                fh.write("\n")
+            fh.write(f"{pattern}\n")
+
+
+def generate_check_env(out_path: Path, *, seed_companion_env_files: bool = True) -> dict[str, str]:
+    pg_password = secrets.token_hex(16)
+    secret_key = secrets.token_hex(32)
+    jwt_secret = secrets.token_hex(32)
+    ingest_secret = secrets.token_hex(24)
+    conductor_secret = secrets.token_hex(24)
+    grafana_password = secrets.token_hex(16)
+    owner_password = f"VoxCheck!{secrets.token_hex(12)}9A"
+
+    values: dict[str, str] = {
+        "APP_ENV": "staging",
+        "PUBLIC_BASE_URL": "http://127.0.0.1:8000",
+        "SECRET_KEY": secret_key,
+        "TRUSTED_HOSTS": "localhost,127.0.0.1,api",
+        "FORWARDED_ALLOW_IPS": "127.0.0.1,::1,172.30.0.10",
+        "CORS_ORIGINS": "http://localhost:8000,http://127.0.0.1:8000,http://localhost:5173",
+        "POSTGRES_USER": "voxdesk",
+        "POSTGRES_DB": "voxdesk",
+        "POSTGRES_PASSWORD": pg_password,
+        "DATABASE_URL": f"postgresql+asyncpg://voxdesk:{pg_password}@db:5432/voxdesk",
+        "REDIS_URL": "redis://redis:6379/0",
+        "JWT_SECRET": jwt_secret,
+        "JWT_ISSUER": "voxdesk",
+        "JWT_AUDIENCE": "voxdesk-api",
+        "ACCESS_TOKEN_MINUTES": "15",
+        "REFRESH_TOKEN_DAYS": "14",
+        "MAX_FAILED_LOGINS": "8",
+        "LOCKOUT_MINUTES": "15",
+        "REALTIME_GATEWAY_URL": "http://realtime-gateway:8790",
+        "REALTIME_GATEWAY_INGEST_SECRET": ingest_secret,
+        "REALTIME_PUBLISH_TIMEOUT_SECONDS": "1.5",
+        "REALTIME_ALLOWED_ORIGINS": "http://localhost:8000,http://127.0.0.1:8000,http://localhost:5173",
+        "MEDIA_ENGINE_PUBLIC_IP": "127.0.0.1",
+        "MEDIA_ENGINE_LABEL": "edge-1",
+        "MEDIA_ENGINE_MAX_PARTICIPANTS": "64",
+        "MEDIA_ENGINE_TIMEOUT_SECONDS": "1.5",
+        "MEDIA_ENGINE_STEER": "off",
+        "CONDUCTOR_WEBHOOK_SECRET": conductor_secret,
+        "GRAFANA_ADMIN_USER": "admin",
+        "GRAFANA_ADMIN_PASSWORD": grafana_password,
+        "METRICS_ENABLED": "true",
+        "METRICS_TOKEN": "",
+        "SCHEDULER_METRICS_PORT": "8001",
+        "CHECK_OWNER_EMAIL": "owner@check.local",
+        "CHECK_OWNER_PASSWORD": owner_password,
+        "DEMO_OWNER_EMAIL": "owner@check.local",
+        "DEMO_OWNER_PASSWORD": owner_password,
+        "VOXDESK_OWNER_PASSWORD": owner_password,
+        "VOXDESK_GATEWAY_INGEST_SECRET": ingest_secret,
+        "TWILIO_ACCOUNT_SID": "",
+        "TWILIO_AUTH_TOKEN": "",
+        "TWILIO_PHONE_NUMBER": "",
+        "TWILIO_SKIP_WEBHOOK_VERIFY": "false",
+        "DEEPGRAM_API_KEY": "",
+        "DEEPGRAM_MODEL": "nova-3",
+        "OPENAI_API_KEY": "",
+        "ANTHROPIC_API_KEY": "",
+        "GOOGLE_API_KEY": "",
+        "DEFAULT_LLM_PRESET": "natural",
+        "ELEVENLABS_API_KEY": "",
+        "ELEVENLABS_VOICE_ID": "21m00Tcm4TlvDq8ikWAM",
+        "ELEVENLABS_MODEL": "eleven_flash_v2_5",
+        "GOOGLE_CREDENTIALS_JSON": "",
+        "BILLING_PROVIDER": "manual",
+        "STRIPE_SECRET_KEY": "",
+        "STRIPE_WEBHOOK_SECRET": "",
+        "EMAIL_TRANSPORT": "log",
+        "E2E_ENABLED": "false",
+        "E2E_TEST_NUMBER": "",
+        "E2E_ALLOWED_CALLERS": "",
+    }
+
+    for template_name in (".env.example", ".env.check.example"):
+        for key in _parse_env_keys(REPO_ROOT / template_name):
+            values.setdefault(key, "")
+
+    lines = [
+        "# Generated by scripts/make_check_env.py — DO NOT COMMIT (mode 0600)",
+        *[f"{k}={v}" for k, v in values.items()],
+        "",
+    ]
+    content = "\n".join(lines)
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fd = os.open(str(out_path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        fh.write(content)
+    os.chmod(out_path, 0o600)
+
+    _ensure_git_exclude(REPO_ROOT, out_path.name)
+    _ensure_git_exclude(REPO_ROOT, ".env.check")
+
+    for d in ("secrets", "secrets-staging", "backups", "backups-staging"):
+        (REPO_ROOT / d).mkdir(parents=True, exist_ok=True)
+
+    if seed_companion_env_files:
+        for companion_name in (".env", ".env.staging"):
+            companion_path = REPO_ROOT / companion_name
+            if not companion_path.exists():
+                cfd = os.open(
+                    str(companion_path),
+                    os.O_WRONLY | os.O_CREAT | os.O_TRUNC,
+                    0o600,
+                )
+                with os.fdopen(cfd, "w", encoding="utf-8") as cfh:
+                    cfh.write("# Temporary check companion env (mode 0600)\n")
+                    cfh.write(content)
+                os.chmod(companion_path, 0o600)
+
+    return values
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Generate .env.check (mode 0600) for Docker run check."
+    )
+    parser.add_argument(
+        "--out",
+        default=".env.check",
+        help="Output path for generated env file (default: .env.check).",
+    )
+    parser.add_argument(
+        "--no-companion",
+        action="store_true",
+        help="Do not create fallback .env / .env.staging when absent.",
+    )
+    args = parser.parse_args(argv)
+    out_path = Path(args.out)
+    if not out_path.is_absolute():
+        out_path = REPO_ROOT / out_path
+    values = generate_check_env(
+        out_path,
+        seed_companion_env_files=not args.no_companion,
+    )
+    mode_oct = oct(out_path.stat().st_mode & 0o777)
+    print(
+        f"wrote {out_path.relative_to(REPO_ROOT) if out_path.is_relative_to(REPO_ROOT) else out_path} "
+        f"({len(values)} keys, mode={mode_oct}, secrets=<redacted>)"
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

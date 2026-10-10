@@ -14,7 +14,8 @@ from uuid import UUID
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import Agent, Environment
+from app.db.models import Agent, Call, Environment
+from app.services.experiment_service import assign_call_to_experiment
 from app.telephony.agent_version import (
     AgentVersionResolutionError,
     resolve_telephony_agent_version,
@@ -76,6 +77,16 @@ from app.telephony.schemas import (
     coerce_e164,
 )
 from app.telephony.transfer import CallTransferService
+from app.runtime.agent_config_resolver import RuntimeConfig, resolve_runtime_config
+
+
+async def resolve_call_runtime_config(
+    session: AsyncSession,
+    call: Any,
+    tenant: Any = None,
+) -> RuntimeConfig:
+    """Resolve and bind the call's runtime configuration (Sub-Phase 2E)."""
+    return await resolve_runtime_config(session, call, tenant)
 
 
 def get_provider_adapter(provider_name: str | TelephonyProviderName) -> TelephonyAdapter:
@@ -118,6 +129,23 @@ class TelephonyRuntimeService:
 
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
+
+    async def assign_experiment_for_call(
+        self,
+        *,
+        call: Call,
+        agent_id: str | UUID,
+        experiment_id: UUID | None = None,
+    ) -> dict[str, Any] | None:
+        """Assign an inbound or outbound ``Call`` to the active experiment for ``agent_id``."""
+        return await assign_call_to_experiment(
+            self.session,
+            tenant_id=call.tenant_id,
+            agent_id=agent_id,
+            call_sid=call.call_sid,
+            call_id=call.id,
+            experiment_id=experiment_id,
+        )
 
     async def initiate_outbound_call(
         self,
@@ -455,6 +483,16 @@ class TelephonyRuntimeService:
         )
         self.session.add(call_session)
         await self.session.flush()
+        exp_assignment = await assign_call_to_experiment(
+            self.session,
+            tenant_id=tenant_uuid,
+            agent_id=agent_row.id,
+            call_sid=pending_id,
+            call_id=call_id,
+        )
+        if exp_assignment is not None:
+            call_session.experiment_id = UUID(exp_assignment["experiment_id"])
+            call_session.variant_id = UUID(exp_assignment["variant_id"])
         # Durable intent is visible to every worker before a phone provider is
         # contacted. If the next operation has an ambiguous outcome, this row
         # and its in-progress receipt remain available for reconciliation.

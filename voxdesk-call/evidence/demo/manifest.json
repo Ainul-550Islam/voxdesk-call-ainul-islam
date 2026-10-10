@@ -1,0 +1,55 @@
+{
+  "generated_at_utc": "2026-10-08T18:04:35.448063+00:00",
+  "artifacts": [
+    {
+      "path": "evidence/demo/01_inbound_call.json",
+      "size_bytes": 1068,
+      "sha256": "34ce3bec9748ca5d6ae077a84b389eb2680ea3b2f41acb20c475bf8ba075ecbb"
+    },
+    {
+      "path": "evidence/demo/01_inbound_call_audio.wav",
+      "size_bytes": 38444,
+      "sha256": "ba52bc5877b45f8446a6a9f8d689a1a55db503c441f5f4768f3c17cbcfe1e3bc"
+    },
+    {
+      "path": "evidence/demo/02_outbound_batch.json",
+      "size_bytes": 742,
+      "sha256": "23f9f88e6b3326775324f276a24b67d46b9c5d740d9fe1711b61287887e1901c"
+    },
+    {
+      "path": "evidence/demo/03_web_call.json",
+      "size_bytes": 774,
+      "sha256": "fe7e4c1c808bfeaf430b7ab34e082153f5b44678e2a628ca1e153761ad1c4efe"
+    },
+    {
+      "path": "evidence/demo/03_web_call_audio.wav",
+      "size_bytes": 32044,
+      "sha256": "262d2db245dcac1d23b1e04b61f7db3e2c97b5c464ff6f8f56776733cdf8ab1e"
+    },
+    {
+      "path": "evidence/demo/04_live_takeover.json",
+      "size_bytes": 701,
+      "sha256": "49f91a82c0bf1eac337aa881056cc9abc8062d4a5894087fe54ddf26dd3e6fd0"
+    },
+    {
+      "path": "evidence/demo/05_flow_call.json",
+      "size_bytes": 645,
+      "sha256": "4714d6b17c5bf8470b50d14b6207286443ec31692c340fb04593b684d66e2be9"
+    },
+    {
+      "path": "evidence/demo/06_webhook_delivery.json",
+      "size_bytes": 762,
+      "sha256": "591feebeced6718f07ce90345ae4e26019550152fa75fca34ef9cf428a809e98"
+    },
+    {
+      "path": "evidence/demo/07_post_call_analysis.json",
+      "size_bytes": 598,
+      "sha256": "fabdf2942de2fd65453bedfda990179f0067b8cdf556373e14332556b8c7f35b"
+    },
+    {
+      "path": "evidence/demo/08_custom_dashboard.json",
+      "size_bytes": 709,
+      "sha256": "7b3f0ea093f55229f4068c875c5c3468e617e6441b97db3381f553f2bf0b5feb"
+    }
+  ]
+}

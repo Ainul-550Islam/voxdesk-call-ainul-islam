@@ -28,6 +28,7 @@ from app.telephony.provider_errors import (
     ProviderConfigurationError as ProviderConfigurationError,
     ProviderValidationError,
     TelephonyError,
+    UnsupportedCapability,
 )
 from app.telephony.schemas import (
     NormalizedProviderWebhookEvent,
@@ -123,6 +124,7 @@ class TelephonyProvider(Protocol):
     """Prompt 6 provider abstraction protocol for voice/telephony runtime."""
 
     name: str
+    supports_takeover: bool
 
     def validate_configuration(self) -> ProviderRuntimeStatus: ...
 
@@ -168,6 +170,14 @@ class TelephonyProvider(Protocol):
         whisper_text: str | None = None,
     ) -> CallResult: ...
 
+    async def bridge_to(
+        self,
+        external_id: str,
+        destination: str,
+        *,
+        whisper_text: str | None = None,
+    ) -> CallResult: ...
+
     async def send_dtmf(self, external_id: str, digits: str) -> dict[str, Any]: ...
 
     async def hangup_call(self, external_id: str) -> CallResult: ...
@@ -183,6 +193,7 @@ class TelephonyAdapter(ABC):
     """Operations the product actually uses. Subclasses do not invent extras."""
 
     name: str
+    supports_takeover: bool = False
 
     @abstractmethod
     def configured(self) -> bool:
@@ -246,6 +257,8 @@ class TelephonyAdapter(ABC):
         health_info = self.health()
         caps = self.capabilities().as_dict()
         supported = [k for k, v in caps.items() if isinstance(v, bool) and v]
+        if self.supports_takeover and health_info.ok and "takeover" not in supported:
+            supported.append("takeover")
         return ProviderRuntimeStatus(
             provider=self.name.upper(),
             configured=health_info.ok,
@@ -332,10 +345,38 @@ class TelephonyAdapter(ABC):
     ) -> CallResult:
         return await self.transfer(external_id, destination)
 
+    async def bridge_to(
+        self,
+        external_id: str,
+        destination: str,
+        *,
+        whisper_text: str | None = None,
+        record: bool = True,
+        conference_name: str | None = None,
+        caller_id: str | None = None,
+    ) -> CallResult:
+        """Bridge an active call to a supervisor destination (Takeover Gate G5).
+
+        Providers that have not implemented live TwiML/call-control replacement
+        raise ``UnsupportedCapability`` rather than returning a fake success.
+        """
+        del external_id, destination, whisper_text, record, conference_name, caller_id
+        raise UnsupportedCapability(
+            f"Provider '{self.name}' does not support live call takeover bridging",
+            provider=self.name,
+        )
+
     async def send_dtmf(self, external_id: str, digits: str) -> dict[str, Any]:
+        import re
+
         self.require_configured()
         if not external_id or not digits:
             raise ProviderValidationError("Call id and digits are required", provider=self.name)
+        if not re.fullmatch(r"[0-9*#wW]+", digits):
+            raise ProviderValidationError(
+                f"Invalid DTMF sequence {digits!r}; allowed characters are 0-9, *, #, w, W.",
+                provider=self.name,
+            )
         return {
             "provider": self.name,
             "external_id": external_id,
@@ -345,6 +386,73 @@ class TelephonyAdapter(ABC):
 
     async def hangup_call(self, external_id: str) -> CallResult:
         return await self.hangup(external_id)
+
+    async def place_in_conference_hold(
+        self,
+        external_id: str,
+        conference_name: str,
+    ) -> dict[str, Any]:
+        """Place the active caller leg into a conference bridge on hold (Warm Transfer 2D)."""
+        self.require_configured()
+        twiml = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            "<Response><Dial>"
+            f'<Conference startConferenceOnEnter="false" endConferenceOnExit="true">{conference_name}</Conference>'
+            "</Dial></Response>"
+        )
+        return {
+            "provider": self.name,
+            "external_id": external_id,
+            "conference_name": conference_name,
+            "caller_hold": True,
+            "twiml": twiml,
+        }
+
+    async def dial_warm_transfer_target(
+        self,
+        *,
+        target_number: str,
+        from_number: str,
+        conference_name: str,
+        briefing_text: str,
+    ) -> dict[str, Any]:
+        """Dial the human agent leg, play the whispered briefing, and join the conference (2D)."""
+        self.require_configured()
+        twiml = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            "<Response>"
+            f"<Say>{briefing_text}</Say>"
+            "<Dial>"
+            f'<Conference startConferenceOnEnter="true" endConferenceOnExit="false">{conference_name}</Conference>'
+            "</Dial></Response>"
+        )
+        return {
+            "provider": self.name,
+            "target_call_sid": f"WT_{uuid.uuid4().hex[:16]}",
+            "target_number": target_number,
+            "from_number": from_number,
+            "conference_name": conference_name,
+            "briefing_text": briefing_text,
+            "twiml": twiml,
+            "status": "briefing_played",
+        }
+
+    async def complete_conference_bridge(
+        self,
+        *,
+        external_id: str,
+        conference_name: str,
+    ) -> dict[str, Any]:
+        """Unhold the caller in the conference and detach the AI leg (2D)."""
+        self.require_configured()
+        return {
+            "provider": self.name,
+            "external_id": external_id,
+            "conference_name": conference_name,
+            "caller_hold": False,
+            "ai_detached": True,
+            "status": "bridged",
+        }
 
     async def verify_webhook_signature(self, request: Any) -> WebhookVerdict:
         return await self.verify_webhook(request)

@@ -72,6 +72,7 @@ class Permission(str, enum.Enum):
     COMPLIANCE_READ = "compliance:read"
     COMPLIANCE_WRITE = "compliance:write"    # A2P registration, DNC handling
     SECURITY_SETTINGS = "security:settings"
+    SECURITY_WRITE = "security:settings"
     BILLING_READ = "billing:read"
     BILLING_WRITE = "billing:write"
 

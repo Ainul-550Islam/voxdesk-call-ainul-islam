@@ -1,0 +1,68 @@
+    Updating crates.io index
+   Compiling voxdesk-control v0.1.0 (/home/user/voxdesk-call-ainul-islam/voxdesk-call/services/control-plane/crates/core)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.54s
+     Running unittests src/lib.rs (services/control-plane/target/debug/deps/voxdesk_control-a2382239e04cb260)
+
+running 53 tests
+test broadcast::tests::dropped_subscriber_is_pruned ... ok
+test broadcast::tests::broadcast_reaches_all_subscribers ... ok
+test idempotency::tests::first_apply_wins ... ok
+test idempotency::tests::same_key_different_tenant_is_independent ... ok
+test ratelimit::tests::clock_going_backwards_does_not_refill ... ok
+test ratelimit::tests::never_refills_beyond_capacity ... ok
+test ratelimit::tests::refills_at_the_declared_rate ... ok
+test ratelimit::tests::starts_full_and_permits_a_burst ... ok
+test ratelimit::tests::zero_cost_action_always_succeeds ... ok
+test registry::tests::ids_are_scoped_to_their_tenant ... ok
+test registry::tests::insert_contains_remove ... ok
+test registry::tests::same_id_two_tenants_is_allowed ... ok
+test retry::tests::delay_is_capped ... ok
+test retry::tests::first_try_has_no_delay_then_exponential_growth ... ok
+test retry::tests::gives_up_after_max_attempts ... ok
+test retry::tests::no_retries_when_max_attempts_is_one ... ok
+test scheduler::tests::default_registry_matches_python_scheduler ... ok
+test scheduler::tests::failing_tick_is_isolated_and_rescheduled ... ok
+test scheduler::tests::job_fires_immediately_then_on_interval ... ok
+test scheduler::tests::multiple_jobs_due_together_are_all_reported ... ok
+test scheduler::tests::unknown_job_is_a_noop ... ok
+test scheduler::tests::zero_interval_is_rejected ... ok
+test session::tests::differential_connected_from_dialing_keeps_status ... ok
+test session::tests::differential_duplicate_failure_is_a_noop ... ok
+test session::tests::differential_happy_path_sets_transferred_at_dialing ... ok
+test session::tests::differential_inferred_failure_can_be_corrected ... ok
+test session::tests::differential_late_failure_does_not_rewrite_connected ... ok
+test session::tests::differential_missing_destination_records_failure ... ok
+test session::tests::differential_provider_error_records_failure_keeps_call_alive ... ok
+test session::tests::differential_reason_is_capped_at_400 ... ok
+test session::tests::differential_reported_failure_is_never_corrected ... ok
+test session::tests::differential_request_when_terminal_is_rejected ... ok
+test session::tests::differential_request_while_connected_reports_completed ... ok
+test session::tests::differential_request_while_ringing_is_not_transferable ... ok
+test session::tests::differential_retry_after_failed_is_allowed ... ok
+test session::tests::differential_ringing_completed_is_legal ... ok
+test session::tests::differential_same_state_is_an_idempotent_noop ... ok
+test session::tests::differential_second_request_in_flight_is_a_noop ... ok
+test session::tests::differential_terminal_never_moves ... ok
+test session::tests::differential_transferred_is_not_terminal ... ok
+test broadcast::tests::slow_subscriber_misses_messages_but_stays ... ok
+test usage::tests::billable_seconds_floors_and_applies_minimum ... ok
+test session::tests::property_random_sequences_preserve_invariants ... ok
+test usage::tests::discrete_metric_overage_is_not_rounded ... ok
+test usage::tests::idempotency_key_is_legible_and_deterministic ... ok
+test usage::tests::duplicate_key_is_a_noop_not_a_failure ... ok
+test usage::tests::included_units_converts_voice_minutes_to_seconds ... ok
+test usage::tests::negative_usage_only_valid_for_adjustment ... ok
+test usage::tests::no_overage_is_free ... ok
+test usage::tests::seed_catalogue_matches_python ... ok
+test usage::tests::totals_are_tenant_scoped_and_clamped ... ok
+test usage::tests::voice_overage_rounds_up_once_on_period_total ... ok
+test usage::tests::zero_quantity_records_nothing ... ok
+
+test result: ok. 53 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+   Doc-tests voxdesk_control
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

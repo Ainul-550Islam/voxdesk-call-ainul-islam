@@ -111,6 +111,36 @@ def build_stt(tenant) -> DeepgramSTTService:
     )
 
 
+def build_stt_for_runtime(cfg, *, configured_settings=settings):
+    """Build a Pipecat STT processor from `RuntimeConfig`, wrapping fallbacks in `FailoverServiceWrapper` (2C)."""
+    from app.agent.providers.failover import FailoverServiceWrapper
+    from app.agent.providers.registry import is_provider_configured
+    from app.agent.providers.stt_providers import build_stt_provider
+
+    primary = build_stt_provider(cfg=cfg, configured_settings=configured_settings)
+    fallbacks = []
+    for fb_prov in getattr(cfg, "stt_fallback_providers", ()) or ():
+        if is_provider_configured("stt", fb_prov, configured_settings=configured_settings):
+            fallbacks.append(
+                (
+                    fb_prov,
+                    lambda p=fb_prov: build_stt_provider(
+                        provider=p,
+                        language=getattr(cfg, "language", "en-US"),
+                        boosted_keywords=getattr(cfg, "boosted_keywords", None),
+                        configured_settings=configured_settings,
+                    ),
+                )
+            )
+    if fallbacks:
+        return FailoverServiceWrapper(
+            stage="stt",
+            primary=(str(getattr(cfg, "stt_provider", "deepgram")), primary),
+            fallbacks=fallbacks,
+        )
+    return primary
+
+
 def __getattr__(name: str):
     """Resolve legacy SDK class exports only when explicitly requested."""
     if name not in {"DeepgramSTTService", "LiveOptions"}:
@@ -141,5 +171,6 @@ __all__ = [
     "STTProviderCapabilities",
     "STTStreamRequest",
     "build_stt",
+    "build_stt_for_runtime",
     "validate_stt_config",
 ]

@@ -80,8 +80,6 @@ async def test_phone_sip_inbound_live_fail_closed_and_simulation_version_binding
     assert sip.json()["has_credentials"] is True
     assert "e2e-only-sip-secret-2026" not in sip.text
 
-    # A signed provider-shaped webhook creates a live (non-simulated) call with
-    # the persisted current AgentVersion. No paid carrier is contacted here.
     live_event = {
         "provider_event_id": "prompt8-live-inbound-ring-001",
         "provider_call_id": "prompt8-live-inbound-call-001",
@@ -113,29 +111,19 @@ async def test_phone_sip_inbound_live_fail_closed_and_simulation_version_binding
     assert live_call["agent_version_number"] == 1
     assert live_call["metadata"]["resolved_agent_version_id"] == version["id"]
 
+    # Legacy mock /media-event endpoint is retired (Part 3 / F-05 closure)
     media_start = await client.post(
         f"/api/v1/telephony/calls/{live_call['id']}/media-event",
         headers=headers,
         json={"type": "media.start", "encoding": "mulaw", "sample_rate": 8000},
     )
-    assert media_start.status_code == 200, media_start.text
-    assert media_start.json()["synthetic_media"] is False
-    assert media_start.json()["media_state"] != "SPEAKING"
-    live_utterance = await client.post(
-        f"/api/v1/telephony/calls/{live_call['id']}/media-event",
-        headers=headers,
-        json={"type": "media.utterance", "text": "I need help with my account."},
-    )
-    assert live_utterance.status_code == 503
-    assert "LIVE_AGENT_RUNTIME_NOT_CONFIGURED" in live_utterance.text
+    assert media_start.status_code == 404
     live_after = await client.get(
         f"/api/v1/telephony/calls/{live_call['id']}", headers=headers
     )
     assert live_after.status_code == 200
     assert live_after.json()["transcript_turns"] == []
 
-    # A signed simulated callback is explicitly marked as simulation and uses
-    # the same exact published pointer; only this path emits deterministic media.
     simulated_event = {
         "provider_event_id": "prompt8-sim-inbound-ring-001",
         "provider_call_id": "prompt8-sim-inbound-call-001",
@@ -165,13 +153,3 @@ async def test_phone_sip_inbound_live_fail_closed_and_simulation_version_binding
     assert sim_call["is_simulation"] is True
     assert sim_call["agent_version_number"] == 1
     assert sim_call["metadata"]["resolved_agent_version_id"] == version["id"]
-
-    sim_media = await client.post(
-        f"/api/v1/telephony/calls/{sim_call['id']}/media-event",
-        headers=headers,
-        json={"type": "media.start", "encoding": "mulaw", "sample_rate": 8000},
-    )
-    assert sim_media.status_code == 200, sim_media.text
-    assert sim_media.json()["synthetic_media"] is True
-    assert sim_media.json()["media_state"] == "SPEAKING"
-    assert sim_media.json()["agent_profile"]["version_id"] == version["id"]

@@ -60,3 +60,4 @@ export function useAgentSort<T extends DurableAgentRecord>(
 }
 
 export default useAgentSort;
+export type { AgentSortDirection, AgentSortKey, AgentSortState };

@@ -1,0 +1,5 @@
+{"check":"development-proxy-with-fixtures-unset","status":"PASS","fixture_plugin_installed":false,"target":"http://127.0.0.1:39601","forwarded":[{"method":"GET","url":"/api/v1/runtime-probe?case=api"},{"method":"GET","url":"/auth/runtime-probe?case=auth"}]}
+10:25:57 AM [vite] (client) Re-optimizing dependencies because vite config has changed
+{"check":"development-opt-in-fixtures-label-read-only-and-no-invented-agent-or-auth-state","status":"PASS","fixture_plugin_installed":true,"catalog_items":4,"fixture_header":"preview-fixture","mutation_status":501,"auth_status":501,"agents_status":501,"upstream_requests":0}
+10:25:58 AM [vite] (client) Re-optimizing dependencies because vite config has changed
+{"check":"non-development-mode-ignores-fixture-opt-in-and-proxies","status":"PASS","fixture_flag":"true","fixture_plugin_installed":false,"forwarded":[{"method":"GET","url":"/api/v1/public/use-cases"}]}

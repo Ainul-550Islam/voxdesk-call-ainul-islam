@@ -626,6 +626,7 @@ def validate_snapshot_dict(
                     }
                 )
     except Exception as exc:
+        __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
         errors.append(
             {
                 "field": "config",

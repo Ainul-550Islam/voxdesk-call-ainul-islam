@@ -1,0 +1,16 @@
+sssssssssssss                                                            [100%]
+=========================== short test summary info ============================
+SKIPPED [1] tests/test_real_providers.py:41: ANTHROPIC_API_KEY not configured
+SKIPPED [1] tests/test_real_providers.py:41: not configured (missing: VOXDESK_REAL_CALCOM_API_KEY)
+SKIPPED [1] tests/test_real_providers.py:41: DEEPGRAM_API_KEY not configured
+SKIPPED [1] tests/test_real_providers.py:41: ELEVENLABS_API_KEY not configured
+SKIPPED [1] tests/test_real_providers.py:41: not configured (missing: VOXDESK_REAL_GHL_ACCESS_TOKEN, VOXDESK_REAL_GHL_LOCATION_ID)
+SKIPPED [1] tests/test_real_providers.py:41: not configured (missing: VOXDESK_REAL_GOOGLE_CALENDAR_REFRESH_TOKEN, VOXDESK_REAL_GOOGLE_CALENDAR_CLIENT_ID, VOXDESK_REAL_GOOGLE_CALENDAR_CLIENT_SECRET)
+SKIPPED [1] tests/test_real_providers.py:41: GOOGLE_API_KEY not configured
+SKIPPED [1] tests/test_real_providers.py:41: not configured (missing: VOXDESK_REAL_HUBSPOT_TOKEN)
+SKIPPED [1] tests/test_real_providers.py:41: not configured (missing: VOXDESK_REAL_JOBBER_ACCESS_TOKEN)
+SKIPPED [1] tests/test_real_providers.py:41: not configured (missing: VOXDESK_REAL_MICROSOFT_REFRESH_TOKEN, VOXDESK_REAL_MICROSOFT_CLIENT_ID, VOXDESK_REAL_MICROSOFT_CLIENT_SECRET)
+SKIPPED [1] tests/test_real_providers.py:41: OPENAI_API_KEY not configured
+SKIPPED [1] tests/test_real_providers.py:41: STRIPE_SECRET_KEY not configured
+SKIPPED [1] tests/test_real_providers.py:41: TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN not configured
+13 skipped in 0.08s

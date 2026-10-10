@@ -143,10 +143,34 @@ async def reminder_loop() -> None:
 
 
 async def campaign_loop() -> None:
+    from datetime import datetime, timezone
+    from app.db.enterprise_models import BatchCall, BatchStatus
+    from app.telephony.outbound import sync_batch_from_calls
+
     maker = get_sessionmaker()
     while not _stop.is_set():
         try:
             async with maker() as session:
+                now_utc = datetime.now(timezone.utc)
+                due_batches = (
+                    await session.execute(
+                        select(BatchCall).where(
+                            BatchCall.status == BatchStatus.SCHEDULED.value,
+                            BatchCall.scheduled_at.is_not(None),
+                            BatchCall.scheduled_at <= now_utc,
+                        )
+                    )
+                ).scalars().all()
+                for sb in due_batches:
+                    sb.status = BatchStatus.RUNNING.value
+                    sb.started_at = sb.started_at or now_utc
+                    if sb.campaign_id:
+                        sc = await session.get(Campaign, sb.campaign_id)
+                        if sc is not None and sc.tenant_id == sb.tenant_id:
+                            sc.is_active = True
+                if due_batches:
+                    await session.commit()
+
                 campaigns = (await session.execute(
                     select(Campaign).where(Campaign.is_active.is_(True))
                 )).scalars().all()
@@ -158,6 +182,16 @@ async def campaign_loop() -> None:
                     if result.get("dialed"):
                         logger.info("scheduler.campaign",
                                     campaign=campaign.name, **result)
+
+                running_batches = (
+                    await session.execute(
+                        select(BatchCall).where(BatchCall.status == BatchStatus.RUNNING.value)
+                    )
+                ).scalars().all()
+                for rb in running_batches:
+                    await sync_batch_from_calls(session, rb)
+                if running_batches:
+                    await session.commit()
             observability.record_job_run("campaigns", ok=True)
         except Exception as exc:
             observability.record_job_run("campaigns", ok=False)
@@ -332,9 +366,17 @@ def _start_metrics_server() -> None:
 
 
 async def main() -> None:
+    from app.core.graceful_shutdown import begin_drain, drain_and_shutdown, reset_drain_state
+
+    reset_drain_state()
     loop = asyncio.get_running_loop()
+
+    def _on_signal() -> None:
+        begin_drain(reason="scheduler_signal")
+        _stop.set()
+
     for sig in (signal.SIGINT, signal.SIGTERM):
-        loop.add_signal_handler(sig, _stop.set)
+        loop.add_signal_handler(sig, _on_signal)
 
     _start_metrics_server()
     logger.info("scheduler.started")
@@ -344,6 +386,11 @@ async def main() -> None:
         stuck_sweep_loop(),
         # Batch 07: the durable job platform and the outbox admission cycle.
         durable_jobs_loop(), outbox_dispatch_loop(),
+    )
+    await drain_and_shutdown(
+        reason="scheduler_shutdown",
+        drain_timeout_seconds=5.0,
+        flush_outbox=True,
     )
     logger.info("scheduler.stopped")
 

@@ -28,7 +28,7 @@ export function PricingPage() {
     setError(null);
     try {
       const publicTiers = await fetchPublicPricingTiers();
-      setTiers(publicTiers);
+      setTiers(Array.isArray(publicTiers) ? publicTiers : []);
     } catch (requestError) {
       setTiers(null);
       setError(errorMessage(requestError));

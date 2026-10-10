@@ -103,6 +103,7 @@ async def get_recording_detail(
         row = await authorize_read(
             session, tenant_id=ctx.tenant_id, recording_id=recording_id, role=ctx.user.role if hasattr(ctx.user, 'role') else None, actor_user_id=ctx.user_id
         )
+        await session.commit()
         d = row.as_dict()
         return RecordingOut(
             id=d["id"],
@@ -175,12 +176,13 @@ async def create_signed_access(
             session, tenant_id=ctx.tenant_id, recording_id=recording_id, role=ctx.user.role if hasattr(ctx.user, 'role') else None, actor_user_id=ctx.user_id
         )
         grant = grant_for(row, role=ctx.user.role if hasattr(ctx.user, 'role') else None)
-        # grant may be token string or dict
-        token = grant if isinstance(grant, str) else grant.get("token", str(uuid.uuid4()))
-        expires_at = _now()
-        # Assume 15 min expiry
-        from datetime import timedelta
-        expires_at = expires_at + timedelta(minutes=15)
+        await session.commit()
+        token = grant.token if hasattr(grant, "token") else (grant if isinstance(grant, str) else grant.get("token", str(uuid.uuid4())))
+        if hasattr(grant, "expires_at"):
+            expires_at = datetime.fromtimestamp(int(grant.expires_at), tz=timezone.utc)
+        else:
+            from datetime import timedelta
+            expires_at = _now() + timedelta(minutes=15)
         return SignedAccessOut(
             recording_id=str(row.id),
             token=token,

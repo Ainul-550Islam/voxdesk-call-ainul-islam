@@ -1,0 +1,27 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_enum_consistency.py::test_every_call_status_round_trips[cancelled] tests/test_enum_consistency.py::test_every_speaker_round_trips[user] tests/test_enum_consistency.py::test_every_speaker_round_trips[assistant] tests/test_enum_consistency.py::test_every_speaker_round_trips[system] tests/test_enum_consistency.py::test_full_transcript_with_caller_agent_and_system_round_trips
+.....                                                                    [100%]
+=============================== warnings summary ===============================
+tests/test_enum_consistency.py::test_every_call_status_round_trips[cancelled]
+tests/test_enum_consistency.py::test_every_speaker_round_trips[user]
+tests/test_enum_consistency.py::test_every_speaker_round_trips[assistant]
+tests/test_enum_consistency.py::test_every_speaker_round_trips[system]
+tests/test_enum_consistency.py::test_full_transcript_with_caller_agent_and_system_round_trips
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_enum_consistency.py: 13 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/test_enum_consistency.py::test_every_call_status_round_trips[cancelled]
+tests/test_enum_consistency.py::test_every_speaker_round_trips[user]
+tests/test_enum_consistency.py::test_every_speaker_round_trips[assistant]
+tests/test_enum_consistency.py::test_every_speaker_round_trips[system]
+tests/test_enum_consistency.py::test_full_transcript_with_caller_agent_and_system_round_trips
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+5 passed, 23 warnings in 4.06s
+
+STDERR:

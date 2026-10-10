@@ -1,0 +1,15 @@
+  status   | rubric_snapshot | transcript_snapshot 
+-----------+-----------------+---------------------
+ completed | {}              | {}
+(1 row)
+
+ retained_rules | restored_bindings 
+----------------+-------------------
+              1 |                 0
+(1 row)
+
+   version_num   
+-----------------
+ 0054_qa_runtime
+(1 row)
+

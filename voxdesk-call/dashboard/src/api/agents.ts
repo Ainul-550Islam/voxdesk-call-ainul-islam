@@ -230,3 +230,4 @@ export async function getModelProviders(): Promise<any[]> {
 }
 
 export { ApiError };
+export type { DurableAgentRecord };

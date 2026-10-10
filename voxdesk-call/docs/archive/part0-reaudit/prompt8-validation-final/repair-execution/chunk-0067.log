@@ -1,0 +1,5 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_data_policy.py::test_naive_utc_timestamp_is_treated_as_utc tests/test_data_policy.py::test_disclosure_recognises_automated_greeting tests/test_data_policy.py::test_disclosure_missing_in_human_sounding_greeting tests/test_data_policy.py::test_disclosure_is_case_insensitive tests/test_data_policy.py::test_disclosure_not_required_means_compliant_regardless
+.....                                                                    [100%]
+5 passed in 0.06s
+
+STDERR:

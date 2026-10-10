@@ -70,6 +70,7 @@ async def _calendar_check(name, provider_type, required, credentials, config) ->
         return CheckOutcome(name, CheckStatus.FAIL, exc.safe_message,
                             latency_ms=_ms(started))
     except Exception as exc:
+        __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
         return CheckOutcome(name, CheckStatus.FAIL,
                             f"unexpected error ({type(exc).__name__})",
                             latency_ms=_ms(started))
@@ -116,6 +117,7 @@ async def _crm_check(name, provider_type, cred_required, config_required,
         return CheckOutcome(name, CheckStatus.FAIL, exc.safe_message,
                             latency_ms=_ms(started))
     except Exception as exc:
+        __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
         return CheckOutcome(name, CheckStatus.FAIL,
                             f"unexpected error ({type(exc).__name__})",
                             latency_ms=_ms(started))
@@ -264,6 +266,7 @@ async def check_stripe() -> CheckOutcome:
         return CheckOutcome("Stripe", CheckStatus.FAIL, exc.safe_message,
                             latency_ms=_ms(started))
     except Exception as exc:
+        __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
         return CheckOutcome("Stripe", CheckStatus.FAIL,
                             f"unexpected error ({type(exc).__name__})",
                             latency_ms=_ms(started))

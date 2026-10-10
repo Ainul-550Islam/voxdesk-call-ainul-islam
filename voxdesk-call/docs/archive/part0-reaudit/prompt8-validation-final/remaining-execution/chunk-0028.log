@@ -1,0 +1,57 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_knowledge_performance.py::test_retrieval_latency tests/test_knowledge_performance.py::test_reranking_is_not_the_bottleneck tests/test_knowledge_performance.py::test_live_call_retrieval_stays_inside_its_budget tests/test_knowledge_performance.py::test_the_timeout_is_enforced_even_when_retrieval_hangs tests/test_knowledge_pipeline.py::test_the_agent_answers_from_an_uploaded_document tests/test_knowledge_pipeline.py::test_the_answer_carries_internal_source_references tests/test_knowledge_pipeline.py::test_the_grounding_instruction_travels_with_the_evidence tests/test_knowledge_pipeline.py::test_an_undocumented_question_is_refused_not_invented tests/test_knowledge_pipeline.py::test_a_tenant_with_no_documents_still_refuses_cleanly tests/test_knowledge_pipeline.py::test_the_configured_knowledge_dict_still_wins tests/test_knowledge_pipeline.py::test_documents_answer_what_the_dict_does_not tests/test_knowledge_pipeline.py::test_the_hours_builtin_still_works_with_no_documents tests/test_knowledge_pipeline.py::test_the_agent_cannot_answer_from_another_tenants_documents tests/test_knowledge_pipeline.py::test_a_retrieval_timeout_falls_back_instead_of_fabricating tests/test_knowledge_pipeline.py::test_a_retrieval_crash_does_not_break_the_call tests/test_knowledge_pipeline.py::test_an_archived_document_stops_answering_calls tests/test_knowledge_pipeline.py::test_trivial_turns_do_not_trigger_retrieval tests/test_knowledge_pipeline.py::test_business_questions_do_trigger_retrieval tests/test_knowledge_pipeline.py::test_the_system_prompt_accepts_a_grounded_block tests/test_knowledge_pipeline.py::test_the_system_prompt_is_unchanged_without_retrieval tests/test_knowledge_pipeline.py::test_document_text_never_enters_the_prompt_by_itself tests/test_knowledge_pipeline.py::test_uploading_does_not_change_the_system_prompt tests/test_knowledge_pipeline.py::test_the_worker_pass_indexes_pending_documents tests/test_knowledge_pipeline.py::test_a_job_for_an_archived_document_is_skipped tests/test_knowledge_pipeline.py::test_a_job_for_a_missing_document_does_not_crash tests/test_knowledge_retrieval.py::test_the_relevant_chunk_is_returned tests/test_knowledge_retrieval.py::test_a_different_question_finds_a_different_chunk tests/test_knowledge_retrieval.py::test_an_unrelated_question_returns_nothing tests/test_knowledge_retrieval.py::test_top_k_is_respected tests/test_knowledge_retrieval.py::test_the_minimum_score_filters_weak_matches
+
+    retrieve over 30 chunks           28.05 ms
+.
+    rerank overhead                     1.72 ms (on=28.0, off=26.3)
+.
+    live-call retrieval                   32.42 ms   (ceiling 1500 ms)
+.
+    hung backend, 200 ms timeout      200.82 ms -> []
+...........................                                           [100%]
+=============================== warnings summary ===============================
+tests/test_knowledge_performance.py: 4 warnings
+tests/test_knowledge_pipeline.py: 19 warnings
+tests/test_knowledge_retrieval.py: 5 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_knowledge_performance.py: 724 warnings
+tests/test_knowledge_pipeline.py: 120 warnings
+tests/test_knowledge_retrieval.py: 45 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/test_knowledge_performance.py: 4 warnings
+tests/test_knowledge_pipeline.py: 19 warnings
+tests/test_knowledge_retrieval.py: 5 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_knowledge_performance.py: 120 warnings
+tests/test_knowledge_pipeline.py: 12 warnings
+tests/test_knowledge_retrieval.py: 5 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/knowledge/ingest.py:227: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    document.processing_started_at = datetime.utcnow()
+
+tests/test_knowledge_performance.py: 120 warnings
+tests/test_knowledge_pipeline.py: 12 warnings
+tests/test_knowledge_retrieval.py: 5 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/knowledge/ingest.py:327: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    document.ingested_at = datetime.utcnow()
+
+tests/test_knowledge_pipeline.py: 12 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/test_knowledge_pipeline.py:37: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    started_at=datetime.utcnow(),
+
+tests/test_knowledge_pipeline.py::test_the_worker_pass_indexes_pending_documents
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/knowledge/ingest.py:447: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    cutoff = datetime.utcnow() - timedelta(seconds=older_than_seconds)
+
+tests/test_knowledge_pipeline.py::test_the_worker_pass_indexes_pending_documents
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/knowledge/ingest.py:503: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = now or datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+30 passed, 1233 warnings in 21.77s
+
+STDERR:

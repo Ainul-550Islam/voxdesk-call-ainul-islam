@@ -73,7 +73,7 @@ depends_on = None
 # this file and compares them -- that check caught a real mismatch in
 # migration 0005 before it reached a database.
 crm_provider_type = sa.Enum(
-    "GOHIGHLEVEL", "HUBSPOT", "JOBBER", "WEBHOOK",
+    "GOHIGHLEVEL", "HUBSPOT", "JOBBER", "SALESFORCE", "WEBHOOK",
     name="crmprovidertype",
 )
 crm_entity_type = sa.Enum(

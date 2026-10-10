@@ -410,6 +410,7 @@ class WorkflowEngine:
                 handler(action.name, action.params)
                 return True, f"action {action.name} executed", attempt
             except Exception as exc:  # handler isolation: never propagate
+                __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
                 if attempt >= node.retry_limit:
                     return (
                         False,

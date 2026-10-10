@@ -1,47 +1,53 @@
-"""Deterministic redaction for telemetry. Not a complete PII detector.
-
-Email, phone, SSN-shaped and card-shaped strings are masked. Anything else is
-left alone. Authorization still has to reject the action; this only keeps
-those patterns out of logs.
-"""
+"""Thin guardrail wrapper delegating all PII detection and redaction to app.gdpr.redact."""
 
 from __future__ import annotations
 
-import re
-
-_EMAIL = re.compile(r"[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}", re.I)
-_PHONE = re.compile(r"(?<!\d)(?:\+?\d[\d\s().-]{8,}\d)")
-_SSN = re.compile(r"\b\d{3}-\d{2}-\d{4}\b")
-_CARD = re.compile(r"\b(?:\d[ -]*?){13,19}\b")
+from app.gdpr.redact import redact as _gdpr_redact
 
 
-def enforce(text: str) -> dict:
-    """Redact a copy for telemetry. The caller still has to authorize the action."""
-    raw = text or ""
+class RedactedText(str):
+    """String result that also supports ``redacted_text, findings = redact(text)`` unpacking."""
+
+    findings: list[str]
+    text: str
+
+    def __new__(cls, text: str, findings: list[str]) -> "RedactedText":
+        obj = super().__new__(cls, text)
+        obj.findings = list(findings)
+        obj.text = str(text)
+        return obj
+
+    def __iter__(self):
+        return iter((str(self), list(self.findings)))
+
+
+def detect(text: str) -> list[str]:
+    """Return sorted PII kinds detected in ``text`` using the canonical GDPR redactor."""
+    return _gdpr_redact(text or "").kinds
+
+
+def has_pii(text: str) -> bool:
+    """Return True when ``text`` contains any canonical PII pattern."""
+    return bool(detect(text))
+
+
+def redact(text: str) -> RedactedText:
+    """Redact PII via ``app.gdpr.redact.redact``.
+
+    Returns a ``RedactedText`` (a ``str`` subclass) that behaves as the redacted
+    ``str`` and also unpacks as ``(redacted_text, findings)``.
+    """
+    result = _gdpr_redact(text or "")
+    return RedactedText(result.text, result.kinds)
+
+
+def enforce(text: str) -> dict[str, object]:
+    """Return redaction metadata and scrubbed text for AI guardrail callers."""
+    result = _gdpr_redact(text or "")
+    kinds = result.kinds
     return {
-        "kinds": detect(raw),
-        "redacted": redact(raw),
+        "redacted": result.text,
+        "kinds": kinds,
+        "redacted_any": bool(kinds),
         "guaranteed_detection": False,
     }
-
-
-def detect(text: str) -> tuple[str, ...]:
-    found = []
-    if _EMAIL.search(text or ""):
-        found.append("email")
-    if _PHONE.search(text or ""):
-        found.append("phone")
-    if _SSN.search(text or ""):
-        found.append("ssn")
-    if _CARD.search(text or ""):
-        found.append("card")
-    return tuple(found)
-
-
-def redact(text: str) -> str:
-    value = text or ""
-    value = _EMAIL.sub("[email]", value)
-    value = _SSN.sub("[ssn]", value)
-    value = _CARD.sub("[card]", value)
-    value = _PHONE.sub("[phone]", value)
-    return value

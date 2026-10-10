@@ -1,0 +1,309 @@
+                                Table "public.organizations"
+   Column   |           Type           | Collation | Nullable |           Default           
+------------+--------------------------+-----------+----------+-----------------------------
+ id         | uuid                     |           | not null | 
+ name       | character varying(200)   |           | not null | 
+ slug       | character varying(63)    |           | not null | 
+ status     | character varying(16)    |           | not null | 'active'::character varying
+ created_at | timestamp with time zone |           | not null | 
+ updated_at | timestamp with time zone |           | not null | 
+Indexes:
+    "organizations_pkey" PRIMARY KEY, btree (id)
+    "uq_organizations_slug" UNIQUE CONSTRAINT, btree (slug)
+Check constraints:
+    "ck_organizations_status" CHECK (status::text = ANY (ARRAY['active'::character varying, 'suspended'::character varying, 'read_only'::character varying, 'deleted'::character varying]::text[]))
+Referenced by:
+    TABLE "call_outcome_events" CONSTRAINT "call_outcome_events_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
+    TABLE "compliance_findings" CONSTRAINT "compliance_findings_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
+    TABLE "compliance_frameworks" CONSTRAINT "compliance_frameworks_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
+    TABLE "compliance_remediations" CONSTRAINT "compliance_remediations_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
+    TABLE "deployment_artifacts" CONSTRAINT "deployment_artifacts_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
+    TABLE "deployment_readiness" CONSTRAINT "deployment_readiness_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
+    TABLE "deployment_revisions" CONSTRAINT "deployment_revisions_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
+    TABLE "deployment_runtime_observations" CONSTRAINT "deployment_runtime_observations_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
+    TABLE "deployment_targets" CONSTRAINT "deployment_targets_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
+    TABLE "deployment_verifications" CONSTRAINT "deployment_verifications_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
+    TABLE "tenants" CONSTRAINT "fk_tenants_organization_id" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE RESTRICT
+    TABLE "jobs" CONSTRAINT "jobs_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE SET NULL
+    TABLE "membership_invitations" CONSTRAINT "membership_invitations_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
+    TABLE "organization_memberships" CONSTRAINT "organization_memberships_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE RESTRICT
+    TABLE "review_assignments" CONSTRAINT "review_assignments_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
+    TABLE "review_cases" CONSTRAINT "review_cases_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
+    TABLE "review_decisions" CONSTRAINT "review_decisions_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
+    TABLE "roi_baselines" CONSTRAINT "roi_baselines_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
+    TABLE "roi_costs" CONSTRAINT "roi_costs_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
+    TABLE "roi_kpi_evaluations" CONSTRAINT "roi_kpi_evaluations_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
+    TABLE "roi_kpis" CONSTRAINT "roi_kpis_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
+    TABLE "roi_outcomes" CONSTRAINT "roi_outcomes_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
+    TABLE "roi_results" CONSTRAINT "roi_results_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
+
+                                               Table "public.tenants"
+          Column          |           Type           | Collation | Nullable |                Default                
+--------------------------+--------------------------+-----------+----------+---------------------------------------
+ id                       | uuid                     |           | not null | 
+ name                     | character varying(200)   |           | not null | 
+ industry                 | character varying(80)    |           |          | 'general'::character varying
+ twilio_number            | character varying(32)    |           | not null | 
+ agent_name               | character varying(80)    |           |          | 'Alex'::character varying
+ greeting                 | text                     |           |          | 
+ system_prompt_extra      | text                     |           |          | ''::text
+ knowledge_base           | json                     |           |          | '{}'::json
+ llm_preset               | character varying(32)    |           |          | 'natural'::character varying
+ llm_provider             | character varying(32)    |           |          | 
+ llm_model                | character varying(80)    |           |          | 
+ temperature              | double precision         |           |          | '0.65'::double precision
+ humanize                 | boolean                  |           |          | true
+ vad_stop_secs            | double precision         |           |          | '0.45'::double precision
+ speech_speed             | double precision         |           |          | '1'::double precision
+ voice_id                 | character varying(64)    |           |          | 
+ language                 | character varying(16)    |           |          | 'en-US'::character varying
+ timezone                 | character varying(64)    |           |          | 'America/New_York'::character varying
+ business_open            | time without time zone   |           |          | 
+ business_close           | time without time zone   |           |          | 
+ appointment_minutes      | integer                  |           |          | 30
+ escalation_number        | character varying(32)    |           |          | 
+ notify_sms_number        | character varying(32)    |           |          | 
+ google_calendar_id       | character varying(255)   |           |          | 
+ crm_webhook_url          | character varying(500)   |           |          | 
+ crm_type                 | character varying(32)    |           |          | 'webhook'::character varying
+ crm_api_key              | character varying(255)   |           |          | 
+ outbound_enabled         | boolean                  |           |          | false
+ outbound_caller_id       | character varying(32)    |           |          | 
+ outbound_window_open     | time without time zone   |           |          | 
+ outbound_window_close    | time without time zone   |           |          | 
+ max_call_attempts        | integer                  |           |          | 3
+ reminder_hours_before    | integer                  |           |          | 24
+ reminder_enabled         | boolean                  |           |          | false
+ ivr_enabled              | boolean                  |           |          | false
+ ivr_flow                 | json                     |           |          | '{}'::json
+ sms_enabled              | boolean                  |           |          | true
+ whatsapp_enabled         | boolean                  |           |          | false
+ whatsapp_number          | character varying(32)    |           |          | 
+ a2p_brand_sid            | character varying(64)    |           |          | 
+ a2p_campaign_sid         | character varying(64)    |           |          | 
+ a2p_status               | character varying(32)    |           |          | 'not_started'::character varying
+ record_calls             | boolean                  |           |          | false
+ recording_disclaimer     | text                     |           |          | 
+ plan                     | character varying(32)    |           |          | 'starter'::character varying
+ included_minutes         | integer                  |           |          | 500
+ minutes_used             | double precision         |           |          | '0'::double precision
+ is_active                | boolean                  |           |          | true
+ created_at               | timestamp with time zone |           |          | now()
+ data_consent_recorded_at | timestamp with time zone |           |          | 
+ data_consent_source      | character varying(80)    |           |          | 
+ erasure_requested_at     | timestamp with time zone |           |          | 
+ is_test_tenant           | boolean                  |           | not null | false
+ organization_id          | uuid                     |           | not null | 
+ lifecycle_status         | character varying(16)    |           | not null | 'active'::character varying
+Indexes:
+    "tenants_pkey" PRIMARY KEY, btree (id)
+    "ix_tenants_organization_id" btree (organization_id)
+    "ix_tenants_twilio_number" btree (twilio_number)
+    "tenants_twilio_number_key" UNIQUE CONSTRAINT, btree (twilio_number)
+Check constraints:
+    "ck_tenants_lifecycle_status" CHECK (lifecycle_status::text = ANY (ARRAY['active'::character varying, 'suspended'::character varying, 'read_only'::character varying, 'deleted'::character varying]::text[]))
+Foreign-key constraints:
+    "fk_tenants_organization_id" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE RESTRICT
+Referenced by:
+    TABLE "agent_tools" CONSTRAINT "agent_tools_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "agent_transfer_events" CONSTRAINT "agent_transfer_events_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "agent_transfers" CONSTRAINT "agent_transfers_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "agent_versions" CONSTRAINT "agent_versions_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "agents" CONSTRAINT "agents_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "ai_admission_counters" CONSTRAINT "ai_admission_counters_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "ai_eval_datasets" CONSTRAINT "ai_eval_datasets_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "ai_eval_runs" CONSTRAINT "ai_eval_runs_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "ai_model_policies" CONSTRAINT "ai_model_policies_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "ai_prompt_rollouts" CONSTRAINT "ai_prompt_rollouts_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "ai_prompt_versions" CONSTRAINT "ai_prompt_versions_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "ai_prompts" CONSTRAINT "ai_prompts_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "analysis_results" CONSTRAINT "analysis_results_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "analysis_schemas" CONSTRAINT "analysis_schemas_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "api_keys" CONSTRAINT "api_keys_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "api_tools" CONSTRAINT "api_tools_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "appointments" CONSTRAINT "appointments_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id)
+    TABLE "audit_logs" CONSTRAINT "audit_logs_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "automation_actions" CONSTRAINT "automation_actions_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "automation_runs" CONSTRAINT "automation_runs_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "automations" CONSTRAINT "automations_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "backfill_jobs" CONSTRAINT "backfill_jobs_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "batch_calls" CONSTRAINT "batch_calls_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "batch_recipients" CONSTRAINT "batch_recipients_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "billing_invoices" CONSTRAINT "billing_invoices_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "billing_webhook_receipts" CONSTRAINT "billing_webhook_receipts_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "calendar_integrations" CONSTRAINT "calendar_integrations_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "calendar_webhook_receipts" CONSTRAINT "calendar_webhook_receipts_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "call_outcome_events" CONSTRAINT "call_outcome_events_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "call_policies" CONSTRAINT "call_policies_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "call_qos_samples" CONSTRAINT "call_qos_samples_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "call_recordings" CONSTRAINT "call_recordings_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "call_simulations" CONSTRAINT "call_simulations_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "calls" CONSTRAINT "calls_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id)
+    TABLE "campaigns" CONSTRAINT "campaigns_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id)
+    TABLE "cc_agent_presence" CONSTRAINT "cc_agent_presence_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "cc_agent_skills" CONSTRAINT "cc_agent_skills_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "cc_queue_entries" CONSTRAINT "cc_queue_entries_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "cc_queue_members" CONSTRAINT "cc_queue_members_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "cc_queues" CONSTRAINT "cc_queues_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "cc_routing_assignments" CONSTRAINT "cc_routing_assignments_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "cc_routing_cursors" CONSTRAINT "cc_routing_cursors_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "cc_routing_decisions" CONSTRAINT "cc_routing_decisions_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "cc_skills" CONSTRAINT "cc_skills_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "chat_agent_versions" CONSTRAINT "chat_agent_versions_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "chat_agents" CONSTRAINT "chat_agents_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "chat_messages" CONSTRAINT "chat_messages_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "chat_sessions" CONSTRAINT "chat_sessions_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "compliance_findings" CONSTRAINT "compliance_findings_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "compliance_frameworks" CONSTRAINT "compliance_frameworks_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "compliance_remediations" CONSTRAINT "compliance_remediations_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "conductor_approvals" CONSTRAINT "conductor_approvals_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "conductor_changes" CONSTRAINT "conductor_changes_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "conductor_evidence" CONSTRAINT "conductor_evidence_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "conductor_proposals" CONSTRAINT "conductor_proposals_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "conductor_sessions" CONSTRAINT "conductor_sessions_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "connector_oauth" CONSTRAINT "connector_oauth_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "connectors" CONSTRAINT "connectors_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "contact_memory_entries" CONSTRAINT "contact_memory_entries_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "contacts" CONSTRAINT "contacts_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "crm_contact_links" CONSTRAINT "crm_contact_links_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "crm_events" CONSTRAINT "crm_events_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "crm_integrations" CONSTRAINT "crm_integrations_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "crm_syncs" CONSTRAINT "crm_syncs_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "crm_webhook_receipts" CONSTRAINT "crm_webhook_receipts_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "crm_writeback_logs" CONSTRAINT "crm_writeback_logs_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "deployment_artifacts" CONSTRAINT "deployment_artifacts_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "deployment_readiness" CONSTRAINT "deployment_readiness_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "deployment_revisions" CONSTRAINT "deployment_revisions_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "deployment_runtime_observations" CONSTRAINT "deployment_runtime_observations_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "deployment_targets" CONSTRAINT "deployment_targets_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "deployment_verifications" CONSTRAINT "deployment_verifications_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "dnc_entries" CONSTRAINT "dnc_entries_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "domain_verifications" CONSTRAINT "domain_verifications_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "dynamic_variable_definitions" CONSTRAINT "dynamic_variable_definitions_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "email_deliveries" CONSTRAINT "email_deliveries_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "email_verification_tokens" CONSTRAINT "email_verification_tokens_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "enterprise_domains" CONSTRAINT "enterprise_domains_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "environment_selections" CONSTRAINT "environment_selections_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "environments" CONSTRAINT "environments_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "evaluation_results" CONSTRAINT "evaluation_results_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "evaluation_rules" CONSTRAINT "evaluation_rules_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "experiment_variants" CONSTRAINT "experiment_variants_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "experiments" CONSTRAINT "experiments_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "conductor_webhook_receipts" CONSTRAINT "fk_conductor_webhook_receipts_tenant_id_tenants" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "request_idempotency_receipts" CONSTRAINT "fk_request_idempotency_receipts_tenant_id_tenants" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "human_approvals" CONSTRAINT "human_approvals_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "identity_mappings" CONSTRAINT "identity_mappings_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "identity_policies" CONSTRAINT "identity_policies_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "inbox_thread_states" CONSTRAINT "inbox_thread_states_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "job_idempotency" CONSTRAINT "job_idempotency_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "jobs" CONSTRAINT "jobs_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "knowledge_chunks" CONSTRAINT "knowledge_chunks_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "knowledge_collection_sources" CONSTRAINT "knowledge_collection_sources_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "knowledge_collections" CONSTRAINT "knowledge_collections_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "knowledge_documents" CONSTRAINT "knowledge_documents_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "knowledge_sources" CONSTRAINT "knowledge_sources_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "lead_activities" CONSTRAINT "lead_activities_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "lead_consents" CONSTRAINT "lead_consents_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "lead_enrichment_records" CONSTRAINT "lead_enrichment_records_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "lead_identities" CONSTRAINT "lead_identities_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "lead_merges" CONSTRAINT "lead_merges_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "lead_score_snapshots" CONSTRAINT "lead_score_snapshots_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "lead_segments" CONSTRAINT "lead_segments_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "lead_status_history" CONSTRAINT "lead_status_history_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "lead_tasks" CONSTRAINT "lead_tasks_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "leads" CONSTRAINT "leads_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id)
+    TABLE "live_call_sessions" CONSTRAINT "live_call_sessions_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "mcp_servers" CONSTRAINT "mcp_servers_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "mcp_tools" CONSTRAINT "mcp_tools_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "membership_invitations" CONSTRAINT "membership_invitations_home_tenant_id_fkey" FOREIGN KEY (home_tenant_id) REFERENCES tenants(id) ON DELETE RESTRICT
+    TABLE "membership_invitations" CONSTRAINT "membership_invitations_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "message_channels" CONSTRAINT "message_channels_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "message_webhook_receipts" CONSTRAINT "message_webhook_receipts_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "mfa_challenges" CONSTRAINT "mfa_challenges_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "mfa_factors" CONSTRAINT "mfa_factors_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "mfa_recovery_codes" CONSTRAINT "mfa_recovery_codes_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "notification_deliveries" CONSTRAINT "notification_deliveries_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "notification_preferences" CONSTRAINT "notification_preferences_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "notification_templates" CONSTRAINT "notification_templates_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "notifications" CONSTRAINT "notifications_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "outbox_events" CONSTRAINT "outbox_events_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "password_reset_tokens" CONSTRAINT "password_reset_tokens_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "pcap_artifacts" CONSTRAINT "pcap_artifacts_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "phone_numbers" CONSTRAINT "phone_numbers_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "privacy_policies" CONSTRAINT "privacy_policies_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "public_webhook_endpoints" CONSTRAINT "public_webhook_endpoints_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "public_webhook_receipts" CONSTRAINT "public_webhook_receipts_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "public_widget_keys" CONSTRAINT "public_widget_keys_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "public_widget_sessions" CONSTRAINT "public_widget_sessions_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "qa_auto_review_runs" CONSTRAINT "qa_auto_review_runs_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "qa_calibration_scores" CONSTRAINT "qa_calibration_scores_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "qa_calibration_sessions" CONSTRAINT "qa_calibration_sessions_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "qa_coaching_signals" CONSTRAINT "qa_coaching_signals_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "qa_compliance_findings" CONSTRAINT "qa_compliance_findings_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "qa_compliance_policies" CONSTRAINT "qa_compliance_policies_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "qa_evidence" CONSTRAINT "qa_evidence_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "qa_findings" CONSTRAINT "qa_findings_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "qa_review_items" CONSTRAINT "qa_review_items_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "qa_reviews" CONSTRAINT "qa_reviews_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "qa_sample_selections" CONSTRAINT "qa_sample_selections_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "qa_sampling_rules" CONSTRAINT "qa_sampling_rules_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "qa_scorecard_items" CONSTRAINT "qa_scorecard_items_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "qa_scorecard_sections" CONSTRAINT "qa_scorecard_sections_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "qa_scorecards" CONSTRAINT "qa_scorecards_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "qa_sentiment_results" CONSTRAINT "qa_sentiment_results_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "qa_topic_results" CONSTRAINT "qa_topic_results_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "recording_consents" CONSTRAINT "recording_consents_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "recording_policies" CONSTRAINT "recording_policies_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "reminders" CONSTRAINT "reminders_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id)
+    TABLE "retention_policies" CONSTRAINT "retention_policies_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "review_assignments" CONSTRAINT "review_assignments_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "review_cases" CONSTRAINT "review_cases_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "review_decisions" CONSTRAINT "review_decisions_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "roi_baselines" CONSTRAINT "roi_baselines_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "roi_costs" CONSTRAINT "roi_costs_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "roi_kpi_evaluations" CONSTRAINT "roi_kpi_evaluations_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "roi_kpis" CONSTRAINT "roi_kpis_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "roi_outcomes" CONSTRAINT "roi_outcomes_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "roi_results" CONSTRAINT "roi_results_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "salesforce_connections" CONSTRAINT "salesforce_connections_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "scheduling_policies" CONSTRAINT "scheduling_policies_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "scim_credentials" CONSTRAINT "scim_credentials_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "scim_group_mappings" CONSTRAINT "scim_group_mappings_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "service_account_credentials" CONSTRAINT "service_account_credentials_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "service_accounts" CONSTRAINT "service_accounts_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "specialized_agent_anomaly_alerts" CONSTRAINT "specialized_agent_anomaly_alerts_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "sso_connection_certificates" CONSTRAINT "sso_connection_certificates_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "sso_connections" CONSTRAINT "sso_connections_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "sso_login_attempts" CONSTRAINT "sso_login_attempts_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "subscriptions" CONSTRAINT "subscriptions_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "telephony_call_sessions" CONSTRAINT "telephony_call_sessions_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "telephony_callback_events" CONSTRAINT "telephony_callback_events_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE SET NULL
+    TABLE "telephony_phone_numbers" CONSTRAINT "telephony_phone_numbers_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "telephony_provider_bindings" CONSTRAINT "telephony_provider_bindings_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "telephony_provider_events" CONSTRAINT "telephony_provider_events_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "telephony_sip_connections" CONSTRAINT "telephony_sip_connections_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "telephony_transfer_records" CONSTRAINT "telephony_transfer_records_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "telephony_usage_ledger" CONSTRAINT "telephony_usage_ledger_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "tenant_memberships" CONSTRAINT "tenant_memberships_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "test_cases" CONSTRAINT "test_cases_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "test_runs" CONSTRAINT "test_runs_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "test_suites" CONSTRAINT "test_suites_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "tool_executions" CONSTRAINT "tool_executions_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "transcript_jobs" CONSTRAINT "transcript_jobs_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "usage_events" CONSTRAINT "usage_events_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "usage_summaries" CONSTRAINT "usage_summaries_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "user_emails" CONSTRAINT "user_emails_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "user_sessions" CONSTRAINT "user_sessions_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "users" CONSTRAINT "users_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "voice_clone_jobs" CONSTRAINT "voice_clone_jobs_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "voice_profiles" CONSTRAINT "voice_profiles_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "webhook_deliveries" CONSTRAINT "webhook_deliveries_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "webhook_delivery_attempts" CONSTRAINT "webhook_delivery_attempts_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "webhook_endpoints" CONSTRAINT "webhook_endpoints_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "webhook_subscriptions" CONSTRAINT "webhook_subscriptions_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "workflow_executions" CONSTRAINT "workflow_executions_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "workflow_idempotency" CONSTRAINT "workflow_idempotency_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "workflow_triggers" CONSTRAINT "workflow_triggers_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "workflow_versions" CONSTRAINT "workflow_versions_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    TABLE "workflows" CONSTRAINT "workflows_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+

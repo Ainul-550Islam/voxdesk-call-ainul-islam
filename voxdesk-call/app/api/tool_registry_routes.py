@@ -211,3 +211,29 @@ async def disable_tool(
     await session.commit()
     await session.refresh(row)
     return _to_out(row)
+
+
+class ToolTestRequest(_Strict):
+    arguments: dict = Field(default_factory=dict)
+
+
+@router.post("/{agent_id}/tools/{tool_id}/test")
+async def test_tool_execution(
+    agent_id: str,
+    tool_id: uuid.UUID,
+    payload: ToolTestRequest,
+    ctx: TenantContext = Depends(require_permission(Permission.TENANT_UPDATE)),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    """POST /api/agents/{id}/tools/{tool_id}/test — Execute a live test call of a custom HTTP tool (2D)."""
+    from app.services.tool_registry_service import test_agent_custom_tool
+
+    row = await session.get(AgentTool, tool_id)
+    if row is None or row.tenant_id != ctx.tenant_id or row.agent_id != agent_id:
+        raise HTTPException(status_code=404, detail="tool not found")
+    return await test_agent_custom_tool(
+        session,
+        tenant_id=ctx.tenant_id,
+        tool=row,
+        arguments=payload.arguments,
+    )

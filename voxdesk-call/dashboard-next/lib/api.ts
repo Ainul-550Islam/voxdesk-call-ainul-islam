@@ -647,16 +647,16 @@ export const api = {
     if (params?.event_type) qs.set("event_type", params.event_type);
     if (params?.limit) qs.set("limit", String(params.limit));
     const q = qs.toString();
-    return request<EvidenceRecord[]>(`/api/evidence${q ? `?${q}` : ""}`);
+    return request<EvidenceRecord[]>(`/api/governance/evidence${q ? `?${q}` : ""}`);
   },
 
   // ---- voice (P0-04) - Voice Product Workspace ----
   voiceProfiles(): Promise<VoiceProfile[]> {
-    return request<VoiceProfile[]>("/api/agent/voice-profiles");
+    return request<VoiceProfile[]>("/api/agents/voices");
   },
 
   voiceCloneJobs(): Promise<VoiceCloneJob[]> {
-    return request<VoiceCloneJob[]>("/api/agent/voice-clones");
+    return request<VoiceCloneJob[]>("/api/voices/catalog");
   },
 
   createVoiceClone(payload: {
@@ -665,7 +665,7 @@ export const api = {
     audio_url?: string;
     description?: string;
   }): Promise<VoiceCloneJob> {
-    return request<VoiceCloneJob>("/api/agent/voice-clones", {
+    return request<VoiceCloneJob>("/api/voices/clone", {
       method: "POST",
       body: JSON.stringify(payload),
     });
@@ -673,18 +673,18 @@ export const api = {
 
   // ---- deployment (P1-07) - Deployment Verification ----
   deploymentTargets(): Promise<Array<Record<string, unknown>>> {
-    return request<Array<Record<string, unknown>>>("/api/deployments/targets");
+    return request<Array<Record<string, unknown>>>("/api/deployment/targets");
   },
 
   deploymentRevisions(targetId: string): Promise<Array<Record<string, unknown>>> {
     return request<Array<Record<string, unknown>>>(
-      `/api/deployments/targets/${targetId}/revisions`,
+      `/api/deployment/targets/${targetId}/revisions`,
     );
   },
 
   // ---- compliance / industry templates ----
   industryTemplates(): Promise<Array<Record<string, unknown>>> {
-    return request<Array<Record<string, unknown>>>("/api/industry-templates");
+    return request<Array<Record<string, unknown>>>("/api/compliance/industry-templates");
   },
 
   complianceFrameworks(): Promise<Array<Record<string, unknown>>> {
@@ -697,16 +697,20 @@ export const api = {
   },
 
   roiResults(): Promise<Array<Record<string, unknown>>> {
-    return request<Array<Record<string, unknown>>>("/api/roi/results");
+    return request<Array<Record<string, unknown>>>("/api/roi/kpis");
   },
 
-  // ---- translation (P1-05) ----
+  // ---- translation (P1-05; retired in PART 0) ----
   translationJobs(): Promise<Array<Record<string, unknown>>> {
-    return request<Array<Record<string, unknown>>>("/api/translations/jobs");
+    return Promise.reject(
+      new ApiError(501, "Translation routes were retired in PART 0."),
+    );
   },
 
   translationGlossaries(): Promise<Array<Record<string, unknown>>> {
-    return request<Array<Record<string, unknown>>>("/api/translations/glossaries");
+    return Promise.reject(
+      new ApiError(501, "Translation routes were retired in PART 0."),
+    );
   },
 
   // ---- anomaly (P1) ----
@@ -823,6 +827,245 @@ export const api = {
     payload: { environment_id: string; framework_id: string; config?: Record<string, unknown>; credentials?: Record<string, unknown> },
   ): Promise<Record<string, unknown>> {
     return request<Record<string, unknown>>(`/api/compliance/qms/${encodeURIComponent(provider)}/audit-package`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  // ---- Multi-Agent Builder, Versions, Flow, Tools & Knowledge (Part 5 / Gate G6) ----
+  listAgents(params?: { status?: string; search?: string }): Promise<Array<Record<string, unknown>>> {
+    const qs = new URLSearchParams();
+    if (params?.status) qs.set("status", params.status);
+    if (params?.search) qs.set("search", params.search);
+    const q = qs.toString();
+    return request<Array<Record<string, unknown>>>(`/api/agents${q ? `?${q}` : ""}`);
+  },
+
+  createAgent(payload: {
+    name: string;
+    description?: string;
+    template_key?: string;
+    initial_config?: Record<string, unknown>;
+  }): Promise<Record<string, unknown>> {
+    return request<Record<string, unknown>>("/api/agents", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  getAgent(agentId: string): Promise<Record<string, unknown>> {
+    return request<Record<string, unknown>>(`/api/agents/${encodeURIComponent(agentId)}`);
+  },
+
+  patchAgent(
+    agentId: string,
+    payload: Record<string, unknown>,
+    expectedEtag?: string,
+  ): Promise<Record<string, unknown>> {
+    const headers: Record<string, string> = {};
+    if (expectedEtag) headers["If-Match"] = expectedEtag;
+    return request<Record<string, unknown>>(`/api/agents/${encodeURIComponent(agentId)}`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify(payload),
+    });
+  },
+
+  duplicateAgent(
+    agentId: string,
+    payload?: { name?: string; include_draft?: boolean },
+  ): Promise<Record<string, unknown>> {
+    return request<Record<string, unknown>>(
+      `/api/v1/agents/${encodeURIComponent(agentId)}/clone`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          new_name: payload?.name ?? "Agent (Copy)",
+          include_knowledge_bases: true,
+          include_tools: true,
+        }),
+      },
+    );
+  },
+
+  archiveAgent(agentId: string, reason = "Archived via dashboard"): Promise<Record<string, unknown>> {
+    return request<Record<string, unknown>>(
+      `/api/v1/agents/${encodeURIComponent(agentId)}/archive`,
+      {
+        method: "POST",
+        body: JSON.stringify({ reason }),
+      },
+    );
+  },
+
+  getAgentDraft(agentId: string): Promise<Record<string, unknown>> {
+    return request<Record<string, unknown>>(`/api/agents/${encodeURIComponent(agentId)}`);
+  },
+
+  putAgentDraft(
+    agentId: string,
+    config: Record<string, unknown>,
+    expectedEtag?: string,
+  ): Promise<Record<string, unknown>> {
+    const headers: Record<string, string> = {};
+    if (expectedEtag) headers["If-Match"] = expectedEtag;
+    return request<Record<string, unknown>>(`/api/agents/${encodeURIComponent(agentId)}`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify({ config, expected_etag: expectedEtag ?? null }),
+    });
+  },
+
+  validateAgentDraft(
+    agentId: string,
+    config?: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    return request<Record<string, unknown>>(`/api/agents/${encodeURIComponent(agentId)}/validate`, {
+      method: "POST",
+      body: JSON.stringify(config ? { config } : {}),
+    });
+  },
+
+  publishAgentVersion(
+    agentId: string,
+    payload: { changelog?: string; environment?: "development" | "staging" | "production" },
+  ): Promise<Record<string, unknown>> {
+    return request<Record<string, unknown>>(`/api/agents/${encodeURIComponent(agentId)}/publish`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  listAgentVersions(agentId: string): Promise<Array<Record<string, unknown>>> {
+    return request<Array<Record<string, unknown>>>(
+      `/api/agents/${encodeURIComponent(agentId)}/versions`,
+    );
+  },
+
+  diffAgentVersions(
+    agentId: string,
+    fromVersion: number,
+    toVersion: number,
+  ): Promise<Record<string, unknown>> {
+    const qs = new URLSearchParams({
+      from_version: String(fromVersion),
+      to_version: String(toVersion),
+    });
+    return request<Record<string, unknown>>(
+      `/api/agents/${encodeURIComponent(agentId)}/versions/diff?${qs.toString()}`,
+    );
+  },
+
+  rollbackAgentVersion(
+    agentId: string,
+    payload: { target_version: number; reason?: string },
+  ): Promise<Record<string, unknown>> {
+    return request<Record<string, unknown>>(`/api/agents/${encodeURIComponent(agentId)}/rollback`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  getAgentFlow(agentId: string): Promise<Record<string, unknown>> {
+    return request<Record<string, unknown>>(`/api/agents/${encodeURIComponent(agentId)}/flow`);
+  },
+
+  putAgentFlow(
+    agentId: string,
+    payload: {
+      mode?: "single_prompt" | "flow";
+      flow: Record<string, unknown>;
+      expected_etag?: string | null;
+    },
+  ): Promise<Record<string, unknown>> {
+    const headers: Record<string, string> = {};
+    if (payload.expected_etag) headers["If-Match"] = payload.expected_etag;
+    return request<Record<string, unknown>>(`/api/agents/${encodeURIComponent(agentId)}/flow`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify({
+        mode: payload.mode ?? "flow",
+        flow: payload.flow,
+        expected_etag: payload.expected_etag ?? null,
+      }),
+    });
+  },
+
+  validateAgentFlow(
+    agentId: string,
+    flow?: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    return request<Record<string, unknown>>(
+      `/api/agents/${encodeURIComponent(agentId)}/flow/validate`,
+      {
+        method: "POST",
+        body: JSON.stringify(flow ? { flow } : {}),
+      },
+    );
+  },
+
+  simulateAgentFlow(
+    agentId: string,
+    payload: {
+      turns: string[];
+      initial_variables?: Record<string, unknown>;
+      flow?: Record<string, unknown>;
+      judge_decisions?: Record<string, boolean>;
+      tool_results?: Record<string, Record<string, unknown>>;
+    },
+  ): Promise<Record<string, unknown>> {
+    return request<Record<string, unknown>>(
+      `/api/agents/${encodeURIComponent(agentId)}/flow/simulate`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+    );
+  },
+
+  publishAgentFlow(
+    agentId: string,
+    payload?: { changelog?: string; environment?: "development" | "staging" | "production" },
+  ): Promise<Record<string, unknown>> {
+    return request<Record<string, unknown>>(
+      `/api/agents/${encodeURIComponent(agentId)}/flow/publish`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload ?? {}),
+      },
+    );
+  },
+
+  listAgentTools(agentId?: string): Promise<Record<string, unknown>> {
+    const qs = agentId ? `?agent_id=${encodeURIComponent(agentId)}` : "";
+    return request<Record<string, unknown>>(`/api/api-tools${qs}`);
+  },
+
+  createAgentTool(payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    return request<Record<string, unknown>>("/api/api-tools", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  listKnowledgeCollections(): Promise<Record<string, unknown>> {
+    return request<Record<string, unknown>>("/api/kb/collections");
+  },
+
+  createKnowledgeCollection(payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    return request<Record<string, unknown>>("/api/kb/collections", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  listWorkflowTriggers(agentId?: string): Promise<Record<string, unknown>> {
+    const qs = agentId ? `?agent_id=${encodeURIComponent(agentId)}` : "";
+    return request<Record<string, unknown>>(`/api/workflows/triggers${qs}`);
+  },
+
+  createWorkflowTrigger(payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    return request<Record<string, unknown>>("/api/workflows/triggers", {
       method: "POST",
       body: JSON.stringify(payload),
     });

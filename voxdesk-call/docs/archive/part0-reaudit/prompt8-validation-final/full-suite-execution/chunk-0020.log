@@ -1,0 +1,118 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/organization/test_membership.py::test_conceptual_roles_are_the_existing_enum tests/organization/test_membership.py::test_insert_hook_creates_one_membership_per_user tests/organization/test_membership.py::test_owner_can_update_and_suspend_and_last_owner_is_protected tests/organization/test_membership.py::test_viewer_cannot_invite_and_member_cannot_self_promote tests/organization/test_membership.py::test_cross_organization_membership_is_not_found tests/organization/test_membership.py::test_revoked_membership_is_rejected_by_existing_tenant_api tests/organization/test_membership.py::test_membership_backfill_is_empty_safe_and_idempotent tests/organization/test_organization_models.py::test_an_empty_database_has_no_synthetic_organization tests/organization/test_organization_models.py::test_a_legacy_insert_gets_its_own_organization_and_production tests/organization/test_organization_models.py::test_two_tenants_are_not_folded_into_one_organization tests/organization/test_organization_models.py::test_users_calls_and_billing_keep_their_tenant_id tests/organization/test_organization_models.py::test_backfill_is_empty_safe_then_one_org_per_tenant_and_idempotent tests/organization/test_organization_models.py::test_new_audit_actions_are_member_names tests/organization/test_organization_routes.py::test_unauthenticated_and_malformed_requests_are_rejected tests/organization/test_organization_routes.py::test_admin_can_rename_their_organization_and_a_viewer_cannot_suspend tests/organization/test_organization_routes.py::test_create_organization_stays_platform_denied tests/organization/test_organization_routes.py::test_cross_organization_access_matches_a_missing_row tests/organization/test_organization_routes.py::test_login_token_has_no_organization_claim tests/organization/test_organization_routes.py::test_a_machine_credential_cannot_read_another_organization tests/organization/test_organization_service.py::test_create_update_and_slug_collision tests/organization/test_organization_service.py::test_suspend_is_idempotent_and_does_not_delete_tenants tests/organization/test_organization_service.py::test_deleted_is_terminal_and_blocks_new_tenants tests/organization/test_organization_service.py::test_suspended_organization_rejects_a_new_tenant_and_keeps_the_old_one tests/outbox/test_delivery.py::test_publish_and_duplicate tests/outbox/test_delivery.py::test_payload_rejects_secret tests/outbox/test_delivery.py::test_default_key_deterministic tests/outbox/test_isolation.py::test_tenant_isolation_not_client_controlled tests/outbox/test_isolation.py::test_payload_rejects_secrets tests/outbox/test_isolation.py::test_payload_bounded tests/providers/test_compatibility.py::test_deepgram_detection_requires_both_sdk_and_pipecat_contract tests/providers/test_compatibility.py::test_websocket_header_keyword_tracks_callable_signature tests/providers/test_compatibility.py::test_websocket_incompatible_surface_fails_closed tests/providers/test_compatibility.py::test_sdk_import_failure_is_explicit_unavailable_not_success tests/qa/test_auto_review.py::test_enqueue_is_idempotent_and_a_missing_executor_is_not_a_score tests/qa/test_auto_review.py::test_suggestion_does_not_finalize_or_replace_a_human_score tests/qa/test_auto_review.py::test_bad_evidence_and_auth_failures_are_permanent tests/qa/test_auto_review.py::test_finalized_review_is_not_sent_back_to_the_model tests/qa/test_calibration.py::test_completing_calibration_leaves_the_finalized_review_alone tests/qa/test_call_outcomes.py::test_outcome_events_are_versioned_idempotent_and_evidence_linked tests/qa/test_call_outcomes.py::test_idempotency_conflict_and_handoff_requires_connected_transfer tests/qa/test_coaching.py::test_acknowledgement_is_the_agent_or_a_supervisor_and_does_not_change_employment tests/qa/test_coaching.py::test_stale_acknowledgement_and_foreign_agent_are_rejected tests/qa/test_compliance.py::test_rule_and_ai_findings_need_a_human_to_confirm tests/qa/test_compliance.py::test_phrase_present_does_not_create_a_finding_and_duplicate_is_idempotent tests/qa/test_concurrency.py::test_two_sessions_cannot_both_finalize_or_both_assign tests/qa/test_concurrency.py::test_reopen_loses_to_a_finalize_that_already_committed tests/qa/test_concurrency.py::test_sampling_and_auto_review_inserts_are_unique tests/qa/test_concurrency.py::test_concurrent_coaching_acknowledgement_and_finalize tests/qa/test_isolation.py::test_other_tenant_cannot_see_a_review_scorecard_or_export tests/qa/test_isolation.py::test_client_tenant_id_cannot_create_a_review_in_another_tenant
+..................................................                       [100%]
+=============================== warnings summary ===============================
+tests/organization/test_membership.py::test_conceptual_roles_are_the_existing_enum
+  tests/organization/test_membership.py:26: PytestWarning: The test <Function test_conceptual_roles_are_the_existing_enum> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_conceptual_roles_are_the_existing_enum():
+
+tests/organization/test_membership.py: 6 warnings
+tests/organization/test_organization_models.py: 4 warnings
+tests/organization/test_organization_routes.py: 8 warnings
+tests/organization/test_organization_service.py: 1 warning
+tests/outbox/test_delivery.py: 1 warning
+tests/outbox/test_isolation.py: 2 warnings
+tests/qa/test_auto_review.py: 4 warnings
+tests/qa/test_calibration.py: 1 warning
+tests/qa/test_call_outcomes.py: 2 warnings
+tests/qa/test_coaching.py: 3 warnings
+tests/qa/test_compliance.py: 2 warnings
+tests/qa/test_concurrency.py: 4 warnings
+tests/qa/test_isolation.py: 4 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/organization/test_membership.py: 46 warnings
+tests/organization/test_organization_models.py: 16 warnings
+tests/organization/test_organization_routes.py: 37 warnings
+tests/organization/test_organization_service.py: 15 warnings
+tests/outbox/test_delivery.py: 5 warnings
+tests/outbox/test_isolation.py: 6 warnings
+tests/qa/test_auto_review.py: 40 warnings
+tests/qa/test_calibration.py: 5 warnings
+tests/qa/test_call_outcomes.py: 8 warnings
+tests/qa/test_coaching.py: 11 warnings
+tests/qa/test_compliance.py: 4 warnings
+tests/qa/test_concurrency.py: 17 warnings
+tests/qa/test_isolation.py: 23 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/organization/test_membership.py: 6 warnings
+tests/organization/test_organization_models.py: 4 warnings
+tests/organization/test_organization_routes.py: 8 warnings
+tests/organization/test_organization_service.py: 3 warnings
+tests/outbox/test_delivery.py: 1 warning
+tests/outbox/test_isolation.py: 2 warnings
+tests/qa/test_auto_review.py: 4 warnings
+tests/qa/test_calibration.py: 1 warning
+tests/qa/test_call_outcomes.py: 2 warnings
+tests/qa/test_coaching.py: 3 warnings
+tests/qa/test_compliance.py: 2 warnings
+tests/qa/test_concurrency.py: 4 warnings
+tests/qa/test_isolation.py: 4 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/organization/test_membership.py: 11 warnings
+tests/organization/test_organization_models.py: 1 warning
+tests/organization/test_organization_routes.py: 7 warnings
+tests/qa/test_auto_review.py: 4 warnings
+tests/qa/test_calibration.py: 2 warnings
+tests/qa/test_call_outcomes.py: 2 warnings
+tests/qa/test_coaching.py: 4 warnings
+tests/qa/test_concurrency.py: 6 warnings
+tests/qa/test_isolation.py: 5 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/organization/test_membership.py::test_owner_can_update_and_suspend_and_last_owner_is_protected
+tests/organization/test_membership.py::test_owner_can_update_and_suspend_and_last_owner_is_protected
+tests/organization/test_membership.py::test_owner_can_update_and_suspend_and_last_owner_is_protected
+tests/organization/test_membership.py::test_owner_can_update_and_suspend_and_last_owner_is_protected
+tests/organization/test_membership.py::test_owner_can_update_and_suspend_and_last_owner_is_protected
+tests/organization/test_membership.py::test_owner_can_update_and_suspend_and_last_owner_is_protected
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/organization/test_membership.py::test_membership_backfill_is_empty_safe_and_idempotent
+  tests/organization/test_membership.py:168: PytestWarning: The test <Function test_membership_backfill_is_empty_safe_and_idempotent> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_membership_backfill_is_empty_safe_and_idempotent(tmp_path):
+
+tests/organization/test_membership.py::test_membership_backfill_is_empty_safe_and_idempotent
+tests/organization/test_membership.py::test_membership_backfill_is_empty_safe_and_idempotent
+tests/organization/test_membership.py::test_membership_backfill_is_empty_safe_and_idempotent
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/alembic/versions/0018_org_memberships_quotas.py:79: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/organization/test_membership.py: 6 warnings
+tests/organization/test_organization_models.py: 8 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/engine/default.py:941: DeprecationWarning: The default datetime adapter is deprecated as of Python 3.12; see the sqlite3 documentation for suggested replacement recipes
+    cursor.execute(statement, parameters)
+
+tests/organization/test_organization_models.py::test_users_calls_and_billing_keep_their_tenant_id
+tests/organization/test_organization_service.py::test_suspend_is_idempotent_and_does_not_delete_tenants
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/conftest.py:569: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "started_at": datetime.utcnow(),
+
+tests/organization/test_organization_models.py::test_backfill_is_empty_safe_then_one_org_per_tenant_and_idempotent
+  tests/organization/test_organization_models.py:108: PytestWarning: The test <Function test_backfill_is_empty_safe_then_one_org_per_tenant_and_idempotent> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_backfill_is_empty_safe_then_one_org_per_tenant_and_idempotent(tmp_path):
+
+tests/organization/test_organization_models.py::test_backfill_is_empty_safe_then_one_org_per_tenant_and_idempotent
+tests/organization/test_organization_models.py::test_backfill_is_empty_safe_then_one_org_per_tenant_and_idempotent
+tests/organization/test_organization_models.py::test_backfill_is_empty_safe_then_one_org_per_tenant_and_idempotent
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/alembic/versions/0017_org_environment_foundation.py:83: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/organization/test_organization_models.py::test_new_audit_actions_are_member_names
+  tests/organization/test_organization_models.py:182: PytestWarning: The test <Function test_new_audit_actions_are_member_names> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_new_audit_actions_are_member_names():
+
+tests/organization/test_organization_routes.py::test_a_machine_credential_cannot_read_another_organization
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/auth/identity/models.py:69: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+50 passed, 394 warnings in 80.91s (0:01:20)
+
+STDERR:

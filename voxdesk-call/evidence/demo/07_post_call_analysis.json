@@ -1,0 +1,19 @@
+{
+  "recording_id": "demo-07-post-call-analysis",
+  "feature_matrix_ids": [
+    26,
+    27
+  ],
+  "captured_at_utc": "2026-10-08T18:04:35.448063+00:00",
+  "extracted_fields": [
+    "summary",
+    "sentiment",
+    "call_successful",
+    "custom_analysis_data"
+  ],
+  "verified_by_tests": [
+    "tests/telephony/test_post_call_pipeline.py::test_real_worker_governed_http_persists_output_and_usage",
+    "tests/telephony/test_custom_analysis.py::test_api_versions_and_tenant_isolation",
+    "tests/qa/test_post_call_runtime.py::test_terminal_pipeline_admits_once_then_http_worker_suggests_only"
+  ]
+}

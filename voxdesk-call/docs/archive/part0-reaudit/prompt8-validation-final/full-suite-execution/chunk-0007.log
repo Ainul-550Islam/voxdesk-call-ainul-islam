@@ -1,0 +1,56 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/auth/sso/test_sso_provisioning.py::test_oidc_jit_and_linking_follow_the_same_rules tests/auth/test_api_keys.py::test_the_secret_is_returned_once_and_stored_only_as_a_digest tests/auth/test_api_keys.py::test_the_key_authenticates_and_records_its_last_use tests/auth/test_api_keys.py::test_a_key_without_the_scope_is_refused_where_it_would_need_it tests/auth/test_api_keys.py::test_a_key_cannot_carry_a_scope_its_maker_does_not_hold tests/auth/test_api_keys.py::test_the_scope_catalogue_is_available_to_a_key_manager tests/auth/test_api_keys.py::test_rotation_replaces_the_key_without_an_overlap tests/auth/test_api_keys.py::test_revocation_is_immediate_and_idempotent tests/auth/test_api_keys.py::test_an_expired_key_is_refused tests/auth/test_api_keys.py::test_a_machine_credential_cannot_mint_api_keys tests/auth/test_api_keys.py::test_a_key_is_confined_to_the_workspace_that_issued_it tests/auth/test_api_keys.py::test_an_unknown_key_and_a_garbage_key_look_the_same tests/auth/test_api_keys.py::test_using_a_dead_key_is_recorded_for_the_operator tests/auth/test_api_keys.py::test_an_unknown_key_is_refused_without_flooding_the_trail tests/auth/test_domains.py::test_adding_a_domain_opens_a_challenge_and_normalizes_the_name tests/auth/test_domains.py::test_a_name_that_cannot_be_a_domain_is_refused tests/auth/test_domains.py::test_a_claimed_domain_is_globally_unique_and_the_conflict_says_nothing tests/auth/test_domains.py::test_verification_succeeds_only_for_the_published_value tests/auth/test_domains.py::test_an_unreachable_resolver_is_not_reported_as_a_wrong_record tests/auth/test_domains.py::test_re_issuing_a_challenge_invalidates_the_previous_value tests/auth/test_domains.py::test_enforcement_needs_a_verified_domain_and_is_audited tests/auth/test_domains.py::test_a_connection_can_be_attached_only_if_it_is_ours tests/auth/test_domains.py::test_removing_a_domain_takes_its_challenge_with_it tests/auth/test_domains.py::test_another_workspace_cannot_touch_the_domain tests/auth/test_domains.py::test_a_domain_claim_needs_an_identity_writer tests/auth/test_domains.py::test_an_unverified_domain_is_inert_in_the_evaluation tests/auth/test_email_verification.py::test_verifying_marks_the_account_and_the_address tests/auth/test_email_verification.py::test_a_second_request_for_a_verified_address_says_so tests/auth/test_email_verification.py::test_an_expired_link_is_refused tests/auth/test_email_verification.py::test_requesting_a_verification_needs_a_session tests/auth/test_email_verification.py::test_the_request_is_rate_limited tests/auth/test_email_verification.py::test_an_unknown_token_and_a_malformed_one_are_the_same_refusal tests/auth/test_email_verification.py::test_a_verification_token_is_bound_to_one_address_and_one_user tests/auth/test_email_verification.py::test_the_flow_is_audited tests/auth/test_email_verification.py::test_a_verification_link_is_not_a_password_reset tests/auth/test_identity_credentials.py::test_a_session_is_listed_with_its_device_and_dies_on_revocation tests/auth/test_identity_credentials.py::test_revoking_other_sessions_leaves_the_current_one_alone tests/auth/test_identity_credentials.py::test_revoking_all_for_a_user_covers_every_session tests/auth/test_identity_credentials.py::test_an_idle_session_stops_being_live_without_a_sweeper tests/auth/test_identity_credentials.py::test_touching_a_dead_session_reports_it_as_unusable tests/auth/test_identity_credentials.py::test_the_session_ceiling_evicts_the_oldest_rather_than_refusing tests/auth/test_identity_credentials.py::test_a_second_session_from_an_unseen_address_is_flagged tests/auth/test_identity_credentials.py::test_an_api_key_secret_is_returned_once_and_stored_as_a_digest tests/auth/test_identity_credentials.py::test_an_api_key_authenticates_until_it_is_revoked tests/auth/test_identity_credentials.py::test_an_expired_api_key_is_refused tests/auth/test_identity_credentials.py::test_a_rotated_key_replaces_the_old_secret_atomically tests/auth/test_identity_credentials.py::test_a_malformed_or_unknown_token_is_refused tests/auth/test_identity_credentials.py::test_scope_matching_is_exact_and_not_prefix_based tests/auth/test_identity_credentials.py::test_an_api_key_is_scoped_to_its_own_tenant tests/auth/test_identity_credentials.py::test_a_service_account_authenticates_but_only_with_its_scopes
+..................................................                       [100%]
+=============================== warnings summary ===============================
+tests/auth/sso/test_sso_provisioning.py::test_oidc_jit_and_linking_follow_the_same_rules
+tests/auth/sso/test_sso_provisioning.py::test_oidc_jit_and_linking_follow_the_same_rules
+tests/auth/sso/test_sso_provisioning.py::test_oidc_jit_and_linking_follow_the_same_rules
+tests/auth/sso/test_sso_provisioning.py::test_oidc_jit_and_linking_follow_the_same_rules
+tests/auth/sso/test_sso_provisioning.py::test_oidc_jit_and_linking_follow_the_same_rules
+tests/auth/sso/test_sso_provisioning.py::test_oidc_jit_and_linking_follow_the_same_rules
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/auth/sso/test_sso_provisioning.py: 1 warning
+tests/auth/test_api_keys.py: 14 warnings
+tests/auth/test_domains.py: 15 warnings
+tests/auth/test_email_verification.py: 7 warnings
+tests/auth/test_identity_credentials.py: 16 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/auth/sso/test_sso_provisioning.py: 5 warnings
+tests/auth/test_api_keys.py: 72 warnings
+tests/auth/test_domains.py: 79 warnings
+tests/auth/test_email_verification.py: 40 warnings
+tests/auth/test_identity_credentials.py: 48 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/auth/sso/test_sso_provisioning.py: 1 warning
+tests/auth/test_api_keys.py: 14 warnings
+tests/auth/test_domains.py: 15 warnings
+tests/auth/test_email_verification.py: 7 warnings
+tests/auth/test_identity_credentials.py: 16 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/auth/sso/test_sso_provisioning.py: 1 warning
+tests/auth/test_api_keys.py: 15 warnings
+tests/auth/test_domains.py: 16 warnings
+tests/auth/test_email_verification.py: 7 warnings
+tests/auth/test_identity_credentials.py: 16 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/auth/sso/test_sso_provisioning.py: 3 warnings
+tests/auth/test_api_keys.py: 13 warnings
+tests/auth/test_domains.py: 58 warnings
+tests/auth/test_email_verification.py: 18 warnings
+tests/auth/test_identity_credentials.py: 11 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/auth/identity/models.py:69: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+50 passed, 514 warnings in 99.71s (0:01:39)
+
+STDERR:

@@ -1,0 +1,66 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/evals/rag/test_rag_eval.py::test_every_grounded_answer_is_traceable_to_its_source[parking] tests/evals/rag/test_rag_eval.py::test_every_grounded_answer_is_traceable_to_its_source[insurance_accepted] tests/evals/rag/test_rag_eval.py::test_every_grounded_answer_is_traceable_to_its_source[saturday_hours] tests/evals/rag/test_rag_eval.py::test_unsupported_questions_retrieve_nothing[bicycle_repair] tests/evals/rag/test_rag_eval.py::test_unsupported_questions_retrieve_nothing[ceo_salary] tests/evals/rag/test_rag_eval.py::test_unsupported_questions_retrieve_nothing[tractor_returns] tests/evals/rag/test_rag_eval.py::test_unsupported_questions_produce_a_do_not_guess_context[bicycle_repair] tests/evals/rag/test_rag_eval.py::test_unsupported_questions_produce_a_do_not_guess_context[ceo_salary] tests/evals/rag/test_rag_eval.py::test_unsupported_questions_produce_a_do_not_guess_context[tractor_returns] tests/evals/rag/test_rag_eval.py::test_the_agent_refuses_unsupported_questions[bicycle_repair] tests/evals/rag/test_rag_eval.py::test_the_agent_refuses_unsupported_questions[ceo_salary] tests/evals/rag/test_rag_eval.py::test_the_agent_refuses_unsupported_questions[tractor_returns] tests/evals/rag/test_rag_eval.py::test_a_malicious_document_still_indexes tests/evals/rag/test_rag_eval.py::test_injected_instructions_are_neutralized_in_the_prompt[how much does a cleaning cost] tests/evals/rag/test_rag_eval.py::test_injected_instructions_are_neutralized_in_the_prompt[what are your terms] tests/evals/rag/test_rag_eval.py::test_injected_instructions_are_neutralized_in_the_prompt[tell me about your price list] tests/evals/rag/test_rag_eval.py::test_injected_instructions_are_neutralized_in_tool_results[how much does a cleaning cost] tests/evals/rag/test_rag_eval.py::test_injected_instructions_are_neutralized_in_tool_results[what are your terms] tests/evals/rag/test_rag_eval.py::test_injected_instructions_are_neutralized_in_tool_results[tell me about your price list] tests/evals/rag/test_rag_eval.py::test_the_legitimate_fact_in_a_poisoned_document_still_works tests/evals/rag/test_rag_eval.py::test_a_poisoned_document_cannot_forge_the_context_fence tests/evals/rag/test_rag_eval.py::test_tenant_isolation_cases[acme_must_not_see_beta_whitening_price] tests/evals/rag/test_rag_eval.py::test_tenant_isolation_cases[acme_must_not_see_beta_refund_window] tests/evals/rag/test_rag_eval.py::test_tenant_isolation_cases[acme_must_not_see_beta_supplier] tests/evals/rag/test_rag_eval.py::test_isolation_holds_in_both_directions tests/evals/rag/test_rag_eval.py::test_isolation_summary tests/governance/test_evidence_chain.py::test_canonical_payload_and_chain_hash_are_deterministic tests/governance/test_evidence_chain.py::test_event_payload_tampering_is_not_valid tests/governance/test_foundation.py::test_canonical_hash_is_stable_for_key_order_and_utc tests/governance/test_foundation.py::test_missing_policy_fails_closed_and_leaves_evidence tests/governance/test_foundation.py::test_policy_publish_then_decide_and_foreign_tenant_is_hidden tests/governance/test_foundation.py::test_model_approval_requires_authoritative_evaluation_and_is_tenant_scoped tests/governance/test_governance_api.py::test_governance_api_requires_authentication tests/governance/test_governance_api.py::test_governance_api_uses_authenticated_tenant_for_bare_paths tests/governance/test_lineage.py::test_lineage_uses_fingerprints_and_scrubs_credentials_from_metadata tests/governance/test_model_registry.py::test_model_lifecycle_is_explicit_and_terminal_retirement_is_final tests/governance/test_model_registry.py::test_unknown_risk_tier_is_rejected_not_normalized_to_a_safe_value tests/governance/test_policy.py::test_pdp_supports_allow_deny_and_human_condition tests/governance/test_policy.py::test_pdp_denies_missing_configuration_inputs tests/governance/test_residency_and_evidence.py::test_residency_intent_is_durable_but_never_proof_without_verifier tests/governance/test_residency_and_evidence.py::test_evidence_package_has_reproducible_root_and_foreign_scope_is_hidden tests/governance/test_residency_enforcement.py::test_supported_label_still_cannot_prove_physical_residency tests/governance/test_residency_enforcement.py::test_restricted_region_is_denied tests/insight/test_insight_api.py::test_insight_route_auth_valid_sources_governance_and_tenant_scope tests/integration/test_agent_version_persistence.py::TestDurableAgentVersionPersistence::test_1_create_draft_persists_across_independent_sessions tests/integration/test_agent_version_persistence.py::TestDurableAgentVersionPersistence::test_2_draft_update_and_etag_optimistic_concurrency_409 tests/integration/test_agent_version_persistence.py::TestDurableAgentVersionPersistence::test_3_validation_failure_blocks_publish_with_422 tests/integration/test_agent_version_persistence.py::TestDurableAgentVersionPersistence::test_4_5_6_publish_immutability_version_lookup_diff_and_rollback tests/integration/test_agent_version_persistence.py::TestDurableAgentVersionPersistence::test_7_concurrent_publish_allocates_monotonic_versions tests/integration/test_agent_version_persistence.py::TestDurableAgentVersionPersistence::test_8_cross_tenant_isolation_enforced_everywhere
+.........................  tenant isolation: 3 cases, 0 leaks 
+.........................                       [100%]
+=============================== warnings summary ===============================
+tests/evals/rag/test_rag_eval.py: 43 warnings
+tests/governance/test_foundation.py: 5 warnings
+tests/governance/test_governance_api.py: 2 warnings
+tests/governance/test_residency_and_evidence.py: 3 warnings
+tests/insight/test_insight_api.py: 2 warnings
+tests/integration/test_agent_version_persistence.py: 7 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/evals/rag/test_rag_eval.py: 497 warnings
+tests/governance/test_foundation.py: 17 warnings
+tests/governance/test_governance_api.py: 6 warnings
+tests/governance/test_residency_and_evidence.py: 11 warnings
+tests/insight/test_insight_api.py: 24 warnings
+tests/integration/test_agent_version_persistence.py: 19 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/evals/rag/test_rag_eval.py: 43 warnings
+tests/governance/test_foundation.py: 5 warnings
+tests/governance/test_governance_api.py: 2 warnings
+tests/governance/test_residency_and_evidence.py: 3 warnings
+tests/insight/test_insight_api.py: 2 warnings
+tests/integration/test_agent_version_persistence.py: 7 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/evals/rag/test_rag_eval.py: 60 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/knowledge/ingest.py:227: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    document.processing_started_at = datetime.utcnow()
+
+tests/evals/rag/test_rag_eval.py: 60 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/knowledge/ingest.py:327: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    document.ingested_at = datetime.utcnow()
+
+tests/evals/rag/test_rag_eval.py::test_the_agent_refuses_unsupported_questions[bicycle_repair]
+tests/evals/rag/test_rag_eval.py::test_the_agent_refuses_unsupported_questions[ceo_salary]
+tests/evals/rag/test_rag_eval.py::test_the_agent_refuses_unsupported_questions[tractor_returns]
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/evals/rag/test_rag_eval.py:158: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    started_at=datetime.utcnow(),
+
+tests/governance/test_foundation.py::test_missing_policy_fails_closed_and_leaves_evidence
+tests/governance/test_foundation.py::test_missing_policy_fails_closed_and_leaves_evidence
+tests/governance/test_foundation.py::test_missing_policy_fails_closed_and_leaves_evidence
+tests/governance/test_foundation.py::test_missing_policy_fails_closed_and_leaves_evidence
+tests/governance/test_foundation.py::test_missing_policy_fails_closed_and_leaves_evidence
+tests/governance/test_foundation.py::test_missing_policy_fails_closed_and_leaves_evidence
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/governance/test_foundation.py: 3 warnings
+tests/governance/test_governance_api.py: 1 warning
+tests/governance/test_residency_and_evidence.py: 2 warnings
+tests/insight/test_insight_api.py: 4 warnings
+tests/integration/test_agent_version_persistence.py: 6 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+50 passed, 843 warnings in 91.50s (0:01:31)
+
+STDERR:

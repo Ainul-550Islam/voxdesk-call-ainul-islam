@@ -1,0 +1,5 @@
+$ /usr/local/bin/python -m pytest -q tests/test_ssrf.py::test_internal_and_special_use_hostnames_are_rejected[http://a.localhost] tests/test_ssrf.py::test_require_https_blocks_plain_http_but_not_vice_versa tests/test_ssrf.py::test_crm_base_url_private_ip_is_rejected_at_the_api tests/test_ssrf.py::test_crm_base_url_https_public_is_accepted tests/test_ssrf.py::test_webhook_url_private_target_is_rejected_at_the_api tests/test_ssrf.py::test_calendar_token_url_localhost_is_rejected_at_the_api tests/test_ssrf.py::test_calendar_base_url_metadata_host_is_rejected_at_the_api tests/test_ssrf.py::test_ghl_provider_rejects_private_base_url_at_use tests/test_ssrf.py::test_ghl_provider_accepts_public_https_base_url tests/test_ssrf.py::test_google_provider_rejects_loopback_base_url_at_use
+..........                                                               [100%]
+10 passed in 0.20s
+
+STDERR:

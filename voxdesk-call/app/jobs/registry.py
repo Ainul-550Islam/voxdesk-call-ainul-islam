@@ -12,6 +12,7 @@ def bootstrap() -> dict[str, object]:
     from app.qa import auto_review  # noqa: F401 - QA_AUTO_REVIEW
     from app.telephony import post_call  # noqa: F401 - registers POST_CALL
     from app.deployment import runtime as deployment_runtime  # noqa: F401 - registers deployment handler
+    from app.services import simulation_service  # noqa: F401 - registers evaluation handler
     return {name: handler_for(name) for name in registered_job_types() if handler_for(name) is not None}
 
 

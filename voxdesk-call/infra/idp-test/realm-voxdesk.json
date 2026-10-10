@@ -1,0 +1,237 @@
+{
+  "id": "voxdesk-realm-id",
+  "realm": "voxdesk",
+  "displayName": "VoxDesk Enterprise Test Realm",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "roles": {
+    "realm": [
+      {
+        "name": "voxdesk-owner",
+        "description": "Maps to VoxDesk UserRole.OWNER"
+      },
+      {
+        "name": "voxdesk-admin",
+        "description": "Maps to VoxDesk UserRole.ADMIN"
+      },
+      {
+        "name": "voxdesk-agent",
+        "description": "Maps to VoxDesk UserRole.AGENT"
+      },
+      {
+        "name": "voxdesk-viewer",
+        "description": "Maps to VoxDesk UserRole.VIEWER"
+      }
+    ]
+  },
+  "groups": [
+    {
+      "name": "voxdesk-owners",
+      "path": "/voxdesk-owners",
+      "realmRoles": ["voxdesk-owner"]
+    },
+    {
+      "name": "voxdesk-admins",
+      "path": "/voxdesk-admins",
+      "realmRoles": ["voxdesk-admin"]
+    },
+    {
+      "name": "voxdesk-agents",
+      "path": "/voxdesk-agents",
+      "realmRoles": ["voxdesk-agent"]
+    },
+    {
+      "name": "voxdesk-viewers",
+      "path": "/voxdesk-viewers",
+      "realmRoles": ["voxdesk-viewer"]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "voxdesk-oidc",
+      "name": "VoxDesk OIDC Enterprise Client",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "keycloak-oidc-test-secret-do-not-use-in-prod",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "https://app.voxdesk.test/auth/sso/keycloak-oidc/callback",
+        "http://localhost:8000/auth/sso/keycloak-oidc/callback",
+        "http://test/auth/sso/keycloak-oidc/callback"
+      ],
+      "webOrigins": [
+        "https://app.voxdesk.test",
+        "http://localhost:8000"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "+"
+      },
+      "protocolMappers": [
+        {
+          "name": "groups-claim-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "consentRequired": false,
+          "config": {
+            "full.path": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "groups",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "realm-roles-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "roles",
+            "jsonType.label": "String",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "https://app.voxdesk.test/auth/sso/keycloak-saml/metadata",
+      "name": "VoxDesk SAML 2.0 Enterprise SP",
+      "enabled": true,
+      "protocol": "saml",
+      "frontchannelLogout": true,
+      "redirectUris": [
+        "https://app.voxdesk.test/auth/sso/keycloak-saml/acs",
+        "http://localhost:8000/auth/sso/keycloak-saml/acs",
+        "http://test/auth/sso/keycloak-saml/acs"
+      ],
+      "attributes": {
+        "saml.authnstatement": "true",
+        "saml.server.signature": "true",
+        "saml.assertion.signature": "true",
+        "saml.signature.algorithm": "RSA_SHA256",
+        "saml_name_id_format": "email",
+        "saml_force_name_id_format": "true",
+        "saml_assertion_consumer_url_post": "https://app.voxdesk.test/auth/sso/keycloak-saml/acs"
+      },
+      "protocolMappers": [
+        {
+          "name": "saml-email",
+          "protocol": "saml",
+          "protocolMapper": "saml-user-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "attribute.nameformat": "Basic",
+            "user.attribute": "email",
+            "friendly.name": "email",
+            "attribute.name": "email"
+          }
+        },
+        {
+          "name": "saml-display-name",
+          "protocol": "saml",
+          "protocolMapper": "saml-user-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "attribute.nameformat": "Basic",
+            "user.attribute": "firstName",
+            "friendly.name": "displayName",
+            "attribute.name": "displayName"
+          }
+        },
+        {
+          "name": "saml-groups",
+          "protocol": "saml",
+          "protocolMapper": "saml-group-membership-mapper",
+          "consentRequired": false,
+          "config": {
+            "single": "true",
+            "attribute.nameformat": "Basic",
+            "full.path": "false",
+            "friendly.name": "groups",
+            "attribute.name": "groups"
+          }
+        },
+        {
+          "name": "saml-roles",
+          "protocol": "saml",
+          "protocolMapper": "saml-role-list-mapper",
+          "consentRequired": false,
+          "config": {
+            "single": "true",
+            "attribute.nameformat": "Basic",
+            "friendly.name": "roles",
+            "attribute.name": "roles"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "grace.hopper",
+      "email": "grace.hopper@voxdesk.test",
+      "firstName": "Grace",
+      "lastName": "Hopper",
+      "enabled": true,
+      "emailVerified": true,
+      "groups": ["/voxdesk-admins"],
+      "realmRoles": ["voxdesk-admin"],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Keycloak-Grace-Test-9!",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "ada.lovelace",
+      "email": "ada.lovelace@voxdesk.test",
+      "firstName": "Ada",
+      "lastName": "Lovelace",
+      "enabled": true,
+      "emailVerified": true,
+      "groups": ["/voxdesk-owners"],
+      "realmRoles": ["voxdesk-owner"],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Keycloak-Ada-Test-9!",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "alan.turing",
+      "email": "alan.turing@voxdesk.test",
+      "firstName": "Alan",
+      "lastName": "Turing",
+      "enabled": true,
+      "emailVerified": true,
+      "groups": ["/voxdesk-agents"],
+      "realmRoles": ["voxdesk-agent"],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Keycloak-Alan-Test-9!",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}

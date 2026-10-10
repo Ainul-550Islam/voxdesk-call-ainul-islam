@@ -1,0 +1,3 @@
+[2m2026-10-07T04:32:14.094852Z[0m [[32m[1minfo     [0m] [1mwebhook.delivered             [0m [36mevent_id[0m=[35m60533e0e-7eb6-41b5-9d04-9433dda475f2[0m [36mstatus[0m=[35m204[0m
+[2m2026-10-07T04:32:14.100585Z[0m [[32m[1minfo     [0m] [1moutbox.round_complete         [0m [36mattempt[0m=[35m0[0m [36mevent_id[0m=[35m60533e0e-7eb6-41b5-9d04-9433dda475f2[0m [36mstatus[0m=[35mdelivered[0m [36mtenant_id[0m=[35m383ae69d-cc1c-427a-a45f-da1b31e9036e[0m
+PASS: two independent PostgreSQL sessions serialize delivery; one HTTP request/ledger; concurrent rotations reach version 3; publication rollback leaves no event

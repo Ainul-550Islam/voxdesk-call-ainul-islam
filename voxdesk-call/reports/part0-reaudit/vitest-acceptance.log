@@ -1,0 +1,240 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90m/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard[39m
+
+ [32m✓[39m tests/billing.test.jsx [2m([22m[2m51 tests[22m[2m)[22m[33m 3508[2mms[22m[39m
+ [32m✓[39m tests/team.test.jsx [2m([22m[2m48 tests[22m[2m)[22m[33m 4090[2mms[22m[39m
+     [33m[2m✓[22m[39m creates through the real endpoint and reports the result [33m 354[2mms[22m[39m
+ [32m✓[39m tests/integrations.test.jsx [2m([22m[2m42 tests[22m[2m)[22m[33m 3529[2mms[22m[39m
+[90mstderr[2m | tests/knowledge.test.jsx[2m > [22m[2mingestion lifecycle[2m > [22m[2mdoes not poll when nothing is in flight
+[22m[39mWarning: An update to App inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at App (/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/src/App.jsx:612:58)
+
+[90mstderr[2m | tests/knowledge.test.jsx[2m > [22m[2mingestion lifecycle[2m > [22m[2mdoes not poll when nothing is in flight
+[22m[39mWarning: An update to App inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at App (/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/src/App.jsx:612:58)
+
+[90mstderr[2m | tests/knowledge.test.jsx[2m > [22m[2mingestion lifecycle[2m > [22m[2mdoes not poll when nothing is in flight
+[22m[39mWarning: An update to App inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at App (/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/src/App.jsx:612:58)
+
+[90mstderr[2m | tests/knowledge.test.jsx[2m > [22m[2mingestion lifecycle[2m > [22m[2mdoes not poll when nothing is in flight
+[22m[39mWarning: An update to Knowledge inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at Knowledge (/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/src/pages/Knowledge.jsx:43:22)
+    at main
+    at div
+    at div
+    at Shell (/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/src/components/Shell.jsx:66:18)
+    at App (/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/src/App.jsx:612:58)
+Warning: An update to Knowledge inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at Knowledge (/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/src/pages/Knowledge.jsx:43:22)
+    at main
+    at div
+    at div
+    at Shell (/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/src/components/Shell.jsx:66:18)
+    at App (/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/src/App.jsx:612:58)
+
+[90mstderr[2m | tests/knowledge.test.jsx[2m > [22m[2mingestion lifecycle[2m > [22m[2mdoes not poll when nothing is in flight
+[22m[39mWarning: An update to Knowledge inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at Knowledge (/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/src/pages/Knowledge.jsx:43:22)
+    at main
+    at div
+    at div
+    at Shell (/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/src/components/Shell.jsx:66:18)
+    at App (/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/src/App.jsx:612:58)
+Warning: An update to Knowledge inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at Knowledge (/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/src/pages/Knowledge.jsx:43:22)
+    at main
+    at div
+    at div
+    at Shell (/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/src/components/Shell.jsx:66:18)
+    at App (/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/src/App.jsx:612:58)
+
+ [31m❯[39m tests/knowledge.test.jsx [2m([22m[2m40 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 2634[2mms[22m[39m
+     [32m✓[39m renders the knowledge page at /knowledge[32m 242[2mms[22m[39m
+     [32m✓[39m is reachable from the sidebar for any role with knowledge:read[32m 64[2mms[22m[39m
+     [32m✓[39m never sends a tenant id -- the server derives it from the token[32m 58[2mms[22m[39m
+     [32m✓[39m renders document metadata from the response[32m 57[2mms[22m[39m
+[31m     [31m×[31m renders the real statistics and no invented ones[39m[32m 69[2mms[22m[39m
+     [32m✓[39m formats timestamps in the tenant timezone, not the browser one[32m 49[2mms[22m[39m
+     [32m✓[39m shows each backend status verbatim[32m 71[2mms[22m[39m
+     [32m✓[39m marks only a ready document as searchable[32m 68[2mms[22m[39m
+     [32m✓[39m explains why a document failed[32m 48[2mms[22m[39m
+     [32m✓[39m says it is auto-refreshing while work is in flight[32m 56[2mms[22m[39m
+     [32m✓[39m does not poll when nothing is in flight[32m 57[2mms[22m[39m
+     [32m✓[39m hides every mutating control from a read-only account[32m 48[2mms[22m[39m
+     [32m✓[39m still shows a read-only account the documents and stats[32m 38[2mms[22m[39m
+     [32m✓[39m gives a writer upload, retry and archive but not permanent delete[32m 93[2mms[22m[39m
+     [32m✓[39m gives an owner the permanent delete control[32m 85[2mms[22m[39m
+     [32m✓[39m refuses the page entirely without knowledge:read[32m 10[2mms[22m[39m
+     [32m✓[39m offers Retry for a failed document and Reindex for a ready one[32m 64[2mms[22m[39m
+     [32m✓[39m offers no reindex while a document is processing[32m 46[2mms[22m[39m
+     [32m✓[39m offers Restore instead of Archive for an archived document[32m 40[2mms[22m[39m
+     [32m✓[39m reindexes through the real endpoint and refreshes[32m 95[2mms[22m[39m
+     [32m✓[39m restores through the real endpoint[32m 76[2mms[22m[39m
+     [32m✓[39m surfaces a failed action without breaking the page[32m 64[2mms[22m[39m
+     [32m✓[39m asks before archiving and sends no request until confirmed[32m 96[2mms[22m[39m
+     [32m✓[39m cancelling sends nothing[32m 80[2mms[22m[39m
+     [32m✓[39m warns that a permanent delete cannot be undone and sends hard=true[32m 102[2mms[22m[39m
+     [32m✓[39m uploads through the real multipart endpoint[32m 139[2mms[22m[39m
+     [32m✓[39m rejects an unsupported type client-side without a round trip[32m 71[2mms[22m[39m
+     [32m✓[39m rejects an oversized file against the limit the server reported[32m 46[2mms[22m[39m
+     [32m✓[39m surfaces a server rejection, because the backend is authoritative[32m 74[2mms[22m[39m
+     [32m✓[39m reports a duplicate as already present rather than a new upload[32m 77[2mms[22m[39m
+     [32m✓[39m advertises only the file types the server said it supports[32m 24[2mms[22m[39m
+     [32m✓[39m sends the status filter to the backend[32m 53[2mms[22m[39m
+     [32m✓[39m paginates on the server with limit and offset[32m 189[2mms[22m[39m
+     [32m✓[39m shows an empty state when the tenant has no documents[32m 20[2mms[22m[39m
+     [32m✓[39m distinguishes an empty filter result from an empty knowledge base[32m 47[2mms[22m[39m
+     [32m✓[39m offers a retry when the list fails[32m 25[2mms[22m[39m
+     [32m✓[39m keeps the document list usable when only the stats fail[32m 24[2mms[22m[39m
+     [32m✓[39m renders a hostile filename and title as text, not markup[32m 23[2mms[22m[39m
+     [32m✓[39m never renders a storage path or credential the API might add[32m 20[2mms[22m[39m
+     [32m✓[39m puts nothing in localStorage[32m 21[2mms[22m[39m
+[90mstderr[2m | src/__tests__/agentStudio.pages.test.tsx[2m > [22m[2mAgentToolsPage[2m > [22m[2mtoggles a tool through the enable/disable endpoints
+[22m[39mWarning: Each child in a list should have a unique "key" prop.
+
+Check the render method of `AgentToolsPage`. See https://reactjs.org/link/warning-keys for more information.
+    at li
+    at AgentToolsPage (/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/src/pages/agents/AgentToolsPage.tsx:16:27)
+
+ [32m✓[39m src/__tests__/agentStudio.pages.test.tsx [2m([22m[2m34 tests[22m[2m)[22m[33m 795[2mms[22m[39m
+ [32m✓[39m tests/audit.test.jsx [2m([22m[2m41 tests[22m[2m)[22m[33m 2703[2mms[22m[39m
+ [32m✓[39m src/tests/use-cases.test.tsx [2m([22m[2m10 tests[22m[2m)[22m[32m 203[2mms[22m[39m
+ [32m✓[39m src/features/public-widget/__tests__/PublicWidget.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 469[2mms[22m[39m
+ [32m✓[39m tests/agent.test.jsx [2m([22m[2m26 tests[22m[2m)[22m[33m 1735[2mms[22m[39m
+ [32m✓[39m src/tests/agents.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[32m 290[2mms[22m[39m
+ [32m✓[39m src/pages/conductor/__tests__/ConductorPage.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 495[2mms[22m[39m
+     [33m[2m✓[22m[39m submits a natural-language request, approves changes, and creates a new immutable AgentVersion without auto-publishing to production [33m 325[2mms[22m[39m
+ [32m✓[39m tests/realtime.test.js [2m([22m[2m13 tests[22m[2m)[22m[32m 25[2mms[22m[39m
+ [32m✓[39m src/tests/conductor.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 527[2mms[22m[39m
+     [33m[2m✓[22m[39m submits a natural-language request, approves changes, and creates a new immutable AgentVersion without auto-publishing to production [33m 321[2mms[22m[39m
+ [32m✓[39m src/tests/voice-agents.test.tsx [2m([22m[2m19 tests[22m[2m)[22m[33m 627[2mms[22m[39m
+ [32m✓[39m src/tests/prompt8-routes-workflows.test.tsx [2m([22m[2m11 tests[22m[2m)[22m[33m 937[2mms[22m[39m
+     [33m[2m✓[22m[39m creates, publishes, executes, and reloads persisted workflow API records [33m 724[2mms[22m[39m
+ [32m✓[39m src/tests/chat-contacts.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 171[2mms[22m[39m
+ [32m✓[39m tests/meeting-url-xss.test.jsx [2m([22m[2m54 tests[22m[2m)[22m[33m 1834[2mms[22m[39m
+     [33m[2m✓[22m[39m renders a valid https URL as a link to the exact destination [33m 323[2mms[22m[39m
+ [32m✓[39m src/tests/testing-evaluations.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 301[2mms[22m[39m
+ [32m✓[39m src/__tests__/prompt6.telephony.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 436[2mms[22m[39m
+ [32m✓[39m tests/security-settings.test.jsx [2m([22m[2m3 tests[22m[2m)[22m[33m 1190[2mms[22m[39m
+     [33m[2m✓[22m[39m renders live tenant posture, current-user sessions, policy, and key inventory without certification claims [33m 332[2mms[22m[39m
+     [33m[2m✓[22m[39m requires fresh reauthentication before creating a scoped one-time API key [33m 765[2mms[22m[39m
+ [32m✓[39m tests/routing.test.jsx [2m([22m[2m18 tests[22m[2m)[22m[33m 372[2mms[22m[39m
+ [32m✓[39m tests/api-auth.test.js [2m([22m[2m8 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+ [32m✓[39m tests/no-fake-revenue.test.jsx [2m([22m[2m5 tests[22m[2m)[22m[33m 341[2mms[22m[39m
+ [32m✓[39m src/__tests__/no-generated-tails.test.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 380[2mms[22m[39m
+ [32m✓[39m src/tests/home.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 517[2mms[22m[39m
+ [32m✓[39m tests/call-detail.test.jsx [2m([22m[2m6 tests[22m[2m)[22m[33m 538[2mms[22m[39m
+ [32m✓[39m tests/transcript-xss.test.jsx [2m([22m[2m6 tests[22m[2m)[22m[33m 309[2mms[22m[39m
+ [32m✓[39m tests/formatting.test.jsx [2m([22m[2m14 tests[22m[2m)[22m[32m 284[2mms[22m[39m
+ [32m✓[39m src/tests/campaigns.test.jsx [2m([22m[2m3 tests[22m[2m)[22m[33m 450[2mms[22m[39m
+ [32m✓[39m src/tests/use-case-detail.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[32m 176[2mms[22m[39m
+ [32m✓[39m src/tests/prompt8-page-routes.test.tsx [2m([22m[2m12 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m tests/boot.test.jsx [2m([22m[2m4 tests[22m[2m)[22m[32m 227[2mms[22m[39m
+ [32m✓[39m src/tests/shared-api-paths.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/tests/voice-demo.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/tests/telemarketing-page.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 300[2mms[22m[39m
+ [32m✓[39m src/tests/campaign-api.test.js [2m([22m[2m2 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m src/tests/home-api.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m src/tests/agent-conversation.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/tests/agent-validation.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/tests/agent-knowledge.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/tests/agent-security.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/tests/agent-versions.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/tests/agent-actions.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/tests/agent-builder.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/tests/agent-filters.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/tests/agent-publish.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/tests/agent-model.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/tests/agent-tools.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/tests/agent-voice.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/tests/agent-test.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m tests/knowledge.test.jsx[2m > [22mreal API response rendering[2m > [22mrenders the real statistics and no invented ones
+[31m[1mError[22m: [2mexpect([22m[31melement[31m[2m).toHaveTextContent()[22m
+
+Expected element to have text content:
+[32m  1[31m
+Received:
+[31m  DocumentsFilter by statusAny statusUploadedProcessingReadyFailedArchivedLoading documents…[31m[39m
+[36m [2m❯[22m tests/knowledge.test.jsx:[2m168:36[22m[39m
+    [90m166|[39m
+    [90m167|[39m     [35mconst[39m ready [33m=[39m [35mawait[39m screen[33m.[39m[34mfindByText[39m([32m'Ready'[39m)
+    [90m168|[39m     [34mexpect[39m(ready[33m.[39m[34mclosest[39m([32m'.card'[39m))[33m.[39m[34mtoHaveTextContent[39m([32m'1'[39m)
+    [90m   |[39m                                    [31m^[39m
+    [90m169|[39m     [34mexpect[39m(screen[33m.[39m[34mgetByText[39m([36m/searchable chunks/i[39m)[33m.[39m[34mclosest[39m([32m'.card'[39m))
+    [90m170|[39m       [33m.[39m[34mtoHaveTextContent[39m([32m'42'[39m)
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m49 passed[39m[22m[90m (50)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m574 passed[39m[22m[90m (575)[39m
+[2m   Start at [22m 13:16:17
+[2m   Duration [22m 83.69s[2m (transform 2.75s, setup 5.44s, import 6.27s, tests 30.56s, environment 34.03s)[22m
+

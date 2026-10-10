@@ -54,3 +54,24 @@ export interface RollbackAgentVersionInput {
   version?: number;
   reason?: string;
 }
+
+export type AgentVersionStatus = AgentVersionLifecycleStatus;
+
+export interface PromoteAgentEnvironmentInput {
+  source_version: number;
+  target_environment: AgentPublishEnvironment;
+  release_notes?: string;
+}
+
+export interface PromoteAgentEnvironmentResponse {
+  agent_id: string;
+  version: number;
+  environment: AgentPublishEnvironment;
+  promoted_at: string;
+}
+
+export interface AgentEnvironmentDeploymentStatus {
+  environment: AgentPublishEnvironment;
+  active_version: number | null;
+  updated_at?: string | null;
+}

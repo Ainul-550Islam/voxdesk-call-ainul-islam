@@ -29,9 +29,15 @@ because a document asked for it.
 from __future__ import annotations
 
 import re
+import uuid
+from typing import Sequence
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.knowledge.retrieval import RetrievedChunk
+from app.db.enterprise_models import KnowledgeCollectionSource
+from app.knowledge.retrieval import RetrievedChunk, retrieve
 
 #: Unambiguous injection phrases, matched anywhere in a line.
 #:
@@ -226,10 +232,6 @@ def build_context(
         if used + len(rendered) > budget:
             if blocks:
                 break
-            # A single excerpt larger than the whole budget. Rather than blow
-            # past the cap, clamp it at a sentence boundary -- a half-sentence
-            # about a refund window is worse than none, because the model will
-            # helpfully complete it.
             body = _clamp(body, budget - (len(rendered) - len(body)))
             if not body:
                 break
@@ -281,3 +283,69 @@ def summarize_for_tool(chunks: list[RetrievedChunk], *, max_chars: int = 900) ->
         parts.append(body)
         used += len(body)
     return "\n---\n".join(parts)
+
+
+async def resolve_collection_document_ids(
+    session: AsyncSession,
+    *,
+    tenant_id: uuid.UUID,
+    collection_ids: Sequence[uuid.UUID] | None = None,
+) -> list[uuid.UUID] | None:
+    """Resolve document UUIDs belonging to the given KnowledgeCollection IDs (Sub-Phase 2E)."""
+    if not collection_ids:
+        return None
+    src_rows = (
+        await session.execute(
+            select(KnowledgeCollectionSource).where(
+                KnowledgeCollectionSource.tenant_id == tenant_id,
+                KnowledgeCollectionSource.collection_id.in_(list(collection_ids)),
+                KnowledgeCollectionSource.source_type == "document",
+            )
+        )
+    ).scalars().all()
+    doc_ids: list[uuid.UUID] = []
+    for row in src_rows:
+        try:
+            doc_uuid = uuid.UUID(str(row.source_id))
+            if doc_uuid not in doc_ids:
+                doc_ids.append(doc_uuid)
+        except (ValueError, TypeError):
+            continue
+    return doc_ids
+
+
+async def build_rag_block(
+    session: AsyncSession,
+    *,
+    tenant_id: uuid.UUID,
+    query: str,
+    top_k: int | None = None,
+    min_score: float | None = None,
+    collection_ids: Sequence[uuid.UUID] | None = None,
+    document_ids: Sequence[uuid.UUID] | None = None,
+    environment_id: uuid.UUID | None = None,
+    max_chars: int | None = None,
+) -> str:
+    """Retrieve knowledge chunks scoped to `collection_ids` / `document_ids` and format as a RAG block."""
+    scoped_doc_ids: list[uuid.UUID] | None = None
+    if document_ids is not None:
+        scoped_doc_ids = list(document_ids)
+    elif collection_ids:
+        scoped_doc_ids = await resolve_collection_document_ids(
+            session, tenant_id=tenant_id, collection_ids=collection_ids
+        )
+        if scoped_doc_ids == []:
+            return ""
+
+    chunks = await retrieve(
+        session,
+        tenant_id=tenant_id,
+        query=query,
+        top_k=top_k,
+        min_score=min_score,
+        document_ids=scoped_doc_ids,
+        environment_id=environment_id,
+    )
+    if not chunks:
+        return ""
+    return build_context(chunks, max_chars=max_chars)

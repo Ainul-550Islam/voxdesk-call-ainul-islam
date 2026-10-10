@@ -55,7 +55,7 @@ from app.resilience.idempotency import (
     complete_request,
     fail_request,
 )
-from app.telephony import phone as phone_util
+from app.telephony import dialer_limits, dnc, phone as phone_util
 from app.core.logging import log
 from app.core.rate_limit import allow_identity_action
 
@@ -267,15 +267,7 @@ async def _check_rate_limit(tenant_id: uuid.UUID, action: str, limit_per_minute:
         )
 
 def _normalize_phone(phone: str) -> str:
-    if not phone:
-        return phone
-    normalized = re.sub(r"[\s\-\(\)]", "", phone.strip())
-    if not normalized.startswith("+"):
-        if len(normalized) == 10 and normalized.isdigit():
-            normalized = f"+1{normalized}"
-        elif len(normalized) == 11 and normalized.startswith("1"):
-            normalized = f"+{normalized}"
-    return normalized
+    return dnc.normalize_phone(phone)
 
 def _redact_phone(phone: str) -> str:
     if not phone or len(phone) < 4:
@@ -288,10 +280,7 @@ def _validate_e164_strict(phone: str) -> bool:
     return bool(E164_REGEX.match(phone)) or phone_util.is_valid(phone)
 
 def _audit(event: str, **kwargs: Any) -> None:
-    try:
-        log.info(event, **kwargs)
-    except Exception:
-        pass
+    log.info(event, **kwargs)
 
 
 async def _record_call_audit(
@@ -456,6 +445,7 @@ def _call_to_detail(call: Call) -> OutboundCallDetailOut:
         try:
             duration = int((call.ended_at - call.started_at).total_seconds())
         except Exception:
+            __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
             duration = None
     return OutboundCallDetailOut(
         id=str(call.id),
@@ -485,18 +475,19 @@ async def _check_dnc(
     lead_id: Optional[uuid.UUID] = None,
     *,
     environment_id: uuid.UUID | None = None,
+    agent_id: str = "",
 ) -> None:
-    """Fail closed on tenant DNC data, in-scope lead state, and voice consent."""
-    from app.db.enterprise_models import DncEntry
+    """Fail closed on centralized tenant/global/prefix DNC data, lead state, and voice consent."""
     from app.leads.consent import voice_denied
 
-    result = await session.execute(
-        select(DncEntry.id).where(
-            DncEntry.tenant_id == tenant_id,
-            DncEntry.phone == phone,
-        ).limit(1)
+    verdict = await dnc.evaluate_dnc(
+        session,
+        tenant_id,
+        phone,
+        environment_id=environment_id,
+        agent_id=agent_id,
     )
-    if result.scalar_one_or_none() is not None:
+    if verdict.blocked:
         raise HTTPException(status_code=403, detail="phone is on do-not-call list")
 
     if lead_id is None:
@@ -522,6 +513,32 @@ def _check_calling_window(tenant: Any) -> None:
 
     if not is_call_window_open(tenant):
         raise HTTPException(status_code=422, detail="outside calling window")
+
+
+async def _check_dialer_policy(
+    session: AsyncSession,
+    tenant: Any,
+    *,
+    agent_id: str = "",
+    campaign: Any = None,
+) -> None:
+    _check_calling_window(tenant)
+    win = await dialer_limits.check_calling_window(
+        session, tenant.id, agent_id=agent_id
+    )
+    if not win.allowed:
+        raise HTTPException(status_code=422, detail="outside calling window")
+    conc = await dialer_limits.check_concurrency_and_rate(
+        session, tenant.id, agent_id=agent_id, campaign=campaign
+    )
+    if not conc.allowed:
+        raise HTTPException(
+            status_code=429,
+            detail={
+                "code": conc.reason or "concurrency_limit_exceeded",
+                "message": "Outbound concurrency or rate limit exceeded",
+            },
+        )
 
 async def _resolve_caller_id(tenant: Any, requested: Optional[str]) -> str:
     if requested:
@@ -671,8 +688,13 @@ async def create_outbound_call(
         to_normalized,
         payload.lead_id,
         environment_id=scope.id,
+        agent_id=payload.agent_id or "",
     )
-    _check_calling_window(tenant)
+    await _check_dialer_policy(
+        session,
+        tenant,
+        agent_id=payload.agent_id or "",
+    )
 
     if payload.campaign_id is not None and payload.lead_id is None:
         raise HTTPException(status_code=422, detail="lead_id is required with campaign_id")
@@ -1145,7 +1167,7 @@ async def retry_outbound_call(
             original.lead_id,
             environment_id=original.environment_id,
         )
-        _check_calling_window(ctx.tenant)
+        await _check_dialer_policy(session, ctx.tenant)
         _require_twilio_ready()
         caller_id = await _resolve_caller_id(ctx.tenant, original.from_number)
         configured_callers = {
@@ -1333,75 +1355,59 @@ async def bulk_outbound_calls(
     )
 
 # ---------------------------------------------------------------------------
-# Web Call API — secure session/token lifecycle
+# Web Call API — delegates to app.telephony.web_call (PART 3 / F-06 closure)
 # ---------------------------------------------------------------------------
 
-@router.post("/web-calls", status_code=501)
+@router.post("/web-calls", status_code=201)
 async def create_web_call(
     payload: WebCallRequest,
     ctx: TenantContext = Depends(require_permission(Permission.CALL_WRITE)),
     session: AsyncSession = Depends(get_session),
     x_idempotency_key: Optional[str] = Header(default=None, alias="Idempotency-Key"),
 ):
-    """Fail closed: this legacy route cannot create a persisted media session."""
-    del payload, ctx, session, x_idempotency_key
-    raise HTTPException(
-        status_code=501,
-        detail={
-            "code": "legacy_web_call_not_implemented",
-            "message": "This legacy route cannot create a persisted media session or signed stream token.",
-        },
+    """Create a browser web call by delegating to `app.telephony.web_call.create_web_call`."""
+    del x_idempotency_key
+    from app.telephony import web_call as web_call_service
+
+    scope = await _scope_for_call_request(
+        session, ctx, permission=Permission.CALL_WRITE, for_write=True
+    )
+    dynamic_vars = dict(payload.custom_fields or {})
+    if payload.customer_name:
+        dynamic_vars.setdefault("customer_name", payload.customer_name)
+    if payload.customer_email:
+        dynamic_vars.setdefault("customer_email", payload.customer_email)
+
+    return await web_call_service.create_web_call(
+        session,
+        tenant=ctx.tenant,
+        agent_id=payload.agent_id,
+        version=None,
+        dynamic_vars=dynamic_vars,
+        metadata=payload.metadata,
+        environment_id=scope.id,
+        ttl_seconds=int(payload.ttl_minutes) * 60,
+        actor_user_id=ctx.user_id,
+        actor_email=ctx.user.email,
     )
 
 
-@router.get("/web-calls", status_code=501)
-async def list_web_calls(
-    status: Optional[str] = Query(default=None),
-    agent_id: Optional[str] = Query(default=None, max_length=80),
-    limit: int = Query(default=DEFAULT_PAGE_LIMIT, ge=1, le=MAX_PAGE_LIMIT),
-    offset: int = Query(default=0, ge=0),
-    ctx: TenantContext = Depends(require_permission(Permission.CALL_READ)),
-):
-    """Legacy web-call records are not returned as active media sessions."""
-    del status, agent_id, limit, offset, ctx
-    raise HTTPException(
-        status_code=501,
-        detail={
-            "code": "legacy_web_call_not_implemented",
-            "message": "This legacy route does not have a durable media-session source of truth.",
-        },
-    )
-
-
-@router.post("/web-calls/{call_id}/refresh", status_code=501)
-async def refresh_web_call_token(
-    call_id: uuid.UUID,
-    ctx: TenantContext = Depends(require_permission(Permission.CALL_WRITE)),
-):
-    """Do not mint a replacement token for an untracked legacy call."""
-    del call_id, ctx
-    raise HTTPException(
-        status_code=501,
-        detail={
-            "code": "legacy_web_call_not_implemented",
-            "message": "Refresh is unavailable because no durable web-call session is registered.",
-        },
-    )
-
-
-@router.post("/web-calls/{call_id}/revoke", status_code=501)
+@router.post("/web-calls/{call_id}/revoke")
 async def revoke_web_call(
     call_id: uuid.UUID,
     ctx: TenantContext = Depends(require_permission(Permission.CALL_WRITE)),
+    session: AsyncSession = Depends(get_session),
 ):
-    """Do not report revocation for a token that was never durably issued."""
-    del call_id, ctx
-    raise HTTPException(
-        status_code=501,
-        detail={
-            "code": "legacy_web_call_not_implemented",
-            "message": "Revocation is unavailable because no durable web-call session is registered.",
-        },
+    """End/revoke an active web call via `app.telephony.web_call.end_web_call`."""
+    from app.telephony import web_call as web_call_service
+
+    return await web_call_service.end_web_call(
+        session,
+        tenant_id=ctx.tenant_id,
+        call_id=call_id,
+        reason="revoked_by_operator",
+        actor_user_id=ctx.user_id,
+        actor_email=ctx.user.email,
     )
 
 # ---------------------------------------------------------------------------
@@ -1535,6 +1541,7 @@ async def get_call_analytics(
         try:
             duration = int((call.ended_at - call.started_at).total_seconds())
         except Exception:
+            __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
             duration = None
     return CallAnalyticsOut(
         call_id=str(call.id),
@@ -1670,16 +1677,17 @@ async def get_call_compliance(
 ):
     """Report stored DNC/consent evidence and the current tenant call window."""
     call = await _get_call(session, ctx, call_id)
-    from app.db.enterprise_models import DncEntry
     from app.leads.repository import latest_consent
     from app.telephony.outbound import is_call_window_open
 
-    dnc_blocked = await session.scalar(
-        select(DncEntry.id).where(
-            DncEntry.tenant_id == ctx.tenant_id,
-            DncEntry.phone == call.to_number,
-        ).limit(1)
-    ) is not None
+    dnc_verdict = await dnc.evaluate_dnc(
+        session,
+        ctx.tenant_id,
+        call.to_number,
+        lead_id=call.lead_id,
+        environment_id=call.environment_id,
+    )
+    dnc_blocked = dnc_verdict.blocked
     consent_status = "unverified"
     if call.lead_id is not None:
         lead = await session.scalar(
@@ -1701,7 +1709,8 @@ async def get_call_compliance(
         else:
             consent_status = "lead_missing"
 
-    window_open = is_call_window_open(ctx.tenant)
+    win_verdict = await dialer_limits.check_calling_window(session, ctx.tenant_id)
+    window_open = is_call_window_open(ctx.tenant) and win_verdict.allowed
     compliant = bool(not dnc_blocked and consent_status == "granted" and window_open)
     return {
         "call_id": str(call.id),

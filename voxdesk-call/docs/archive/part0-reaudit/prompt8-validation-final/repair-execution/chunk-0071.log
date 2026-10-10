@@ -1,0 +1,5 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_enum_consistency.py::test_speaker_has_no_legacy_aliases_left tests/test_enum_consistency.py::test_enum_names_are_unique_and_have_no_duplicate_values tests/test_enum_consistency.py::test_migration_declares_the_same_call_status_values tests/test_enum_consistency.py::test_migration_declares_the_same_speaker_values tests/test_enum_consistency.py::test_baseline_speaker_type_already_matches_python
+.....                                                                    [100%]
+5 passed in 0.11s
+
+STDERR:

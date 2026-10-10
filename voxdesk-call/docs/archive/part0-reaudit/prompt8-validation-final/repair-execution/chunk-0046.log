@@ -1,0 +1,5 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_calendar_providers.py::TestCalComBooking::test_booking_payload tests/test_calendar_providers.py::TestCalComBooking::test_booking_without_an_email_is_refused_clearly tests/test_calendar_providers.py::TestCalComBooking::test_a_status_other_than_success_at_200_is_a_rejection tests/test_calendar_providers.py::TestCalComBooking::test_no_longer_available_becomes_a_conflict_not_a_validation_error tests/test_calendar_providers.py::TestCalComBooking::test_reschedule_uses_the_dedicated_endpoint
+.....                                                                    [100%]
+5 passed in 0.12s
+
+STDERR:

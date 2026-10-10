@@ -1,0 +1,543 @@
+....................................................................s... [  7%]
+............................................................s........... [ 15%]
+........................................................................ [ 23%]
+........................................................................ [ 30%]
+........................................................................ [ 38%]
+........................................................................ [ 46%]
+........................................................................ [ 54%]
+........................................................................ [ 61%]
+...s.................................................................... [ 69%]
+........................................................................ [ 77%]
+......................................................................s. [ 85%]
+........................................................................ [ 92%]
+...................................................................      [100%]
+=============================== warnings summary ===============================
+tests/ai/test_ai_runtime_enforcement.py: 15 warnings
+tests/ai/test_ai_unknown_usage.py: 1 warning
+tests/ai/test_gateway.py: 6 warnings
+tests/ai/test_governance.py: 4 warnings
+tests/ai/test_post_call_llm.py: 14 warnings
+tests/ai/test_runtime_enforcement.py: 12 warnings
+tests/ai/test_security.py: 6 warnings
+tests/qa/test_auto_review.py: 4 warnings
+tests/qa/test_calibration.py: 1 warning
+tests/qa/test_call_outcomes.py: 2 warnings
+tests/qa/test_coaching.py: 3 warnings
+tests/qa/test_compliance.py: 2 warnings
+tests/qa/test_concurrency.py: 4 warnings
+tests/qa/test_isolation.py: 5 warnings
+tests/qa/test_post_call_runtime.py: 24 warnings
+tests/qa/test_sampling.py: 4 warnings
+tests/qa/test_scoring.py: 1 warning
+tests/qa/test_sentiment.py: 4 warnings
+tests/test_crm_credentials.py: 2 warnings
+tests/test_crm_idempotency.py: 19 warnings
+tests/test_crm_tenant_isolation.py: 32 warnings
+tests/test_crm_wiring.py: 51 warnings
+tests/webhooks/test_call_event_bridge.py: 34 warnings
+tests/webhooks/test_webhook_isolation.py: 65 warnings
+tests/webhooks/test_webhook_lifecycle_real.py: 3 warnings
+tests/outbox/test_delivery.py: 1 warning
+tests/outbox/test_isolation.py: 2 warnings
+tests/jobs/test_queue.py: 6 warnings
+tests/jobs/test_recovery.py: 1 warning
+tests/jobs/test_worker.py: 3 warnings
+tests/operations/test_notification_webhook_email.py: 8 warnings
+tests/test_external_success_honesty.py: 22 warnings
+tests/test_call_callbacks.py: 16 warnings
+tests/test_transfer.py: 28 warnings
+tests/telephony/test_analysis_backfill.py: 17 warnings
+tests/telephony/test_callback_reconciliation.py: 6 warnings
+tests/telephony/test_custom_analysis.py: 4 warnings
+tests/telephony/test_lead_lifecycle_callbacks.py: 8 warnings
+tests/telephony/test_number_provisioning.py: 8 warnings
+tests/telephony/test_outbound_environment_scope.py: 10 warnings
+tests/telephony/test_post_call_crm.py: 10 warnings
+tests/telephony/test_post_call_pipeline.py: 21 warnings
+tests/telephony/test_provider_contract.py: 1 warning
+tests/telephony/test_qos.py: 2 warnings
+tests/telephony/test_recording.py: 8 warnings
+tests/campaign/test_concurrency.py: 7 warnings
+tests/test_legacy_lead_routes.py: 13 warnings
+tests/test_enterprise_batch01.py: 69 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/ai/test_ai_runtime_enforcement.py: 51 warnings
+tests/ai/test_ai_unknown_usage.py: 5 warnings
+tests/ai/test_gateway.py: 23 warnings
+tests/ai/test_governance.py: 32 warnings
+tests/ai/test_post_call_llm.py: 61 warnings
+tests/ai/test_runtime_enforcement.py: 49 warnings
+tests/ai/test_security.py: 33 warnings
+tests/qa/test_auto_review.py: 47 warnings
+tests/qa/test_calibration.py: 5 warnings
+tests/qa/test_call_outcomes.py: 8 warnings
+tests/qa/test_coaching.py: 11 warnings
+tests/qa/test_compliance.py: 4 warnings
+tests/qa/test_concurrency.py: 17 warnings
+tests/qa/test_isolation.py: 30 warnings
+tests/qa/test_post_call_runtime.py: 110 warnings
+tests/qa/test_sampling.py: 6 warnings
+tests/qa/test_scoring.py: 3 warnings
+tests/qa/test_sentiment.py: 7 warnings
+tests/test_crm_credentials.py: 6 warnings
+tests/test_crm_idempotency.py: 193 warnings
+tests/test_crm_tenant_isolation.py: 156 warnings
+tests/test_crm_wiring.py: 277 warnings
+tests/webhooks/test_call_event_bridge.py: 104 warnings
+tests/webhooks/test_webhook_isolation.py: 250 warnings
+tests/webhooks/test_webhook_lifecycle_real.py: 45 warnings
+tests/outbox/test_delivery.py: 5 warnings
+tests/outbox/test_isolation.py: 6 warnings
+tests/jobs/test_queue.py: 14 warnings
+tests/jobs/test_recovery.py: 1 warning
+tests/jobs/test_worker.py: 6 warnings
+tests/operations/test_notification_webhook_email.py: 27 warnings
+tests/test_external_success_honesty.py: 91 warnings
+tests/test_call_callbacks.py: 115 warnings
+tests/test_transfer.py: 130 warnings
+tests/telephony/test_analysis_backfill.py: 124 warnings
+tests/telephony/test_callback_reconciliation.py: 22 warnings
+tests/telephony/test_custom_analysis.py: 25 warnings
+tests/telephony/test_lead_lifecycle_callbacks.py: 68 warnings
+tests/telephony/test_number_provisioning.py: 41 warnings
+tests/telephony/test_outbound_environment_scope.py: 48 warnings
+tests/telephony/test_post_call_crm.py: 97 warnings
+tests/telephony/test_post_call_pipeline.py: 75 warnings
+tests/telephony/test_provider_contract.py: 1 warning
+tests/telephony/test_qos.py: 2 warnings
+tests/telephony/test_recording.py: 12 warnings
+tests/campaign/test_concurrency.py: 45 warnings
+tests/test_legacy_lead_routes.py: 86 warnings
+tests/test_enterprise_batch01.py: 213 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/ai/test_ai_runtime_enforcement.py: 15 warnings
+tests/ai/test_ai_unknown_usage.py: 1 warning
+tests/ai/test_gateway.py: 6 warnings
+tests/ai/test_governance.py: 4 warnings
+tests/ai/test_post_call_llm.py: 14 warnings
+tests/ai/test_runtime_enforcement.py: 12 warnings
+tests/ai/test_security.py: 6 warnings
+tests/qa/test_auto_review.py: 4 warnings
+tests/qa/test_calibration.py: 1 warning
+tests/qa/test_call_outcomes.py: 2 warnings
+tests/qa/test_coaching.py: 3 warnings
+tests/qa/test_compliance.py: 2 warnings
+tests/qa/test_concurrency.py: 4 warnings
+tests/qa/test_isolation.py: 5 warnings
+tests/qa/test_post_call_runtime.py: 24 warnings
+tests/qa/test_sampling.py: 4 warnings
+tests/qa/test_scoring.py: 1 warning
+tests/qa/test_sentiment.py: 4 warnings
+tests/test_crm_credentials.py: 2 warnings
+tests/test_crm_idempotency.py: 19 warnings
+tests/test_crm_tenant_isolation.py: 32 warnings
+tests/test_crm_wiring.py: 51 warnings
+tests/webhooks/test_call_event_bridge.py: 34 warnings
+tests/webhooks/test_webhook_isolation.py: 65 warnings
+tests/webhooks/test_webhook_lifecycle_real.py: 3 warnings
+tests/outbox/test_delivery.py: 1 warning
+tests/outbox/test_isolation.py: 2 warnings
+tests/jobs/test_queue.py: 6 warnings
+tests/jobs/test_recovery.py: 1 warning
+tests/jobs/test_worker.py: 3 warnings
+tests/operations/test_notification_webhook_email.py: 8 warnings
+tests/test_external_success_honesty.py: 22 warnings
+tests/test_call_callbacks.py: 16 warnings
+tests/test_transfer.py: 28 warnings
+tests/telephony/test_analysis_backfill.py: 17 warnings
+tests/telephony/test_callback_reconciliation.py: 6 warnings
+tests/telephony/test_custom_analysis.py: 4 warnings
+tests/telephony/test_lead_lifecycle_callbacks.py: 8 warnings
+tests/telephony/test_number_provisioning.py: 8 warnings
+tests/telephony/test_outbound_environment_scope.py: 10 warnings
+tests/telephony/test_post_call_crm.py: 10 warnings
+tests/telephony/test_post_call_pipeline.py: 21 warnings
+tests/telephony/test_provider_contract.py: 1 warning
+tests/telephony/test_qos.py: 2 warnings
+tests/telephony/test_recording.py: 8 warnings
+tests/campaign/test_concurrency.py: 7 warnings
+tests/test_legacy_lead_routes.py: 13 warnings
+tests/test_enterprise_batch01.py: 69 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/ai/test_ai_runtime_enforcement.py: 12 warnings
+tests/ai/test_ai_unknown_usage.py: 1 warning
+tests/ai/test_gateway.py: 4 warnings
+tests/ai/test_governance.py: 4 warnings
+tests/ai/test_post_call_llm.py: 13 warnings
+tests/ai/test_runtime_enforcement.py: 7 warnings
+tests/ai/test_security.py: 5 warnings
+tests/qa/test_auto_review.py: 4 warnings
+tests/qa/test_calibration.py: 2 warnings
+tests/qa/test_call_outcomes.py: 2 warnings
+tests/qa/test_coaching.py: 4 warnings
+tests/qa/test_concurrency.py: 6 warnings
+tests/qa/test_isolation.py: 7 warnings
+tests/qa/test_post_call_runtime.py: 5 warnings
+tests/qa/test_sampling.py: 1 warning
+tests/qa/test_scoring.py: 1 warning
+tests/test_crm_tenant_isolation.py: 16 warnings
+tests/test_crm_wiring.py: 20 warnings
+tests/webhooks/test_webhook_isolation.py: 27 warnings
+tests/webhooks/test_webhook_lifecycle_real.py: 1 warning
+tests/operations/test_notification_webhook_email.py: 1 warning
+tests/test_external_success_honesty.py: 16 warnings
+tests/telephony/test_analysis_backfill.py: 16 warnings
+tests/telephony/test_callback_reconciliation.py: 2 warnings
+tests/telephony/test_custom_analysis.py: 2 warnings
+tests/telephony/test_number_provisioning.py: 3 warnings
+tests/telephony/test_recording.py: 2 warnings
+tests/test_legacy_lead_routes.py: 11 warnings
+tests/test_enterprise_batch01.py: 13 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/ai/test_ai_runtime_enforcement.py::test_governed_build_does_not_silently_switch_provider
+  tests/ai/test_ai_runtime_enforcement.py:359: PytestWarning: The test <Function test_governed_build_does_not_silently_switch_provider> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_governed_build_does_not_silently_switch_provider(monkeypatch):
+
+tests/ai/test_ai_runtime_enforcement.py::test_live_sources_do_not_select_a_model_outside_the_runtime
+  tests/ai/test_ai_runtime_enforcement.py:366: PytestWarning: The test <Function test_live_sources_do_not_select_a_model_outside_the_runtime> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_live_sources_do_not_select_a_model_outside_the_runtime():
+
+tests/ai/test_ai_runtime_enforcement.py::test_context_is_immutable_and_rejects_a_foreign_claim
+  tests/ai/test_ai_runtime_enforcement.py:378: PytestWarning: The test <Function test_context_is_immutable_and_rejects_a_foreign_claim> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_context_is_immutable_and_rejects_a_foreign_claim():
+
+tests/ai/test_ai_runtime_enforcement.py::test_customer_reply_distinguishes_governance_from_outage
+  tests/ai/test_ai_runtime_enforcement.py:394: PytestWarning: The test <Function test_customer_reply_distinguishes_governance_from_outage> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_customer_reply_distinguishes_governance_from_outage():
+
+tests/ai/test_ai_runtime_enforcement.py::test_inbound_message_does_not_call_a_policy_denial_an_outage
+tests/ai/test_ai_runtime_enforcement.py::test_inbound_message_does_not_call_a_policy_denial_an_outage
+tests/ai/test_ai_runtime_enforcement.py::test_inbound_message_does_not_call_a_policy_denial_an_outage
+tests/ai/test_ai_runtime_enforcement.py::test_inbound_message_does_not_call_a_policy_denial_an_outage
+tests/ai/test_ai_runtime_enforcement.py::test_inbound_message_does_not_call_a_policy_denial_an_outage
+tests/ai/test_ai_runtime_enforcement.py::test_inbound_message_does_not_call_a_policy_denial_an_outage
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/ai/test_ai_runtime_enforcement.py::test_inbound_message_does_not_call_a_policy_denial_an_outage
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/channels/messaging.py:94: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    cutoff = datetime.utcnow() - timedelta(minutes=THREAD_IDLE_MINUTES)
+
+tests/ai/test_ai_runtime_enforcement.py::test_inbound_message_does_not_call_a_policy_denial_an_outage
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/channels/messaging.py:127: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call_sid=f"{channel}-{customer}-{int(datetime.utcnow().timestamp())}",
+
+tests/ai/test_gateway.py::test_telemetry_drops_secrets
+  tests/ai/test_gateway.py:158: PytestWarning: The test <Function test_telemetry_drops_secrets> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_telemetry_drops_secrets():
+
+tests/ai/test_governance.py::test_published_version_is_immutable_and_rollback_restores_it
+tests/ai/test_governance.py::test_published_version_is_immutable_and_rollback_restores_it
+tests/ai/test_governance.py::test_rollout_is_deterministic
+tests/ai/test_governance.py::test_rollout_is_deterministic
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/ai/prompts/versioning.py:93: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    version.published_at = datetime.utcnow()
+
+tests/ai/test_governance.py::test_published_version_is_immutable_and_rollback_restores_it
+tests/ai/test_governance.py::test_published_version_is_immutable_and_rollback_restores_it
+tests/ai/test_governance.py::test_rollout_is_deterministic
+tests/ai/test_governance.py::test_rollout_is_deterministic
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/ai/prompts/versioning.py:95: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    prompt.updated_at = datetime.utcnow()
+
+tests/ai/test_governance.py::test_published_version_is_immutable_and_rollback_restores_it
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/api/prompt_routes.py:261: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    prompt.updated_at = datetime.utcnow()
+
+tests/ai/test_governance.py::test_eval_does_not_invent_a_score_or_leak_another_tenant
+tests/ai/test_governance.py::test_eval_does_not_invent_a_score_or_leak_another_tenant
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/api/eval_routes.py:148: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    finished_at=datetime.utcnow(),
+
+tests/ai/test_governance.py::test_safety_and_pii_are_explicit
+  tests/ai/test_governance.py:173: PytestWarning: The test <Function test_safety_and_pii_are_explicit> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_safety_and_pii_are_explicit():
+
+tests/ai/test_runtime_enforcement.py::test_voice_media_chain_wires_the_guardrail_processors
+  tests/ai/test_runtime_enforcement.py:384: PytestWarning: The test <Function test_voice_media_chain_wires_the_guardrail_processors> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_voice_media_chain_wires_the_guardrail_processors():
+
+tests/ai/test_runtime_enforcement.py::test_gateway_never_imports_the_runtime
+  tests/ai/test_runtime_enforcement.py:403: PytestWarning: The test <Function test_gateway_never_imports_the_runtime> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_gateway_never_imports_the_runtime():
+
+tests/ai/test_runtime_enforcement.py::test_policy_denial_is_never_a_fallback_trigger
+  tests/ai/test_runtime_enforcement.py:412: PytestWarning: The test <Function test_policy_denial_is_never_a_fallback_trigger> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_policy_denial_is_never_a_fallback_trigger():
+
+tests/ai/test_security.py::test_model_cannot_self_authorize_and_disallowed_tool_is_rejected
+  tests/ai/test_security.py:66: PytestWarning: The test <Function test_model_cannot_self_authorize_and_disallowed_tool_is_rejected> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_model_cannot_self_authorize_and_disallowed_tool_is_rejected():
+
+tests/qa/test_post_call_runtime.py: 21 warnings
+tests/test_crm_idempotency.py: 18 warnings
+tests/test_crm_tenant_isolation.py: 4 warnings
+tests/test_crm_wiring.py: 15 warnings
+tests/webhooks/test_call_event_bridge.py: 30 warnings
+tests/webhooks/test_webhook_lifecycle_real.py: 2 warnings
+tests/operations/test_notification_webhook_email.py: 1 warning
+tests/telephony/test_analysis_backfill.py: 16 warnings
+tests/telephony/test_callback_reconciliation.py: 5 warnings
+tests/telephony/test_custom_analysis.py: 2 warnings
+tests/telephony/test_lead_lifecycle_callbacks.py: 8 warnings
+tests/telephony/test_post_call_crm.py: 8 warnings
+tests/telephony/test_post_call_pipeline.py: 18 warnings
+tests/telephony/test_qos.py: 2 warnings
+tests/telephony/test_recording.py: 6 warnings
+tests/test_enterprise_batch01.py: 6 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/conftest.py:569: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "started_at": datetime.utcnow(),
+
+tests/test_crm_contract.py: 10 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/test_crm_contract.py:157: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_crm_credentials.py: 2 warnings
+tests/test_crm_idempotency.py: 18 warnings
+tests/test_crm_tenant_isolation.py: 22 warnings
+tests/test_crm_wiring.py: 25 warnings
+tests/telephony/test_post_call_crm.py: 9 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/conftest.py:550: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    integration.credentials_updated_at = datetime.utcnow()
+
+tests/test_crm_idempotency.py: 7 warnings
+tests/test_crm_wiring.py: 5 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/integrations/crm/service.py:807: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    cutoff = datetime.utcnow() - timedelta(minutes=older_than_minutes)
+
+tests/test_crm_idempotency.py: 7 warnings
+tests/test_crm_wiring.py: 5 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/integrations/crm/service.py:818: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    next_attempt_at=datetime.utcnow(),
+
+tests/test_crm_idempotency.py: 8 warnings
+tests/test_crm_wiring.py: 5 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/integrations/crm/service.py:776: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    moment = now or datetime.utcnow()
+
+tests/test_crm_idempotency.py: 18 warnings
+tests/test_crm_wiring.py: 5 warnings
+tests/telephony/test_post_call_crm.py: 2 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/integrations/crm/service.py:295: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_crm_idempotency.py: 8 warnings
+tests/test_crm_wiring.py: 2 warnings
+tests/telephony/test_post_call_crm.py: 1 warning
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/integrations/crm/service.py:625: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    sync.synced_at = datetime.utcnow()
+
+tests/test_crm_idempotency.py::test_a_provider_timeout_after_acceptance_does_not_duplicate
+tests/test_crm_idempotency.py::test_a_500_schedules_a_retry_and_keeps_the_sync_recoverable
+tests/test_crm_idempotency.py::test_repeated_transient_failures_eventually_give_up
+tests/test_crm_idempotency.py::test_repeated_transient_failures_eventually_give_up
+tests/test_crm_idempotency.py::test_a_429_reads_retry_after
+tests/test_crm_idempotency.py::test_an_absurd_retry_after_is_capped
+tests/test_crm_idempotency.py::test_a_garbage_retry_after_falls_back_to_our_own_backoff
+tests/test_crm_wiring.py::TestStructuredLogging::test_a_failed_sync_logs_an_error_code_and_no_secret
+tests/telephony/test_post_call_crm.py::test_note_failure_is_not_hidden_by_successful_contact
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/integrations/crm/service.py:661: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    sync.next_attempt_at = datetime.utcnow() + timedelta(seconds=delay)
+
+tests/test_crm_idempotency.py::test_a_second_call_from_the_same_number_updates_the_same_contact
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/integrations/crm/service.py:198: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    existing.last_seen_at = datetime.utcnow()
+
+tests/test_crm_idempotency.py::test_a_worker_restart_mid_flight_is_safe
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/test_crm_idempotency.py:300: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    sync.last_attempt_at = datetime.utcnow() - timedelta(hours=1)
+
+tests/test_crm_idempotency.py::test_a_429_reads_retry_after
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/test_crm_idempotency.py:498: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    before = datetime.utcnow()
+
+tests/test_crm_idempotency.py::test_an_absurd_retry_after_is_capped
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/test_crm_idempotency.py:512: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    before = datetime.utcnow()
+
+tests/test_crm_idempotency.py::test_a_throttled_sync_is_rescheduled_not_failed
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/integrations/crm/service.py:274: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    sync.next_attempt_at = datetime.utcnow() + timedelta(seconds=max(delay, 1.0))
+
+tests/test_crm_tenant_isolation.py::test_tenant_b_cannot_modify_tenant_a_integration
+tests/test_crm_tenant_isolation.py::test_a_tenant_id_in_the_body_is_ignored
+tests/test_crm_tenant_isolation.py::test_connecting_an_integration_writes_no_secret_to_the_audit_log
+tests/test_crm_tenant_isolation.py::test_no_secret_reaches_the_structured_log
+tests/test_crm_wiring.py::TestIntegrationApi::test_connecting_a_provider
+tests/test_crm_wiring.py::TestIntegrationApi::test_updating_without_credentials_keeps_the_existing_token
+tests/test_crm_wiring.py::TestIntegrationApi::test_an_unknown_credential_field_is_rejected
+tests/test_crm_wiring.py::TestIntegrationApi::test_a_webhook_gets_a_generated_signing_secret
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/api/integration_routes.py:395: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    integration.updated_at = datetime.utcnow()
+
+tests/test_crm_tenant_isolation.py::test_connecting_an_integration_writes_no_secret_to_the_audit_log
+tests/test_crm_tenant_isolation.py::test_no_secret_reaches_the_structured_log
+tests/test_crm_wiring.py::TestIntegrationApi::test_connecting_a_provider
+tests/test_crm_wiring.py::TestIntegrationApi::test_a_webhook_gets_a_generated_signing_secret
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/api/integration_routes.py:487: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    integration.credentials_updated_at = datetime.utcnow()
+
+tests/test_crm_wiring.py: 3 warnings
+tests/test_call_callbacks.py: 1 warning
+tests/telephony/test_lead_lifecycle_callbacks.py: 12 warnings
+tests/telephony/test_outbound_environment_scope.py: 10 warnings
+tests/campaign/test_concurrency.py: 5 warnings
+tests/test_legacy_lead_routes.py: 11 warnings
+tests/test_enterprise_batch01.py: 1 warning
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/leads/models.py:25: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow()
+
+tests/test_crm_wiring.py::TestAppointmentWiring::test_booking_emits
+tests/test_crm_wiring.py::TestAppointmentWiring::test_cancellation_emits
+tests/test_crm_wiring.py::TestAppointmentWiring::test_a_duplicate_booking_event_is_safe
+tests/test_crm_wiring.py::TestAppointmentWiring::test_rescheduling_produces_a_distinct_event
+tests/test_crm_wiring.py::TestAppointmentWiring::test_a_provider_without_a_calendar_is_skipped_cleanly
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/conftest.py:606: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    starts = datetime.utcnow() + timedelta(days=1)
+
+tests/test_crm_wiring.py::TestHealthCheck::test_a_working_connection_reports_connected
+tests/test_crm_wiring.py::TestHealthCheck::test_a_bad_token_reports_a_diagnosis_not_a_500
+tests/test_crm_wiring.py::TestHealthCheck::test_a_health_check_records_its_result
+tests/test_crm_wiring.py::TestHealthCheck::test_a_timeout_reports_cleanly
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/integrations/crm/service.py:749: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    integration.last_health_check_at = datetime.utcnow()
+
+tests/test_crm_wiring.py::TestInboundWebhooks::test_receipts_can_be_pruned
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/test_crm_wiring.py:870: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    provider_event_id="old", received_at=datetime.utcnow() - timedelta(days=90),
+
+tests/test_crm_wiring.py::TestInboundWebhooks::test_receipts_can_be_pruned
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/api/crm_webhook_routes.py:308: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    cutoff = datetime.utcnow() - timedelta(days=older_than_days)
+
+tests/webhooks/test_call_event_bridge.py: 6 warnings
+tests/webhooks/test_webhook_lifecycle_real.py: 1 warning
+tests/test_call_state.py: 13 warnings
+tests/test_call_callbacks.py: 11 warnings
+tests/telephony/test_callback_reconciliation.py: 2 warnings
+tests/telephony/test_lead_lifecycle_callbacks.py: 8 warnings
+tests/telephony/test_post_call_pipeline.py: 4 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/call_state.py:261: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call.ended_at = ended_at or datetime.utcnow()
+
+tests/webhooks/test_call_event_bridge.py: 1 warning
+tests/test_call_callbacks.py: 4 warnings
+tests/test_transfer.py: 7 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/transfer_service.py:472: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call.transfer_failed_at = datetime.utcnow()
+
+tests/test_call_state.py: 27 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/test_call_state.py:27: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    started_at=datetime.utcnow(),
+
+tests/test_call_state.py::test_ended_at_can_be_supplied_explicitly
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/test_call_state.py:132: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    when = datetime.utcnow() - timedelta(minutes=5)
+
+tests/test_call_callbacks.py: 16 warnings
+tests/test_transfer.py: 26 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/test_transfer.py:43: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    started_at=datetime.utcnow(),
+
+tests/test_call_callbacks.py: 6 warnings
+tests/test_transfer.py: 19 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/transfer_service.py:288: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_call_callbacks.py: 6 warnings
+tests/test_transfer.py: 15 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/transfer_service.py:340: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call.transfer_started_at = datetime.utcnow()
+
+tests/test_call_callbacks.py::test_case_a_transfer_then_stream_close_then_completed_then_dial_callback
+tests/test_call_callbacks.py::test_case_b_dial_callback_then_completed
+tests/test_call_callbacks.py::test_case_d_duplicate_completed_callbacks
+tests/test_transfer.py::test_already_connected_call_reports_completed_not_a_new_transfer
+tests/test_transfer.py::test_connected_callback_records_the_connection
+tests/test_transfer.py::test_duplicate_connected_callback_changes_nothing
+tests/test_transfer.py::test_failure_callback_after_connection_is_ignored
+tests/test_transfer.py::test_transfer_writes_system_transcript_events
+tests/test_transfer.py::test_duplicate_provider_events_do_not_duplicate_system_turns
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/transfer_service.py:409: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call.transfer_completed_at = datetime.utcnow()
+
+tests/test_call_callbacks.py::test_duplicate_callbacks_do_not_regrade_a_lead
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/test_call_callbacks.py:312: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    started_at=datetime.utcnow(), lead_id=lead.id, lead_score=80,
+
+tests/telephony/test_outbound_environment_scope.py::test_selection_is_restricted_to_the_campaign_environment
+tests/telephony/test_outbound_environment_scope.py::test_staging_campaign_selects_only_staging_leads
+tests/telephony/test_outbound_environment_scope.py::test_dnc_and_attempt_cap_still_exclude_leads
+tests/telephony/test_outbound_environment_scope.py::test_parallel_ticks_claim_each_lead_once
+tests/telephony/test_outbound_environment_scope.py::test_parallel_ticks_claim_each_lead_once
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/outbound.py:90: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/telephony/test_outbound_environment_scope.py::test_same_environment_pair_dials
+tests/telephony/test_outbound_environment_scope.py::test_parallel_ticks_claim_each_lead_once
+tests/telephony/test_outbound_environment_scope.py::test_parallel_ticks_claim_each_lead_once
+tests/telephony/test_outbound_environment_scope.py::test_parallel_ticks_claim_each_lead_once
+tests/telephony/test_outbound_environment_scope.py::test_parallel_ticks_claim_each_lead_once
+tests/telephony/test_outbound_environment_scope.py::test_parallel_ticks_claim_each_lead_once
+tests/telephony/test_outbound_environment_scope.py::test_parallel_ticks_claim_each_lead_once
+tests/campaign/test_concurrency.py::test_concurrent_dial_claims_the_lead_exactly_once
+tests/campaign/test_concurrency.py::test_concurrent_dial_claims_the_lead_exactly_once
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/outbound.py:251: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/telephony/test_qos.py::test_valid_metrics_and_missing_metric
+  tests/telephony/test_qos.py:15: PytestWarning: The test <Function test_valid_metrics_and_missing_metric> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_valid_metrics_and_missing_metric():
+
+tests/telephony/test_qos.py::test_negative_and_unit_and_mos_are_rejected
+  tests/telephony/test_qos.py:32: PytestWarning: The test <Function test_negative_and_unit_and_mos_are_rejected> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_negative_and_unit_and_mos_are_rejected():
+
+tests/telephony/test_recording.py::test_retention_deletes_recording_unless_held
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/telephony/test_recording.py:148: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call.started_at = datetime.utcnow() - timedelta(days=400)
+
+tests/telephony/test_recording.py::test_retention_deletes_recording_unless_held
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/telephony/test_recording.py:160: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call2.started_at = datetime.utcnow() - timedelta(days=400)
+
+tests/test_enterprise_batch01.py::TestConversationService::test_start_and_project
+tests/test_enterprise_batch01.py::TestConversationService::test_append_turn_and_classify
+tests/test_enterprise_batch01.py::TestConversationService::test_escalate_records_intent_without_dialing
+tests/test_enterprise_batch01.py::TestConversationService::test_close_and_reopen_policy
+tests/test_enterprise_batch01.py::TestConversationService::test_reopen_outside_window_rejected
+tests/test_enterprise_batch01.py::TestConversationService::test_summarize_persists
+tests/test_enterprise_batch01.py::TestConversationService::test_search_tenant_scoped
+tests/test_enterprise_batch01.py::TestConversationService::test_search_tenant_scoped
+tests/test_enterprise_batch01.py::TestSecurityGuarantees::test_no_cross_tenant_conversation_visibility
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/conversation_service.py:107: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call_sid=f"{channel.value}-{int(datetime.utcnow().timestamp()*1000)}",
+
+tests/test_enterprise_batch01.py::TestAnalyticsService::test_aggregate_correctness
+tests/test_enterprise_batch01.py::TestAnalyticsService::test_tenant_isolation
+tests/test_enterprise_batch01.py::TestAnalyticsService::test_empty_results
+tests/test_enterprise_batch01.py::TestAnalyticsService::test_snapshot_has_no_pii
+tests/test_enterprise_batch01.py::TestSecurityGuarantees::test_analytics_never_exposes_phone_numbers
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/test_enterprise_batch01.py:186: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_enterprise_batch01.py::TestInboxService::test_thread_isolation
+tests/test_enterprise_batch01.py::TestInboxService::test_message_ordering
+tests/test_enterprise_batch01.py::TestInboxService::test_read_unread
+tests/test_enterprise_batch01.py::TestInboxService::test_assignment
+tests/test_enterprise_batch01.py::TestInboxService::test_escalation
+tests/test_enterprise_batch01.py::TestInboxService::test_close_and_reopen_policy
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/inbox_service.py:126: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call_sid=f"inbox-{int(datetime.utcnow().timestamp()*1000)}",
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /home/user/voxdesk-call-ainul-islam/voxdesk-call/reports/part1/crm-runtime/regression.xml -
+927 passed, 4 skipped, 4824 warnings in 300.23s (0:05:00)

@@ -74,10 +74,21 @@ DIST_IMPORT_OVERRIDES: dict[str, str] = {
 TRANSITIVE_ALLOWLIST: frozenset[str] = frozenset({
     "pydantic_core",   # pinned transitive dependency of pydantic
     "google",          # google-auth namespace (dep of google-api-python-client)
+    "audioop",         # stdlib in Python <=3.12; provided by audioop-lts on Python 3.13
+    "fakeredis",       # validation/test dependency in requirements-validation.txt
+    "respx",           # validation/test dependency in requirements-validation.txt
 })
 
 # The project's own top-level packages — never treated as third-party.
-LOCAL_PACKAGES: frozenset[str] = frozenset({"app", "tests", "scripts", "loadtest"})
+LOCAL_PACKAGES: frozenset[str] = frozenset({
+    "app",
+    "tests",
+    "scripts",
+    "loadtest",
+    "sdk",
+    "strip_padding_markers",
+    "verify_retired_references",
+})
 
 # requirements.txt lines are `name==version` or `name[extra1,extra2]==version`;
 # inline comments may follow. Non-pinned lines are skipped (none exist today).

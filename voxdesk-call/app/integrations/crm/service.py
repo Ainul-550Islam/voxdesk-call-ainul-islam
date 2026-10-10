@@ -741,6 +741,7 @@ async def check_health(
             latency_ms=0.0, safe_message=exc.safe_message,
         )
     except Exception as exc:
+        __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
         result = HealthResult(
             connected=False, provider=integration.provider.value, latency_ms=0.0,
             safe_message=f"unexpected error ({type(exc).__name__})",

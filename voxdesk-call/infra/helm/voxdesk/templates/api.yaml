@@ -5,7 +5,9 @@ metadata:
   labels:
     {{- include "voxdesk.labels" . | nindent 4 }}
 spec:
+  {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
+  {{- end }}
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ include "voxdesk.name" . }}
@@ -15,12 +17,19 @@ spec:
       labels:
         {{- include "voxdesk.labels" . | nindent 8 }}
     spec:
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds | default 60 }}
+      {{- if and .Values.readinessGates .Values.readinessGates.enabled }}
+      readinessGates:
+        {{- range .Values.readinessGates.conditions }}
+        - conditionType: {{ . | quote }}
+        {{- end }}
+      {{- end }}
       securityContext:
         runAsNonRoot: true
         seccompProfile: {type: RuntimeDefault}
       containers:
         - name: api
-          image: "{{ required \"image.repository is required\" .Values.image.repository }}:{{ required \"image.tag is required\" .Values.image.tag }}"
+          image: "{{ required "image.repository is required" .Values.image.repository }}:{{ required "image.tag is required" .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http
@@ -34,12 +43,30 @@ spec:
               value: {{ required "config.redisUrl is required" .Values.config.redisUrl | quote }}
             - name: TRUSTED_HOSTS
               value: {{ .Values.config.trustedHosts | quote }}
+            - name: SHUTDOWN_DRAIN_TIMEOUT_SECONDS
+              value: {{ .Values.drain.timeoutSeconds | default 45 | quote }}
+            - name: SHUTDOWN_FLUSH_TIMEOUT_SECONDS
+              value: {{ .Values.drain.flushTimeoutSeconds | default 10 | quote }}
           envFrom:
             - secretRef:
                 name: {{ required "secrets.existingSecret is required" .Values.secrets.existingSecret }}
-          readinessProbe:
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - "sleep {{ .Values.drain.preStopSleepSeconds | default 5 }}"
+          startupProbe:
             httpGet: {path: {{ .Values.probes.readiness }}, port: http}
-            periodSeconds: 10
+            periodSeconds: 5
+            failureThreshold: 12
+            timeoutSeconds: 3
+          readinessProbe:
+            # /health/ready verifies DB (SELECT 1), Redis (PING), provider config, and drain state
+            httpGet: {path: {{ .Values.probes.readiness }}, port: http}
+            periodSeconds: 5
+            failureThreshold: 2
             timeoutSeconds: 3
           livenessProbe:
             httpGet: {path: {{ .Values.probes.liveness }}, port: http}
@@ -63,6 +90,64 @@ spec:
     - name: http
       port: {{ .Values.service.port }}
       targetPort: http
+{{- if .Values.autoscaling.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "voxdesk.fullname" . }}
+  labels:
+    {{- include "voxdesk.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "voxdesk.fullname" . }}
+  minReplicas: {{ .Values.autoscaling.minReplicas | default 2 }}
+  maxReplicas: {{ .Values.autoscaling.maxReplicas | default 20 }}
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: {{ .Values.autoscaling.scaleDownStabilizationWindowSeconds | default 300 }}
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 30
+  metrics:
+    - type: Pods
+      pods:
+        metric:
+          name: voxdesk_active_calls
+        target:
+          type: AverageValue
+          averageValue: {{ .Values.autoscaling.targetConcurrentCallsPerPod | default "25" | quote }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.targetCPUUtilizationPercentage | default 70 }}
+{{- end }}
+{{- if .Values.podDisruptionBudget.enabled }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "voxdesk.fullname" . }}
+  labels:
+    {{- include "voxdesk.labels" . | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable | default 1 }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "voxdesk.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
 {{- if .Values.ingress.enabled }}
 ---
 apiVersion: networking.k8s.io/v1

@@ -1,0 +1,23 @@
+{
+  "recording_id": "demo-02-outbound-batch",
+  "feature_matrix_ids": [
+    17,
+    21
+  ],
+  "captured_at_utc": "2026-10-08T18:04:35.448063+00:00",
+  "endpoints": [
+    "POST /api/batch-calls",
+    "GET /api/batch-calls/{id}"
+  ],
+  "verified_by_tests": [
+    "tests/campaign/test_batch_dialing.py::test_batch_call_creates_campaign_leads_and_dials_real_calls",
+    "tests/campaign/test_concurrency.py::test_concurrent_dial_claims_the_lead_exactly_once",
+    "tests/campaign/test_dnc_enforcement.py::test_dnc_entry_normalizes_phone_on_insert_and_blocks_all_paths"
+  ],
+  "invariants_verified": {
+    "e164_validation": true,
+    "dnc_suppression": true,
+    "skip_locked_no_double_dial": true,
+    "redis_token_bucket_cps_pacing": true
+  }
+}

@@ -1,0 +1,52 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_knowledge_tenant_isolation.py::test_a_cannot_hard_delete_bs_document tests/test_knowledge_tenant_isolation.py::test_a_cannot_reindex_bs_document tests/test_knowledge_tenant_isolation.py::test_a_cannot_restore_bs_document tests/test_knowledge_tenant_isolation.py::test_search_never_crosses_tenants tests/test_knowledge_tenant_isolation.py::test_stats_only_count_the_callers_own_tenant tests/test_knowledge_tenant_isolation.py::test_uploading_the_same_file_as_another_tenant_is_allowed tests/test_knowledge_tenant_isolation.py::test_metadata_filters_cannot_reach_another_tenant tests/test_knowledge_tenant_isolation.py::test_a_filter_only_narrows_the_callers_own_tenant tests/test_knowledge_tenant_isolation.py::test_filter_result_counts_do_not_reveal_another_tenants_documents tests/test_knowledge_tenant_isolation.py::test_an_unknown_filter_field_is_rejected_not_ignored tests/test_knowledge_tenant_isolation.py::test_a_filter_cannot_override_the_tenant_predicate tests/test_legacy_lead_routes.py::test_bulk_import_url_and_response_shape_unchanged tests/test_legacy_lead_routes.py::test_bulk_import_skips_duplicates_within_the_environment tests/test_legacy_lead_routes.py::test_same_phone_may_exist_in_two_environments tests/test_legacy_lead_routes.py::test_bulk_import_refuses_a_cross_environment_campaign tests/test_legacy_lead_routes.py::test_bulk_import_refuses_a_foreign_environment tests/test_legacy_lead_routes.py::test_list_url_shape_and_environment_scope tests/test_legacy_lead_routes.py::test_do_not_call_route_goes_through_consent_and_history tests/test_legacy_lead_routes.py::test_do_not_call_from_the_wrong_environment_is_404 tests/test_legacy_lead_routes.py::test_legacy_campaign_urls_still_work tests/test_legacy_lead_routes.py::test_foreign_tenant_manager_gets_404_on_every_legacy_url tests/test_legacy_lead_routes.py::test_viewer_cannot_write_legacy_lead_routes tests/test_license_routes.py::test_owner_can_issue_a_verifiable_license tests/test_license_routes.py::test_issue_rejects_out_of_range_payloads tests/test_license_routes.py::test_verify_endpoint_is_public_and_honest tests/test_license_routes.py::test_issue_requires_owner tests/test_licensing.py::test_round_trip tests/test_licensing.py::test_tampered_token_is_rejected tests/test_licensing.py::test_expired_token_is_rejected tests/test_licensing.py::test_garbage_inputs_are_rejected
+..............................                                           [100%]
+=============================== warnings summary ===============================
+tests/test_knowledge_tenant_isolation.py::test_a_cannot_hard_delete_bs_document
+tests/test_knowledge_tenant_isolation.py::test_a_cannot_hard_delete_bs_document
+tests/test_knowledge_tenant_isolation.py::test_a_cannot_hard_delete_bs_document
+tests/test_knowledge_tenant_isolation.py::test_a_cannot_hard_delete_bs_document
+tests/test_knowledge_tenant_isolation.py::test_a_cannot_hard_delete_bs_document
+tests/test_knowledge_tenant_isolation.py::test_a_cannot_hard_delete_bs_document
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/test_knowledge_tenant_isolation.py: 21 warnings
+tests/test_legacy_lead_routes.py: 13 warnings
+tests/test_license_routes.py: 4 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_knowledge_tenant_isolation.py: 160 warnings
+tests/test_legacy_lead_routes.py: 86 warnings
+tests/test_license_routes.py: 20 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/test_knowledge_tenant_isolation.py: 21 warnings
+tests/test_legacy_lead_routes.py: 13 warnings
+tests/test_license_routes.py: 4 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_knowledge_tenant_isolation.py: 6 warnings
+tests/test_legacy_lead_routes.py: 11 warnings
+tests/test_license_routes.py: 4 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_knowledge_tenant_isolation.py: 16 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/knowledge/ingest.py:227: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    document.processing_started_at = datetime.utcnow()
+
+tests/test_knowledge_tenant_isolation.py: 16 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/knowledge/ingest.py:327: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    document.ingested_at = datetime.utcnow()
+
+tests/test_legacy_lead_routes.py: 11 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/leads/models.py:25: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+30 passed, 412 warnings in 73.81s (0:01:13)
+
+STDERR:

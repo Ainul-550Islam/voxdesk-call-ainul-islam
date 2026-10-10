@@ -1,0 +1,6 @@
+$ /usr/local/bin/python -m pytest --collect-only -q tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+tests/test_telephony_runtime_e2e.py::test_realtime_media_gateway_barge_in_dtmf_and_transfers
+
+1 test collected in 0.08s
+
+STDERR:

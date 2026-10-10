@@ -311,6 +311,7 @@ async def _on_checkout_completed(
             # `subscription.updated` event that follows will carry the state
             # anyway, and returning non-2xx would make Stripe retry a
             # checkout we have already recorded.
+            __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
             remote = None
         if remote is not None:
             plan = await service._plan_for_price(

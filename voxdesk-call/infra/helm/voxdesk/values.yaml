@@ -1,8 +1,29 @@
 image:
-  repository: ""
-  tag: ""
+  repository: "ghcr.io/voxdesk/voxdesk-call"
+  tag: "1.0.0"
   pullPolicy: IfNotPresent
 replicaCount: 2
+terminationGracePeriodSeconds: 60
+drain:
+  timeoutSeconds: 45
+  flushTimeoutSeconds: 10
+  preStopSleepSeconds: 5
+readinessGates:
+  enabled: true
+  conditions:
+    - voxdesk.io/db-ready
+    - voxdesk.io/redis-ready
+    - voxdesk.io/providers-ready
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 20
+  targetCPUUtilizationPercentage: 70
+  targetConcurrentCallsPerPod: "25"
+  scaleDownStabilizationWindowSeconds: 300
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
 service:
   type: ClusterIP
   port: 8000
@@ -15,17 +36,25 @@ secrets:
   existingSecret: voxdesk-runtime
 config:
   appEnv: production
-  databaseUrl: ""
-  redisUrl: ""
+  databaseUrl: "postgresql+asyncpg://voxdesk:voxdesk@postgres:5432/voxdesk"
+  redisUrl: "redis://redis:6379/0"
   trustedHosts: ""
 resources:
-  requests: {cpu: 250m, memory: 512Mi}
+  requests: {cpu: 500m, memory: 512Mi}
   limits: {cpu: "2", memory: 2Gi}
 probes:
   readiness: /health/ready
   liveness: /health
+  dependencies: /health/dependencies
 scheduler:
   enabled: true
+  terminationGracePeriodSeconds: 45
+  drain:
+    timeoutSeconds: 15
+    flushTimeoutSeconds: 20
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
   resources:
     requests: {cpu: 100m, memory: 256Mi}
     limits: {cpu: "1", memory: 1Gi}

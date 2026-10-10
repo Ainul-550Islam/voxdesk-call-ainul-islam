@@ -6,23 +6,15 @@ import type {
 } from './types/agent-version';
 
 export async function getAgentPublish(agentId: string): Promise<any> {
-  try {
-    return await apiClient.get(`/api/agents/${encodeURIComponent(agentId)}/environments`);
-  } catch {
-    return null;
-  }
+  return apiClient.get(`/api/agents/${encodeURIComponent(agentId)}/environments`);
 }
 
 export async function listAgentPublish(agentId?: string): Promise<AgentVersionSnapshot[]> {
   if (!agentId) return [];
-  try {
-    const res = await apiClient.get<any>(
-      `/api/v1/agents/${encodeURIComponent(agentId)}/versions`
-    );
-    return Array.isArray(res) ? res : res?.items || res?.versions || [];
-  } catch {
-    return [];
-  }
+  const res = await apiClient.get<any>(
+    `/api/v1/agents/${encodeURIComponent(agentId)}/versions`
+  );
+  return Array.isArray(res) ? res : res?.items || res?.versions || [];
 }
 
 export async function publishAgentBuilder(

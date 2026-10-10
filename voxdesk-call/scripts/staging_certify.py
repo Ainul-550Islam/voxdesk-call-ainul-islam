@@ -690,6 +690,51 @@ def _run_single_mode(args: argparse.Namespace, mode: str) -> dict:
     }
 
 
+def _run_http_certify(args: argparse.Namespace) -> dict:
+    """Certify a live HTTP stack endpoint (--base / --base-url)."""
+    app_env = (os.environ.get("APP_ENV") or settings.app_env or "staging").strip()
+    live = ops.compute_live_facts()
+    base = args.base_url.rstrip("/")
+    steps: list[dict] = []
+
+    code_h, ok_h = _http_get(base + "/health")
+    steps.append(_step("verify liveness (/health)", ops.STATUS_PASS if ok_h and code_h == 200 else ops.STATUS_FAIL, f"GET /health -> {code_h}"))
+
+    code_r, ok_r = _http_get(base + "/health/ready")
+    steps.append(_step("verify readiness (/health/ready)", ops.STATUS_PASS if ok_r and code_r == 200 else ops.STATUS_FAIL, f"GET /health/ready -> {code_r}"))
+
+    code_m, ok_m = _http_get(base + "/metrics")
+    steps.append(_step("verify metrics (/metrics)", ops.STATUS_PASS if ok_m and code_m in (200, 401) else ops.STATUS_FAIL, f"GET /metrics -> {code_m}"))
+
+    code_p, ok_p = _http_get(base + "/")
+    steps.append(_step("verify dashboard shell (/)", ops.STATUS_PASS if ok_p and code_p == 200 else ops.STATUS_FAIL, f"GET / -> {code_p}"))
+
+    smoke_script = Path(ops.REPO_ROOT) / "scripts" / "smoke_test.py"
+    proc = subprocess.run(
+        [sys.executable, str(smoke_script), "--base", base],
+        capture_output=True, text=True, timeout=120,
+        env={**os.environ, "SMOKE_BASE_URL": base},
+    )
+    smoke_summary = (proc.stdout or proc.stderr).strip().splitlines()[-1] if (proc.stdout or proc.stderr) else ""
+    steps.append(_step("smoke test (smoke_test.py)", ops.STATUS_PASS if proc.returncode == 0 else ops.STATUS_FAIL, smoke_summary))
+
+    cstatus, cdetail = _static_compose_checks()
+    steps.append(_step("deployment checks (static)", cstatus, cdetail))
+
+    codes = [ops.exit_code_for_status(s["status"]) for s in steps]
+    overall = "PASS" if all(s["status"] == ops.STATUS_PASS for s in steps) else "FAIL"
+    return {
+        "mode": "http-certify",
+        "timestamp": ops.now_iso(),
+        "release_commit": live["git_commit"],
+        "environment": app_env,
+        "steps": [{"step": s["step"], "status": s["status"], "detail": s["detail"]} for s in steps],
+        "overall": overall,
+        "exit_code": ops.worst_exit_code(codes),
+        "records": [],
+    }
+
+
 def _render(report: dict) -> str:
     lines = [f"staging_certify — mode={report.get('mode')}", "=" * 78]
     if report.get("preflight"):
@@ -711,13 +756,22 @@ def main(argv=None) -> int:
         ("egress", args.egress), ("e2e-readiness", args.e2e_readiness),
         ("deploy-drill", args.deploy_drill),
     ) if on]
-    if args.all_safe or not modes:
+    raw_argv = sys.argv[1:] if argv is None else list(argv)
+    base_only_flag = any(
+        a in ("--base", "--base-url") or a.startswith("--base=") or a.startswith("--base-url=")
+        for a in raw_argv
+    )
+    if not modes and base_only_flag and not args.all_safe:
+        modes = ["http-certify"]
+    elif args.all_safe or not modes:
         modes = ["preflight", "staging", "backup", "providers", "observability", "egress", "deploy-drill"]
 
     reports = []
     for mode in modes:
         if mode == "staging":
             reports.append(_run_staging_sequence(args))
+        elif mode == "http-certify":
+            reports.append(_run_http_certify(args))
         else:
             reports.append(_run_single_mode(args, mode))
 

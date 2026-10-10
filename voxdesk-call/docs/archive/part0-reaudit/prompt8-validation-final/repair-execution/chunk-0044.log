@@ -1,0 +1,5 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_calendar_providers.py::TestMicrosoftEvents::test_refresh_stores_the_rotated_token tests/test_calendar_providers.py::TestCalComCapabilities::test_free_busy_is_not_claimed tests/test_calendar_providers.py::TestCalComCapabilities::test_update_event_is_not_claimed_but_reschedule_is tests/test_calendar_providers.py::TestCalComCapabilities::test_the_api_version_header_is_sent tests/test_calendar_providers.py::TestCalComCapabilities::test_a_missing_event_type_is_a_clear_configuration_error
+.....                                                                    [100%]
+5 passed in 0.11s
+
+STDERR:

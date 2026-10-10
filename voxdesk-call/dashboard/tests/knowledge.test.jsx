@@ -7,7 +7,7 @@
  * detail an invented fixture gets wrong and which `lib/format` has to treat
  * as UTC.
  */
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 
@@ -220,14 +220,16 @@ describe('ingestion lifecycle', () => {
           'GET /api/knowledge/documents': { body: docList([READY_DOC], 1) },
         })
       )
-      render(<App />)
-      await vi.waitFor(() =>
-        expect(calls.some((c) => c.path.includes('/knowledge/documents')))
-          .toBe(true)
-      )
+      await act(async () => {
+        render(<App />)
+        await vi.advanceTimersByTimeAsync(50)
+      })
+      expect(calls.some((c) => c.path.includes('/knowledge/documents'))).toBe(true)
 
       const before = calls.filter((c) => c.path.includes('/knowledge')).length
-      await vi.advanceTimersByTimeAsync(15000)
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(15000)
+      })
       const after = calls.filter((c) => c.path.includes('/knowledge')).length
 
       expect(after).toBe(before)

@@ -65,6 +65,7 @@ class PdfExtractor:
                 raw = page.extract_text() or ""
             except Exception:
                 # One broken page must not lose the other ninety-nine.
+                __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
                 failed_pages += 1
                 continue
             body = clean_text(raw)

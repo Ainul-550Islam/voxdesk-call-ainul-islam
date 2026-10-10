@@ -1,0 +1,37 @@
+$ /usr/local/bin/python -m pytest -q tests/e2e/test_campaign_workflow_flow.py::test_campaign_audience_plan_and_controlled_workflow_lead_action
+.                                                                        [100%]
+=============================== warnings summary ===============================
+tests/e2e/test_campaign_workflow_flow.py::test_campaign_audience_plan_and_controlled_workflow_lead_action
+tests/e2e/test_campaign_workflow_flow.py::test_campaign_audience_plan_and_controlled_workflow_lead_action
+tests/e2e/test_campaign_workflow_flow.py::test_campaign_audience_plan_and_controlled_workflow_lead_action
+tests/e2e/test_campaign_workflow_flow.py::test_campaign_audience_plan_and_controlled_workflow_lead_action
+tests/e2e/test_campaign_workflow_flow.py::test_campaign_audience_plan_and_controlled_workflow_lead_action
+tests/e2e/test_campaign_workflow_flow.py::test_campaign_audience_plan_and_controlled_workflow_lead_action
+  /usr/local/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/e2e/test_campaign_workflow_flow.py::test_campaign_audience_plan_and_controlled_workflow_lead_action
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/e2e/test_campaign_workflow_flow.py: 21 warnings
+  /usr/local/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/e2e/test_campaign_workflow_flow.py::test_campaign_audience_plan_and_controlled_workflow_lead_action
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/e2e/test_campaign_workflow_flow.py::test_campaign_audience_plan_and_controlled_workflow_lead_action
+tests/e2e/test_campaign_workflow_flow.py::test_campaign_audience_plan_and_controlled_workflow_lead_action
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/e2e/test_campaign_workflow_flow.py::test_campaign_audience_plan_and_controlled_workflow_lead_action
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/leads/models.py:25: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 32 warnings in 61.18s (0:01:01)
+
+STDERR:

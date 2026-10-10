@@ -1,0 +1,68 @@
+
+> voxdesk-dashboard-next@0.1.0 build
+> next build
+
+  ▲ Next.js 14.2.35
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/40) ...
+   Generating static pages (10/40) 
+   Generating static pages (20/40) 
+   Generating static pages (30/40) 
+ ✓ Generating static pages (40/40)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                        Size     First Load JS
+┌ ○ /                                              499 B          87.8 kB
+├ ○ /_not-found                                    876 B          88.2 kB
+├ ○ /dashboard                                     6.39 kB        97.1 kB
+├ ○ /dashboard/agent                               1.84 kB        92.5 kB
+├ ○ /dashboard/analytics                           1.2 kB         91.9 kB
+├ ○ /dashboard/anomaly                             4.73 kB        95.4 kB
+├ ○ /dashboard/appointments                        1.8 kB         92.5 kB
+├ ○ /dashboard/audit                               1.27 kB        91.9 kB
+├ ○ /dashboard/billing                             1.76 kB        92.4 kB
+├ ○ /dashboard/calls                               1.86 kB        92.5 kB
+├ ƒ /dashboard/calls/[id]                          1.61 kB        92.3 kB
+├ ○ /dashboard/campaigns                           1.49 kB        92.1 kB
+├ ○ /dashboard/compliance                          3 kB           93.7 kB
+├ ○ /dashboard/connection-demo                     3.93 kB        94.6 kB
+├ ○ /dashboard/deployment                          1.82 kB        92.5 kB
+├ ○ /dashboard/evidence                            1.08 kB        91.7 kB
+├ ○ /dashboard/forecasting                         4.75 kB        95.4 kB
+├ ○ /dashboard/governance                          2.1 kB         92.8 kB
+├ ○ /dashboard/insight                             5.24 kB        95.9 kB
+├ ○ /dashboard/integrations                        1.68 kB        92.3 kB
+├ ○ /dashboard/knowledge                           1.74 kB        92.4 kB
+├ ○ /dashboard/leads                               1.4 kB         92.1 kB
+├ ○ /dashboard/legal                               2.43 kB        93.1 kB
+├ ○ /dashboard/reviews                             864 B          91.5 kB
+├ ○ /dashboard/roi                                 1.35 kB          92 kB
+├ ○ /dashboard/settings                            178 B          96.2 kB
+├ ○ /dashboard/settings/identity                   3.64 kB         108 kB
+├ ○ /dashboard/settings/identity/api-keys          2.35 kB         107 kB
+├ ○ /dashboard/settings/identity/domains           2.28 kB         107 kB
+├ ○ /dashboard/settings/identity/scim              2.46 kB         107 kB
+├ ○ /dashboard/settings/identity/security          3.35 kB         108 kB
+├ ○ /dashboard/settings/identity/service-accounts  3.37 kB         108 kB
+├ ○ /dashboard/settings/identity/sso               2.04 kB         106 kB
+├ ƒ /dashboard/settings/identity/sso/[id]          4.62 kB         109 kB
+├ ○ /dashboard/specialized-agents                  1.92 kB        92.6 kB
+├ ○ /dashboard/team                                1.38 kB          92 kB
+├ ○ /dashboard/translation                         5.05 kB        95.7 kB
+├ ○ /dashboard/voice                               6.52 kB        97.2 kB
+├ ○ /dashboard/workflows                           5.71 kB        96.4 kB
+└ ○ /login                                         1.18 kB        93.9 kB
++ First Load JS shared by all                      87.3 kB
+  ├ chunks/2117-9d87c108fa9f0933.js                31.7 kB
+  ├ chunks/fd9d1056-f94d9e7da100abe1.js            53.6 kB
+  └ other shared chunks (total)                    1.96 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

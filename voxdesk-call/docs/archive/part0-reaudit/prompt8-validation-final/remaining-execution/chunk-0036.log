@@ -1,0 +1,53 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_outbound.py::test_call_window[21-False] tests/test_outbound.py::test_window_respects_tenant_timezone tests/test_outbound.py::test_next_window_start_before_open tests/test_outbound.py::test_next_window_start_after_close_is_tomorrow tests/test_outbound.py::test_next_window_start_inside_window_is_now tests/test_outbound.py::test_backoff_grows_then_caps tests/test_outbound.py::test_backoff_handles_zero tests/test_outbound.py::test_twiml_url_carries_ids tests/test_outbound.py::test_hot_lead_scores_high tests/test_outbound.py::test_cold_lead_scores_low tests/test_outbound.py::test_unknown_timeline_scores_zero_base tests/test_outbound.py::test_score_never_exceeds_100 tests/test_outbound.py::test_score_ordering_is_sane tests/test_outbound.py::test_crm_payload_is_flat_and_complete tests/test_outbound.py::test_crm_payload_outbound_uses_to_number_as_contact tests/test_outbound.py::test_gohighlevel_mapping_splits_name_and_tags tests/test_outbound.py::test_gohighlevel_handles_missing_name tests/test_outbound.py::test_crm_headers_per_provider tests/test_outbound.py::test_crm_push_without_url_is_noop tests/test_outbound.py::test_reminder_text_is_human_and_actionable tests/test_outbound.py::test_reminder_text_without_name_still_reads_ok tests/test_outbound.py::test_reminder_call_script_asks_a_question tests/test_outbound_call_route_hardening.py::test_cancel_replay_precedes_terminal_status_and_provider_readiness tests/test_outbound_call_route_hardening.py::test_no_answer_call_is_terminal_for_cancel tests/test_outbound_call_route_hardening.py::test_retry_rechecks_tenant_dnc_and_records_failed_receipt tests/test_outbound_call_route_hardening.py::test_retry_rechecks_recorded_voice_consent tests/test_outbound_call_route_hardening.py::test_retry_rechecks_calling_window_before_provider_dial tests/test_outbound_call_route_hardening.py::test_bulk_rolls_back_each_failed_item_and_returns_stable_batch_id tests/test_performance_smoke.py::test_password_hash_cost_stays_bounded tests/test_performance_smoke.py::test_stream_token_round_trip_is_fast
+............................
+    bcrypt hash (1x)                             1.32 ms   (ceiling 2000 ms)
+.
+    stream token mint+verify                     0.01 ms   (ceiling 5 ms)
+.                                           [100%]
+=============================== warnings summary ===============================
+tests/test_outbound.py::test_crm_payload_is_flat_and_complete
+tests/test_outbound.py::test_crm_payload_outbound_uses_to_number_as_contact
+tests/test_outbound.py::test_gohighlevel_mapping_splits_name_and_tags
+tests/test_outbound.py::test_gohighlevel_handles_missing_name
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/integrations/crm/legacy.py:41: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "occurred_at": datetime.utcnow().isoformat() + "Z",
+
+tests/test_outbound_call_route_hardening.py::test_cancel_replay_precedes_terminal_status_and_provider_readiness
+tests/test_outbound_call_route_hardening.py::test_no_answer_call_is_terminal_for_cancel
+tests/test_outbound_call_route_hardening.py::test_retry_rechecks_tenant_dnc_and_records_failed_receipt
+tests/test_outbound_call_route_hardening.py::test_retry_rechecks_recorded_voice_consent
+tests/test_outbound_call_route_hardening.py::test_retry_rechecks_calling_window_before_provider_dial
+tests/test_outbound_call_route_hardening.py::test_bulk_rolls_back_each_failed_item_and_returns_stable_batch_id
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_outbound_call_route_hardening.py: 32 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/test_outbound_call_route_hardening.py::test_cancel_replay_precedes_terminal_status_and_provider_readiness
+tests/test_outbound_call_route_hardening.py::test_no_answer_call_is_terminal_for_cancel
+tests/test_outbound_call_route_hardening.py::test_retry_rechecks_tenant_dnc_and_records_failed_receipt
+tests/test_outbound_call_route_hardening.py::test_retry_rechecks_recorded_voice_consent
+tests/test_outbound_call_route_hardening.py::test_retry_rechecks_calling_window_before_provider_dial
+tests/test_outbound_call_route_hardening.py::test_bulk_rolls_back_each_failed_item_and_returns_stable_batch_id
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_outbound_call_route_hardening.py::test_cancel_replay_precedes_terminal_status_and_provider_readiness
+tests/test_outbound_call_route_hardening.py::test_no_answer_call_is_terminal_for_cancel
+tests/test_outbound_call_route_hardening.py::test_retry_rechecks_tenant_dnc_and_records_failed_receipt
+tests/test_outbound_call_route_hardening.py::test_retry_rechecks_recorded_voice_consent
+tests/test_outbound_call_route_hardening.py::test_retry_rechecks_calling_window_before_provider_dial
+tests/test_outbound_call_route_hardening.py::test_bulk_rolls_back_each_failed_item_and_returns_stable_batch_id
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_outbound_call_route_hardening.py::test_retry_rechecks_recorded_voice_consent
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/leads/models.py:25: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+30 passed, 55 warnings in 5.78s
+
+STDERR:

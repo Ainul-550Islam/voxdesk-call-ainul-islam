@@ -1,0 +1,55 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/auth/scim/test_scim_users.py::test_deleting_the_last_active_owner_is_refused tests/auth/scim/test_scim_users.py::test_an_unknown_user_id_is_a_404_and_a_foreign_one_is_too tests/auth/scim/test_scim_users.py::test_a_malformed_user_id_is_a_400_and_an_unknown_one_is_a_404 tests/auth/scim/test_scim_users.py::test_the_resource_reports_the_tenant_scoped_location tests/auth/scim/test_scim_users.py::test_display_name_falls_back_to_the_local_part tests/auth/scim/test_scim_users.py::test_an_address_from_another_workspace_cannot_be_provisioned tests/auth/sso/test_account_unlink.py::test_a_jit_accounts_only_sign_in_method_cannot_be_removed tests/auth/sso/test_account_unlink.py::test_a_password_account_can_be_unlinked_without_losing_the_account tests/auth/sso/test_account_unlink.py::test_a_link_from_another_workspace_is_not_found tests/auth/sso/test_account_unlink.py::test_a_viewer_and_a_machine_credential_cannot_unlink tests/auth/sso/test_account_unlink.py::test_an_unknown_link_id_is_not_found tests/auth/sso/test_oidc_claim_validation.py::test_a_correctly_signed_token_is_accepted tests/auth/sso/test_oidc_claim_validation.py::test_a_token_from_another_issuer_is_refused tests/auth/sso/test_oidc_claim_validation.py::test_a_token_for_another_client_is_refused tests/auth/sso/test_oidc_claim_validation.py::test_a_multi_audience_token_needs_a_matching_authorized_party tests/auth/sso/test_oidc_claim_validation.py::test_an_expired_token_is_refused tests/auth/sso/test_oidc_claim_validation.py::test_a_token_inside_the_clock_skew_is_accepted_and_outside_it_is_not tests/auth/sso/test_oidc_claim_validation.py::test_a_token_from_the_future_is_refused tests/auth/sso/test_oidc_claim_validation.py::test_a_token_without_a_nonce_is_refused tests/auth/sso/test_oidc_claim_validation.py::test_a_token_for_another_attempt_is_refused tests/auth/sso/test_oidc_claim_validation.py::test_an_unsigned_token_is_refused tests/auth/sso/test_oidc_claim_validation.py::test_a_token_signed_by_an_unknown_key_is_refused tests/auth/sso/test_oidc_claim_validation.py::test_a_symmetric_token_is_refused tests/auth/sso/test_oidc_claim_validation.py::test_a_token_missing_a_required_claim_is_refused tests/auth/sso/test_oidc_claim_validation.py::test_a_missing_verified_email_claim_does_not_count_as_verified tests/auth/sso/test_oidc_discovery.py::test_discovery_returns_the_published_endpoints tests/auth/sso/test_oidc_discovery.py::test_discovery_refuses_a_document_naming_another_issuer tests/auth/sso/test_oidc_discovery.py::test_discovery_refuses_a_document_without_a_key_set tests/auth/sso/test_oidc_discovery.py::test_discovery_refuses_an_endpoint_that_is_not_https tests/auth/sso/test_oidc_discovery.py::test_discovery_refuses_an_insecure_discovery_url tests/auth/sso/test_oidc_discovery.py::test_discovery_is_cached_and_can_be_forced tests/auth/sso/test_oidc_discovery.py::test_an_advertised_symmetric_algorithm_is_recorded_and_never_trusted tests/auth/sso/test_oidc_discovery.py::test_a_document_that_is_not_json_is_refused tests/auth/sso/test_oidc_discovery.py::test_the_https_posture_rule_is_the_same_one_everywhere tests/auth/sso/test_oidc_jwks_rotation.py::test_a_token_signed_with_the_rotated_key_is_accepted tests/auth/sso/test_oidc_jwks_rotation.py::test_a_token_signed_with_a_retired_key_is_refused tests/auth/sso/test_oidc_jwks_rotation.py::test_one_unknown_key_id_triggers_exactly_one_forced_refresh tests/auth/sso/test_oidc_jwks_rotation.py::test_key_sets_are_cached_between_logins tests/auth/sso/test_oidc_jwks_rotation.py::test_a_key_set_that_cannot_be_fetched_refuses_the_login tests/auth/sso/test_oidc_jwks_rotation.py::test_a_key_set_that_answers_an_error_status_refuses_the_login tests/auth/sso/test_oidc_jwks_rotation.py::test_an_empty_key_set_refuses_the_token tests/auth/sso/test_oidc_jwks_rotation.py::test_a_key_set_with_an_unusable_key_is_refused tests/auth/sso/test_oidc_jwks_rotation.py::test_a_malformed_key_set_document_is_refused tests/auth/sso/test_oidc_login.py::test_a_first_login_provisions_a_user_and_returns_a_session tests/auth/sso/test_oidc_login.py::test_a_second_login_reuses_the_same_account tests/auth/sso/test_oidc_login.py::test_an_unknown_state_is_refused_generically tests/auth/sso/test_oidc_login.py::test_a_provider_error_is_answered_with_the_same_shape tests/auth/sso/test_oidc_login.py::test_a_token_carrying_the_wrong_nonce_is_refused tests/auth/sso/test_oidc_login.py::test_a_disabled_connection_refuses_the_login tests/auth/sso/test_oidc_login.py::test_an_unverified_email_is_refused_when_the_connection_requires_verification
+..................................................                       [100%]
+=============================== warnings summary ===============================
+tests/auth/scim/test_scim_users.py::test_deleting_the_last_active_owner_is_refused
+tests/auth/scim/test_scim_users.py::test_deleting_the_last_active_owner_is_refused
+tests/auth/scim/test_scim_users.py::test_deleting_the_last_active_owner_is_refused
+tests/auth/scim/test_scim_users.py::test_deleting_the_last_active_owner_is_refused
+tests/auth/scim/test_scim_users.py::test_deleting_the_last_active_owner_is_refused
+tests/auth/scim/test_scim_users.py::test_deleting_the_last_active_owner_is_refused
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/auth/scim/test_scim_users.py: 8 warnings
+tests/auth/sso/test_account_unlink.py: 6 warnings
+tests/auth/sso/test_oidc_login.py: 7 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/auth/scim/test_scim_users.py: 52 warnings
+tests/auth/sso/test_account_unlink.py: 62 warnings
+tests/auth/sso/test_oidc_login.py: 47 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/auth/scim/test_scim_users.py: 8 warnings
+tests/auth/sso/test_account_unlink.py: 6 warnings
+tests/auth/sso/test_oidc_login.py: 7 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/auth/scim/test_scim_users.py: 10 warnings
+tests/auth/sso/test_account_unlink.py: 11 warnings
+tests/auth/sso/test_oidc_login.py: 9 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/auth/scim/test_scim_users.py: 34 warnings
+tests/auth/sso/test_account_unlink.py: 37 warnings
+tests/auth/sso/test_oidc_login.py: 31 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/auth/identity/models.py:69: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow()
+
+tests/auth/sso/test_oidc_claim_validation.py::test_a_symmetric_token_is_refused
+tests/auth/sso/test_oidc_discovery.py::test_an_advertised_symmetric_algorithm_is_recorded_and_never_trusted
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/jwt/api_jwt.py:147: InsecureKeyLengthWarning: The HMAC key is 13 bytes long, which is below the minimum recommended length of 32 bytes for SHA256. See RFC 7518 Section 3.2.
+    return self._jws.encode(
+
+tests/auth/sso/test_oidc_discovery.py::test_the_https_posture_rule_is_the_same_one_everywhere
+  tests/auth/sso/test_oidc_discovery.py:133: PytestWarning: The test <Function test_the_https_posture_rule_is_the_same_one_everywhere> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_the_https_posture_rule_is_the_same_one_everywhere():
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+50 passed, 344 warnings in 75.31s (0:01:15)
+
+STDERR:

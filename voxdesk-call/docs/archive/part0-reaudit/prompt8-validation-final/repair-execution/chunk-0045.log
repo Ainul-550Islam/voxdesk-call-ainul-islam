@@ -1,0 +1,5 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_calendar_providers.py::TestCalComCapabilities::test_a_non_numeric_event_type_is_rejected tests/test_calendar_providers.py::TestCalComSlots::test_every_documented_slot_shape_is_accepted[shape0] tests/test_calendar_providers.py::TestCalComSlots::test_every_documented_slot_shape_is_accepted[shape1] tests/test_calendar_providers.py::TestCalComSlots::test_every_documented_slot_shape_is_accepted[shape2] tests/test_calendar_providers.py::TestCalComSlots::test_no_slots_is_an_empty_list
+.....                                                                    [100%]
+5 passed in 0.13s
+
+STDERR:

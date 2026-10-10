@@ -102,3 +102,23 @@ groups:
           summary: "Scheduler job has not succeeded recently"
           description: "A frequent scheduler loop (reminders/campaigns/crm_sync/knowledge) has not completed successfully in over an hour."
           runbook: "docs/SLO-ALERTS.md#voxdeskjobstale"
+
+      - alert: VoiceLatencyP95Degraded
+        expr: histogram_quantile(0.95, sum(rate(voxdesk_voice_e2e_latency_seconds_bucket[5m])) by (le)) > 1.2
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Voice E2E p95 latency above 1.2s target for 10m"
+          description: "95th-percentile voice turn latency has exceeded the 1.2s benchmark target for 10 minutes. Inspect stage breakdown (voxdesk_voice_ttfb_seconds) in Grafana."
+          runbook: "docs/LATENCY_BENCHMARK.md#alerts"
+
+      - alert: VoiceLatencyP95Critical
+        expr: histogram_quantile(0.95, sum(rate(voxdesk_voice_e2e_latency_seconds_bucket[5m])) by (le)) > 2.0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Voice E2E p95 latency above 2.0s"
+          description: "95th-percentile voice turn latency has exceeded 2.0s for 2 minutes. Immediate provider failover or circuit inspection required."
+          runbook: "docs/LATENCY_BENCHMARK.md#alerts"

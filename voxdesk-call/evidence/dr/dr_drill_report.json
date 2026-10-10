@@ -1,0 +1,29 @@
+{
+  "drill_status": "PASS",
+  "executed_at_utc": "2026-10-08T17:03:22Z",
+  "last_write_utc": "2026-10-08T17:03:20Z",
+  "disaster_declared_utc": "2026-10-08T17:03:20Z",
+  "restore_verified_utc": "2026-10-08T17:03:22Z",
+  "alembic_revision_source": "0062_drop_pcap_artifacts",
+  "alembic_revision_restored": "0062_drop_pcap_artifacts",
+  "restored_public_tables": 239,
+  "backup_file": "/home/user/voxdesk-call-ainul-islam/voxdesk-call/evidence/dr/backups/voxdesk-20261008-170320.dump",
+  "backup_size_bytes": 1955302,
+  "backup_sha256": "5f919bb3bd4a128b69433e3cff7ce80ca7b9e13597a1410399e7318adb159b6c",
+  "metrics": {
+    "measured_rpo_seconds": 0.3491,
+    "measured_rto_seconds": 2.2289,
+    "backup_duration_seconds": 0.2946,
+    "backup_verify_duration_seconds": 0.0392,
+    "rpo_data_loss_rows": 0
+  },
+  "verified_row_counts": {
+    "tenants": 1,
+    "users": 1,
+    "agents": 1,
+    "calls": 2,
+    "turns": 4,
+    "call_latency_stats": 2,
+    "pcap_artifacts_table_present": false
+  }
+}

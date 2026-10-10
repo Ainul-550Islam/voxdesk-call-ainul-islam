@@ -1,0 +1,79 @@
+name: check
+
+# Manual + weekly full repository verification suite (SELL CHECK 1-4).
+# Runs scripts/check_all.sh (backend, frontend, docker, other, and summary)
+# on ubuntu-latest with Docker and uploads reports/check as a build artifact.
+# Does NOT replace ci.yml, polyglot.yml, or security-scan.yml.
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Reason for running the full check suite"
+        required: false
+        default: "manual verification"
+  schedule:
+    - cron: "0 4 * * 1"   # Mondays 04:00 UTC
+
+permissions:
+  contents: read
+
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  check-all:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Set up Go 1.24
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+
+      - name: Set up Rust 1.90.0
+        uses: dtolnay/rust-toolchain@1.90.0
+        with:
+          components: rustfmt, clippy
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq protobuf-compiler cmake g++ make libsndfile1 ffmpeg redis-server gitleaks
+
+      - name: Install Python dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio aiosqlite httpx bandit pip-audit locust
+
+      - name: Run full check suite (CHECK 1-4 + SUMMARY)
+        run: |
+          bash scripts/check_all.sh
+
+      - name: Upload reports/check artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: voxdesk-check-reports
+          path: reports/check/
+          retention-days: 30

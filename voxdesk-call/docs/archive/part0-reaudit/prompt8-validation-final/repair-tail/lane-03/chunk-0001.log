@@ -1,0 +1,5 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_voice_clone.py::test_clone_audio_validation_accepts_pcm_wav tests/test_voice_clone.py::test_clone_fingerprint_is_tenant_and_input_bound tests/test_voice_clone.py::test_clone_audio_rejects_untrusted_format
+...                                                                      [100%]
+3 passed in 0.06s
+
+STDERR:

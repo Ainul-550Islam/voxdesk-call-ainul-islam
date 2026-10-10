@@ -517,6 +517,7 @@ def verify_tls(base_url: str, timeout: float = 8.0, check_websocket: bool = Fals
         checks["expiry_days"] = (not_after - now).days
         checks["hostname_matches"] = _hostname_matches(host, cert)
     except Exception as exc:  # noqa: BLE001 - environment/network errors are data here
+        __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
         checks["connect_error"] = type(exc).__name__
         return {"status": STATUS_BLOCKED, "checks": checks,
                 "evidence": f"TLS connection failed ({type(exc).__name__}); "
@@ -538,6 +539,7 @@ def verify_tls(base_url: str, timeout: float = 8.0, check_websocket: bool = Fals
                 location = resp.headers.get("location", "")
                 checks["redirect_ok"] = bool(location) and location.startswith("https://")
     except Exception as exc:  # noqa: BLE001
+        __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
         checks["http_error"] = type(exc).__name__
 
     if check_websocket:
@@ -601,6 +603,7 @@ def verify_observability(
                 resp = client.get(url)
                 return resp.status_code, True
         except Exception:  # noqa: BLE001
+            __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
             return 0, False
 
     status, ok = get(prometheus_url.rstrip("/") + "/-/healthy")

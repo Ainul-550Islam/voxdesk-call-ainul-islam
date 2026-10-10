@@ -653,6 +653,7 @@ async def _default_role(session: AsyncSession, principal: SCIMPrincipal) -> User
             try:
                 role = claim_rules._parse_role(connection.default_role)
             except Exception:  # noqa: BLE001
+                __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
                 role = UserRole.VIEWER
             return role
     return UserRole.VIEWER

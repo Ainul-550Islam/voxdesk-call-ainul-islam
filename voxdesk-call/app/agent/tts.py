@@ -133,3 +133,33 @@ def build_tts(tenant) -> SpeedAwareElevenLabsTTSService:
         ),
         speed=speed,
     )
+
+
+def build_tts_for_runtime(cfg, *, configured_settings=settings):
+    """Build a Pipecat TTS processor from `RuntimeConfig`, wrapping fallbacks in `FailoverServiceWrapper` (2C)."""
+    from app.agent.providers.failover import FailoverServiceWrapper
+    from app.agent.providers.registry import is_provider_configured
+    from app.agent.providers.tts_providers import build_tts_provider
+
+    primary = build_tts_provider(cfg=cfg, configured_settings=configured_settings)
+    fallbacks = []
+    for fb_prov in getattr(cfg, "tts_fallback_providers", ()) or ():
+        if is_provider_configured("tts", fb_prov, configured_settings=configured_settings):
+            fallbacks.append(
+                (
+                    fb_prov,
+                    lambda p=fb_prov: build_tts_provider(
+                        provider=p,
+                        language=getattr(cfg, "language", "en-US"),
+                        voice_settings=getattr(cfg, "voice_settings", None),
+                        configured_settings=configured_settings,
+                    ),
+                )
+            )
+    if fallbacks:
+        return FailoverServiceWrapper(
+            stage="tts",
+            primary=(str(getattr(cfg, "tts_provider", "elevenlabs")), primary),
+            fallbacks=fallbacks,
+        )
+    return primary

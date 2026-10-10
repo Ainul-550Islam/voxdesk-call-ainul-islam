@@ -1,0 +1,3 @@
+$ python scripts/verify_retired_references.py
+exit=0
+[]

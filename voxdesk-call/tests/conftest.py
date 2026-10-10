@@ -97,11 +97,33 @@ def other_idp():
     return IdP(common_name="attacker.example.net")
 
 
+_SCHEMA_SNAPSHOT: tuple[int, bytes] | None = None
+
+
+async def _get_schema_bytes() -> bytes:
+    global _SCHEMA_SNAPSHOT
+    table_count = len(Base.metadata.tables)
+    if _SCHEMA_SNAPSHOT is not None and _SCHEMA_SNAPSHOT[0] == table_count:
+        return _SCHEMA_SNAPSHOT[1]
+    template_engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+    try:
+        async with template_engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+            aio_conn = (await conn.get_raw_connection()).driver_connection
+            raw_bytes = await aio_conn._execute(aio_conn._conn.serialize)
+    finally:
+        await template_engine.dispose()
+    _SCHEMA_SNAPSHOT = (table_count, raw_bytes)
+    return raw_bytes
+
+
 @pytest_asyncio.fixture
 async def engine():
+    raw_bytes = await _get_schema_bytes()
     eng = create_async_engine("sqlite+aiosqlite:///:memory:")
-    async with eng.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    async with eng.connect() as conn:
+        aio_conn = (await conn.get_raw_connection()).driver_connection
+        await aio_conn._execute(aio_conn._conn.deserialize, raw_bytes)
     yield eng
     await eng.dispose()
 
@@ -834,12 +856,10 @@ async def concurrent_sessionmaker(tmp_path):
     what PostgreSQL does in production. This is the only way to test
     requirement 8 for real rather than by mocking the lock.
     """
-    from app.db.models import Base
-
-    url = f"sqlite+aiosqlite:///{tmp_path}/concurrency.db"
+    db_file = tmp_path / "concurrency.db"
+    db_file.write_bytes(await _get_schema_bytes())
+    url = f"sqlite+aiosqlite:///{db_file}"
     eng = create_async_engine(url)
-    async with eng.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
     yield async_sessionmaker(eng, class_=AsyncSession, expire_on_commit=False)
     await eng.dispose()
 

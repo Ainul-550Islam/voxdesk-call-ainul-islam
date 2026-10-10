@@ -8,13 +8,16 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
+from app.api.agent_flow_routes import router as agent_flow_router
 from app.api.agent_management_routes import router as agent_management_router
+from app.api.analytics_dashboard_routes import router as analytics_dashboard_router
 from app.api.auth_routes import router as auth_router
 from app.api.appointment_routes import (
     calendar_router,
     router as appointment_router,
 )
 from app.api.analytics_routes import router as analytics_router
+from app.messaging.sms import router as sms_router
 from app.api.automation_routes import router as automation_router
 from app.api.campaign_routes import router as campaign_router
 from app.api.inbox_routes import router as inbox_router
@@ -97,6 +100,11 @@ from app.api.sso_routes import public_router as sso_public_router
 from app.core.chaos import add_chaos_middleware
 from app.core.config import settings
 from app.core.errors import install_error_handling
+from app.core.graceful_shutdown import (
+    add_drain_middleware,
+    drain_and_shutdown,
+    reset_drain_state,
+)
 from app.core.logging import log
 from app.core.metrics import add_metrics_endpoint, add_metrics_middleware
 from app.core.rate_limit import add_rate_limit_middleware
@@ -106,7 +114,7 @@ from app.db.models import Base
 # Register additive enterprise governance models on the shared metadata before
 # development/test create_all and before Alembic imports its target metadata.
 import app.governance as governance_models  # noqa: F401
-import app.db.enterprise_models as enterprise_models  # noqa: F401 — P0/P1 missing API models: batch_calls, experiments, pcap, retention, webhooks, salesforce, kb collections, simulation, tool registry, workflow triggers, multichannel, call policies, DNC
+import app.db.enterprise_models as enterprise_models  # noqa: F401 — P0/P1 missing API models: batch_calls, experiments, retention, webhooks, salesforce, kb collections, simulation, tool registry, workflow triggers, multichannel, call policies, DNC
 import app.db.retell_models as retell_models  # noqa: F401 — Retell parity foundation models: contacts, contact_memory_entries, chat_agents, chat_agent_versions, dynamic_variable_definitions, agent_transfers, agent_transfer_events
 from app.db.session import get_engine
 from app.channels.messaging import router as channels_router
@@ -119,10 +127,12 @@ from app.api.outbound_call_routes import router as outbound_call_router
 from app.api.transfer_control_routes import router as transfer_control_router
 # Live monitoring / takeover / human takeover session
 from app.api.live_monitoring_routes import router as live_monitoring_router
+from app.api.ws.monitor_ws import router as monitor_ws_router
 # Agent delete/archive lifecycle
 from app.api.agent_lifecycle_routes import router as agent_lifecycle_router
 # Phone-number lifecycle extended
 from app.api.phone_number_lifecycle_routes import router as phone_number_lifecycle_router
+from app.api.number_trust_routes import router as number_trust_router
 # Recording management
 from app.api.recording_management_routes import router as recording_management_router
 # Native batch-call
@@ -131,8 +141,6 @@ from app.api.batch_call_routes import router as batch_call_router
 from app.api.post_call_analysis_routes import router as post_call_analysis_router
 # A/B testing + rollout
 from app.api.ab_testing_routes import router as ab_testing_router
-# PCAP/debug artifact
-from app.api.pcap_routes import router as pcap_router
 # Per-agent retention
 from app.api.retention_routes import router as retention_router
 # Webhook lifecycle + delivery control + event-type subscription
@@ -164,6 +172,7 @@ from app.api.evaluation_routes import router as evaluation_router
 from app.api.simulation_routes import router as simulation_router
 from app.api.call_routes import router as call_test_router
 from app.api.web_call_routes import router as web_call_router
+from app.api.web_call_live_routes import router as web_call_live_router
 from app.api.phone_call_routes import router as phone_call_router
 from app.api.conductor_routes import router as conductor_router
 from app.api.conductor_review_routes import router as conductor_review_router
@@ -177,6 +186,8 @@ from app.api.v1.parity_routes import router as parity_v1_router
 from app.api.v1.telephony_routes import router as telephony_runtime_v1_router
 from app.api.v1.telephony_webhook_routes import router as telephony_webhook_v1_router
 from app.middleware.public_boundary import add_public_boundary_middleware
+from app.api.voice_catalog_routes import router as voice_catalog_router
+from app.telephony.telnyx_handler import router as telnyx_voice_router
 from app.middleware.security_middleware import add_security_middleware
 
 # Observability: Sentry error reporting is optional and off unless a DSN is
@@ -245,8 +256,14 @@ async def lifespan(app: FastAPI):
         for problem in plan_problems:
             log.warning("billing.plan_misconfigured", problem=problem)
 
+    reset_drain_state()
     log.info("voxdesk.started")
     yield
+    await drain_and_shutdown(
+        reason="lifespan_shutdown",
+        flush_outbox=settings.app_env.lower() not in {"test"},
+    )
+    reset_drain_state()
     await engine.dispose()
 
 
@@ -393,6 +410,7 @@ app.include_router(environment_resource_export_router)
 # and `/api/agents/models` and answer "Agent not found" for them. FastAPI
 # resolves in registration order, so the concrete catalog paths must win.
 app.include_router(agent_catalog_router)
+app.include_router(agent_flow_router)
 app.include_router(agent_management_router)
 # Static trigger paths must precede /api/workflows/{workflow_id}.
 app.include_router(workflow_event_router)
@@ -419,10 +437,12 @@ app.include_router(outbound_call_router)
 app.include_router(transfer_control_router)
 # Live monitoring / takeover / human takeover session lifecycle
 app.include_router(live_monitoring_router)
+app.include_router(monitor_ws_router)
 # Agent delete/archive lifecycle
 app.include_router(agent_lifecycle_router)
 # Phone-number lifecycle extended
 app.include_router(phone_number_lifecycle_router)
+app.include_router(number_trust_router)
 # Recording management
 app.include_router(recording_management_router)
 # Native batch-call
@@ -431,8 +451,6 @@ app.include_router(batch_call_router)
 app.include_router(post_call_analysis_router)
 # A/B testing + rollout
 app.include_router(ab_testing_router)
-# PCAP/debug artifact
-app.include_router(pcap_router)
 # Per-agent retention + purge status
 app.include_router(retention_router)
 # Webhook lifecycle + delivery control + event-type subscription + DLQ
@@ -463,6 +481,7 @@ app.include_router(evaluation_router)
 app.include_router(simulation_router)
 app.include_router(call_test_router)
 app.include_router(web_call_router)
+app.include_router(web_call_live_router)
 app.include_router(phone_call_router)
 app.include_router(conductor_router)
 app.include_router(conductor_review_router)
@@ -475,6 +494,10 @@ app.include_router(telephony_webhook_v1_router)
 app.include_router(audit_v1_router)
 app.include_router(enterprise_security_v1_router)
 app.include_router(parity_v1_router)
+app.include_router(voice_catalog_router)
+app.include_router(telnyx_voice_router)
+app.include_router(analytics_dashboard_router)
+app.include_router(sms_router)
 
 # Quarantine synthetic route generators before the application starts serving.
 # Their `/endpoint-N` handlers return fabricated identifiers/counts/timestamps;
@@ -587,6 +610,7 @@ install_error_handling(app)
 add_security_headers(app)
 add_security_middleware(app, max_request_body_bytes=settings.max_request_body_bytes)
 add_public_boundary_middleware(app)
+add_drain_middleware(app)
 add_rate_limit_middleware(app)
 add_chaos_middleware(app)
 add_metrics_middleware(app)

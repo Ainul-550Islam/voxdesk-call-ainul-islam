@@ -1,0 +1,49 @@
+$ python scripts/verify_no_fake_success.py
+exit=1
+[
+  {
+    "file": "app/api/agent_test_routes.py",
+    "line": 33,
+    "reason": "swallowed audit/outbox/webhook exception"
+  },
+  {
+    "file": "app/api/call_search_export_routes.py",
+    "line": 222,
+    "reason": "swallowed audit/outbox/webhook exception"
+  },
+  {
+    "file": "app/api/knowledge_base_routes.py",
+    "line": 385,
+    "reason": "swallowed audit/outbox/webhook exception"
+  },
+  {
+    "file": "app/api/pcap_routes.py",
+    "line": 269,
+    "reason": "swallowed audit/outbox/webhook exception"
+  },
+  {
+    "file": "app/api/phone_number_lifecycle_routes.py",
+    "line": 301,
+    "reason": "swallowed audit/outbox/webhook exception"
+  },
+  {
+    "file": "app/api/recording_management_routes.py",
+    "line": 281,
+    "reason": "swallowed audit/outbox/webhook exception"
+  },
+  {
+    "file": "app/api/tool_registry_routes.py",
+    "line": 235,
+    "reason": "swallowed audit/outbox/webhook exception"
+  },
+  {
+    "file": "app/api/workflow_event_routes.py",
+    "line": 257,
+    "reason": "swallowed audit/outbox/webhook exception"
+  },
+  {
+    "file": "app/compliance/qms_adapters.py",
+    "line": 154,
+    "reason": "fake-success phrase"
+  }
+]

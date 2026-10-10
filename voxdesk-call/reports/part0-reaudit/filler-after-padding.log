@@ -1,0 +1,91 @@
+[
+  {
+    "file": "dashboard/src/app/router.tsx",
+    "line": 0,
+    "reason": "distinct-line ratio",
+    "ratio": 0.3427230046948357,
+    "code_lines": 213
+  },
+  {
+    "file": "dashboard/src/features/public-widget/__tests__/PublicWidget.test.tsx",
+    "line": 0,
+    "reason": "distinct-line ratio",
+    "ratio": 0.3384279475982533,
+    "code_lines": 458
+  },
+  {
+    "file": "dashboard/src/pages/industries/IndustriesBenefits.tsx",
+    "line": 1,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/industries/IndustriesCTA.tsx",
+    "line": 1,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/industries/IndustriesGrid.tsx",
+    "line": 1,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/industries/IndustriesHero.tsx",
+    "line": 1,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/industries/IndustryCard.tsx",
+    "line": 1,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/telemarketing/TelemarketingAnalytics.tsx",
+    "line": 1,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/telemarketing/TelemarketingCRM.tsx",
+    "line": 1,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/telemarketing/TelemarketingCampaigns.tsx",
+    "line": 1,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/telemarketing/TelemarketingDeveloper.tsx",
+    "line": 1,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/telemarketing/TelemarketingFAQ.tsx",
+    "line": 1,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/telemarketing/TelemarketingFollowUp.tsx",
+    "line": 1,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/telemarketing/TelemarketingLifecycle.tsx",
+    "line": 1,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/telemarketing/TelemarketingQualification.tsx",
+    "line": 1,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/telemarketing/TelemarketingScheduling.tsx",
+    "line": 1,
+    "reason": "forbidden marker"
+  },
+  {
+    "file": "dashboard/src/pages/product/telemarketing/TelemarketingSecurity.tsx",
+    "line": 1,
+    "reason": "forbidden marker"
+  }
+]

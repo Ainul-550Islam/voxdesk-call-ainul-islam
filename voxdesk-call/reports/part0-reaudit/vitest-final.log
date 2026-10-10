@@ -1,0 +1,210 @@
+
+> voxdesk-dashboard@0.1.0 test
+> vitest run
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90m/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard[39m
+
+ [32m✓[39m tests/team.test.jsx [2m([22m[2m48 tests[22m[2m)[22m[33m 7508[2mms[22m[39m
+     [33m[2m✓[22m[39m renders at /team [33m 508[2mms[22m[39m
+     [33m[2m✓[22m[39m filters by search and by the deactivated toggle [33m 329[2mms[22m[39m
+     [33m[2m✓[22m[39m creates through the real endpoint and reports the result [33m 746[2mms[22m[39m
+     [33m[2m✓[22m[39m drops the password from the DOM once submitted [33m 391[2mms[22m[39m
+     [33m[2m✓[22m[39m surfaces a duplicate email as the backend 409 [33m 351[2mms[22m[39m
+     [33m[2m✓[22m[39m surfaces the real password-policy message [33m 393[2mms[22m[39m
+     [33m[2m✓[22m[39m disables the create button and shows progress while in flight [33m 451[2mms[22m[39m
+ [32m✓[39m tests/billing.test.jsx [2m([22m[2m51 tests[22m[2m)[22m[33m 5988[2mms[22m[39m
+     [33m[2m✓[22m[39m renders at /billing [33m 483[2mms[22m[39m
+ [32m✓[39m tests/integrations.test.jsx [2m([22m[2m42 tests[22m[2m)[22m[33m 6319[2mms[22m[39m
+     [33m[2m✓[22m[39m renders at /integrations [33m 485[2mms[22m[39m
+     [33m[2m✓[22m[39m renders a card per catalogue provider, configured or not [33m 401[2mms[22m[39m
+     [33m[2m✓[22m[39m sends a typed credential and then drops it from the DOM [33m 432[2mms[22m[39m
+[90mstderr[2m | tests/knowledge.test.jsx[2m > [22m[2mingestion lifecycle[2m > [22m[2mdoes not poll when nothing is in flight
+[22m[39mWarning: An update to App inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at App (/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/src/App.jsx:612:58)
+
+[90mstderr[2m | tests/knowledge.test.jsx[2m > [22m[2mingestion lifecycle[2m > [22m[2mdoes not poll when nothing is in flight
+[22m[39mWarning: An update to App inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at App (/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/src/App.jsx:612:58)
+
+[90mstderr[2m | tests/knowledge.test.jsx[2m > [22m[2mingestion lifecycle[2m > [22m[2mdoes not poll when nothing is in flight
+[22m[39mWarning: An update to App inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at App (/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/src/App.jsx:612:58)
+
+[90mstderr[2m | tests/knowledge.test.jsx[2m > [22m[2mingestion lifecycle[2m > [22m[2mdoes not poll when nothing is in flight
+[22m[39mWarning: An update to Knowledge inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at Knowledge (/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/src/pages/Knowledge.jsx:43:22)
+    at main
+    at div
+    at div
+    at Shell (/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/src/components/Shell.jsx:66:18)
+    at App (/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/src/App.jsx:612:58)
+Warning: An update to Knowledge inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at Knowledge (/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/src/pages/Knowledge.jsx:43:22)
+    at main
+    at div
+    at div
+    at Shell (/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/src/components/Shell.jsx:66:18)
+    at App (/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/src/App.jsx:612:58)
+
+[90mstderr[2m | tests/knowledge.test.jsx[2m > [22m[2mingestion lifecycle[2m > [22m[2mdoes not poll when nothing is in flight
+[22m[39mWarning: An update to Knowledge inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at Knowledge (/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/src/pages/Knowledge.jsx:43:22)
+    at main
+    at div
+    at div
+    at Shell (/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/src/components/Shell.jsx:66:18)
+    at App (/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/src/App.jsx:612:58)
+Warning: An update to Knowledge inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at Knowledge (/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/src/pages/Knowledge.jsx:43:22)
+    at main
+    at div
+    at div
+    at Shell (/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/src/components/Shell.jsx:66:18)
+    at App (/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/src/App.jsx:612:58)
+
+ [32m✓[39m tests/knowledge.test.jsx [2m([22m[2m40 tests[22m[2m)[22m[33m 4921[2mms[22m[39m
+     [33m[2m✓[22m[39m renders the knowledge page at /knowledge [33m 338[2mms[22m[39m
+     [33m[2m✓[22m[39m paginates on the server with limit and offset [33m 501[2mms[22m[39m
+ [32m✓[39m tests/audit.test.jsx [2m([22m[2m41 tests[22m[2m)[22m[33m 5029[2mms[22m[39m
+     [33m[2m✓[22m[39m renders at /audit [33m 508[2mms[22m[39m
+     [33m[2m✓[22m[39m searches across actor, action, ip and redacted detail [33m 425[2mms[22m[39m
+ [32m✓[39m tests/meeting-url-xss.test.jsx [2m([22m[2m54 tests[22m[2m)[22m[33m 3641[2mms[22m[39m
+     [33m[2m✓[22m[39m renders a valid https URL as a link to the exact destination [33m 684[2mms[22m[39m
+ [32m✓[39m tests/agent.test.jsx [2m([22m[2m26 tests[22m[2m)[22m[33m 3013[2mms[22m[39m
+     [33m[2m✓[22m[39m renders the agent page at /agent [33m 448[2mms[22m[39m
+ [32m✓[39m tests/security-settings.test.jsx [2m([22m[2m3 tests[22m[2m)[22m[33m 1973[2mms[22m[39m
+     [33m[2m✓[22m[39m renders live tenant posture, current-user sessions, policy, and key inventory without certification claims [33m 573[2mms[22m[39m
+     [33m[2m✓[22m[39m requires fresh reauthentication before creating a scoped one-time API key [33m 1224[2mms[22m[39m
+ [32m✓[39m src/tests/prompt8-routes-workflows.test.tsx [2m([22m[2m11 tests[22m[2m)[22m[33m 1517[2mms[22m[39m
+     [33m[2m✓[22m[39m renders live parity API evidence without upgrading route presence to verification [33m 327[2mms[22m[39m
+     [33m[2m✓[22m[39m creates, publishes, executes, and reloads persisted workflow API records [33m 1173[2mms[22m[39m
+[90mstderr[2m | src/__tests__/agentStudio.pages.test.tsx[2m > [22m[2mAgentToolsPage[2m > [22m[2mtoggles a tool through the enable/disable endpoints
+[22m[39mWarning: Each child in a list should have a unique "key" prop.
+
+Check the render method of `AgentToolsPage`. See https://reactjs.org/link/warning-keys for more information.
+    at li
+    at AgentToolsPage (/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/src/pages/agents/AgentToolsPage.tsx:16:27)
+
+ [32m✓[39m src/__tests__/agentStudio.pages.test.tsx [2m([22m[2m34 tests[22m[2m)[22m[33m 1293[2mms[22m[39m
+ [32m✓[39m src/tests/home.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 1014[2mms[22m[39m
+     [33m[2m✓[22m[39m renders the current hero copy [33m 552[2mms[22m[39m
+ [32m✓[39m src/pages/conductor/__tests__/ConductorPage.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 848[2mms[22m[39m
+     [33m[2m✓[22m[39m submits a natural-language request, approves changes, and creates a new immutable AgentVersion without auto-publishing to production [33m 555[2mms[22m[39m
+ [32m✓[39m src/tests/voice-agents.test.tsx [2m([22m[2m19 tests[22m[2m)[22m[33m 829[2mms[22m[39m
+     [33m[2m✓[22m[39m renders honest builder guidance and changes the selected workflow [33m 303[2mms[22m[39m
+ [32m✓[39m src/tests/conductor.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 814[2mms[22m[39m
+     [33m[2m✓[22m[39m submits a natural-language request, approves changes, and creates a new immutable AgentVersion without auto-publishing to production [33m 606[2mms[22m[39m
+ [32m✓[39m tests/call-detail.test.jsx [2m([22m[2m6 tests[22m[2m)[22m[33m 933[2mms[22m[39m
+     [33m[2m✓[22m[39m is reachable by deep link [33m 337[2mms[22m[39m
+     [33m[2m✓[22m[39m is reachable by clicking a row in the call log [33m 346[2mms[22m[39m
+ [32m✓[39m src/features/public-widget/__tests__/PublicWidget.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 875[2mms[22m[39m
+     [33m[2m✓[22m[39m bootstraps PublicWidget, runs multi-turn chat session, and ends session cleanly [33m 426[2mms[22m[39m
+ [32m✓[39m src/tests/campaigns.test.jsx [2m([22m[2m3 tests[22m[2m)[22m[33m 726[2mms[22m[39m
+     [33m[2m✓[22m[39m renders the backend lead_total and processed counters instead of missing legacy fields [33m 449[2mms[22m[39m
+ [32m✓[39m src/__tests__/prompt6.telephony.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 803[2mms[22m[39m
+     [33m[2m✓[22m[39m renders PhoneNumbersPage with E.164 numbers, agent bindings, and SIP trunks [33m 437[2mms[22m[39m
+     [33m[2m✓[22m[39m renders CallRuntimePage with active call session, DTMF keypad, transfer, and hangup controls [33m 363[2mms[22m[39m
+ [32m✓[39m tests/routing.test.jsx [2m([22m[2m18 tests[22m[2m)[22m[33m 487[2mms[22m[39m
+ [32m✓[39m src/__tests__/no-generated-tails.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 362[2mms[22m[39m
+ [32m✓[39m tests/no-fake-revenue.test.jsx [2m([22m[2m5 tests[22m[2m)[22m[33m 432[2mms[22m[39m
+ [32m✓[39m src/tests/telemarketing-page.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 340[2mms[22m[39m
+     [33m[2m✓[22m[39m renders without inventing operational records or requiring an API fixture [33m 337[2mms[22m[39m
+ [32m✓[39m tests/formatting.test.jsx [2m([22m[2m14 tests[22m[2m)[22m[33m 354[2mms[22m[39m
+     [33m[2m✓[22m[39m renders call times in the tenant's zone and durations as minutes [33m 327[2mms[22m[39m
+ [32m✓[39m src/tests/agents.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[33m 335[2mms[22m[39m
+ [32m✓[39m src/tests/testing-evaluations.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 285[2mms[22m[39m
+ [32m✓[39m tests/transcript-xss.test.jsx [2m([22m[2m6 tests[22m[2m)[22m[32m 277[2mms[22m[39m
+ [32m✓[39m tests/boot.test.jsx [2m([22m[2m4 tests[22m[2m)[22m[32m 290[2mms[22m[39m
+ [32m✓[39m src/tests/use-cases.test.tsx [2m([22m[2m10 tests[22m[2m)[22m[32m 220[2mms[22m[39m
+ [32m✓[39m src/tests/chat-contacts.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 164[2mms[22m[39m
+ [32m✓[39m src/tests/use-case-detail.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[32m 179[2mms[22m[39m
+ [32m✓[39m tests/api-auth.test.js [2m([22m[2m8 tests[22m[2m)[22m[32m 21[2mms[22m[39m
+ [32m✓[39m tests/realtime.test.js [2m([22m[2m13 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+ [32m✓[39m src/tests/campaign-api.test.js [2m([22m[2m2 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/tests/shared-api-paths.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/tests/prompt8-page-routes.test.tsx [2m([22m[2m12 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/tests/home-api.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m src/tests/voice-demo.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m src/tests/agent-model.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/tests/agent-conversation.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/tests/agent-test.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/tests/agent-voice.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/tests/agent-builder.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/tests/agent-actions.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/tests/agent-filters.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/tests/agent-security.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/tests/agent-validation.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/tests/agent-versions.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/tests/agent-tools.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/tests/agent-knowledge.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/tests/agent-publish.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m50 passed[39m[22m[90m (50)[39m
+[2m      Tests [22m [1m[32m574 passed[39m[22m[90m (574)[39m
+[2m   Start at [22m 13:07:52
+[2m   Duration [22m 128.33s[2m (transform 4.51s, setup 7.98s, import 9.90s, tests 51.97s, environment 48.33s)[22m
+

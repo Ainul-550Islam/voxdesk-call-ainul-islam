@@ -415,6 +415,7 @@ async def evaluate_single_rule(
         rt = _coerce_rule_type(rule_type)
         cfg = validate_rule_config(rt, config or {})
     except Exception as exc:
+        __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
         evidence = EvaluationEvidencePayload(error_detail=str(exc)).model_dump()
         return {
             "rule_name": rule_name,
@@ -929,6 +930,7 @@ async def evaluate_single_rule(
 
         raise ValueError(f"Unsupported evaluation rule type: {rule_type}")
     except Exception as exc:
+        __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
         evidence = EvaluationEvidencePayload(error_detail=str(exc)).model_dump()
         return {
             "rule_name": rule_name,

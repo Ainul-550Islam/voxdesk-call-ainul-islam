@@ -1,0 +1,5 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_calendar_providers.py::TestGooglePayload::test_the_event_id_is_derived_from_the_idempotency_key tests/test_calendar_providers.py::TestGooglePayload::test_the_event_id_is_filtered_to_googles_charset tests/test_calendar_providers.py::TestGooglePayload::test_an_email_attendee_is_invited_and_a_phone_goes_in_the_body tests/test_calendar_providers.py::TestGooglePayload::test_a_missing_token_is_a_configuration_error tests/test_calendar_providers.py::TestGoogleFreeBusy::test_busy_periods_are_parsed
+.....                                                                    [100%]
+5 passed in 0.10s
+
+STDERR:

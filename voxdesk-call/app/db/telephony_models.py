@@ -20,6 +20,7 @@ from sqlalchemy import (
     CheckConstraint,
     ForeignKeyConstraint,
     DateTime,
+    Float,
     ForeignKey,
     Index,
     Integer,
@@ -143,6 +144,7 @@ class TelephonyPhoneNumber(Base):
     inbound_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     outbound_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     inbound_agent_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    inbound_agent_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
     outbound_agent_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     status: Mapped[str] = mapped_column(
         String(32),
@@ -214,6 +216,8 @@ class TelephonyCallSession(Base):
     )
     agent_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     agent_version_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    experiment_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True, index=True)
+    variant_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True, index=True)
     provider: Mapped[str] = mapped_column(
         String(32),
         nullable=False,
@@ -527,3 +531,75 @@ class PostCallStepRun(Base):
     telemetry: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class CallLatencyStat(Base):
+    """Per-call voice pipeline latency percentile summary and turn stat (Sub-Phase 2A)."""
+
+    __tablename__ = "call_latency_stats"
+    __table_args__ = (
+        Index("ix_call_latency_stats_tenant_call", "tenant_id", "call_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    call_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid,
+        ForeignKey("calls.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid,
+        ForeignKey("tenants.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    turn_idx: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    turns: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    stt_ms: Mapped[float | None] = mapped_column(Float, nullable=True)
+    llm_ttfb_ms: Mapped[float | None] = mapped_column(Float, nullable=True)
+    tts_ttfb_ms: Mapped[float | None] = mapped_column(Float, nullable=True)
+    e2e_ms: Mapped[float | None] = mapped_column(Float, nullable=True)
+    stt_ttfb_p50_ms: Mapped[float | None] = mapped_column(Float, nullable=True)
+    stt_ttfb_p95_ms: Mapped[float | None] = mapped_column(Float, nullable=True)
+    llm_ttfb_p50_ms: Mapped[float | None] = mapped_column(Float, nullable=True)
+    llm_ttfb_p95_ms: Mapped[float | None] = mapped_column(Float, nullable=True)
+    tts_ttfb_p50_ms: Mapped[float | None] = mapped_column(Float, nullable=True)
+    tts_ttfb_p95_ms: Mapped[float | None] = mapped_column(Float, nullable=True)
+    e2e_p50_ms: Mapped[float | None] = mapped_column(Float, nullable=True)
+    e2e_p95_ms: Mapped[float | None] = mapped_column(Float, nullable=True)
+    e2e_p99_ms: Mapped[float | None] = mapped_column(Float, nullable=True)
+    e2e_max_ms: Mapped[float | None] = mapped_column(Float, nullable=True)
+    interrupted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    interruptions: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
+    )
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "id": str(self.id),
+            "call_id": str(self.call_id),
+            "tenant_id": str(self.tenant_id),
+            "turn_idx": int(self.turn_idx or 0),
+            "turns": int(self.turns or 0),
+            "stt_ms": self.stt_ms,
+            "llm_ttfb_ms": self.llm_ttfb_ms,
+            "tts_ttfb_ms": self.tts_ttfb_ms,
+            "e2e_ms": self.e2e_ms,
+            "stt_ttfb_p50_ms": self.stt_ttfb_p50_ms,
+            "stt_ttfb_p95_ms": self.stt_ttfb_p95_ms,
+            "llm_ttfb_p50_ms": self.llm_ttfb_p50_ms,
+            "llm_ttfb_p95_ms": self.llm_ttfb_p95_ms,
+            "tts_ttfb_p50_ms": self.tts_ttfb_p50_ms,
+            "tts_ttfb_p95_ms": self.tts_ttfb_p95_ms,
+            "e2e_p50_ms": self.e2e_p50_ms,
+            "e2e_p95_ms": self.e2e_p95_ms,
+            "e2e_p99_ms": self.e2e_p99_ms,
+            "e2e_max_ms": self.e2e_max_ms,
+            "interrupted": bool(self.interrupted),
+            "interruptions": int(self.interruptions or 0),
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+

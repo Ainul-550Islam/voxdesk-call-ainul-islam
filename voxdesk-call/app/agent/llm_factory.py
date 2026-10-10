@@ -349,3 +349,33 @@ def validate_llm_config(selection) -> LLMChoice:
             provider=selection.provider,
         )
     return _choice(selection.provider, selection.model)
+
+
+def build_llm_for_runtime(cfg, *, configured_settings=settings):
+    """Build a Pipecat LLM processor from `RuntimeConfig`, wrapping fallbacks in `FailoverServiceWrapper` (2C)."""
+    from app.agent.providers.failover import FailoverServiceWrapper
+    from app.agent.providers.llm_providers import build_llm_provider
+    from app.agent.providers.registry import is_provider_configured
+
+    primary = build_llm_provider(cfg=cfg, configured_settings=configured_settings)
+    fallbacks = []
+    for fb_prov in getattr(cfg, "llm_fallback_providers", ()) or ():
+        if is_provider_configured("llm", fb_prov, configured_settings=configured_settings):
+            fallbacks.append(
+                (
+                    fb_prov,
+                    lambda p=fb_prov: build_llm_provider(
+                        provider=p,
+                        temperature=float(getattr(cfg, "temperature", 0.6)),
+                        max_tokens=int(getattr(cfg, "max_tokens", 300)),
+                        configured_settings=configured_settings,
+                    ),
+                )
+            )
+    if fallbacks:
+        return FailoverServiceWrapper(
+            stage="llm",
+            primary=(str(getattr(cfg, "llm_provider", "openai")), primary),
+            fallbacks=fallbacks,
+        )
+    return primary

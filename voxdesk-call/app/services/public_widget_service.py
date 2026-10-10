@@ -104,16 +104,17 @@ def _enforce_widget_rate_limit(bucket_key: str, limit_per_minute: int) -> None:
 
 
 def _is_voice_transport_configured() -> tuple[bool, str, str | None]:
-    """Check whether live WebRTC / SIP voice transport is configured in settings."""
+    """Check whether live browser / WebRTC / SIP voice transport is configured in settings."""
     webrtc_url = getattr(settings, "webrtc_signaling_url", None) or getattr(
         settings, "livekit_url", None
     )
+    web_call_enabled = bool(getattr(settings, "web_call_transport_enabled", False))
     twilio_ready = bool(
         getattr(settings, "twilio_account_sid", None)
         and getattr(settings, "twilio_auth_token", None)
     )
-    if webrtc_url or twilio_ready:
-        return True, "ready", None
+    if webrtc_url or web_call_enabled or twilio_ready:
+        return True, "ready", "/api/public/web-calls"
     return (
         False,
         "NOT_CONFIGURED",
@@ -327,6 +328,7 @@ async def create_public_widget_session(
     voice_ok, _, voice_msg = _is_voice_transport_configured()
     initial_transcript: list[dict[str, Any]] = []
     chat_session_id: uuid.UUID | None = None
+    web_call_bootstrap: dict[str, Any] | None = None
 
     if payload.mode == PublicWidgetSessionMode.VOICE and not voice_ok:
         session_status = PublicWidgetSessionStatusEnum.NOT_CONFIGURED.value
@@ -336,8 +338,35 @@ async def create_public_widget_session(
         run_status = TestRunStatusEnum.ERROR.value
         run_mode = TestRunModeEnum.WEB_CALL.value
     elif payload.mode == PublicWidgetSessionMode.VOICE:
+        from app.db.models import Tenant
+        from app.telephony.web_call import create_web_call
+
+        tenant_row = await db.get(Tenant, key_row.tenant_id)
+        if tenant_row is None:
+            raise AppError(
+                status_code=404,
+                code="TENANT_NOT_FOUND",
+                message="Tenant not found for widget public key.",
+            )
+        web_call_bootstrap = await create_web_call(
+            db,
+            tenant=tenant_row,
+            agent_id=canonical_agent_id,
+            version=pub_ver_num,
+            dynamic_vars={},
+            metadata=dict(payload.metadata or {}),
+            environment_id=key_row.environment_id,
+            origin=normalized_origin,
+            allowed_origins=list(key_row.allowed_origins or []),
+            public_key_id=key_row.id,
+            rate_limit_per_minute=int(key_row.rate_limit_per_minute or 30),
+            transport="websocket",
+            ttl_seconds=int(key_row.session_ttl_seconds or 900),
+            actor_email=f"public_key:{key_row.key_prefix}",
+        )
         session_status = PublicWidgetSessionStatusEnum.CONNECTED.value
-        transport = "webrtc"
+        transport = str(web_call_bootstrap.get("url") or "/telephony/web/ws")
+        plaintext_token = str(web_call_bootstrap["access_token"])
         error_code = None
         error_message = None
         run_status = TestRunStatusEnum.RUNNING.value
@@ -428,6 +457,7 @@ async def create_public_widget_session(
         metadata_json={
             "public_key_prefix": key_row.key_prefix,
             "environment_name": key_row.environment_name,
+            **({"web_call": web_call_bootstrap} if web_call_bootstrap else {}),
             **(payload.metadata or {}),
         },
         error_code=error_code,
@@ -871,3 +901,102 @@ async def end_public_widget_session(
         appearance=appearance,
         plaintext_token=None,
     )
+
+
+async def create_public_widget_voice_bootstrap(
+    db: AsyncSession,
+    *,
+    raw_public_key: str | None,
+    request_origin: str | None,
+    dynamic_vars: dict[str, Any] | None = None,
+    metadata: dict[str, Any] | None = None,
+    client_ip: str | None = None,
+) -> dict[str, Any]:
+    """Return the real web-call bootstrap (public key + origin check) when voice is configured, or NOT_CONFIGURED otherwise."""
+    key_row, normalized_origin = await authenticate_public_key(
+        db,
+        raw_public_key=raw_public_key,
+        request_origin=request_origin,
+        required_capability=PublicWidgetCapability.WIDGET_VOICE_START,
+        client_ip=client_ip,
+    )
+    _enforce_widget_rate_limit(
+        f"key:{key_row.id}", int(key_row.rate_limit_per_minute or 30)
+    )
+    if client_ip:
+        _enforce_widget_rate_limit(
+            f"ip:{client_ip}", max(30, int(key_row.rate_limit_per_minute or 30) * 2)
+        )
+
+    canonical_agent_id, agent_name, _, pub_ver_num, _, is_published = await resolve_tenant_agent(
+        db,
+        tenant_id=key_row.tenant_id,
+        agent_id=key_row.agent_id,
+        agent_kind=key_row.agent_kind,
+    )
+    if key_row.require_published_agent and not is_published:
+        raise AppError(
+            status_code=403,
+            code="AGENT_NOT_PUBLISHED",
+            message="This agent has no published version available for the public widget.",
+        )
+
+    appearance = _appearance_from_key(key_row, agent_name)
+    if not appearance.enable_voice:
+        raise AppError(
+            status_code=403,
+            code="VOICE_MODE_DISABLED",
+            message="Voice mode is disabled on this widget configuration.",
+        )
+
+    voice_ok, voice_status, voice_msg = _is_voice_transport_configured()
+    if not voice_ok:
+        return {
+            "status": "not_configured",
+            "code": "NOT_CONFIGURED",
+            "voice_transport_configured": False,
+            "voice_transport_status": voice_status,
+            "message": voice_msg,
+            "agent_id": canonical_agent_id,
+            "agent_name": agent_name,
+            "published_version_number": pub_ver_num,
+            "appearance": appearance.model_dump(mode="json"),
+        }
+
+    from app.db.models import Tenant
+    from app.telephony.web_call import create_web_call
+
+    tenant_row = await db.get(Tenant, key_row.tenant_id)
+    if tenant_row is None:
+        raise AppError(
+            status_code=404,
+            code="TENANT_NOT_FOUND",
+            message="Tenant not found for widget public key.",
+        )
+
+    web_call_data = await create_web_call(
+        db,
+        tenant=tenant_row,
+        agent_id=canonical_agent_id,
+        version=pub_ver_num,
+        dynamic_vars=dynamic_vars,
+        metadata=metadata,
+        environment_id=key_row.environment_id,
+        origin=normalized_origin,
+        allowed_origins=list(key_row.allowed_origins or []),
+        public_key_id=key_row.id,
+        rate_limit_per_minute=int(key_row.rate_limit_per_minute or 30),
+        transport="websocket",
+        ttl_seconds=int(key_row.session_ttl_seconds or 900),
+        actor_email=f"public_key:{key_row.key_prefix}",
+    )
+    return {
+        "status": "ready",
+        "code": "READY",
+        "voice_transport_configured": True,
+        "voice_transport_status": "ready",
+        "agent_name": agent_name,
+        "appearance": appearance.model_dump(mode="json"),
+        **web_call_data,
+    }
+

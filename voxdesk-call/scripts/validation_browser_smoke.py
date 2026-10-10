@@ -7,6 +7,7 @@ kept in memory, never written to evidence. No provider call is requested.
 from __future__ import annotations
 
 import asyncio
+import importlib
 import json
 import os
 import secrets
@@ -17,13 +18,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from playwright.async_api import async_playwright  # noqa: E402
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine  # noqa: E402
 from app.auth.password import hash_password  # noqa: E402
 from app.db.models import Tenant, User, UserRole  # noqa: E402
 
 
 async def main():
+    async_playwright = importlib.import_module("playwright.async_api").async_playwright
     dsn = os.environ["DATABASE_URL"]
     if not dsn.endswith("/voxdesk_test"):
         raise RuntimeError("Refusing to create fixtures outside disposable voxdesk_test")

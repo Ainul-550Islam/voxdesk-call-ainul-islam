@@ -297,6 +297,7 @@ class AuditAction(str, enum.Enum):
     RESOURCE_BOUND = "resource_bound"
     RESOURCE_SCOPE_DENIED = "resource_scope_denied"
     RESOURCE_EXPORTED = "resource_exported"
+    PII_REDACTION_DISABLED = "pii_redaction_disabled"
 
 
 class Speaker(str, enum.Enum):
@@ -626,6 +627,18 @@ class Call(Base):
     lead_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("leads.id"), nullable=True, index=True
     )
+    agent_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("agents.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    agent_version_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("agent_versions.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    experiment_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True, index=True
+    )
+    variant_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True, index=True
+    )
 
     tenant: Mapped[Tenant] = relationship(back_populates="calls")
     turns: Mapped[list["Turn"]] = relationship(back_populates="call", cascade="all, delete-orphan")
@@ -863,6 +876,9 @@ class Campaign(Base):
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=False)
     calls_per_minute: Mapped[int] = mapped_column(Integer, default=2)  # throttle
+    batch_call_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True, index=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
 
     leads: Mapped[list["Lead"]] = relationship(back_populates="campaign")
@@ -1325,6 +1341,7 @@ class CrmProviderType(str, enum.Enum):
     GOHIGHLEVEL = "gohighlevel"
     HUBSPOT = "hubspot"
     JOBBER = "jobber"
+    SALESFORCE = "salesforce"
     WEBHOOK = "webhook"
 
 
@@ -3504,10 +3521,10 @@ class Workflow(Base):
     # column remains the migration's existing ``metadata`` column.
     workflow_metadata: Mapped[dict] = mapped_column("metadata", JSON, nullable=False, default=dict)
     current_version_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("workflow_versions.id", ondelete="SET NULL"), nullable=True
+        ForeignKey("workflow_versions.id", ondelete="SET NULL", use_alter=True), nullable=True
     )
     published_version_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("workflow_versions.id", ondelete="SET NULL"), nullable=True
+        ForeignKey("workflow_versions.id", ondelete="SET NULL", use_alter=True), nullable=True
     )
     created_by: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"), nullable=True
@@ -4046,7 +4063,7 @@ class AgentVersion(Base):
     version_label: Mapped[str] = mapped_column(String(64), nullable=False, default="")
     status: Mapped[str] = mapped_column(String(24), nullable=False, default="published")
     config_snapshot: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
-    config_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    config_hash: Mapped[str] = mapped_column(String(64), nullable=False, default="")
     changelog: Mapped[str] = mapped_column(String(500), nullable=False, default="")
     published_environment_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("environments.id", ondelete="SET NULL"), nullable=True
@@ -4209,6 +4226,8 @@ def _freeze_campaign_scope(mapper, connection, target) -> None:
 
 
 from app.db.telephony_models import (  # noqa: E402,F401
+    CallLatencyStat,
+    PostCallStepRun,
     TelephonyCallSession,
     TelephonyPhoneNumber,
     TelephonyProviderEvent,
@@ -4216,4 +4235,6 @@ from app.db.telephony_models import (  # noqa: E402,F401
     TelephonyTransferRecord,
     TelephonyUsageLedger,
 )
+from app.db import enterprise_models  # noqa: E402,F401
+
 

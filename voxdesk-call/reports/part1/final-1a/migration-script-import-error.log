@@ -1,0 +1,15 @@
+Traceback (most recent call last):
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/reports/part1/final-1a/verify_migration.py", line 86, in <module>
+    asyncio.run(main())
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.cache/python/cpython-3.12.15-linux-x86_64-gnu/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.cache/python/cpython-3.12.15-linux-x86_64-gnu/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.cache/python/cpython-3.12.15-linux-x86_64-gnu/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/reports/part1/final-1a/verify_migration.py", line 66, in main
+    from app.auth.identity.secrets import decrypt_text
+ModuleNotFoundError: No module named 'app'

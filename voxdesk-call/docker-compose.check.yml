@@ -1,0 +1,90 @@
+# =============================================================================
+# VoxDesk — Local Docker Check Override (SELL CHECK 3 of 4)
+#
+# Usage:
+#   docker compose -p voxdesk-check --env-file .env.check \
+#     -f docker-compose.prod.yml -f docker-compose.check.yml up -d
+#
+# Keeps `docker-compose.prod.yml` untouched while making the stack safe to run
+# on a single developer / CI host without DNS or Let's Encrypt:
+#   - Moves `caddy` into an opt-in profile (`tls-check`) so it does not bind
+#     80/443 or attempt ACME challenges against a placeholder domain.
+#   - Binds host-testable ports to 127.0.0.1 only:
+#       api              -> 127.0.0.1:8000:8000
+#       realtime-gateway -> 127.0.0.1:8790:8790
+#       media-engine     -> 127.0.0.1:9001:9001, 127.0.0.1:5000:5000/udp
+#       prometheus       -> 127.0.0.1:9090:9090
+#       grafana          -> 127.0.0.1:3000:3000
+#   - Sets `restart: "no"` on all services so crash loops fail loudly instead
+#     of hiding behind `unless-stopped`.
+#   - Overrides `env_file` to `.env.check` so a production `.env` is not needed.
+# =============================================================================
+
+services:
+  caddy:
+    profiles: ["tls-check"]
+    restart: "no"
+    ports: !override []
+
+  api:
+    restart: "no"
+    env_file: !override
+      - .env.check
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      REALTIME_GATEWAY_URL: http://realtime-gateway:8790
+    ports: !override
+      - "127.0.0.1:8000:8000"
+
+  realtime-gateway:
+    restart: "no"
+    ports: !override
+      - "127.0.0.1:8790:8790"
+
+  media-engine:
+    restart: "no"
+    ports: !override
+      - "127.0.0.1:9001:9001"
+      - "127.0.0.1:5000:5000/udp"
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/9001'"]
+      interval: 5s
+      timeout: 3s
+      retries: 6
+      start_period: 5s
+
+  scheduler:
+    restart: "no"
+    env_file: !override
+      - .env.check
+    environment:
+      REDIS_URL: redis://redis:6379/0
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/metrics', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  db:
+    restart: "no"
+
+  redis:
+    restart: "no"
+
+  backup:
+    restart: "no"
+    entrypoint:
+      - /bin/sh
+      - -c
+      - sleep 86400
+
+  prometheus:
+    restart: "no"
+    ports: !override
+      - "127.0.0.1:9090:9090"
+
+  grafana:
+    restart: "no"
+    ports: !override
+      - "127.0.0.1:3000:3000"

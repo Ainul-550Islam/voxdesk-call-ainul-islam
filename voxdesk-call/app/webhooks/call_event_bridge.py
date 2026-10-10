@@ -6,11 +6,42 @@ signed HTTP delivery and its durable per-subscription delivery ledger.
 """
 from __future__ import annotations
 
+import uuid
+from typing import Any
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import Call
+from app.gdpr.redact import redact
 from app.outbox.publisher import publish
+from app.telephony.transcription import should_redact_pii
 from app.webhooks.call_event_catalog import CALL_EVENTS, VERSION, validate_payload
+
+
+def _is_uuid_str(value: str) -> bool:
+    try:
+        uuid.UUID(value)
+        return True
+    except (ValueError, TypeError, AttributeError):
+        return False
+
+
+def redact_webhook_payload(payload: dict[str, Any], *, redact_pii: bool = True) -> dict[str, Any]:
+    """Scrub string fields in a webhook payload when ``redact_pii`` is enabled."""
+    if not redact_pii:
+        return dict(payload)
+    cleaned: dict[str, Any] = {}
+    for key, val in payload.items():
+        if isinstance(val, str) and not _is_uuid_str(val):
+            cleaned[key] = redact(val).text
+        elif isinstance(val, list):
+            cleaned[key] = [
+                redact(item).text if isinstance(item, str) and not _is_uuid_str(item) else item
+                for item in val
+            ]
+        else:
+            cleaned[key] = val
+    return cleaned
 
 
 async def publish_call_event(
@@ -36,7 +67,8 @@ async def publish_call_event(
     if extra:
         if payload.keys() & extra.keys():
             raise ValueError("Extra fields cannot override call identity or state")
-        payload.update(extra)
+        redact_enabled = await should_redact_pii(session, call)
+        payload.update(redact_webhook_payload(extra, redact_pii=redact_enabled))
     validate_payload(event, payload)
     result = await publish(
         session,

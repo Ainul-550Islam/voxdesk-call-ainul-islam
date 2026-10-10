@@ -90,6 +90,7 @@ def validate_runtime_config(*, strict: bool | None = None) -> list[ValidationIss
             key = base64.b64decode(settings.airgap_public_key_base64, validate=True)
             key_valid = len(key) == 32
         except Exception:
+            __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
             key_valid = False
         if not settings.airgap_manifest_directory or not key_valid or not Path(settings.airgap_manifest_directory).is_dir():
             issues.append(ValidationIssue("airgap_verification_config_invalid", "airgap", "air-gap verification needs an existing manifest directory and a valid Ed25519 public key"))

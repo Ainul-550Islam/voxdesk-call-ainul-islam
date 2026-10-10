@@ -1,0 +1,5 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_calendar_providers.py::TestCalComBooking::test_cancel_uses_the_cancel_endpoint tests/test_calendar_providers.py::TestCalComBooking::test_cancelling_an_already_cancelled_booking_is_silent tests/test_calendar_providers.py::TestCalComBooking::test_reconciliation_matches_on_metadata tests/test_calendar_providers.py::TestCalComBooking::test_reconciliation_skips_a_cancelled_match tests/test_calendar_providers.py::TestCalComBooking::test_an_unsupported_capability_is_reported_not_faked
+.....                                                                    [100%]
+5 passed in 0.13s
+
+STDERR:

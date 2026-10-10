@@ -2,12 +2,14 @@ import React, { useEffect, useRef } from 'react';
 import type { VoiceState } from '../../types/voice';
 
 export interface WaveformProps {
-  state: VoiceState;
+  state?: VoiceState;
+  active?: boolean;
   bars?: number;
   className?: string;
 }
 
-export function Waveform({ state, bars = 24, className = '' }: WaveformProps) {
+export function Waveform({ state: rawState, active, bars = 24, className = '' }: WaveformProps) {
+  const state: VoiceState = rawState ?? (active ? 'SPEAKING' : 'IDLE');
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>(0);
 

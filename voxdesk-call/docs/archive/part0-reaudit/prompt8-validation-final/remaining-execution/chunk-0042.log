@@ -1,0 +1,64 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_realtime_publisher.py::test_event_ids_are_deterministic_and_state_material tests/test_realtime_publisher.py::test_extra_outcome_rides_along_inside_the_payload tests/test_realtime_publisher.py::test_one_failed_room_degrades_the_whole_event tests/test_realtime_wiring.py::test_a_new_incoming_call_announces_call_created_once tests/test_realtime_wiring.py::test_a_redelivered_voice_webhook_does_not_reannounce tests/test_realtime_wiring.py::test_an_applied_status_change_announces_call_updated tests/test_realtime_wiring.py::test_duplicate_completed_callbacks_announce_call_updated_exactly_once tests/test_realtime_wiring.py::test_an_unknown_callsid_announces_nothing tests/test_realtime_wiring.py::test_a_connected_transfer_announces_call_transfer tests/test_realtime_wiring.py::test_a_busy_transfer_announces_the_failure_outcome tests/test_realtime_wiring.py::test_a_retried_dial_callback_annotates_exactly_once tests/test_realtime_wiring.py::test_disabled_realtime_keeps_webhooks_untouched tests/test_release_gate.py::test_checklist_has_required_categories tests/test_release_gate.py::test_checklist_has_real_telephony_e2e_item tests/test_release_gate.py::test_checklist_has_all_provider_items tests/test_release_gate.py::test_checklist_ids_unique tests/test_release_gate.py::test_every_item_has_a_classification tests/test_release_gate.py::test_missing_evidence_is_not_run tests/test_release_gate.py::test_missing_evidence_never_becomes_pass tests/test_release_gate.py::test_pass_without_evidence_is_impossible tests/test_release_gate.py::test_p0_fail_blocks tests/test_release_gate.py::test_p0_blocked_gives_blocked_result tests/test_release_gate.py::test_p1_fail_blocks tests/test_release_gate.py::test_p1_not_run_blocks tests/test_release_gate.py::test_p2_waiver_allowed_and_closes_item tests/test_release_gate.py::test_p0_waiver_is_invalid_and_still_blocks tests/test_release_gate.py::test_expired_waiver_degrades_to_not_run tests/test_release_gate.py::test_waiver_without_reason_or_approver_is_invalid tests/test_release_gate.py::test_artifact_drift_git_commit tests/test_release_gate.py::test_artifact_drift_dependency_fingerprint
+..............................                                           [100%]
+=============================== warnings summary ===============================
+tests/test_realtime_wiring.py::test_a_new_incoming_call_announces_call_created_once
+tests/test_realtime_wiring.py::test_a_new_incoming_call_announces_call_created_once
+tests/test_realtime_wiring.py::test_a_new_incoming_call_announces_call_created_once
+tests/test_realtime_wiring.py::test_a_new_incoming_call_announces_call_created_once
+tests/test_realtime_wiring.py::test_a_new_incoming_call_announces_call_created_once
+tests/test_realtime_wiring.py::test_a_new_incoming_call_announces_call_created_once
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/test_realtime_wiring.py::test_a_new_incoming_call_announces_call_created_once
+tests/test_realtime_wiring.py::test_a_redelivered_voice_webhook_does_not_reannounce
+tests/test_realtime_wiring.py::test_an_applied_status_change_announces_call_updated
+tests/test_realtime_wiring.py::test_duplicate_completed_callbacks_announce_call_updated_exactly_once
+tests/test_realtime_wiring.py::test_a_connected_transfer_announces_call_transfer
+tests/test_realtime_wiring.py::test_a_busy_transfer_announces_the_failure_outcome
+tests/test_realtime_wiring.py::test_a_retried_dial_callback_annotates_exactly_once
+tests/test_realtime_wiring.py::test_disabled_realtime_keeps_webhooks_untouched
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_realtime_wiring.py: 19 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/test_realtime_wiring.py::test_a_new_incoming_call_announces_call_created_once
+tests/test_realtime_wiring.py::test_a_redelivered_voice_webhook_does_not_reannounce
+tests/test_realtime_wiring.py::test_an_applied_status_change_announces_call_updated
+tests/test_realtime_wiring.py::test_duplicate_completed_callbacks_announce_call_updated_exactly_once
+tests/test_realtime_wiring.py::test_a_connected_transfer_announces_call_transfer
+tests/test_realtime_wiring.py::test_a_busy_transfer_announces_the_failure_outcome
+tests/test_realtime_wiring.py::test_a_retried_dial_callback_annotates_exactly_once
+tests/test_realtime_wiring.py::test_disabled_realtime_keeps_webhooks_untouched
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_realtime_wiring.py::test_an_applied_status_change_announces_call_updated
+tests/test_realtime_wiring.py::test_duplicate_completed_callbacks_announce_call_updated_exactly_once
+tests/test_realtime_wiring.py::test_a_connected_transfer_announces_call_transfer
+tests/test_realtime_wiring.py::test_a_busy_transfer_announces_the_failure_outcome
+tests/test_realtime_wiring.py::test_a_retried_dial_callback_annotates_exactly_once
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/test_transfer.py:43: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    started_at=datetime.utcnow(),
+
+tests/test_realtime_wiring.py::test_an_applied_status_change_announces_call_updated
+tests/test_realtime_wiring.py::test_duplicate_completed_callbacks_announce_call_updated_exactly_once
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/call_state.py:260: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call.ended_at = ended_at or datetime.utcnow()
+
+tests/test_realtime_wiring.py::test_a_connected_transfer_announces_call_transfer
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/transfer_service.py:408: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call.transfer_completed_at = datetime.utcnow()
+
+tests/test_realtime_wiring.py::test_a_busy_transfer_announces_the_failure_outcome
+tests/test_realtime_wiring.py::test_a_retried_dial_callback_annotates_exactly_once
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/transfer_service.py:469: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call.transfer_failed_at = datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+30 passed, 51 warnings in 63.92s (0:01:03)
+
+STDERR:

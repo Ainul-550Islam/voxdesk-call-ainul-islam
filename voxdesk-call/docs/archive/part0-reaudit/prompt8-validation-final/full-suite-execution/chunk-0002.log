@@ -1,0 +1,148 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/ai/test_runtime_enforcement.py::test_authorize_live_flags_whether_it_reserved tests/ai/test_runtime_enforcement.py::test_voice_preparation_carries_the_reservation_flag tests/ai/test_runtime_enforcement.py::test_govern_direct_path_releases_on_a_non_retryable_failure tests/ai/test_runtime_enforcement.py::test_fallback_candidates_are_independently_policy_valid tests/ai/test_runtime_enforcement.py::test_release_and_reconcile_never_go_negative tests/ai/test_runtime_enforcement.py::test_text_reply_failure_releases_the_admitted_token tests/ai/test_runtime_enforcement.py::test_text_reply_reconciles_and_records_measured_usage tests/ai/test_runtime_enforcement.py::test_complete_turn_reports_none_when_the_provider_measures_nothing tests/ai/test_runtime_enforcement.py::test_voice_media_chain_wires_the_guardrail_processors tests/ai/test_runtime_enforcement.py::test_gateway_never_imports_the_runtime tests/ai/test_runtime_enforcement.py::test_policy_denial_is_never_a_fallback_trigger tests/ai/test_security.py::test_cross_tenant_prompt_policy_and_eval tests/ai/test_security.py::test_model_cannot_self_authorize_and_disallowed_tool_is_rejected tests/ai/test_security.py::test_viewer_cannot_publish_production_prompt tests/ai/test_security.py::test_unapproved_model_and_fallback_cannot_bypass tests/ai/test_security.py::test_injection_signal_does_not_grant_a_tool tests/ai/test_security.py::test_development_model_cannot_serve_production tests/auth/scim/test_filter.py::test_an_empty_filter_is_no_filter tests/auth/scim/test_filter.py::test_every_comparison_operator_parses tests/auth/scim/test_filter.py::test_attribute_names_are_matched_against_the_allow_list tests/auth/scim/test_filter.py::test_logical_grouping_and_negation tests/auth/scim/test_filter.py::test_a_malformed_filter_is_refused_with_a_message tests/auth/scim/test_filter.py::test_string_values_are_unescaped_per_the_rfc tests/auth/scim/test_filter.py::test_values_are_coerced_to_the_type_of_the_column tests/auth/scim/test_filter.py::test_a_value_is_never_interpolated_into_the_statement tests/auth/scim/test_filter.py::test_compiling_a_filter_for_a_column_that_was_not_offered_is_refused tests/auth/scim/test_filter.py::test_equality_against_null_is_a_null_test tests/auth/scim/test_filter.py::test_compiled_filters_actually_select tests/auth/scim/test_schemas.py::test_a_user_resource_has_the_required_shape tests/auth/scim/test_schemas.py::test_a_user_with_no_display_name_falls_back_to_the_login_address tests/auth/scim/test_schemas.py::test_a_deactivated_user_is_reported_as_inactive tests/auth/scim/test_schemas.py::test_groups_on_a_user_are_value_and_display_only tests/auth/scim/test_schemas.py::test_a_group_resource_carries_members_and_the_mapped_role_honestly tests/auth/scim/test_schemas.py::test_a_list_response_reports_paging tests/auth/scim/test_schemas.py::test_an_error_document_states_the_status_as_a_string tests/auth/scim/test_schemas.py::test_the_service_provider_config_promises_only_what_is_implemented tests/auth/scim/test_schemas.py::test_resource_types_match_the_endpoints_that_exist tests/auth/scim/test_schemas.py::test_the_declared_schemas_describe_attributes_that_are_actually_supported tests/auth/scim/test_schemas.py::test_a_filter_id_that_is_not_a_uuid_is_an_invalid_value tests/auth/scim/test_schemas.py::test_a_real_user_from_the_database_renders_without_internals tests/auth/scim/test_scim_credentials.py::test_a_credential_is_issued_once_and_stored_hashed tests/auth/scim/test_scim_credentials.py::test_listing_never_returns_the_token tests/auth/scim/test_scim_credentials.py::test_rotation_replaces_the_token_and_kills_the_old_one tests/auth/scim/test_scim_credentials.py::test_revocation_is_immediate tests/auth/scim/test_scim_credentials.py::test_an_unknown_credential_id_is_a_404 tests/auth/scim/test_scim_credentials.py::test_a_foreign_credential_id_is_invisible tests/auth/scim/test_scim_credentials.py::test_an_agent_cannot_manage_scim_credentials tests/auth/scim/test_scim_credentials.py::test_a_scim_token_cannot_manage_scim_credentials tests/auth/scim/test_scim_credentials.py::test_a_scim_token_cannot_call_the_product_api tests/auth/scim/test_scim_credentials.py::test_a_credential_can_be_limited_to_the_tenant
+..................................................                       [100%]
+=============================== warnings summary ===============================
+tests/ai/test_runtime_enforcement.py: 7 warnings
+tests/ai/test_security.py: 6 warnings
+tests/auth/scim/test_filter.py: 1 warning
+tests/auth/scim/test_schemas.py: 6 warnings
+tests/auth/scim/test_scim_credentials.py: 11 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/ai/test_runtime_enforcement.py: 26 warnings
+tests/ai/test_security.py: 33 warnings
+tests/auth/scim/test_filter.py: 5 warnings
+tests/auth/scim/test_schemas.py: 9 warnings
+tests/auth/scim/test_scim_credentials.py: 81 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/ai/test_runtime_enforcement.py: 7 warnings
+tests/ai/test_security.py: 6 warnings
+tests/auth/scim/test_filter.py: 1 warning
+tests/auth/scim/test_schemas.py: 6 warnings
+tests/auth/scim/test_scim_credentials.py: 11 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/ai/test_runtime_enforcement.py: 2 warnings
+tests/ai/test_security.py: 5 warnings
+tests/auth/scim/test_filter.py: 2 warnings
+tests/auth/scim/test_schemas.py: 1 warning
+tests/auth/scim/test_scim_credentials.py: 11 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/ai/test_runtime_enforcement.py::test_voice_media_chain_wires_the_guardrail_processors
+  tests/ai/test_runtime_enforcement.py:384: PytestWarning: The test <Function test_voice_media_chain_wires_the_guardrail_processors> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_voice_media_chain_wires_the_guardrail_processors():
+
+tests/ai/test_runtime_enforcement.py::test_gateway_never_imports_the_runtime
+  tests/ai/test_runtime_enforcement.py:403: PytestWarning: The test <Function test_gateway_never_imports_the_runtime> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_gateway_never_imports_the_runtime():
+
+tests/ai/test_runtime_enforcement.py::test_policy_denial_is_never_a_fallback_trigger
+  tests/ai/test_runtime_enforcement.py:412: PytestWarning: The test <Function test_policy_denial_is_never_a_fallback_trigger> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_policy_denial_is_never_a_fallback_trigger():
+
+tests/ai/test_security.py::test_cross_tenant_prompt_policy_and_eval
+tests/ai/test_security.py::test_cross_tenant_prompt_policy_and_eval
+tests/ai/test_security.py::test_cross_tenant_prompt_policy_and_eval
+tests/ai/test_security.py::test_cross_tenant_prompt_policy_and_eval
+tests/ai/test_security.py::test_cross_tenant_prompt_policy_and_eval
+tests/ai/test_security.py::test_cross_tenant_prompt_policy_and_eval
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/ai/test_security.py::test_model_cannot_self_authorize_and_disallowed_tool_is_rejected
+  tests/ai/test_security.py:66: PytestWarning: The test <Function test_model_cannot_self_authorize_and_disallowed_tool_is_rejected> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_model_cannot_self_authorize_and_disallowed_tool_is_rejected():
+
+tests/auth/scim/test_filter.py::test_an_empty_filter_is_no_filter
+  tests/auth/scim/test_filter.py:40: PytestWarning: The test <Function test_an_empty_filter_is_no_filter> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_an_empty_filter_is_no_filter():
+
+tests/auth/scim/test_filter.py::test_every_comparison_operator_parses
+  tests/auth/scim/test_filter.py:45: PytestWarning: The test <Function test_every_comparison_operator_parses> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_every_comparison_operator_parses():
+
+tests/auth/scim/test_filter.py::test_attribute_names_are_matched_against_the_allow_list
+  tests/auth/scim/test_filter.py:65: PytestWarning: The test <Function test_attribute_names_are_matched_against_the_allow_list> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_attribute_names_are_matched_against_the_allow_list():
+
+tests/auth/scim/test_filter.py::test_logical_grouping_and_negation
+  tests/auth/scim/test_filter.py:80: PytestWarning: The test <Function test_logical_grouping_and_negation> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_logical_grouping_and_negation():
+
+tests/auth/scim/test_filter.py::test_a_malformed_filter_is_refused_with_a_message
+  tests/auth/scim/test_filter.py:97: PytestWarning: The test <Function test_a_malformed_filter_is_refused_with_a_message> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_a_malformed_filter_is_refused_with_a_message():
+
+tests/auth/scim/test_filter.py::test_string_values_are_unescaped_per_the_rfc
+  tests/auth/scim/test_filter.py:116: PytestWarning: The test <Function test_string_values_are_unescaped_per_the_rfc> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_string_values_are_unescaped_per_the_rfc():
+
+tests/auth/scim/test_filter.py::test_values_are_coerced_to_the_type_of_the_column
+  tests/auth/scim/test_filter.py:124: PytestWarning: The test <Function test_values_are_coerced_to_the_type_of_the_column> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_values_are_coerced_to_the_type_of_the_column():
+
+tests/auth/scim/test_filter.py::test_a_value_is_never_interpolated_into_the_statement
+  tests/auth/scim/test_filter.py:148: PytestWarning: The test <Function test_a_value_is_never_interpolated_into_the_statement> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_a_value_is_never_interpolated_into_the_statement():
+
+tests/auth/scim/test_filter.py::test_compiling_a_filter_for_a_column_that_was_not_offered_is_refused
+  tests/auth/scim/test_filter.py:174: PytestWarning: The test <Function test_compiling_a_filter_for_a_column_that_was_not_offered_is_refused> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_compiling_a_filter_for_a_column_that_was_not_offered_is_refused():
+
+tests/auth/scim/test_filter.py::test_equality_against_null_is_a_null_test
+  tests/auth/scim/test_filter.py:185: PytestWarning: The test <Function test_equality_against_null_is_a_null_test> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_equality_against_null_is_a_null_test():
+
+tests/auth/scim/test_schemas.py::test_a_user_resource_has_the_required_shape
+  tests/auth/scim/test_schemas.py:73: PytestWarning: The test <Function test_a_user_resource_has_the_required_shape> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_a_user_resource_has_the_required_shape(db, tenant_a):
+
+tests/auth/scim/test_schemas.py::test_a_user_with_no_display_name_falls_back_to_the_login_address
+  tests/auth/scim/test_schemas.py:111: PytestWarning: The test <Function test_a_user_with_no_display_name_falls_back_to_the_login_address> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_a_user_with_no_display_name_falls_back_to_the_login_address(db, tenant_a):
+
+tests/auth/scim/test_schemas.py::test_a_deactivated_user_is_reported_as_inactive
+  tests/auth/scim/test_schemas.py:129: PytestWarning: The test <Function test_a_deactivated_user_is_reported_as_inactive> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_a_deactivated_user_is_reported_as_inactive(db, tenant_a):
+
+tests/auth/scim/test_schemas.py::test_groups_on_a_user_are_value_and_display_only
+  tests/auth/scim/test_schemas.py:141: PytestWarning: The test <Function test_groups_on_a_user_are_value_and_display_only> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_groups_on_a_user_are_value_and_display_only(db, tenant_a):
+
+tests/auth/scim/test_schemas.py::test_a_group_resource_carries_members_and_the_mapped_role_honestly
+  tests/auth/scim/test_schemas.py:159: PytestWarning: The test <Function test_a_group_resource_carries_members_and_the_mapped_role_honestly> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_a_group_resource_carries_members_and_the_mapped_role_honestly(db, tenant_a):
+
+tests/auth/scim/test_schemas.py::test_a_list_response_reports_paging
+  tests/auth/scim/test_schemas.py:189: PytestWarning: The test <Function test_a_list_response_reports_paging> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_a_list_response_reports_paging():
+
+tests/auth/scim/test_schemas.py::test_an_error_document_states_the_status_as_a_string
+  tests/auth/scim/test_schemas.py:200: PytestWarning: The test <Function test_an_error_document_states_the_status_as_a_string> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_an_error_document_states_the_status_as_a_string():
+
+tests/auth/scim/test_schemas.py::test_the_service_provider_config_promises_only_what_is_implemented
+  tests/auth/scim/test_schemas.py:215: PytestWarning: The test <Function test_the_service_provider_config_promises_only_what_is_implemented> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_the_service_provider_config_promises_only_what_is_implemented():
+
+tests/auth/scim/test_schemas.py::test_resource_types_match_the_endpoints_that_exist
+  tests/auth/scim/test_schemas.py:235: PytestWarning: The test <Function test_resource_types_match_the_endpoints_that_exist> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_resource_types_match_the_endpoints_that_exist():
+
+tests/auth/scim/test_schemas.py::test_the_declared_schemas_describe_attributes_that_are_actually_supported
+  tests/auth/scim/test_schemas.py:248: PytestWarning: The test <Function test_the_declared_schemas_describe_attributes_that_are_actually_supported> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_the_declared_schemas_describe_attributes_that_are_actually_supported():
+
+tests/auth/scim/test_scim_credentials.py: 47 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/auth/identity/models.py:69: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+50 passed, 314 warnings in 70.75s (0:01:10)
+
+STDERR:

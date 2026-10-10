@@ -1,0 +1,49 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/security/test_authorization_matrix.py::test_a_role_without_identity_write_gets_403[POST-/api/sso/connections-body4-manager] tests/security/test_authorization_matrix.py::test_a_role_without_identity_write_gets_403[POST-/api/scim/credentials-body5-viewer] tests/security/test_authorization_matrix.py::test_a_role_without_identity_write_gets_403[POST-/api/scim/credentials-body5-agent] tests/security/test_authorization_matrix.py::test_a_role_without_identity_write_gets_403[POST-/api/scim/credentials-body5-manager] tests/security/test_authorization_matrix.py::test_every_human_role_may_read_their_own_account_state[/api/identity/status-viewer] tests/security/test_authorization_matrix.py::test_every_human_role_may_read_their_own_account_state[/api/identity/status-agent] tests/security/test_authorization_matrix.py::test_every_human_role_may_read_their_own_account_state[/api/identity/status-manager] tests/security/test_authorization_matrix.py::test_every_human_role_may_read_their_own_account_state[/api/mfa/status-viewer] tests/security/test_authorization_matrix.py::test_every_human_role_may_read_their_own_account_state[/api/mfa/status-agent] tests/security/test_authorization_matrix.py::test_every_human_role_may_read_their_own_account_state[/api/mfa/status-manager] tests/security/test_authorization_matrix.py::test_every_human_role_may_read_their_own_account_state[/api/sessions-viewer] tests/security/test_authorization_matrix.py::test_every_human_role_may_read_their_own_account_state[/api/sessions-agent] tests/security/test_authorization_matrix.py::test_every_human_role_may_read_their_own_account_state[/api/sessions-manager] tests/security/test_authorization_matrix.py::test_an_owner_can_read_every_identity_view[/api/identity/policy] tests/security/test_authorization_matrix.py::test_an_owner_can_read_every_identity_view[/api/identity/events] tests/security/test_authorization_matrix.py::test_an_owner_can_read_every_identity_view[/api/api-keys] tests/security/test_authorization_matrix.py::test_an_owner_can_read_every_identity_view[/api/service-accounts] tests/security/test_authorization_matrix.py::test_an_owner_can_read_every_identity_view[/api/domains] tests/security/test_authorization_matrix.py::test_an_owner_can_read_every_identity_view[/api/sso/connections] tests/security/test_authorization_matrix.py::test_an_owner_can_read_every_identity_view[/api/sso/attempts] tests/security/test_authorization_matrix.py::test_an_owner_can_read_every_identity_view[/api/scim/credentials] tests/security/test_authorization_matrix.py::test_an_owner_can_read_every_identity_view[/api/identity/status] tests/security/test_authorization_matrix.py::test_an_owner_can_read_every_identity_view[/api/mfa/status] tests/security/test_authorization_matrix.py::test_an_owner_can_read_every_identity_view[/api/sessions] tests/security/test_authorization_matrix.py::test_an_owner_reaches_the_handler_rather_than_being_refused[PATCH-/api/identity/policy-body0] tests/security/test_authorization_matrix.py::test_an_owner_reaches_the_handler_rather_than_being_refused[POST-/api/api-keys-body1] tests/security/test_authorization_matrix.py::test_an_owner_reaches_the_handler_rather_than_being_refused[POST-/api/service-accounts-body2] tests/security/test_authorization_matrix.py::test_an_owner_reaches_the_handler_rather_than_being_refused[POST-/api/domains-body3] tests/security/test_authorization_matrix.py::test_an_owner_reaches_the_handler_rather_than_being_refused[POST-/api/sso/connections-body4] tests/security/test_authorization_matrix.py::test_an_owner_reaches_the_handler_rather_than_being_refused[POST-/api/scim/credentials-body5] tests/security/test_authorization_matrix.py::test_an_owner_reaches_the_handler_rather_than_being_refused[POST-/api/identity/reauth-body6] tests/security/test_authorization_matrix.py::test_an_owner_reaches_the_handler_rather_than_being_refused[POST-/api/mfa/enroll-body7] tests/security/test_authorization_matrix.py::test_an_owner_reaches_the_handler_rather_than_being_refused[POST-/api/mfa/challenge-body8] tests/security/test_authorization_matrix.py::test_an_owner_reaches_the_handler_rather_than_being_refused[POST-/api/mfa/recovery-codes/regenerate-body9] tests/security/test_authorization_matrix.py::test_an_owner_reaches_the_handler_rather_than_being_refused[POST-/api/sessions/revoke-others-body10] tests/security/test_authorization_matrix.py::test_resetting_another_users_second_factor_needs_a_fresh_proof tests/security/test_authorization_matrix.py::test_lifting_an_emergency_stop_is_owner_only tests/security/test_authorization_matrix.py::test_a_machine_credential_cannot_reach_tenant_identity_settings tests/security/test_authorization_matrix.py::test_every_authenticated_identity_route_is_free_of_5xx tests/security/test_authorization_matrix.py::test_a_second_tenant_cannot_see_a_first_tenants_identity_settings tests/security/test_conductor_security.py::test_conductor_cross_tenant_isolation_and_context_scope tests/security/test_conductor_security.py::test_conductor_rejects_forbidden_paths_secrets_and_unapproved_apply tests/security/test_contact_center_isolation.py::test_other_tenant_cannot_read_queue_or_decision tests/security/test_contact_center_isolation.py::test_body_tenant_id_does_not_enqueue_into_another_tenant tests/security/test_contact_center_isolation.py::test_call_in_another_environment_is_rejected tests/security/test_contact_center_isolation.py::test_revoked_environment_membership_is_not_offered_work tests/security/test_contact_center_isolation.py::test_expired_token_cannot_read_queues tests/security/test_contact_center_isolation.py::test_disabled_user_is_rejected tests/security/test_identity_enterprise.py::test_tenant_a_cannot_read_or_change_tenant_b_sso tests/security/test_identity_enterprise.py::test_tenant_a_scim_credential_cannot_provision_or_deactivate_tenant_b
+..................................................                       [100%]
+=============================== warnings summary ===============================
+.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/security/test_authorization_matrix.py: 41 warnings
+tests/security/test_conductor_security.py: 3 warnings
+tests/security/test_contact_center_isolation.py: 8 warnings
+tests/security/test_identity_enterprise.py: 4 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/security/test_authorization_matrix.py: 210 warnings
+tests/security/test_conductor_security.py: 12 warnings
+tests/security/test_contact_center_isolation.py: 33 warnings
+tests/security/test_identity_enterprise.py: 26 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/security/test_authorization_matrix.py: 41 warnings
+tests/security/test_conductor_security.py: 3 warnings
+tests/security/test_contact_center_isolation.py: 8 warnings
+tests/security/test_identity_enterprise.py: 4 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/security/test_authorization_matrix.py: 43 warnings
+tests/security/test_conductor_security.py: 4 warnings
+tests/security/test_contact_center_isolation.py: 7 warnings
+tests/security/test_identity_enterprise.py: 5 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/security/test_authorization_matrix.py: 23 warnings
+tests/security/test_identity_enterprise.py: 13 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/auth/identity/models.py:69: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+50 passed, 494 warnings in 91.62s (0:01:31)
+
+STDERR:

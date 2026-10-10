@@ -1,0 +1,75 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/jobs/test_retry.py::test_backoff_grows tests/jobs/test_retry.py::test_jitter_bounded tests/jobs/test_retry.py::test_classify_permanent tests/jobs/test_retry.py::test_decide_exhausted tests/jobs/test_runtime_registry.py::test_deployment_is_known_by_existing_durable_job_registry tests/jobs/test_runtime_registry.py::test_unknown_job_is_not_added_to_persisted_vocabulary tests/jobs/test_worker.py::test_successful_handler tests/jobs/test_worker.py::test_permanent_to_dlq tests/jobs/test_worker.py::test_expired_lease_recovered tests/leads/test_concurrency.py::test_two_sessions_cannot_both_claim tests/leads/test_concurrency.py::test_stale_status_transition_loses tests/leads/test_dedup.py::test_formatted_phone_and_email_case_match_inside_one_environment tests/leads/test_dedup.py::test_same_phone_in_another_environment_is_not_a_duplicate tests/leads/test_dedup.py::test_fuzzy_name_is_informational_and_does_not_merge tests/leads/test_dedup.py::test_explicit_merge_keeps_history_and_propagates_dnc tests/leads/test_dedup.py::test_cross_tenant_merge_is_rejected tests/leads/test_dedup.py::test_self_merge_is_rejected tests/leads/test_environment_scope.py::test_lead_is_invisible_from_another_environment tests/leads/test_environment_scope.py::test_lead_is_invisible_from_another_tenant tests/leads/test_environment_scope.py::test_update_from_the_wrong_environment_is_not_found tests/leads/test_environment_scope.py::test_status_change_from_the_wrong_environment_is_not_found tests/leads/test_environment_scope.py::test_activity_attachment_from_the_wrong_environment_is_denied tests/leads/test_environment_scope.py::test_task_from_the_wrong_environment_is_not_found tests/leads/test_environment_scope.py::test_score_from_the_wrong_environment_is_not_found tests/leads/test_environment_scope.py::test_consent_from_the_wrong_environment_is_not_found tests/leads/test_environment_scope.py::test_campaign_binding_must_share_the_leads_environment tests/leads/test_environment_scope.py::test_update_cannot_rebind_to_a_cross_environment_campaign tests/leads/test_environment_scope.py::test_update_rejects_environment_id_as_a_field tests/leads/test_environment_scope.py::test_orm_level_environment_move_is_frozen tests/leads/test_environment_scope.py::test_create_lead_defaults_to_production_and_stamps_history tests/leads/test_environment_scope.py::test_supplied_foreign_environment_is_boundary_denied tests/leads/test_import.py::test_csv_import_is_idempotent tests/leads/test_import.py::test_invalid_row_is_reported_and_oversized_body_is_rejected tests/leads/test_isolation.py::test_other_tenant_cannot_read_or_retarget tests/leads/test_isolation.py::test_export_drops_secrets tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[called-do_not_call] tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[called-failed] tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[called-qualified] tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[called-queued] tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[called-unqualified] tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[failed-do_not_call] tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[failed-queued] tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[failed-unqualified] tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[new-called] tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[new-do_not_call] tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[new-failed] tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[new-qualified] tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[new-queued] tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[new-unqualified] tests/leads/test_lifecycle.py::test_every_valid_transition_is_accepted[qualified-called]
+..................................................                       [100%]
+=============================== warnings summary ===============================
+tests/jobs/test_worker.py: 3 warnings
+tests/leads/test_concurrency.py: 2 warnings
+tests/leads/test_dedup.py: 7 warnings
+tests/leads/test_environment_scope.py: 16 warnings
+tests/leads/test_import.py: 2 warnings
+tests/leads/test_isolation.py: 3 warnings
+tests/leads/test_lifecycle.py: 15 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/jobs/test_worker.py: 6 warnings
+tests/leads/test_concurrency.py: 6 warnings
+tests/leads/test_dedup.py: 31 warnings
+tests/leads/test_environment_scope.py: 56 warnings
+tests/leads/test_import.py: 9 warnings
+tests/leads/test_isolation.py: 15 warnings
+tests/leads/test_lifecycle.py: 64 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/jobs/test_worker.py: 3 warnings
+tests/leads/test_concurrency.py: 2 warnings
+tests/leads/test_dedup.py: 7 warnings
+tests/leads/test_environment_scope.py: 16 warnings
+tests/leads/test_import.py: 2 warnings
+tests/leads/test_isolation.py: 3 warnings
+tests/leads/test_lifecycle.py: 15 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/leads/test_concurrency.py::test_two_sessions_cannot_both_claim
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/leads/test_concurrency.py:27: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/leads/test_concurrency.py: 4 warnings
+tests/leads/test_dedup.py: 34 warnings
+tests/leads/test_environment_scope.py: 8 warnings
+tests/leads/test_import.py: 6 warnings
+tests/leads/test_isolation.py: 6 warnings
+tests/leads/test_lifecycle.py: 34 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/leads/models.py:25: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow()
+
+tests/leads/test_concurrency.py::test_stale_status_transition_loses
+tests/leads/test_dedup.py::test_explicit_merge_keeps_history_and_propagates_dnc
+tests/leads/test_dedup.py::test_explicit_merge_keeps_history_and_propagates_dnc
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/leads/repository.py:272: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    identity.updated_at = moment or datetime.utcnow()
+
+tests/leads/test_import.py::test_csv_import_is_idempotent
+tests/leads/test_import.py::test_invalid_row_is_reported_and_oversized_body_is_rejected
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/leads/importers.py:123: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    job.completed_at = datetime.utcnow()
+
+tests/leads/test_isolation.py::test_other_tenant_cannot_read_or_retarget
+tests/leads/test_isolation.py::test_other_tenant_cannot_read_or_retarget
+tests/leads/test_isolation.py::test_other_tenant_cannot_read_or_retarget
+tests/leads/test_isolation.py::test_other_tenant_cannot_read_or_retarget
+tests/leads/test_isolation.py::test_other_tenant_cannot_read_or_retarget
+tests/leads/test_isolation.py::test_other_tenant_cannot_read_or_retarget
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/leads/test_isolation.py::test_other_tenant_cannot_read_or_retarget
+tests/leads/test_isolation.py::test_other_tenant_cannot_read_or_retarget
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+50 passed, 389 warnings in 81.86s (0:01:21)
+
+STDERR:

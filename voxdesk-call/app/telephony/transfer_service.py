@@ -533,3 +533,214 @@ def _default_whisper(tenant: Tenant, reason: str) -> str:
     if safe:
         return f"Transfer from your A I receptionist. Reason: {safe}"
     return "Transfer from your A I receptionist."
+
+
+def build_warm_transfer_briefing(
+    *,
+    call: Call | None = None,
+    reason: str = "",
+    summary: str | None = None,
+    caller_name: str | None = None,
+    sentiment: str | None = None,
+    transcript_excerpt: str | None = None,
+) -> str:
+    """Synthesize a whispered Warm Transfer Briefing for the human operator (Sub-Phase 2D)."""
+    parts: list[str] = ["Warm transfer briefing from your A I receptionist."]
+    if caller_name:
+        safe_name = _safe_whisper_reason(caller_name)
+        if safe_name:
+            parts.append(f"Caller: {safe_name}.")
+    if reason:
+        safe_reason = _safe_whisper_reason(reason)
+        if safe_reason:
+            parts.append(f"Reason: {safe_reason}.")
+    if sentiment:
+        safe_sent = _safe_whisper_reason(sentiment)
+        if safe_sent:
+            parts.append(f"Sentiment: {safe_sent}.")
+    resolved_summary = summary or (getattr(call, "summary", None) if call is not None else None) or transcript_excerpt
+    if resolved_summary:
+        safe_sum = _safe_whisper_reason(resolved_summary)
+        if safe_sum:
+            parts.append(f"Context: {safe_sum}.")
+    return " ".join(parts)[:380]
+
+
+async def initiate_warm_transfer(
+    session: AsyncSession,
+    *,
+    tenant: Tenant,
+    call: Call,
+    destination_override: str | None = None,
+    reason: str = "",
+    summary: str | None = None,
+    caller_name: str | None = None,
+    sentiment: str | None = None,
+    transcript_excerpt: str | None = None,
+    telephony_adapter: object | None = None,
+) -> dict:
+    """Orchestrate a Warm Transfer with Conference Hold + Human Briefing (Sub-Phase 2D).
+
+    1. Places the caller leg into a conference bridge (`voxdesk-warm-{call.id}`) on hold.
+    2. Dials the human target leg (`destination`) and plays `briefing_text` ONLY to the human.
+    3. Records warm transfer state on `call.transfer_context["warm_transfer"]`.
+    """
+    from app.telephony.providers.base import SimulatedTelephonyAdapter
+
+    if call.tenant_id != tenant.id:
+        return {"ok": False, "error": TransferError.TENANT_MISMATCH.value}
+
+    if call_state.is_terminal(call.status):
+        return {"ok": False, "error": TransferError.CALL_ALREADY_ENDED.value}
+
+    destination, dest_error = resolve_destination(tenant, destination_override)
+    if dest_error is not None or not destination:
+        await _record_failure(session, call, (dest_error or TransferError.NO_DESTINATION).value, error=dest_error)
+        await session.commit()
+        return {"ok": False, "error": (dest_error or TransferError.NO_DESTINATION).value}
+
+    adapter = telephony_adapter or SimulatedTelephonyAdapter()
+    conference_name = f"voxdesk-warm-{call.id}"
+    briefing_text = build_warm_transfer_briefing(
+        call=call,
+        reason=reason,
+        summary=summary,
+        caller_name=caller_name,
+        sentiment=sentiment,
+        transcript_excerpt=transcript_excerpt,
+    )
+
+    hold_res = await adapter.place_in_conference_hold(call.call_sid, conference_name)
+    dial_res = await adapter.dial_warm_transfer_target(
+        target_number=destination,
+        from_number=call.to_number or tenant.twilio_number,
+        conference_name=conference_name,
+        briefing_text=briefing_text,
+    )
+
+    now = datetime.utcnow()
+    call.escalated = True
+    call.intent = call.intent or "escalation"
+    call.transfer_state = TransferState.DIALING
+    call.transfer_requested_at = call.transfer_requested_at or now
+    call.transfer_started_at = now
+    call.transfer_destination = destination
+    call.transfer_reason = _redact_reason_for_storage(reason)
+    call.transfer_attempts += 1
+    call.transfer_error = None
+    if summary:
+        call.summary = _redact_reason_for_storage(summary)
+
+    ctx = dict(call.transfer_context or {})
+    warm_meta = {
+        "mode": "warm",
+        "conference_name": conference_name,
+        "briefing_text": briefing_text,
+        "caller_hold": True,
+        "human_briefed": True,
+        "ai_detached": False,
+        "returned_to_ai": False,
+        "target_number": destination,
+        "target_call_sid": dial_res.get("target_call_sid"),
+        "hold_twiml": hold_res.get("twiml"),
+        "target_twiml": dial_res.get("twiml"),
+        "status": "briefing_played",
+    }
+    ctx["warm_transfer"] = warm_meta
+    call.transfer_context = ctx
+
+    transition_result = call_state.apply_status(call, CallStatus.TRANSFERRED, source="warm_transfer")
+    await call_state.publish_transition(session, call, transition_result)
+    await add_system_event(session, call, SYSTEM_EVENT["requested"])
+    await add_system_event(session, call, SYSTEM_EVENT["started"])
+    await session.commit()
+
+    return {
+        "ok": True,
+        "call_id": str(call.id),
+        "mode": "warm",
+        "state": call.transfer_state.value,
+        "conference_name": conference_name,
+        "briefing_text": briefing_text,
+        "caller_hold": True,
+        "human_briefed": True,
+        "ai_detached": False,
+        "target_call_sid": dial_res.get("target_call_sid"),
+        "destination": destination,
+    }
+
+
+async def complete_warm_transfer(
+    session: AsyncSession,
+    *,
+    call: Call,
+    telephony_adapter: object | None = None,
+) -> dict:
+    """Complete a Warm Transfer after the human agent hears the briefing and accepts (Sub-Phase 2D).
+
+    Unholds the caller in the conference bridge and detaches the AI leg.
+    """
+    from app.telephony.providers.base import SimulatedTelephonyAdapter
+
+    adapter = telephony_adapter or SimulatedTelephonyAdapter()
+    ctx = dict(call.transfer_context or {})
+    warm_meta = dict(ctx.get("warm_transfer") or {})
+    conference_name = warm_meta.get("conference_name") or f"voxdesk-warm-{call.id}"
+
+    bridge_res = await adapter.complete_conference_bridge(
+        external_id=call.call_sid,
+        conference_name=conference_name,
+    )
+    warm_meta["caller_hold"] = False
+    warm_meta["ai_detached"] = True
+    warm_meta["status"] = "bridged"
+    ctx["warm_transfer"] = warm_meta
+    call.transfer_context = ctx
+
+    await mark_transfer_connected(session, call)
+    await session.commit()
+    return {
+        "ok": True,
+        "call_id": str(call.id),
+        "mode": "warm",
+        "state": call.transfer_state.value,
+        "conference_name": conference_name,
+        "caller_hold": False,
+        "ai_detached": True,
+        "status": bridge_res.get("status", "bridged"),
+    }
+
+
+async def abort_warm_transfer_to_ai(
+    session: AsyncSession,
+    *,
+    call: Call,
+    reason: str = "no_answer",
+) -> dict:
+    """Abort a Warm Transfer when the human declines or does not answer, returning caller to the AI (Sub-Phase 2D)."""
+    ctx = dict(call.transfer_context or {})
+    warm_meta = dict(ctx.get("warm_transfer") or {})
+    warm_meta["caller_hold"] = False
+    warm_meta["ai_detached"] = False
+    warm_meta["returned_to_ai"] = True
+    warm_meta["status"] = "returned_to_ai"
+    warm_meta["fallback_message"] = (
+        "I wasn't able to reach a team member right now, so I have taken you off hold. "
+        "How else can I assist you or take a message?"
+    )
+    ctx["warm_transfer"] = warm_meta
+    call.transfer_context = ctx
+
+    await mark_transfer_failed(session, call, reason)
+    if call.status == CallStatus.TRANSFERRED:
+        call.status = CallStatus.IN_PROGRESS
+    await session.commit()
+    return {
+        "ok": True,
+        "call_id": str(call.id),
+        "mode": "warm",
+        "state": call.transfer_state.value,
+        "caller_hold": False,
+        "returned_to_ai": True,
+        "fallback_message": warm_meta["fallback_message"],
+    }

@@ -1,0 +1,110 @@
+{
+  "uid": "voxdesk-voice-latency",
+  "title": "VoxDesk Voice Runtime Latency",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "tags": ["voxdesk", "voice", "latency", "slo"],
+  "panels": [
+    {
+      "id": 1,
+      "title": "E2E Voice Turn Latency (p50 / p95 / p99)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.9 },
+              { "color": "orange", "value": 1.2 },
+              { "color": "red", "value": 2.0 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "legendFormat": "p50",
+          "expr": "histogram_quantile(0.50, sum(rate(voxdesk_voice_e2e_latency_seconds_bucket[5m])) by (le))"
+        },
+        {
+          "refId": "B",
+          "legendFormat": "p95",
+          "expr": "histogram_quantile(0.95, sum(rate(voxdesk_voice_e2e_latency_seconds_bucket[5m])) by (le))"
+        },
+        {
+          "refId": "C",
+          "legendFormat": "p99",
+          "expr": "histogram_quantile(0.99, sum(rate(voxdesk_voice_e2e_latency_seconds_bucket[5m])) by (le))"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Stage TTFB Breakdown (STT / LLM / TTS p50 & p95)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "legendFormat": "{{stage}} p50",
+          "expr": "histogram_quantile(0.50, sum(rate(voxdesk_voice_ttfb_seconds_bucket[5m])) by (le, stage))"
+        },
+        {
+          "refId": "B",
+          "legendFormat": "{{stage}} p95",
+          "expr": "histogram_quantile(0.95, sum(rate(voxdesk_voice_ttfb_seconds_bucket[5m])) by (le, stage))"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Provider Comparison (E2E p95 by LLM & TTS Provider)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "legendFormat": "LLM={{llm_provider}} / TTS={{tts_provider}} (p95)",
+          "expr": "histogram_quantile(0.95, sum(rate(voxdesk_voice_e2e_latency_seconds_bucket[5m])) by (le, llm_provider, tts_provider))"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Caller Barge-In / Interruptions per Minute",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "cpm"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "legendFormat": "interruptions/min ({{tenant_plan}})",
+          "expr": "sum(rate(voxdesk_voice_interruptions_total[1m])) by (tenant_plan) * 60"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_calendar_providers.py::TestMicrosoftFreeBusy::test_a_per_mailbox_error_raises tests/test_calendar_providers.py::TestMicrosoftFreeBusy::test_no_schedule_at_all_is_a_validation_error tests/test_calendar_providers.py::TestMicrosoftFreeBusy::test_free_busy_without_a_mailbox_is_a_config_error tests/test_calendar_providers.py::TestMicrosoftEvents::test_create tests/test_calendar_providers.py::TestMicrosoftEvents::test_update_drops_the_create_only_transaction_id
+.....                                                                    [100%]
+5 passed in 0.13s
+
+STDERR:

@@ -1,0 +1,22 @@
+...........F.......                                                      [100%]
+=================================== FAILURES ===================================
+_______ test_apply_plan_removes_only_unsupported_verification_properties _______
+
+tmp_path = PosixPath('/tmp/pytest-of-user/pytest-5/test_apply_plan_removes_only_u0')
+parser_seam = None
+
+    def test_apply_plan_removes_only_unsupported_verification_properties(tmp_path, parser_seam):
+        file = tmp_path / 'claims.ts'
+        file.write_text('export const evidence = { id: 4, verified: true, real: true, title: "Example" };\n')
+        _, edits = tails.plan([file])
+>       assert edits[file] == 'export const evidence = { id: 4,  title: "Example" };\n'
+E       assert 'export const...Example" };\n' == 'export const...Example" };\n'
+E         
+E         - export const evidence = { id: 4,  title: "Example" };
+E         + export const evidence = { id: 4, , title: "Example" };
+E         ?                                  +
+
+tests/truth/test_generated_tails.py:99: AssertionError
+=========================== short test summary info ============================
+FAILED tests/truth/test_generated_tails.py::test_apply_plan_removes_only_unsupported_verification_properties
+1 failed, 18 passed in 0.63s

@@ -352,8 +352,10 @@ async def get_backfill(
 
 
 # Compatibility paths retained, backed by the same scoped analysis service.
+compat_router = APIRouter(prefix="/extended")
 
-@router.get("/extended/health", response_model=dict)
+
+@compat_router.get("/health", response_model=dict)
 async def extended_health_check(
     ctx: TenantContext = Depends(require_permission(Permission.QA_READ)),
     session: AsyncSession = Depends(get_session),
@@ -366,7 +368,7 @@ async def extended_health_check(
             "database": "reachable", "schemas": count, "provider_connectivity": "not_probed", "at": _now().isoformat()}
 
 
-@router.get("/extended/stats", response_model=dict)
+@compat_router.get("/stats", response_model=dict)
 async def extended_stats(
     ctx: TenantContext = Depends(require_permission(Permission.QA_READ)),
     session: AsyncSession = Depends(get_session),
@@ -376,7 +378,7 @@ async def extended_stats(
     return await analysis.observed_stats(session, tenant_id=ctx.tenant_id, environment_id=environment_id)
 
 
-@router.get("/extended/config", response_model=dict)
+@compat_router.get("/config", response_model=dict)
 async def extended_config(
     ctx: TenantContext = Depends(require_permission(Permission.QA_READ)),
     session: AsyncSession = Depends(get_session),
@@ -390,7 +392,7 @@ async def extended_config(
             "cache_clear": "unsupported"}
 
 
-@router.get("/extended/metrics", response_model=dict)
+@compat_router.get("/metrics", response_model=dict)
 async def extended_metrics(
     ctx: TenantContext = Depends(require_permission(Permission.QA_READ)),
     session: AsyncSession = Depends(get_session),
@@ -400,7 +402,7 @@ async def extended_metrics(
     return await analysis.observed_metrics(session, tenant_id=ctx.tenant_id, environment_id=environment_id)
 
 
-@router.post("/extended/validate", response_model=dict)
+@compat_router.post("/validate", response_model=dict)
 async def extended_validate(
     payload: dict,
     ctx: TenantContext = Depends(require_permission(Permission.QA_READ)),
@@ -419,7 +421,7 @@ async def extended_validate(
     return {"valid": True, "errors": [], "compiled_schema": compiled}
 
 
-@router.get("/extended/audit", response_model=dict)
+@compat_router.get("/audit", response_model=dict)
 async def extended_audit_log(
     limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0),
     ctx: TenantContext = Depends(require_permission(Permission.AUDIT_READ)),
@@ -433,7 +435,7 @@ async def extended_audit_log(
                                      limit=limit, offset=offset)
 
 
-@router.get("/extended/list", response_model=dict)
+@compat_router.get("/list", response_model=dict)
 async def extended_list(
     limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0),
     ctx: TenantContext = Depends(require_permission(Permission.QA_READ)),
@@ -444,7 +446,7 @@ async def extended_list(
     return {"items": page["schemas"], "total": page["total"], "limit": limit, "offset": offset}
 
 
-@router.post("/extended/bulk", response_model=dict)
+@compat_router.post("/bulk", response_model=dict)
 async def extended_bulk(
     payload: dict,
     ctx: TenantContext = Depends(require_permission(Permission.QA_WRITE)),
@@ -459,7 +461,7 @@ async def extended_bulk(
     return await create_backfill(request, ctx=ctx, session=session, x_idempotency_key=None)
 
 
-@router.delete("/extended/cache", response_model=dict)
+@compat_router.delete("/cache", response_model=dict)
 async def extended_clear_cache(
     ctx: TenantContext = Depends(require_permission(Permission.QA_WRITE)),
     session: AsyncSession = Depends(get_session),
@@ -467,6 +469,9 @@ async def extended_clear_cache(
     """No analysis cache exists; persisted evidence must not be called a cache."""
     await _environment(session, ctx, write=True)
     raise HTTPException(501, detail={"code": "UNSUPPORTED_CAPABILITY", "capability": "analysis_cache_clear"})
+
+
+router.include_router(compat_router)
 
 
 @router.post("/backfill/preview", response_model=dict)

@@ -33,9 +33,9 @@ function mapBuilderPayloadToConfig(res: any, fallbackAgentId = ''): BuilderConfi
       call_handling: a.call_handling || {},
       security: a.security || {},
     },
-    version: Number(a.published_version ?? a.version ?? a.active_version ?? 1),
-    etag: String(a.draft_etag || a.etag || ''),
-    updated_at: String(a.updated_at || new Date().toISOString()),
+    version: Number(res?.version ?? a.published_version ?? a.version ?? a.active_version ?? 1),
+    etag: String(res?.draft_etag || res?.etag || a.draft_etag || a.etag || ''),
+    updated_at: String(res?.updated_at || a.updated_at || new Date().toISOString()),
   };
 }
 
@@ -196,28 +196,24 @@ export async function unpublishAgent(agentId: string): Promise<void> {
 }
 
 export async function getVersions(agentId: string): Promise<Version[]> {
-  try {
-    const res = await apiClient.get<any>(
-      `/api/v1/agents/${encodeURIComponent(agentId)}/versions`
-    );
-    const items = Array.isArray(res) ? res : res?.versions || [];
-    return items.map((v: any, idx: number) => ({
-      id: String(v.id || `${agentId}-v${v.version ?? v.version_number ?? idx + 1}`),
-      version: Number(v.version ?? v.version_number ?? idx + 1),
-      created_at: String(v.published_at || v.created_at || new Date().toISOString()),
-      author: String(v.published_by || 'system'),
-      status: String(v.status || 'published'),
-      changes: String(v.changelog || v.release_notes || 'Published snapshot'),
-      is_current: v.is_active !== undefined ? Boolean(v.is_active) : idx === 0,
-      etag: String(v.config_hash || ''),
-      config_hash: String(v.config_hash || ''),
-      config_snapshot: v.config_snapshot || {},
-      published_environment: String(v.published_environment || 'production'),
-      is_rollback: Boolean(v.is_rollback),
-    }));
-  } catch {
-    return [];
-  }
+  const res = await apiClient.get<any>(
+    `/api/v1/agents/${encodeURIComponent(agentId)}/versions`
+  );
+  const items = Array.isArray(res) ? res : res?.versions || [];
+  return items.map((v: any, idx: number) => ({
+    id: String(v.id || `${agentId}-v${v.version ?? v.version_number ?? idx + 1}`),
+    version: Number(v.version ?? v.version_number ?? idx + 1),
+    created_at: String(v.published_at || v.created_at || new Date().toISOString()),
+    author: String(v.published_by || 'system'),
+    status: String(v.status || 'published'),
+    changes: String(v.changelog || v.release_notes || 'Published snapshot'),
+    is_current: v.is_active !== undefined ? Boolean(v.is_active) : idx === 0,
+    etag: String(v.config_hash || ''),
+    config_hash: String(v.config_hash || ''),
+    config_snapshot: v.config_snapshot || {},
+    published_environment: String(v.published_environment || 'production'),
+    is_rollback: Boolean(v.is_rollback),
+  }));
 }
 
 export async function getVersion(agentId: string, versionNumber: number): Promise<any> {
@@ -243,13 +239,9 @@ export async function rollbackVersion(
 }
 
 export async function getKnowledge(agentId: string): Promise<any[]> {
-  try {
-    const cfg = await getBuilderConfig(agentId);
-    const kbs = (cfg.config as any)?.knowledge_bases;
-    return Array.isArray(kbs) ? kbs : [];
-  } catch {
-    return [];
-  }
+  const cfg = await getBuilderConfig(agentId);
+  const kbs = (cfg.config as any)?.knowledge_bases;
+  return Array.isArray(kbs) ? kbs : [];
 }
 
 export async function attachKnowledge(agentId: string, kbId: string): Promise<void> {
@@ -292,13 +284,9 @@ export async function detachKnowledge(agentId: string, kbId: string): Promise<vo
 }
 
 export async function getTools(agentId: string): Promise<any[]> {
-  try {
-    const cfg = await getBuilderConfig(agentId);
-    const tools = (cfg.config as any)?.tools;
-    return Array.isArray(tools) ? tools : [];
-  } catch {
-    return [];
-  }
+  const cfg = await getBuilderConfig(agentId);
+  const tools = (cfg.config as any)?.tools;
+  return Array.isArray(tools) ? tools : [];
 }
 
 export async function attachTool(agentId: string, toolId: string): Promise<void> {

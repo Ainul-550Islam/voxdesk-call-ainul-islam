@@ -299,3 +299,7 @@ class ElevenLabsStreamingProvider:
         if "auth" in value or "key" in value:
             raise ProviderAuthenticationError("TTS credentials were rejected", provider="elevenlabs")
         raise ProviderUnavailableError("TTS provider returned an error", provider="elevenlabs")
+
+
+ElevenLabsTTSProvider = ElevenLabsStreamingProvider
+

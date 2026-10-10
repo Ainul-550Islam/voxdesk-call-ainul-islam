@@ -1,0 +1,86 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/specialized_agents/test_anomaly.py::test_normal_baseline_and_strong_z_score_deviation tests/specialized_agents/test_anomaly.py::test_mad_and_rolling_detectors_are_reproducible tests/specialized_agents/test_anomaly.py::test_insufficient_data_and_validation_fail_closed tests/specialized_agents/test_executor.py::test_valid_execution_creates_policy_lineage_evidence_and_is_idempotent tests/specialized_agents/test_executor.py::test_governance_denial_and_unapproved_model_fail_closed tests/specialized_agents/test_executor.py::test_review_required_is_a_real_terminal_state_and_scope_isolated tests/specialized_agents/test_legal.py::test_clause_detection_preserves_location_and_multiple_findings tests/specialized_agents/test_legal.py::test_low_confidence_sets_review_required_and_no_fabricated_citation tests/specialized_agents/test_legal.py::test_chunk_fingerprint_mismatch_is_rejected tests/specialized_agents/test_persistence.py::test_execution_lookup_child_persistence_review_attachment_and_isolation tests/specialized_agents/test_persistence.py::test_forecast_api_reuses_analytics_and_discloses_unavailable_intervals tests/specialized_agents/test_translation.py::test_translation_uses_language_and_glossary_version_and_preserves_terms tests/specialized_agents/test_translation.py::test_translation_quality_flags_numbers_urls_placeholders_and_review tests/specialized_agents/test_translation.py::test_language_validation_rejects_same_language_and_untranslated_output tests/telephony/test_callback_reconciliation.py::test_duplicate_and_out_of_order_do_not_double_apply tests/telephony/test_callback_reconciliation.py::test_missing_local_record_is_unmatched tests/telephony/test_callback_reconciliation.py::test_stale_snapshot_does_not_overwrite_a_newer_terminal_call tests/telephony/test_callback_reconciliation.py::test_dlq_retry_exhaustion_and_replay tests/telephony/test_callback_reconciliation.py::test_permanent_error_dead_letters_without_five_retries tests/telephony/test_callback_reconciliation.py::test_scrub_drops_secrets tests/telephony/test_lead_lifecycle_callbacks.py::test_completed_high_score_qualifies_with_history tests/telephony/test_lead_lifecycle_callbacks.py::test_completed_low_score_marks_called tests/telephony/test_lead_lifecycle_callbacks.py::test_short_completed_call_does_not_grade tests/telephony/test_lead_lifecycle_callbacks.py::test_failed_at_attempt_cap_marks_failed tests/telephony/test_lead_lifecycle_callbacks.py::test_no_answer_under_the_cap_leaves_the_lead_alone tests/telephony/test_lead_lifecycle_callbacks.py::test_repeated_callback_never_double_grades tests/telephony/test_lead_lifecycle_callbacks.py::test_cross_environment_lead_is_never_graded tests/telephony/test_lead_lifecycle_callbacks.py::test_dnc_lead_is_never_touched_or_reversed tests/telephony/test_number_provisioning.py::test_purchase_requires_billing_and_then_assigns_once tests/telephony/test_number_provisioning.py::test_provider_failure_releases_the_reservation tests/telephony/test_number_provisioning.py::test_cross_tenant_assign_and_release_are_not_found tests/telephony/test_number_provisioning.py::test_release_calls_provider_once_and_is_idempotent tests/telephony/test_number_provisioning.py::test_stale_provider_snapshot_does_not_revive_a_release tests/telephony/test_number_provisioning.py::test_http_inventory_is_tenant_scoped tests/telephony/test_outbound_environment_scope.py::test_selection_is_restricted_to_the_campaign_environment tests/telephony/test_outbound_environment_scope.py::test_staging_campaign_selects_only_staging_leads tests/telephony/test_outbound_environment_scope.py::test_dnc_and_attempt_cap_still_exclude_leads tests/telephony/test_outbound_environment_scope.py::test_same_environment_pair_dials tests/telephony/test_outbound_environment_scope.py::test_cross_environment_lead_is_refused_even_when_directly_handed tests/telephony/test_outbound_environment_scope.py::test_cross_environment_campaign_is_refused tests/telephony/test_outbound_environment_scope.py::test_foreign_tenant_lead_is_refused tests/telephony/test_outbound_environment_scope.py::test_dnc_lead_is_refused_inside_the_same_environment tests/telephony/test_outbound_environment_scope.py::test_parallel_ticks_claim_each_lead_once tests/telephony/test_provider_contract.py::test_each_adapter_rejects_missing_credentials tests/telephony/test_provider_contract.py::test_unknown_provider_and_secret_are_not_returned tests/telephony/test_provider_contract.py::test_disabled_provider_is_rejected tests/telephony/test_provider_contract.py::test_telnyx_maps_http_errors tests/telephony/test_provider_contract.py::test_telnyx_does_not_invent_a_call_or_whatsapp tests/telephony/test_provider_contract.py::test_telnyx_search_uses_only_returned_features tests/telephony/test_provider_contract.py::test_vonage_voice_and_recording_fail_clearly
+..................................................                       [100%]
+=============================== warnings summary ===============================
+tests/specialized_agents/test_executor.py: 4 warnings
+tests/specialized_agents/test_persistence.py: 3 warnings
+tests/telephony/test_callback_reconciliation.py: 6 warnings
+tests/telephony/test_lead_lifecycle_callbacks.py: 8 warnings
+tests/telephony/test_number_provisioning.py: 8 warnings
+tests/telephony/test_outbound_environment_scope.py: 10 warnings
+tests/telephony/test_provider_contract.py: 1 warning
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/specialized_agents/test_executor.py: 12 warnings
+tests/specialized_agents/test_persistence.py: 13 warnings
+tests/telephony/test_callback_reconciliation.py: 16 warnings
+tests/telephony/test_lead_lifecycle_callbacks.py: 44 warnings
+tests/telephony/test_number_provisioning.py: 41 warnings
+tests/telephony/test_outbound_environment_scope.py: 48 warnings
+tests/telephony/test_provider_contract.py: 1 warning
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/specialized_agents/test_executor.py: 4 warnings
+tests/specialized_agents/test_persistence.py: 3 warnings
+tests/telephony/test_callback_reconciliation.py: 6 warnings
+tests/telephony/test_lead_lifecycle_callbacks.py: 8 warnings
+tests/telephony/test_number_provisioning.py: 8 warnings
+tests/telephony/test_outbound_environment_scope.py: 10 warnings
+tests/telephony/test_provider_contract.py: 1 warning
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/specialized_agents/test_executor.py: 4 warnings
+tests/specialized_agents/test_persistence.py: 3 warnings
+tests/telephony/test_callback_reconciliation.py: 2 warnings
+tests/telephony/test_number_provisioning.py: 3 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/specialized_agents/test_persistence.py::test_forecast_api_reuses_analytics_and_discloses_unavailable_intervals
+tests/specialized_agents/test_persistence.py::test_forecast_api_reuses_analytics_and_discloses_unavailable_intervals
+tests/specialized_agents/test_persistence.py::test_forecast_api_reuses_analytics_and_discloses_unavailable_intervals
+tests/specialized_agents/test_persistence.py::test_forecast_api_reuses_analytics_and_discloses_unavailable_intervals
+tests/specialized_agents/test_persistence.py::test_forecast_api_reuses_analytics_and_discloses_unavailable_intervals
+tests/specialized_agents/test_persistence.py::test_forecast_api_reuses_analytics_and_discloses_unavailable_intervals
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/telephony/test_callback_reconciliation.py: 5 warnings
+tests/telephony/test_lead_lifecycle_callbacks.py: 8 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/conftest.py:569: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "started_at": datetime.utcnow(),
+
+tests/telephony/test_callback_reconciliation.py: 2 warnings
+tests/telephony/test_lead_lifecycle_callbacks.py: 8 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/call_state.py:259: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call.ended_at = ended_at or datetime.utcnow()
+
+tests/telephony/test_lead_lifecycle_callbacks.py: 12 warnings
+tests/telephony/test_outbound_environment_scope.py: 10 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/leads/models.py:25: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow()
+
+tests/telephony/test_outbound_environment_scope.py::test_selection_is_restricted_to_the_campaign_environment
+tests/telephony/test_outbound_environment_scope.py::test_staging_campaign_selects_only_staging_leads
+tests/telephony/test_outbound_environment_scope.py::test_dnc_and_attempt_cap_still_exclude_leads
+tests/telephony/test_outbound_environment_scope.py::test_parallel_ticks_claim_each_lead_once
+tests/telephony/test_outbound_environment_scope.py::test_parallel_ticks_claim_each_lead_once
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/outbound.py:90: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/telephony/test_outbound_environment_scope.py::test_same_environment_pair_dials
+tests/telephony/test_outbound_environment_scope.py::test_parallel_ticks_claim_each_lead_once
+tests/telephony/test_outbound_environment_scope.py::test_parallel_ticks_claim_each_lead_once
+tests/telephony/test_outbound_environment_scope.py::test_parallel_ticks_claim_each_lead_once
+tests/telephony/test_outbound_environment_scope.py::test_parallel_ticks_claim_each_lead_once
+tests/telephony/test_outbound_environment_scope.py::test_parallel_ticks_claim_each_lead_once
+tests/telephony/test_outbound_environment_scope.py::test_parallel_ticks_claim_each_lead_once
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/outbound.py:251: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+50 passed, 330 warnings in 64.33s (0:01:04)
+
+STDERR:

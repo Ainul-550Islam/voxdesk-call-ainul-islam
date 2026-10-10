@@ -8,20 +8,12 @@ import type {
 } from './types/agent-version';
 
 export async function getAgentActions(agentId: string): Promise<any> {
-  try {
-    return await apiClient.get(`/api/agents/${encodeURIComponent(agentId)}`);
-  } catch {
-    return null;
-  }
+  return apiClient.get(`/api/agents/${encodeURIComponent(agentId)}`);
 }
 
 export async function listAgentActions(): Promise<any[]> {
-  try {
-    const res = await apiClient.get<any>('/api/agents');
-    return Array.isArray(res) ? res : res?.items || res?.agents || [];
-  } catch {
-    return [];
-  }
+  const res = await apiClient.get<any>('/api/agents');
+  return Array.isArray(res) ? res : res?.items || res?.agents || [];
 }
 
 export async function publishAgent(

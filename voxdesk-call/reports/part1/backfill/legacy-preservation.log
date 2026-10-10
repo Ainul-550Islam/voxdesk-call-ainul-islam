@@ -1,0 +1,10 @@
+ retained_backfills | dropped_metadata_not_fabricated | scope_restored 
+--------------------+---------------------------------+----------------
+                  1 | t                               | t
+(1 row)
+
+ retained_results | result_provenance_preserved 
+------------------+-----------------------------
+                1 | t
+(1 row)
+

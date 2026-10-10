@@ -1,0 +1,5 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_calendar_contract.py::test_a_403_that_is_really_a_throttle_becomes_retryable[microsoft] tests/test_calendar_contract.py::test_a_403_that_is_really_a_throttle_becomes_retryable[calcom] tests/test_calendar_contract.py::test_a_403_that_is_really_a_throttle_becomes_retryable[internal] tests/test_calendar_contract.py::test_timeouts_become_retryable_calendar_timeouts[google] tests/test_calendar_contract.py::test_timeouts_become_retryable_calendar_timeouts[google_service_account]
+.....                                                                    [100%]
+5 passed in 0.16s
+
+STDERR:

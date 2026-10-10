@@ -22,6 +22,7 @@ import uuid
 from typing import Any
 
 import structlog
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.service import record_audit
 from app.core.logging import log as _core_log
@@ -199,3 +200,17 @@ _IDENTITY_ACTIONS = frozenset({
     AuditAction.DOMAIN_REMOVED.value,
     AuditAction.DOMAIN_ENFORCEMENT_CHANGED.value,
 })
+
+
+async def record_enterprise_audit(
+    db: AsyncSession,
+    tenant_id: uuid.UUID,
+    user_id: uuid.UUID | None,
+    action: str | AuditAction,
+    detail: dict[str, Any] | None = None,
+) -> AuditLog:
+    """Insert a durable ``AuditLog`` row in the caller's transaction without swallowing errors."""
+    from app.audit.service import record_enterprise_audit as _record_enterprise_audit
+
+    return await _record_enterprise_audit(db, tenant_id, user_id, action, detail or {})
+

@@ -1,0 +1,54 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/auth/test_identity_credentials.py::test_a_disabled_service_account_cannot_authenticate tests/auth/test_identity_credentials.py::test_emergency_disable_cannot_be_undone_by_a_normal_enable tests/auth/test_identity_credentials.py::test_rotating_a_credential_revokes_the_previous_secret tests/auth/test_identity_credentials.py::test_an_expired_account_and_an_expired_credential_are_both_refused tests/auth/test_identity_credentials.py::test_scopes_beyond_the_creator_are_refused tests/auth/test_identity_credentials.py::test_deleting_an_account_revokes_its_credentials tests/auth/test_identity_credentials.py::test_credentials_are_never_returned_by_listing tests/auth/test_identity_credentials.py::test_a_reset_token_is_single_use_and_stored_hashed tests/auth/test_identity_credentials.py::test_an_expired_reset_token_is_refused tests/auth/test_identity_credentials.py::test_an_unknown_reset_token_is_refused tests/auth/test_identity_credentials.py::test_email_verification_tokens_are_single_use tests/auth/test_identity_credentials.py::test_reset_and_verification_tokens_are_not_interchangeable tests/auth/test_identity_credentials.py::test_the_log_transport_reports_a_no_op_instead_of_failing tests/auth/test_identity_credentials.py::test_the_reset_flow_uses_the_same_password_policy_as_signup tests/auth/test_identity_policy.py::test_the_defaults_are_the_documented_ones tests/auth/test_identity_policy.py::test_a_change_records_what_it_replaced tests/auth/test_identity_policy.py::test_a_value_outside_the_permitted_range_is_refused tests/auth/test_identity_policy.py::test_an_allow_list_is_normalized_and_validated tests/auth/test_identity_policy.py::test_requiring_sso_with_nothing_to_require_is_refused tests/auth/test_identity_policy.py::test_each_workspace_has_its_own tests/auth/test_identity_policy.py::test_reading_needs_a_permission_and_writing_needs_a_stronger_one tests/auth/test_identity_policy.py::test_a_machine_credential_cannot_change_the_policy tests/auth/test_identity_policy.py::test_turning_off_password_login_stops_a_password_login tests/auth/test_identity_policy.py::test_an_allow_list_keeps_outsiders_out_and_lets_the_listed_in tests/auth/test_identity_policy.py::test_turning_off_api_keys_stops_a_live_key_on_the_next_request tests/auth/test_identity_policy.py::test_turning_off_service_accounts_stops_a_live_credential tests/auth/test_identity_policy.py::test_privileged_reauth_can_be_switched_off tests/auth/test_identity_policy.py::test_scim_can_be_switched_off_per_workspace tests/auth/test_identity_policy.py::test_provisioning_can_be_switched_off_without_breaking_linked_logins tests/auth/test_login_notice.py::test_a_successful_password_login_notifies_and_a_failure_does_not tests/auth/test_login_notice.py::test_a_notice_failure_does_not_fail_the_login tests/auth/test_mfa.py::test_enrollment_stores_only_ciphertext tests/auth/test_mfa.py::test_enrollment_requires_a_code_from_the_same_seed tests/auth/test_mfa.py::test_confirm_returns_recovery_codes_once_and_stores_only_hashes tests/auth/test_mfa.py::test_a_code_cannot_be_replayed tests/auth/test_mfa.py::test_wrong_codes_lock_the_challenge tests/auth/test_mfa.py::test_a_consumed_challenge_cannot_be_reused tests/auth/test_mfa.py::test_a_recovery_code_works_exactly_once tests/auth/test_mfa.py::test_regenerating_recovery_codes_replaces_the_old_set tests/auth/test_mfa.py::test_disabling_a_factor_clears_codes_and_other_sessions tests/auth/test_mfa.py::test_a_user_without_a_factor_cannot_open_a_challenge tests/auth/test_mfa.py::test_enrolling_twice_is_refused_while_a_factor_is_active tests/auth/test_mfa.py::test_totp_window_accepts_one_step_of_skew_each_way tests/auth/test_mfa.py::test_verification_rate_limit_is_per_user tests/auth/test_mfa.py::test_mfa_secret_is_never_logged_or_returned_by_status tests/auth/test_mfa.py::test_factor_rows_are_scoped_to_one_user tests/auth/test_mfa.py::test_enrollment_refuses_when_mfa_is_disabled_on_the_deployment tests/auth/test_mfa.py::test_password_verification_is_untouched_by_mfa tests/auth/test_mfa.py::test_unused_import_guard tests/auth/test_mfa_enrollment.py::test_enrollment_requires_an_authenticated_session
+..................................................                       [100%]
+=============================== warnings summary ===============================
+tests/auth/test_identity_credentials.py: 11 warnings
+tests/auth/test_identity_policy.py: 16 warnings
+tests/auth/test_login_notice.py: 2 warnings
+tests/auth/test_mfa.py: 17 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/auth/test_identity_credentials.py: 33 warnings
+tests/auth/test_identity_policy.py: 112 warnings
+tests/auth/test_login_notice.py: 12 warnings
+tests/auth/test_mfa.py: 53 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/auth/test_identity_credentials.py: 11 warnings
+tests/auth/test_identity_policy.py: 16 warnings
+tests/auth/test_login_notice.py: 2 warnings
+tests/auth/test_mfa.py: 17 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/auth/test_identity_credentials.py: 11 warnings
+tests/auth/test_identity_policy.py: 22 warnings
+tests/auth/test_login_notice.py: 2 warnings
+tests/auth/test_mfa.py: 18 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/auth/test_identity_credentials.py: 30 warnings
+tests/auth/test_identity_policy.py: 56 warnings
+tests/auth/test_mfa.py: 160 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/auth/identity/models.py:69: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow()
+
+tests/auth/test_identity_policy.py::test_the_defaults_are_the_documented_ones
+tests/auth/test_identity_policy.py::test_the_defaults_are_the_documented_ones
+tests/auth/test_identity_policy.py::test_the_defaults_are_the_documented_ones
+tests/auth/test_identity_policy.py::test_the_defaults_are_the_documented_ones
+tests/auth/test_identity_policy.py::test_the_defaults_are_the_documented_ones
+tests/auth/test_identity_policy.py::test_the_defaults_are_the_documented_ones
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/auth/test_identity_policy.py::test_privileged_reauth_can_be_switched_off
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/auth/test_identity_policy.py:373: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    row.password_confirmed_at = datetime.utcnow() - timedelta(hours=3)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+50 passed, 608 warnings in 94.44s (0:01:34)
+
+STDERR:

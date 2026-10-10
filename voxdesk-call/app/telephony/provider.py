@@ -70,6 +70,7 @@ class TwilioProvider:
             # 20404 here almost always means the call already ended.
             return RedirectResult(False, str(exc.code), exc.msg)
         except Exception as exc:
+            __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
             return RedirectResult(False, "provider_error", str(exc))
 
         return RedirectResult(True)

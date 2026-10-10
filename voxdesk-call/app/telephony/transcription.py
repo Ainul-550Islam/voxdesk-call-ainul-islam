@@ -17,7 +17,9 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.auth.permissions import Permission
 from app.auth.rbac import has_permission
 from app.core.config import settings
-from app.db.models import Base, Turn, UserRole
+from app.db.models import Base, Call, Speaker, Tenant, Turn, UserRole
+from app.gdpr.redact import redact
+from app.telephony.recording_policy import effective
 from app.tenancy.isolation import Forbidden, NotFound
 
 _MAX_ATTEMPTS = 3
@@ -73,19 +75,34 @@ class TranscriptJob(Base):
         }
 
 
+CallTranscriptJob = TranscriptJob
+
+
 async def enqueue(
     session, call, *, recording_id: uuid.UUID | None = None, language: str = ""
 ) -> TranscriptJob:
     from app.agent.errors import ProviderConfigurationError
+    from app.agent.language import resolve_language_config
     from app.agent.stt import validate_stt_config
+
+    raw_lang = language or getattr(call, "language", "") or ""
+    lang_profile = resolve_language_config(raw_lang) if raw_lang else None
+    resolved_model = (
+        lang_profile.stt_model
+        if lang_profile and lang_profile.is_multilingual
+        else (settings.deepgram_model or "")
+    )
+    resolved_lang = (
+        lang_profile.stt_language if lang_profile else raw_lang
+    )
 
     job = TranscriptJob(
         tenant_id=call.tenant_id,
         call_id=call.id,
         recording_id=recording_id,
         provider="deepgram",
-        model=(settings.deepgram_model or "")[:64],
-        language=(language or getattr(call, "language", "") or "")[:16],
+        model=resolved_model[:64],
+        language=resolved_lang[:16],
         status="queued",
         attempt_count=1,
     )
@@ -97,6 +114,23 @@ async def enqueue(
     session.add(job)
     await session.flush()
     return job
+
+
+def resolve_transcription_options(
+    language: str | None = "en-US",
+    boosted_keywords: list[tuple[str, float]] | tuple[tuple[str, float], ...] | None = None,
+) -> dict[str, object]:
+    """Return STT transcription options including `multi` language detection and `keywords` (Sub-Phase 2G)."""
+    from app.agent.language import resolve_language_config
+    from app.agent.providers.stt_providers import format_boosted_keywords
+
+    prof = resolve_language_config(language)
+    return {
+        "language": prof.stt_language,
+        "model": prof.stt_model,
+        "multilingual": prof.is_multilingual,
+        "keywords": format_boosted_keywords(boosted_keywords),
+    }
 
 
 async def mark_processing(session, job: TranscriptJob) -> TranscriptJob:
@@ -160,7 +194,68 @@ class TranscriptUnavailable(ValueError):
         self.code = code
 
 
-async def finalize_stored_turns(session, call, *, snapshot: dict | None = None) -> tuple[str, dict]:
+async def should_redact_pii(
+    session,
+    call: Call,
+    *,
+    agent_id: str | uuid.UUID | None = None,
+) -> bool:
+    """Return True when the effective RecordingPolicy for ``call`` enables PII redaction."""
+    tenant = await session.get(Tenant, call.tenant_id)
+    resolved_agent_id = agent_id or getattr(call, "agent_id", None)
+    policy = await effective(
+        session,
+        tenant,
+        environment_id=getattr(call, "environment_id", None),
+        agent_id=resolved_agent_id,
+    )
+    return bool(policy.get("redact_pii", True))
+
+
+async def redact_turn_text(
+    session,
+    call: Call,
+    text: str,
+    *,
+    agent_id: str | uuid.UUID | None = None,
+) -> str:
+    """Redact ``text`` according to the effective RecordingPolicy before persistence."""
+    if not text:
+        return text
+    if await should_redact_pii(session, call, agent_id=agent_id):
+        return redact(text).text
+    return text
+
+
+async def record_turn(
+    session,
+    call: Call,
+    *,
+    speaker: Speaker,
+    text: str,
+    latency_ms: float | None = None,
+    agent_id: str | uuid.UUID | None = None,
+) -> Turn:
+    """Persist a ``Turn`` row after applying policy-governed PII redaction."""
+    clean_text = await redact_turn_text(session, call, text, agent_id=agent_id)
+    turn = Turn(
+        call_id=call.id,
+        speaker=speaker,
+        text=clean_text,
+        latency_ms=latency_ms,
+    )
+    session.add(turn)
+    await session.flush()
+    return turn
+
+
+async def finalize_stored_turns(
+    session,
+    call,
+    *,
+    snapshot: dict | None = None,
+    agent_id: str | uuid.UUID | None = None,
+) -> tuple[str, dict]:
     """Freeze existing text evidence for post-call work; never synthesize STT.
 
     The caller holds the Call lock. A checkpoint is references plus a digest,
@@ -171,7 +266,6 @@ async def finalize_stored_turns(session, call, *, snapshot: dict | None = None) 
     """
     import hashlib
     import json
-    from app.db.models import Call
 
     query = (select(Turn).join(Call, Call.id == Turn.call_id).where(
         Call.id == call.id, Call.tenant_id == call.tenant_id,
@@ -187,12 +281,24 @@ async def finalize_stored_turns(session, call, *, snapshot: dict | None = None) 
         raise TranscriptUnavailable("no_transcript")
     if len(turns) > 1000:
         raise TranscriptUnavailable("transcript_too_large")
+    redact_enabled = await should_redact_pii(session, call, agent_id=agent_id)
+    if redact_enabled:
+        for row in turns:
+            if row.text:
+                scrubbed = redact(row.text).text
+                if row.text != scrubbed:
+                    row.text = scrubbed
     evidence = [(str(row.id), getattr(row.speaker, "value", str(row.speaker)), row.text or "") for row in turns]
     text = "\n".join(f"{speaker}: {value}" for _, speaker, value in evidence)
     if len(text) > 6300:
         raise TranscriptUnavailable("transcript_too_large")
     digest = hashlib.sha256(json.dumps(evidence, ensure_ascii=False, separators=(",", ":")).encode()).hexdigest()
-    result = {"turn_ids": [row[0] for row in evidence], "turn_count": len(evidence), "sha256": digest}
+    result = {
+        "turn_ids": [row[0] for row in evidence],
+        "turn_count": len(evidence),
+        "sha256": digest,
+        "pii_redacted": redact_enabled,
+    }
     if snapshot is not None and (snapshot.get("sha256") != digest or snapshot.get("turn_ids") != result["turn_ids"]):
         raise TranscriptUnavailable("transcript_changed")
     # Existing asynchronous transcription records may now be closed from real

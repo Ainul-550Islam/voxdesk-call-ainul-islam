@@ -1,0 +1,8 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest --collect-only -q tests/workflow/test_workflow_persistence.py::test_state_machine tests/workflow/test_workflow_persistence.py::test_workflow_schemas_strict_validation tests/workflow/test_workflow_persistence.py::test_workflow_store_protocol_surface
+tests/workflow/test_workflow_persistence.py::test_state_machine
+tests/workflow/test_workflow_persistence.py::test_workflow_schemas_strict_validation
+tests/workflow/test_workflow_persistence.py::test_workflow_store_protocol_surface
+
+3 tests collected in 0.04s
+
+STDERR:

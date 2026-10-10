@@ -1,0 +1,63 @@
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 0001_baseline, v0.3 baseline: full schema
+INFO  [alembic.runtime.migration] Running upgrade 0001_baseline -> 0002_enum_consistency, enum consistency: callstatus + speaker
+INFO  [alembic.runtime.migration] Running upgrade 0002_enum_consistency -> 0003_auth_rbac, auth: users, refresh tokens, audit log
+INFO  [alembic.runtime.migration] Running upgrade 0003_auth_rbac -> 0004_call_transfer_lifecycle, call transfer lifecycle
+INFO  [alembic.runtime.migration] Running upgrade 0004_call_transfer_lifecycle -> 0005_knowledge_rag, knowledge base documents and chunks (RAG)
+INFO  [alembic.runtime.migration] Running upgrade 0005_knowledge_rag -> 0006_crm_integrations, CRM integration layer: configuration, events, sync state, contact links
+INFO  [alembic.runtime.migration] Running upgrade 0006_crm_integrations -> 0007_calendar_scheduling, calendar/scheduling layer: appointment lifecycle, integrations, policies
+INFO  [alembic.runtime.migration] Running upgrade 0007_calendar_scheduling -> 0008_billing, billing: plans, subscriptions, usage metering, invoices, webhook receipts
+INFO  [alembic.runtime.migration] Running upgrade 0008_billing -> 0009_perf_policy, performance indexes + data-policy columns
+INFO  [alembic.runtime.migration] Running upgrade 0009_perf_policy -> 0010_e2e_test_tenant, real-call E2E test-tenant marker
+INFO  [alembic.runtime.migration] Running upgrade 0010_e2e_test_tenant -> 0011_side_effect_exactly_once, side-effect exactly-once: reminder leases + message webhook receipts
+INFO  [alembic.runtime.migration] Running upgrade 0011_side_effect_exactly_once -> 0012_enterprise_persistence, enterprise surface persistence: automations, notifications, inbox state
+INFO  [alembic.runtime.migration] Running upgrade 0012_enterprise_persistence -> 0013_enterprise_identity, enterprise identity: MFA, SSO, SCIM, sessions, machine credentials, domains
+INFO  [alembic.runtime.migration] Running upgrade 0013_enterprise_identity -> 0014_identity_audit_actions, identity audit actions, in the case SQLAlchemy actually writes
+INFO  [alembic.runtime.migration] Running upgrade 0014_identity_audit_actions -> 0015_credential_auth_rejected, refused machine credentials, as an audit action
+INFO  [alembic.runtime.migration] Running upgrade 0015_credential_auth_rejected -> 0016_sso_account_unlinked, account unlink, as an audit action
+INFO  [alembic.runtime.migration] Running upgrade 0016_sso_account_unlinked -> 0017_org_environment_foundation, organization, tenant parent, and environment foundation
+INFO  [alembic.runtime.migration] Running upgrade 0017_org_environment_foundation -> 0018_org_memberships_quotas, organization memberships, invitations and quota limits
+INFO  [alembic.runtime.migration] Running upgrade 0018_org_memberships_quotas -> 0019_env_scope_business_res, environment scope for selected business resources
+INFO  [alembic.runtime.migration] Running upgrade 0019_env_scope_business_res -> 0020_durable_enterprise_ops, durable enterprise operations
+INFO  [alembic.runtime.migration] Running upgrade 0020_durable_enterprise_ops -> 0021_ai_governance, ai governance persistence
+INFO  [alembic.runtime.migration] Running upgrade 0021_ai_governance -> 0022_telephony_media_platform, telephony media platform
+INFO  [alembic.runtime.migration] Running upgrade 0022_telephony_media_platform -> 0023_contact_center_acd, contact center acd
+INFO  [alembic.runtime.migration] Running upgrade 0023_contact_center_acd -> 0024_qa_conversation_intel, qa conversation intelligence
+INFO  [alembic.runtime.migration] Running upgrade 0024_qa_conversation_intel -> 0025_enterprise_leads, enterprise lead lifecycle
+INFO  [alembic.runtime.migration] Running upgrade 0025_enterprise_leads -> 0026_campaign_environment_scope, campaign environment scope
+INFO  [alembic.runtime.migration] Running upgrade 0026_campaign_environment_scope -> 0027_durable_jobs_outbox, durable jobs outbox
+INFO  [alembic.runtime.migration] Running upgrade 0027_durable_jobs_outbox -> 0028_durable_workflow, durable workflow execution
+INFO  [alembic.runtime.migration] Running upgrade 0028_durable_workflow -> 0029_prompt3_surfaces, Prompt 3 connector/tool/MCP/security surfaces and PostgreSQL RLS.
+INFO  [alembic.runtime.migration] Running upgrade 0029_prompt3_surfaces -> 0030_voice_runtime, Durable voice profiles and provider-backed voice clone jobs.
+INFO  [alembic.runtime.migration] Running upgrade 0030_voice_runtime -> 0031_workflow_persistence_hard, Harden the durable workflow schema for locking, publication, and recovery.
+INFO  [alembic.runtime.migration] Running upgrade 0031_workflow_persistence_hard -> 0032_enterprise_governance_found, Enterprise AI governance foundation.
+INFO  [alembic.runtime.migration] Running upgrade 0032_enterprise_governance_found -> 0033_specialized_agent_execution, Durable specialized-agent execution and result metadata.
+INFO  [alembic.runtime.migration] Running upgrade 0033_specialized_agent_execution -> 0034_review_specialized_persist, Durable human review and specialized-agent result projections.
+INFO  [alembic.runtime.migration] Running upgrade 0034_review_specialized_persist -> 0035_compliance_roi_deployment, Enterprise compliance, ROI measurement, and deployment control plane.
+INFO  [alembic.runtime.migration] Running upgrade 0035_compliance_roi_deployment -> 0036_durable_call_outcomes, Durable, reviewable call-outcome events.
+INFO  [alembic.runtime.migration] Running upgrade 0036_durable_call_outcomes -> 0036_runtime_deployment_observ, Scoped deployment runtime observations and evidence metadata.
+INFO  [alembic.runtime.migration] Running upgrade 0036_runtime_deployment_observ -> 0037_enterprise_missing_apis, Enterprise missing APIs closure — batch calls, A/B testing, PCAP, retention, webhooks, Salesforce, KB collections, simulation, tool registry, workflow triggers, multichannel, call policies, analysis, backfill, live sessions, DNC
+INFO  [alembic.runtime.migration] Running upgrade 0037_enterprise_missing_apis -> 0038_retell_parity_foundation, Retell parity foundation — contacts, contact memory, chat agents + versions, dynamic variables, agent transfers + events
+INFO  [alembic.runtime.migration] Running upgrade 0038_retell_parity_foundation -> 0038_agent_chat_conductor, Durable Agent, AgentVersion, ChatSession, ChatMessage, TestSuite, TestCase, TestRun, EvaluationRule, and EvaluationResult tables with tenant/environment isolation.
+INFO  [alembic.runtime.migration] Running upgrade 0038_agent_chat_conductor -> 0039_conductor_control_plane, Prompt 4: Durable Conductor AI Control Plane tables, constraints, and indexes.
+INFO  [alembic.runtime.migration] Running upgrade 0039_conductor_control_plane -> 0040_public_widget_keys, Prompt 5: Public Widget Keys, Public Widget Sessions, and Public Contact Sales tables.
+INFO  [alembic.runtime.migration] Running upgrade 0040_public_widget_keys -> 0041_telephony_voice_runtime, alembic/versions/0041_telephony_voice_runtime.py
+Prompt 6 — Telephony / Voice Runtime tables:
+- telephony_sip_connections
+- telephony_phone_numbers
+- telephony_call_sessions
+- telephony_provider_events
+- telephony_transfer_records
+INFO  [alembic.runtime.migration] Running upgrade 0041_telephony_voice_runtime -> 0042_audit_scope_and_redaction, Add queryable scope and correlation fields to the existing audit ledger.
+INFO  [alembic.runtime.migration] Running upgrade 0042_audit_scope_and_redaction -> 0043_environment_bound_api_keys, Bind machine API keys to an optional tenant-owned environment.
+INFO  [alembic.runtime.migration] Running upgrade 0043_environment_bound_api_keys -> 0044_conductor_webhook_receipts, Persist tenant-scoped Conductor webhook idempotency receipts.
+INFO  [alembic.runtime.migration] Running upgrade 0044_conductor_webhook_receipts -> 0045_request_idem_receipts, Add durable, request-scoped idempotency receipts.
+INFO  [alembic.runtime.migration] Running upgrade 0045_request_idem_receipts -> 0046_callstatus_cancelled, Add truthful provider-confirmed cancellation status for legacy calls.
+INFO  [alembic.runtime.migration] Running upgrade 0046_callstatus_cancelled -> 0047_call_transfer_context, Persist tenant-scoped warm-transfer context on calls.
+INFO  [alembic.runtime.migration] Running upgrade 0047_call_transfer_context -> 0048_boolean_defaults, Make public-widget and telephony boolean defaults portable on PostgreSQL.
+INFO  [alembic.runtime.migration] Running upgrade 0048_boolean_defaults -> 0049_runtime_schema_alignment, Align deployed agent/MCP columns with the authoritative persisted models.
+INFO  [alembic.runtime.migration] Running upgrade 0049_runtime_schema_alignment -> 0050_unify_webhooks, Unify webhook storage; preserve legacy records in sealed quarantine.
+INFO  [alembic.runtime.migration] Running upgrade 0050_unify_webhooks -> 0051_post_call_pipeline, Durable checkpoints for canonical call post-processing.
+INFO  [alembic.runtime.migration] Running upgrade 0051_post_call_pipeline -> 0052_analysis_versions, Scope custom schemas and preserve immutable version/provenance metadata.
+INFO  [alembic.runtime.migration] Running upgrade 0052_analysis_versions -> 0053_analysis_backfill, Persist backfill scope, pinned definition, selection and canonical job IDs.

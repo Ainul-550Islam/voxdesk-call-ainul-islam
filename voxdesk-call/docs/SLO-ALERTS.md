@@ -1,129 +1,119 @@
-# VoxDesk — SLOs and alerts (Step 7)
+# VoxDesk — SLOs and Alerts (Step 7 & Part 8 / Gate G9)
 
-Two questions, one document: what are we promising (SLO), and what wakes a
-human when we are about to break it (alerts).
+Two questions, one document: what service levels VoxDesk measures and targets
+(SLOs), and what wakes an operator when we are about to breach them (alerts &
+runbooks).
 
 ---
 
-## SLOs
+## 1. Service Level Objectives (SLOs)
 
-The one availability SLO VoxDesk states, measured by the recording rules in
+Measured continuously by the Prometheus recording rules in
 `observability/slos.yml`:
 
-| SLO | Target | Measured by | Window |
-|---|---|---|---|
-| HTTP availability | ≥ 99.9% monthly | `voxdesk:slo:availability:30d` (5m for operations) | 5m / 30d |
+| SLO | Target | Recording Rules (`5m` live / `30d` rolling) | Underlying Metric | Runbook |
+|---|---|---|---|---|
+| **HTTP API Availability** | `>= 99.9%` monthly | `voxdesk:slo:availability:5m` / `voxdesk:slo:availability:30d` | `voxdesk_http_requests_total` | `docs/RUNBOOKS/db-failover.md` |
+| **Voice E2E Turn Latency (p95)** | `<= 1.2s` (`1200 ms`) | `voxdesk:slo:voice_e2e_latency_p95:5m` / `voxdesk:slo:voice_e2e_latency_p95:30d` | `voxdesk_voice_e2e_latency_seconds_bucket` (from 2A `LatencyObserver`) | `docs/RUNBOOKS/high-latency.md` |
+| **Webhook Delivery Success** | `>= 99.5%` monthly | `voxdesk:slo:webhook_delivery_success:5m` / `voxdesk:slo:webhook_delivery_success:30d` | `voxdesk_external_side_effects_total{kind="message_webhook"}` | `docs/RUNBOOKS/webhook-backlog.md` |
+| **Post-Call Completion Time (p95)** | `<= 10.0s` | `voxdesk:slo:post_call_completion_p95:5m` / `voxdesk:slo:post_call_completion_p95:30d` | `voxdesk_runtime_event_duration_seconds_bucket{component="workflow",event="execution"}` | `docs/RUNBOOKS/high-latency.md` |
 
-**Definition.** Availability = `1 − (5xx responses / all responses)`. A 4xx is
-*correct* behaviour (auth failure, not-found), not a miss, so it is excluded
-from the numerator. This is process-level HTTP availability — the standard
-definition. Call-level quality has its own signals (`voxdesk_calls_total`,
-`voxdesk_calls_answered_total`) and is not folded into this number.
+### Definitions & PromQL Queries
 
-**Reading it.**
+1. **HTTP API Availability (`>= 99.9%`)**:
+   - **Formula**: `1 - (5xx responses / all HTTP responses)`. Client `4xx` responses (auth failure, validation error, 404) are normal protocol outcomes and are excluded from the error numerator.
+   - **PromQL**:
+     ```promql
+     voxdesk:slo:availability:5m
+     voxdesk:slo:availability:30d
+     # Error budget remaining (fraction of traffic):
+     voxdesk:slo:availability:30d - 0.999
+     ```
 
-```promql
-# current availability (5-minute window):
-voxdesk:slo:availability:5m
+2. **Voice E2E Turn Latency p95 (`<= 1.2s`, Sub-Phase 2A)**:
+   - **Formula**: 95th percentile of `voxdesk_voice_e2e_latency_seconds` measured by `LatencyObserver` (`app/agent/latency.py`) from caller end-of-speech (`UserStoppedSpeakingFrame`) to first outbound bot audio frame (`BotStartedSpeakingFrame`). In the deterministic synthetic benchmark (`docs/LATENCY_BENCHMARK.md`, `N=200` calls), harness `e2e_p95_ms` is `323.328 ms`; the production SLO includes live STT/LLM/TTS network round-trips (`<= 1.2s` warning, `<= 2.0s` critical).
+   - **PromQL**:
+     ```promql
+     voxdesk:slo:voice_e2e_latency_p95:5m
+     voxdesk:slo:voice_e2e_latency_p95:30d
+     ```
 
-# 30-day availability (meaningful only after 30 days of retained data —
-# before that the window is optimistically short):
-voxdesk:slo:availability:30d
+3. **Webhook Delivery Success (`>= 99.5%`)**:
+   - **Formula**: `1 - (failed webhook deliveries / total completed webhook delivery attempts)`. Backed by the transactional outbox (`app/outbox/dispatcher.py`) and durable job worker (`app/jobs/worker.py`).
+   - **PromQL**:
+     ```promql
+     voxdesk:slo:webhook_delivery_success:5m
+     voxdesk:slo:webhook_delivery_success:30d
+     ```
 
-# error budget remaining in a window, as a fraction of traffic:
-voxdesk:slo:availability:5m - 0.999
-```
+4. **Post-Call Completion Time p95 (`<= 10.0s`)**:
+   - **Formula**: 95th percentile of post-call workflow and structured analysis execution duration (`voxdesk_runtime_event_duration_seconds_bucket{component="workflow",event="execution"}`) from call termination to persisted post-call artifacts and enqueued outbox events.
+   - **PromQL**:
+     ```promql
+     voxdesk:slo:post_call_completion_p95:5m
+     voxdesk:slo:post_call_completion_p95:30d
+     ```
 
-**Honesty about the 30d window.** A fresh Prometheus has no 30 days of data,
-so `:30d` reads optimistically high until the window fills. The 5m window is
-the operations number; the 30d window is the report number.
+**Honesty about the 30d window.** A fresh Prometheus instance has no 30 days of retained samples, so `:30d` rules read optimistically high until the retention window fills. Use `:5m` for real-time operations and alerting, and `:30d` for monthly SLO reporting.
 
 ---
 
-## Alerts
+## 2. Alerts (`observability/alerts.yml`)
 
-`observability/alerts.yml`. Minimal and high-value: every alert means "a human
-should look now", and every alert carries a `runbook` annotation pointing at
-its section below.
+Every alert in `observability/alerts.yml` maps to a concrete operator action and runbook:
 
-| Alert | Severity | Condition |
-|---|---|---|
-| VoxDeskInstanceDown | critical | API unscrapeable 2m |
-| VoxDeskSchedulerDown | critical | scheduler unscrapeable 2m |
-| VoxDeskDatabaseDown | critical | `voxdesk_db_up == 0` 1m |
-| VoxDeskHighErrorRate | warning | 5xx > 5% over 5m |
-| VoxDeskSlowP95 | warning | p95 > 2s over 5m |
-| VoxDeskCallFailureRate | warning | > 30% of finished calls failed over 10m |
-| VoxDeskProviderErrorBurst | warning | > 10 provider errors in 10m |
-| VoxDeskStuckSideEffects | critical | any stuck side effect for 10m |
-| VoxDeskJobStale | warning | frequent scheduler loop silent > 1h |
+| Alert | Severity | Condition | Dedicated Runbook |
+|---|---|---|---|
+| `VoxDeskInstanceDown` | `critical` | API unscrapeable `2m` | `#voxdeskinstancedown` |
+| `VoxDeskSchedulerDown` | `critical` | scheduler unscrapeable `2m` | `docs/RUNBOOKS/webhook-backlog.md` |
+| `VoxDeskDatabaseDown` | `critical` | `voxdesk_db_up == 0` for `1m` | `docs/RUNBOOKS/db-failover.md` |
+| `VoxDeskHighErrorRate` | `warning` | HTTP `5xx > 5%` over `5m` | `#voxdeskhigherrorrate--voxdeskslowp95` |
+| `VoxDeskSlowP95` | `warning` | HTTP `p95 > 2s` over `5m` | `docs/RUNBOOKS/high-latency.md` |
+| `VoxDeskCallFailureRate` | `warning` | `> 30%` of finished calls failed over `10m` | `docs/RUNBOOKS/provider-outage.md` |
+| `VoxDeskProviderErrorBurst` | `warning` | `> 10` provider errors in `10m` | `docs/RUNBOOKS/provider-outage.md` |
+| `VoxDeskStuckSideEffects` | `critical` | any stuck side effect for `10m` | `docs/RUNBOOKS/webhook-backlog.md` |
+| `VoxDeskJobStale` | `warning` | frequent scheduler loop silent `> 1h` | `docs/RUNBOOKS/webhook-backlog.md` |
+| `VoiceLatencyP95Degraded` | `warning` | Voice E2E `p95 > 1.2s` for `10m` | `docs/RUNBOOKS/high-latency.md` |
+| `VoiceLatencyP95Critical` | `critical` | Voice E2E `p95 > 2.0s` for `2m` | `docs/RUNBOOKS/high-latency.md` |
 
-### Runbooks
+### Alert Summaries & Immediate Actions
 
 #### VoxDeskInstanceDown
 * **What it means:** Prometheus cannot scrape `/metrics` from the API.
-* **Check:** `docker compose -f docker-compose.prod.yml ps api`; `docker
-  compose logs api --tail 200`; is the process OOM-killed? Is Caddy up?
-* **Act:** restart the service; if it loops, roll back
-  (`scripts/deploy.sh` at the last-known-good SHA) and diagnose from logs.
+* **Check:** `docker compose -f docker-compose.prod.yml ps api` or `kubectl get pods -l app.kubernetes.io/name=voxdesk`; inspect container logs (`--tail 200`) for OOMKills or startup validation errors.
+* **Act:** Restart the service; if a deploy introduced a boot failure, roll back (`scripts/rollback.sh` or `helm rollback voxdesk`).
 
 #### VoxDeskSchedulerDown
-* **What it means:** the background worker (reminders, campaigns, CRM sync,
-  billing reconciliation, retention, stuck sweep) is unscrapeable.
-* **Impact:** calls still work; side effects stop flowing — reminders stop,
-  CRM writes queue up, usage summaries go stale.
-* **Act:** check `docker compose logs scheduler`; restart it. Its loops are
-  idempotent and self-healing, so a restart is safe.
+* **What it means:** The background worker (`scripts/scheduler.py` — reminders, campaigns, CRM sync, billing reconciliation, retention, durable jobs, outbox dispatch) is unscrapeable.
+* **Impact:** Live calls still answer; asynchronous side effects queue in PostgreSQL.
+* **Act:** Follow [`docs/RUNBOOKS/webhook-backlog.md`](RUNBOOKS/webhook-backlog.md). Restarting the scheduler is safe because all loops and job claims are idempotent and lease-guarded.
 
 #### VoxDeskDatabaseDown
-* **What it means:** `/health/ready` is reporting the database unreachable,
-  and the load balancer is (or should be) draining this node.
-* **Act:** check `pg_isready`, disk space, connection count
-  (`pool_size`/`max_overflow` exhaustion). Do **not** restart the API hoping
-  to fix the DB — readiness is doing its job.
+* **What it means:** `/health/ready` is reporting the database unreachable (`voxdesk_db_up == 0`), and readiness gates are draining the node.
+* **Act:** Follow [`docs/RUNBOOKS/db-failover.md`](RUNBOOKS/db-failover.md). Check `pg_isready`, connection pool limits, standby promotion, or restore using `scripts/dr_drill.sh` / `scripts/restore.sh`.
 
 #### VoxDeskHighErrorRate / VoxDeskSlowP95
-* **What it means:** either a code regression or a saturated dependency.
-* **Act:** open the Overview dashboard; correlate the 5xx/latency spike with a
-  deploy time. Pull the worst `request_id`s from logs
-  (`grep '"request_id"'`) and reproduce. Roll back if it follows a deploy.
+* **What it means:** Either a code regression, worker CPU saturation, or a degraded downstream dependency.
+* **Act:** Follow [`docs/RUNBOOKS/high-latency.md`](RUNBOOKS/high-latency.md). Correlate the 5xx/latency spike with deploy timestamps and `request_id` structured logs.
 
 #### VoxDeskCallFailureRate
-* **What it means:** more than 30% of finished calls are `failed` (not
-  `no_answer` — those are "nobody picked up", a business fact, not a fault).
-* **Act:** open the Provider errors panel; group failures by
-  provider/category. A single provider outage shows as one category spiking.
-  Check `call.crashed` and `pipeline.run_failed` logs by `call_sid`.
+* **What it means:** More than 30% of finished calls are `failed` (`no_answer` is excluded as normal caller behavior).
+* **Act:** Follow [`docs/RUNBOOKS/provider-outage.md`](RUNBOOKS/provider-outage.md). Inspect `voxdesk_provider_errors_total` and `voxdesk_provider_failover_total` by stage (`stt`, `llm`, `tts`).
 
 #### VoxDeskProviderErrorBurst
-* **What it means:** a voice provider (Deepgram/ElevenLabs/LLM) is failing at
-  volume.
-* **Act:** identify the provider/category from the dashboard; check its status
-  page; verify keys/limits. The LLM factory falls back between providers, so
-  an LLM burst may be invisible to callers while it degrades quality.
+* **What it means:** A voice provider (Deepgram, ElevenLabs, OpenAI, Anthropic, Gemini) is failing at volume.
+* **Act:** Follow [`docs/RUNBOOKS/provider-outage.md`](RUNBOOKS/provider-outage.md). Verify automatic failover via `FailoverServiceWrapper` (`app/agent/providers/failover.py`) and switch primary provider if an upstream outage is prolonged.
 
 #### VoxDeskStuckSideEffects
-* **What it means:** reminders, CRM syncs or document ingestions have been
-  in-flight past their recovery window and the reapers have not recovered
-  them.
-* **Act:** check `scheduler.crm_sync`, `scheduler.reminders`,
-  `ingest.reaped_stuck_documents` logs; confirm the scheduler is alive
-  (VoxDeskSchedulerDown). A stuck row blocks the customer-visible action
-  (their reminder, their CRM lead) — treat as urgent.
+* **What it means:** Reminders, CRM syncs, or document ingestions have remained in-flight past their lease recovery window.
+* **Act:** Follow [`docs/RUNBOOKS/webhook-backlog.md`](RUNBOOKS/webhook-backlog.md). Inspect `outbox_events`, `jobs`, and `webhook_deliveries` and redrive dead-lettered items once the downstream endpoint is healthy.
 
 #### VoxDeskJobStale
-* **What it means:** one of the frequent loops (reminders, campaigns,
-  CRM sync, knowledge) has not *succeeded* in over an hour. (Retention and
-  billing reconciliation run daily/hourly and are deliberately not in this
-  alert.)
-* **Act:** inspect the loop's error logs; the loops swallow per-iteration
-  errors to survive, so a persistent failure shows as a silent stale gauge
-  rather than a crash.
+* **What it means:** One of the frequent scheduler loops (`reminders`, `campaigns`, `crm_sync`, `knowledge`) has not succeeded in over an hour.
+* **Act:** Follow [`docs/RUNBOOKS/webhook-backlog.md`](RUNBOOKS/webhook-backlog.md). Inspect `scheduler.*_failed` logs.
 
 ---
 
-## Alerting philosophy
+## 3. Alerting Philosophy
 
-No hundreds of noisy rules. Each alert is a condition an operator can act on,
-each has a severity and a runbook. If a new alert cannot state its runbook
-action in one sentence, it does not ship.
+No noisy informational rules. Every alert represents a customer-impacting condition or imminent SLO burn, carries an explicit severity, and links to an executable runbook in `docs/RUNBOOKS/`.

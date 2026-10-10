@@ -122,6 +122,7 @@ async def validate_candidate_configuration(
             if op not in {"remove", "delete"}:
                 validate_value_safety(new_val, path=path)
         except Exception as exc:
+            __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
             msg = str(exc)
             c_msgs.append(msg)
             errors.append({"field": path or "operation", "message": msg})
@@ -160,6 +161,7 @@ async def validate_candidate_configuration(
     try:
         candidate = apply_operations_to_snapshot(base_snapshot, active_ops)
     except Exception as exc:
+        __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
         errors.append({"field": "candidate", "message": str(exc)})
         return {
             "valid": False,

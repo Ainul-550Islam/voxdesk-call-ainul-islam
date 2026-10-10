@@ -1,0 +1,52 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_transfer_pipeline.py::test_dispatch_reaches_the_provider_and_changes_the_database tests/test_transfer_pipeline.py::test_failed_transfer_does_not_claim_success_to_the_model tests/test_transfer_pipeline.py::test_tool_result_leaks_neither_numbers_nor_provider_errors tests/test_transfer_pipeline.py::test_duplicate_dispatch_does_not_dial_twice tests/test_transfer_pipeline.py::test_dispatch_survives_a_missing_argument
+.....                                                                    [100%]
+=============================== warnings summary ===============================
+tests/test_transfer_pipeline.py::test_dispatch_reaches_the_provider_and_changes_the_database
+tests/test_transfer_pipeline.py::test_failed_transfer_does_not_claim_success_to_the_model
+tests/test_transfer_pipeline.py::test_tool_result_leaks_neither_numbers_nor_provider_errors
+tests/test_transfer_pipeline.py::test_duplicate_dispatch_does_not_dial_twice
+tests/test_transfer_pipeline.py::test_dispatch_survives_a_missing_argument
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_transfer_pipeline.py: 13 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/test_transfer_pipeline.py::test_dispatch_reaches_the_provider_and_changes_the_database
+tests/test_transfer_pipeline.py::test_failed_transfer_does_not_claim_success_to_the_model
+tests/test_transfer_pipeline.py::test_tool_result_leaks_neither_numbers_nor_provider_errors
+tests/test_transfer_pipeline.py::test_duplicate_dispatch_does_not_dial_twice
+tests/test_transfer_pipeline.py::test_dispatch_survives_a_missing_argument
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_transfer_pipeline.py::test_dispatch_reaches_the_provider_and_changes_the_database
+tests/test_transfer_pipeline.py::test_failed_transfer_does_not_claim_success_to_the_model
+tests/test_transfer_pipeline.py::test_tool_result_leaks_neither_numbers_nor_provider_errors
+tests/test_transfer_pipeline.py::test_duplicate_dispatch_does_not_dial_twice
+tests/test_transfer_pipeline.py::test_dispatch_survives_a_missing_argument
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/test_transfer.py:43: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    started_at=datetime.utcnow(),
+
+tests/test_transfer_pipeline.py::test_dispatch_reaches_the_provider_and_changes_the_database
+tests/test_transfer_pipeline.py::test_failed_transfer_does_not_claim_success_to_the_model
+tests/test_transfer_pipeline.py::test_tool_result_leaks_neither_numbers_nor_provider_errors
+tests/test_transfer_pipeline.py::test_duplicate_dispatch_does_not_dial_twice
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/transfer_service.py:288: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_transfer_pipeline.py::test_dispatch_reaches_the_provider_and_changes_the_database
+tests/test_transfer_pipeline.py::test_duplicate_dispatch_does_not_dial_twice
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/transfer_service.py:340: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call.transfer_started_at = datetime.utcnow()
+
+tests/test_transfer_pipeline.py::test_failed_transfer_does_not_claim_success_to_the_model
+tests/test_transfer_pipeline.py::test_tool_result_leaks_neither_numbers_nor_provider_errors
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/transfer_service.py:469: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call.transfer_failed_at = datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+5 passed, 36 warnings in 3.67s
+
+STDERR:

@@ -1,0 +1,5 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/workflow/test_workflow_state_machine.py::test_transition_matrix[paused-running-True] tests/workflow/test_workflow_state_machine.py::test_transition_matrix[paused-completed-False] tests/workflow/test_workflow_state_machine.py::test_transition_matrix[waiting_approval-completed-True] tests/workflow/test_workflow_state_machine.py::test_transition_matrix[waiting_approval-running-True] tests/workflow/test_workflow_state_machine.py::test_transition_matrix[failed-retrying-True]
+.....                                                                    [100%]
+5 passed in 0.08s
+
+STDERR:

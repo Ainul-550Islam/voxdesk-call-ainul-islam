@@ -1,0 +1,79 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_enum_consistency.py::test_full_transcript_with_caller_agent_and_system_round_trips tests/test_enum_consistency.py::test_call_lifecycle_still_works_end_to_end tests/test_enum_consistency.py::test_transcript_reader_maps_speakers_to_llm_roles tests/test_enum_consistency.py::test_transfer_state_migration_matches_the_model tests/test_enum_consistency.py::test_transfer_state_values_are_lowercase_names tests/test_enum_consistency.py::test_migration_0004_adds_every_new_call_column tests/test_enum_consistency.py::test_migration_chain_is_linear_and_unbroken tests/test_enum_consistency.py::test_document_status_migration_matches_the_model tests/test_enum_consistency.py::test_document_source_type_migration_matches_the_model tests/test_enum_consistency.py::test_knowledge_enum_values_are_lowercase_names tests/test_enum_consistency.py::test_only_ready_is_searchable tests/test_enum_consistency.py::test_migration_0005_creates_every_base_model_column tests/test_enum_consistency.py::test_migration_0005_declares_the_tenant_scoped_constraints tests/test_enum_consistency.py::test_migration_0005_follows_0004 tests/test_enum_consistency.py::test_chunk_carries_its_own_tenant_id tests/test_enum_consistency.py::test_crm_provider_type_migration_matches_the_model tests/test_enum_consistency.py::test_crm_event_type_migration_matches_the_model tests/test_enum_consistency.py::test_crm_entity_type_migration_matches_the_model tests/test_enum_consistency.py::test_crm_sync_status_migration_matches_the_model tests/test_enum_consistency.py::test_integration_audit_actions_are_added_by_migration_0006 tests/test_enum_consistency.py::test_crm_enum_values_are_stable_wire_strings tests/test_enum_consistency.py::test_migration_0006_creates_every_model_column tests/test_enum_consistency.py::test_migration_0006_declares_the_constraints_that_carry_the_guarantees tests/test_enum_consistency.py::test_migration_0006_follows_0005 tests/test_enum_consistency.py::test_migration_0006_does_not_touch_the_legacy_crm_columns tests/test_enum_consistency.py::test_the_retryable_and_terminal_status_sets_do_not_overlap tests/test_enum_consistency.py::test_every_crm_enum_round_trips_through_the_database tests/test_enum_consistency.py::test_appointment_status_migration_matches_the_model tests/test_enum_consistency.py::test_calendar_provider_type_migration_matches_the_model tests/test_enum_consistency.py::test_calendar_audit_actions_are_added_by_migration_0007
+.....FF.......................                                           [100%]
+=================================== FAILURES ===================================
+________________ test_migration_0004_adds_every_new_call_column ________________
+
+    def test_migration_0004_adds_every_new_call_column():
+        """A model column with no migration is a production-only crash."""
+        import pathlib
+    
+        from app.db.models import Call
+    
+        source = pathlib.Path(
+            "alembic/versions/0004_call_transfer_lifecycle.py"
+        ).read_text()
+    
+        new_columns = [
+            c.name for c in Call.__table__.columns
+            if c.name.startswith("transfer_") or c.name == "failure_reason"
+        ]
+        assert new_columns
+        for column in new_columns:
+>           assert f'"{column}"' in source, f"{column} is missing from migration 0004"
+E           AssertionError: transfer_context is missing from migration 0004
+E           assert '"transfer_context"' in '"""call transfer lifecycle\n\nAdds the columns that let the application prove a human transfer actually\nhappened, pl...  "failure_reason",\n    ):\n        op.drop_column("calls", column)\n\n    transfer_state.drop(bind, checkfirst=True)'
+
+tests/test_enum_consistency.py:394: AssertionError
+_________________ test_migration_chain_is_linear_and_unbroken __________________
+
+    def test_migration_chain_is_linear_and_unbroken():
+        import pathlib
+        import re
+    
+        versions = pathlib.Path("alembic/versions")
+        revisions, downs = {}, {}
+        for path in versions.glob("*.py"):
+            text = path.read_text()
+            rev = re.search(r'^revision = "([^"]+)"', text, re.M)
+            down = re.search(r"^down_revision = (?:\"([^\"]+)\"|None)", text, re.M)
+            if rev:
+                revisions[rev.group(1)] = path.name
+                downs[rev.group(1)] = down.group(1) if down and down.group(1) else None
+    
+        assert "0004_call_transfer_lifecycle" in revisions
+        assert downs["0004_call_transfer_lifecycle"] == "0003_auth_rbac"
+        # Exactly one root, and every parent exists.
+        roots = [r for r, d in downs.items() if d is None]
+        assert len(roots) == 1, f"expected one baseline, found {roots}"
+        for rev, down in downs.items():
+>           assert down is None or down in revisions, f"{rev} points at missing {down}"
+E           AssertionError: 0041_telephony_voice_runtime points at missing 0040_public_widget_keys
+E           assert ('0040_public_widget_keys' is None or '0040_public_widget_keys' in {'0001_baseline': '0001_baseline.py', '0002_enum_consistency': '0002_enum_consistency.py', '0003_auth_rbac': '0003_auth_rbac.py', '0004_call_transfer_lifecycle': '0004_call_transfer_lifecycle.py', ...})
+
+tests/test_enum_consistency.py:417: AssertionError
+=============================== warnings summary ===============================
+tests/test_enum_consistency.py::test_full_transcript_with_caller_agent_and_system_round_trips
+tests/test_enum_consistency.py::test_call_lifecycle_still_works_end_to_end
+tests/test_enum_consistency.py::test_transcript_reader_maps_speakers_to_llm_roles
+tests/test_enum_consistency.py::test_every_crm_enum_round_trips_through_the_database
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_enum_consistency.py: 22 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/test_enum_consistency.py::test_full_transcript_with_caller_agent_and_system_round_trips
+tests/test_enum_consistency.py::test_call_lifecycle_still_works_end_to_end
+tests/test_enum_consistency.py::test_transcript_reader_maps_speakers_to_llm_roles
+tests/test_enum_consistency.py::test_every_crm_enum_round_trips_through_the_database
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_enum_consistency.py::test_migration_0004_adds_every_new_call_column
+FAILED tests/test_enum_consistency.py::test_migration_chain_is_linear_and_unbroken
+2 failed, 28 passed, 30 warnings in 3.03s
+
+STDERR:

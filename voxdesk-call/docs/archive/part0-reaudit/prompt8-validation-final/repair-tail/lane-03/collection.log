@@ -1,0 +1,8 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest --collect-only -q tests/test_voice_clone.py::test_clone_audio_validation_accepts_pcm_wav tests/test_voice_clone.py::test_clone_fingerprint_is_tenant_and_input_bound tests/test_voice_clone.py::test_clone_audio_rejects_untrusted_format
+tests/test_voice_clone.py::test_clone_audio_validation_accepts_pcm_wav
+tests/test_voice_clone.py::test_clone_fingerprint_is_tenant_and_input_bound
+tests/test_voice_clone.py::test_clone_audio_rejects_untrusted_format
+
+3 tests collected in 0.04s
+
+STDERR:

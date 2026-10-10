@@ -1,0 +1,40 @@
+......s....                                                              [100%]
+=============================== warnings summary ===============================
+tests/telephony/test_post_call_crm.py: 12 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/telephony/test_post_call_crm.py: 128 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/telephony/test_post_call_crm.py: 12 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/telephony/test_post_call_crm.py: 10 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/conftest.py:569: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "started_at": datetime.utcnow(),
+
+tests/telephony/test_post_call_crm.py: 11 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/conftest.py:550: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    integration.credentials_updated_at = datetime.utcnow()
+
+tests/telephony/test_post_call_crm.py::test_pipeline_admits_once_and_actual_provider_note_is_required
+tests/telephony/test_post_call_crm.py::test_note_failure_is_not_hidden_by_successful_contact
+tests/telephony/test_post_call_crm.py::test_missing_provider_secret_is_not_configured
+tests/telephony/test_post_call_crm.py::test_delivery_audit_failure_does_not_commit_synced
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/integrations/crm/service.py:295: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/telephony/test_post_call_crm.py::test_pipeline_admits_once_and_actual_provider_note_is_required
+tests/telephony/test_post_call_crm.py::test_delivery_audit_failure_does_not_commit_synced
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/integrations/crm/service.py:625: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    sync.synced_at = datetime.utcnow()
+
+tests/telephony/test_post_call_crm.py::test_note_failure_is_not_hidden_by_successful_contact
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/integrations/crm/service.py:661: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    sync.next_attempt_at = datetime.utcnow() + timedelta(seconds=delay)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+10 passed, 1 skipped, 180 warnings in 7.62s

@@ -44,12 +44,14 @@ _CONFIG = {
     },
     CrmProviderType.HUBSPOT: {"base_url": "https://hubspot.test"},
     CrmProviderType.JOBBER: {"base_url": "https://jobber.test/graphql"},
+    CrmProviderType.SALESFORCE: {"instance_url": "https://acme.my.salesforce.com"},
     CrmProviderType.WEBHOOK: {"url": "https://hooks.test/in"},
 }
 _CREDENTIALS = {
     CrmProviderType.GOHIGHLEVEL: {"access_token": "pit-secret-token-value-123"},
     CrmProviderType.HUBSPOT: {"access_token": "pat-na1-secret-token-value"},
     CrmProviderType.JOBBER: {"access_token": "jobber-secret-token-value"},
+    CrmProviderType.SALESFORCE: {"access_token": "sf-secret-token-value-123"},
     CrmProviderType.WEBHOOK: {"signing_secret": "webhook-secret-value-0123456789"},
 }
 
@@ -405,6 +407,7 @@ async def test_a_successful_write_always_returns_an_external_id(
                 "client": {"id": "jb-1"}, "userErrors": [],
             }}
         },
+        CrmProviderType.SALESFORCE: {"id": "003xx000004TmiQAAS", "success": True},
         CrmProviderType.WEBHOOK: {"id": "wh-1"},
     }
     FakeTransport((200, success_bodies[provider])).install(monkeypatch)

@@ -134,7 +134,7 @@ export function useAgentBuilder(agentId: string) {
       const v = await doValidate();
       if (!v.valid) return { success: false, errors: v.errors };
       try {
-        const r = await publishAgent(agentId, releaseNotes);
+        const r = await publishAgent(agentId, { release_notes: releaseNotes });
         await load();
         return { ...r, success: true };
       } catch (e: any) {

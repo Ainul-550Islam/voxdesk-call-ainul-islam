@@ -173,6 +173,7 @@ class PostCallPipeline:
                 except Exception:
                     # This is an explicit failed checkpoint, not ignored failure.
                     # The aggregate job will fail after independent steps run.
+                    __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
                     row.status, row.error = "failed", "post_call_internal_error"
                 row.finished_at = _now()
                 await session.commit()
@@ -261,6 +262,30 @@ class PostCallPipeline:
                 row.retryable = any(item is None or item.retryable for item in incomplete)
                 return
             ids = [by_step[key].output["analysis_result_id"] for key in sorted(required) if key.startswith("schema:")]
+            if getattr(call, "experiment_id", None) and getattr(call, "variant_id", None):
+                from app.services.experiment_service import record_call_outcome
+                sentiment_step = by_step.get("sentiment")
+                csat_val = None
+                if sentiment_step and isinstance(sentiment_step.output, dict):
+                    raw_score = sentiment_step.output.get("score")
+                    if isinstance(raw_score, (int, float)):
+                        csat_val = round(max(1.0, min(5.0, 3.0 + float(raw_score) * 2.0)), 2)
+                call_success = bool(
+                    getattr(call, "booked", False)
+                    or str(getattr(call.status, "value", call.status)).lower() == "completed"
+                )
+                await record_call_outcome(
+                    session,
+                    tenant_id=call.tenant_id,
+                    call_id=call.id,
+                    success=call_success,
+                    duration=float(call.duration_seconds or 0.0),
+                    csat=csat_val,
+                    cost=round(float(call.duration_seconds or 0.0) * 0.002, 6),
+                    experiment_id=call.experiment_id,
+                    variant_id=call.variant_id,
+                    call_sid=call.call_sid or "",
+                )
             from app.webhooks.call_event_bridge import publish_call_event
             await publish_call_event(session, call, "call_analyzed", {"analysis_result_ids": ids})
             row.output, row.status = {"analysis_result_ids": ids}, "completed"

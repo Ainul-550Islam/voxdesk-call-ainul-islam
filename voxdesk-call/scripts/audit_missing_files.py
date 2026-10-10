@@ -91,10 +91,12 @@ def audit_docker() -> None:
         for m in re.finditer(r"^\s*-\s+([\w./~-]+\.(?:sh|py|json|yml|yaml|conf|sql|toml))", text, re.M):
             ref = m.group(1)
             if ref.startswith(("./", "~")):
-                if not exists(ref):
+                local = comp.parent / ref.lstrip("./")
+                if not local.exists() and not exists(ref):
                     note("compose", str(comp.relative_to(ROOT)), f"mounted file missing: {ref}")
         for m in re.finditer(r"env_file:\s*\n\s*-\s*([\w./-]+)", text):
-            if not exists(m.group(1)):
+            local = comp.parent / m.group(1).lstrip("./")
+            if not local.exists() and not exists(m.group(1)):
                 note("compose", str(comp.relative_to(ROOT)), f"env_file missing: {m.group(1)}")
 
 
@@ -127,6 +129,13 @@ def audit_workflows() -> None:
 FILE_LITERAL = re.compile(r"""["']((?:docs|contracts|scripts|observability|loadtest|alembic|tests|app)/[\w./${}-]+\.(?:md|json|sql|yml|yaml|py|sh|txt|j2|template))["']""")
 
 
+SYNTHETIC_TEST_LITERALS: frozenset[str] = frozenset({
+    "app/broken.py",
+    "app/arbitrary.py",
+    "tests/test_delivery.py",
+})
+
+
 def audit_python_literals() -> None:
     for py in _walk("*.py"):
         try:
@@ -135,7 +144,7 @@ def audit_python_literals() -> None:
             continue
         for m in FILE_LITERAL.finditer(text):
             ref = m.group(1)
-            if "$" in ref or "{" in ref:
+            if "$" in ref or "{" in ref or ref in SYNTHETIC_TEST_LITERALS:
                 continue
             if not exists(ref):
                 note("py-literal", str(py.relative_to(ROOT)), f"path literal with no file: {ref}")

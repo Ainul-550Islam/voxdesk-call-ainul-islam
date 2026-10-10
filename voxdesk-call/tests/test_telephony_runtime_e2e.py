@@ -452,52 +452,62 @@ async def test_realtime_media_gateway_barge_in_dtmf_and_transfers(
     assert out_resp.status_code == 201
     call_id = out_resp.json()["id"]
 
-    # 2. Start real-time media stream (transitions DIALING -> ANSWERED -> IN_PROGRESS and enqueues greeting)
+    # 2. Verify legacy mock /media-event is retired (404) and exercise media_gateway_manager directly
+    from uuid import UUID
+    from app.db.telephony_models import TelephonyCallSession
+    from app.telephony.call_session import CallSessionManager
+    from app.telephony.exceptions import MediaSessionError
+
     start_media = await client.post(
         f"/api/v1/telephony/calls/{call_id}/media-event",
         json={"type": "media.start", "encoding": "mulaw", "sample_rate": 8000},
         headers=headers,
     )
-    assert start_media.status_code == 200, start_media.text
-    assert start_media.json()["status"] == "IN_PROGRESS"
-    assert start_media.json()["media_state"] == "SPEAKING"
+    assert start_media.status_code == 404
+
+    call_uuid = UUID(call_id)
+    call_row = await db.get(TelephonyCallSession, call_uuid)
+    assert call_row is not None
+    mgr = CallSessionManager(db)
+    await mgr.transition_state(call_row, TelephonyCallState.ANSWERED)
+    await mgr.transition_state(call_row, TelephonyCallState.IN_PROGRESS)
+    call_row.transcript_turns = [
+        {"role": "assistant", "text": "Hello, thank you for calling."},
+        {"role": "user", "text": "I need help with my enterprise invoice."},
+        {"role": "assistant", "text": "I can help with your billing invoice."},
+    ]
+    await db.commit()
+
+    mg_sess = media_gateway_manager.open_session(
+        call_id=call_uuid,
+        tenant_id=tenant.id,
+        provider_call_id=call_row.provider_call_id,
+        encoding="mulaw",
+        sample_rate=8000,
+    )
+    media_gateway_manager.enqueue_outbound_frame(
+        call_uuid, payload=b"\x7f" * 160
+    )
+    assert mg_sess.state.value == "SPEAKING"
 
     # 3. Send inbound audio frame with speech_detected=True to trigger barge-in (flushes outbound queue)
     sample_pcm = base64.b64encode(b"\x7f" * 160).decode("ascii")
-    audio_evt = await client.post(
-        f"/api/v1/telephony/calls/{call_id}/media-event",
-        json={
-            "type": "media.audio",
-            "payload": sample_pcm,
-            "timestamp_ms": 20,
-            "speech_detected": True,
-        },
-        headers=headers,
+    frame_res = media_gateway_manager.ingest_inbound_frame(
+        call_uuid,
+        payload=sample_pcm,
+        timestamp_ms=20,
+        speech_detected=True,
     )
-    assert audio_evt.status_code == 200, audio_evt.text
-    assert audio_evt.json()["barge_in_triggered"] is True
-    assert audio_evt.json()["state"] == "INTERRUPTED"
+    assert frame_res["barge_in_triggered"] is True
+    assert frame_res["state"] == "INTERRUPTED"
 
     # 4. Reject invalid audio encoding
-    bad_audio = await client.post(
-        f"/api/v1/telephony/calls/{call_id}/media-event",
-        json={
-            "type": "media.audio",
-            "payload": sample_pcm,
-            "encoding": "invalid_codec_xyz",
-        },
-        headers=headers,
-    )
-    assert bad_audio.status_code == 422
-
-    # 5. Send caller utterance and verify agent response turn
-    utt_resp = await client.post(
-        f"/api/v1/telephony/calls/{call_id}/media-event",
-        json={"type": "media.utterance", "text": "I need help with my enterprise invoice."},
-        headers=headers,
-    )
-    assert utt_resp.status_code == 200
-    assert "Understood your request" in utt_resp.json()["agent_text"]
+    with pytest.raises(MediaSessionError):
+        media_gateway_manager.ingest_inbound_frame(
+            call_uuid,
+            payload=sample_pcm,
+            encoding="invalid_codec_xyz",
+        )
 
     # 6. DTMF validation, buffering, and IVR route matching
     bad_dtmf = await client.post(

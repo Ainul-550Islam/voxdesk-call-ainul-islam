@@ -90,6 +90,13 @@ def build(name: str) -> TelephonyAdapter:
     return VonageAdapter()
 
 
+def carrier_media_capabilities() -> dict[str, dict]:
+    """Return per-carrier media streaming and serializer capabilities (Sub-Phase 2F)."""
+    from app.telephony.media.serializers import supported_media_serializers
+
+    return supported_media_serializers()
+
+
 async def binding_for(session, tenant_id: uuid.UUID, provider: str) -> ProviderBinding | None:
     return (
         await session.execute(

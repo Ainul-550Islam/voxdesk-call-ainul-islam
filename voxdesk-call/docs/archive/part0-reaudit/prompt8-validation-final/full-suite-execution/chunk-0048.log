@@ -1,0 +1,23 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_compliance.py::test_banned_content_is_blocked[Best vape deals] tests/test_compliance.py::test_normal_appointment_message_passes tests/test_compliance.py::test_url_shortener_is_blocked tests/test_compliance.py::test_branded_domain_is_allowed tests/test_compliance.py::test_empty_message_is_an_error tests/test_compliance.py::test_first_message_without_stop_is_a_warning_not_a_block tests/test_compliance.py::test_oversized_message_is_blocked tests/test_compliance.py::test_short_gsm_message_is_one_segment tests/test_compliance.py::test_161_gsm_chars_becomes_two_segments tests/test_compliance.py::test_emoji_switches_to_ucs2_and_shrinks_capacity tests/test_compliance.py::test_71_unicode_chars_becomes_two_segments tests/test_compliance.py::test_accented_latin_stays_gsm7 tests/test_compliance.py::test_empty_message_is_zero_segments tests/test_compliance.py::test_opt_out_footer_is_appended_when_missing tests/test_compliance.py::test_opt_out_footer_is_not_duplicated tests/test_compliance.py::test_checklist_is_ordered_and_assigns_owners tests/test_compliance.py::test_sample_messages_pass_our_own_validator tests/test_config.py::test_default_development_settings_load tests/test_config.py::test_environment_variable_override_is_honoured tests/test_config.py::test_development_defaults_report_known_problems tests/test_config.py::test_fully_configured_production_is_clean tests/test_config.py::test_production_refuses_default_jwt_secret tests/test_config.py::test_production_refuses_insecure_base_url tests/test_config.py::test_production_refuses_missing_twilio_token tests/test_config.py::test_production_refuses_twilio_verify_bypass tests/test_config.py::test_production_refuses_missing_crm_encryption_keys tests/test_config.py::test_production_refuses_hashing_embedder tests/test_config.py::test_production_refuses_test_stripe_key tests/test_config.py::test_stripe_provider_requires_secrets tests/test_config.py::test_invalid_billing_provider_is_rejected tests/test_config.py::test_cors_origin_list_is_parsed tests/test_config.py::test_wildcard_cors_is_rejected_when_credentials_allowed tests/test_contracts.py::test_contracts_exist tests/test_contracts.py::test_enum_vocabulary_matches_models tests/test_contracts.py::test_every_operational_message_is_tenant_scoped tests/test_contracts.py::test_shared_primitives_are_exactly_the_allowlist tests/test_correlation_and_redaction.py::test_secret_key_names_are_redacted tests/test_correlation_and_redaction.py::test_redact_masks_key_values_recursively tests/test_correlation_and_redaction.py::test_redact_masks_configured_secret_values tests/test_correlation_and_redaction.py::test_redact_passes_through_scalars tests/test_correlation_and_redaction.py::test_redact_handles_lists tests/test_correlation_and_redaction.py::test_correlation_scope_binds_and_restores tests/test_correlation_and_redaction.py::test_correlation_scope_ignores_none_values tests/test_correlation_and_redaction.py::test_correlation_scope_truncates_long_values tests/test_correlation_and_redaction.py::test_correlation_scope_with_no_fields_is_a_noop tests/test_correlation_and_redaction.py::test_a_provider_failure_logs_the_safe_message_and_nothing_else tests/test_correlation_and_redaction.py::test_a_contract_failure_logs_its_real_type_and_is_not_a_provider_error tests/test_correlation_and_redaction.py::test_a_secret_that_reaches_a_log_value_is_masked_by_the_pipeline tests/test_cost.py::test_price_lookup_voice_minute tests/test_cost.py::test_price_lookup_voice_minute_with_prices
+.................................F................                       [100%]
+=================================== FAILURES ===================================
+_____________________ test_enum_vocabulary_matches_models ______________________
+
+    def test_enum_vocabulary_matches_models() -> None:
+        from app.db import models
+    
+        enums, _ = _parse_all()
+        errors = vc.check_enums_against_models(enums, models)
+>       assert errors == [], errors
+E       AssertionError: [{'detail': "contract is missing ['CANCELLED']", 'kind': 'enum-member-missing', 'package': 'CallStatus'}]
+E       assert [{'detail': "...'CallStatus'}] == []
+E         
+E         Left contains one more item: {'detail': "contract is missing ['CANCELLED']", 'kind': 'enum-member-missing', 'package': 'CallStatus'}
+E         Use -v to get more diff
+
+tests/test_contracts.py:50: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_contracts.py::test_enum_vocabulary_matches_models - Asserti...
+1 failed, 49 passed in 0.24s
+
+STDERR:

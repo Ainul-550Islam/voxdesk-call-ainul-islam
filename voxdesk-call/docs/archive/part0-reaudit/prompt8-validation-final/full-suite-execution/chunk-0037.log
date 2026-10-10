@@ -1,0 +1,45 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_calendar_api.py::TestVoiceTools::test_a_provider_failure_never_returns_booked tests/test_calendar_api.py::TestVoiceTools::test_the_payload_never_carries_provider_detail tests/test_calendar_api.py::TestVoiceTools::test_the_outcome_vocabulary_is_closed tests/test_calendar_api.py::TestVoiceTools::test_missing_arguments_produce_a_question_not_a_booking tests/test_calendar_api.py::TestVoiceTools::test_an_ambiguous_day_asks_rather_than_guessing tests/test_calendar_api.py::TestVoiceTools::test_an_ambiguous_hour_asks tests/test_calendar_api.py::TestVoiceTools::test_a_nonexistent_local_time_asks_rather_than_shifting tests/test_calendar_api.py::TestVoiceTools::test_reschedule_and_cancel_by_phone tests/test_calendar_api.py::TestVoiceTools::test_an_unknown_caller_gets_not_found tests/test_calendar_api.py::TestVoiceTools::test_confirm_is_honest_about_a_pending_booking tests/test_calendar_api.py::TestVoiceTools::test_a_tool_cannot_reach_another_tenants_diary tests/test_calendar_api.py::TestVoiceTools::test_the_voice_deadline_is_enforced tests/test_calendar_api.py::TestVoiceTools::test_the_agent_dispatch_routes_to_the_new_layer tests/test_calendar_api.py::TestCalendarWebhooks::test_a_valid_signed_notification_is_accepted tests/test_calendar_api.py::TestCalendarWebhooks::test_an_invalid_signature_is_rejected tests/test_calendar_api.py::TestCalendarWebhooks::test_a_forged_routing_token_is_rejected tests/test_calendar_api.py::TestCalendarWebhooks::test_a_replayed_notification_is_ignored tests/test_calendar_api.py::TestCalendarWebhooks::test_a_tenant_id_in_the_body_does_not_route tests/test_calendar_api.py::TestCalendarWebhooks::test_a_provider_cancellation_frees_the_slot tests/test_calendar_api.py::TestCalendarWebhooks::test_a_cancellation_cannot_reach_another_tenants_appointment tests/test_calendar_api.py::TestCalendarWebhooks::test_a_provider_with_no_stored_secret_fails_closed tests/test_calendar_api.py::TestCalendarWebhooks::test_a_google_channel_token_is_verified tests/test_calendar_api.py::TestCalendarWebhooks::test_a_graph_validation_token_is_echoed tests/test_calendar_api.py::TestCalendarWebhooks::test_every_rejection_looks_the_same tests/test_calendar_api.py::TestCalendarWebhooks::test_receipts_can_be_pruned tests/test_calendar_api.py::TestServiceOverhead::test_availability_lookup_overhead tests/test_calendar_api.py::TestServiceOverhead::test_availability_scales_with_the_diary_not_quadratically tests/test_calendar_api.py::TestServiceOverhead::test_booking_overhead tests/test_calendar_api.py::TestServiceOverhead::test_reschedule_and_cancel_overhead tests/test_calendar_api.py::TestServiceOverhead::test_a_hung_provider_cannot_outlast_the_voice_deadline tests/test_calendar_booking.py::TestBusinessHours::test_a_closed_day_offers_nothing tests/test_calendar_booking.py::TestBusinessHours::test_an_open_day_offers_slots tests/test_calendar_booking.py::TestBusinessHours::test_a_lunch_break_is_respected tests/test_calendar_booking.py::TestBusinessHours::test_a_holiday_closes_the_whole_day tests/test_calendar_booking.py::TestBusinessHours::test_a_blocked_period_removes_only_its_own_slots tests/test_calendar_booking.py::TestBusinessHours::test_booking_outside_business_hours_is_refused tests/test_calendar_booking.py::TestBusinessHours::test_booking_during_the_lunch_break_is_refused tests/test_calendar_booking.py::TestBusinessHours::test_an_appointment_spanning_the_break_is_refused tests/test_calendar_booking.py::TestBusinessHours::test_a_closed_day_is_refused_with_a_useful_message tests/test_calendar_booking.py::TestBusinessHours::test_the_escape_hatch_allows_out_of_hours_booking tests/test_calendar_booking.py::TestBusinessHours::test_a_tenant_with_no_policy_keeps_the_legacy_behaviour tests/test_calendar_booking.py::TestBusinessHours::test_an_invalid_policy_is_rejected_when_parsed tests/test_calendar_booking.py::TestAvailability::test_provider_busy_periods_remove_slots tests/test_calendar_booking.py::TestAvailability::test_our_own_appointments_remove_slots tests/test_calendar_booking.py::TestAvailability::test_a_cancelled_appointment_frees_its_slot tests/test_calendar_booking.py::TestAvailability::test_buffers_widen_what_a_booking_blocks tests/test_calendar_booking.py::TestAvailability::test_back_to_back_slots_do_not_collide_without_a_buffer tests/test_calendar_booking.py::TestAvailability::test_minimum_notice_hides_imminent_slots tests/test_calendar_booking.py::TestAvailability::test_the_booking_horizon_is_enforced tests/test_calendar_booking.py::TestAvailability::test_a_past_time_is_refused
+.........................
+  availability lookup: 3.08 ms
+.  availability empty 2.61 ms -> 6 booked 2.66 ms (x1.0)
+.  booking: 10.04 ms
+.  reschedule: 17.61 ms   cancel: 7.09 ms
+.  hung provider, 200 ms budget -> returned at 201.18 ms
+.....................                       [100%]
+=============================== warnings summary ===============================
+tests/test_calendar_api.py: 32 warnings
+tests/test_calendar_booking.py: 19 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_calendar_api.py: 218 warnings
+tests/test_calendar_booking.py: 85 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/test_calendar_api.py: 32 warnings
+tests/test_calendar_booking.py: 19 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_calendar_api.py: 13 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/conftest.py:777: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    integration.credentials_updated_at = datetime.utcnow()
+
+tests/test_calendar_api.py::TestCalendarWebhooks::test_a_valid_signed_notification_is_accepted
+tests/test_calendar_api.py::TestCalendarWebhooks::test_a_valid_signed_notification_is_accepted
+tests/test_calendar_api.py::TestCalendarWebhooks::test_a_valid_signed_notification_is_accepted
+tests/test_calendar_api.py::TestCalendarWebhooks::test_a_valid_signed_notification_is_accepted
+tests/test_calendar_api.py::TestCalendarWebhooks::test_a_valid_signed_notification_is_accepted
+tests/test_calendar_api.py::TestCalendarWebhooks::test_a_valid_signed_notification_is_accepted
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/test_calendar_api.py::TestCalendarWebhooks::test_receipts_can_be_pruned
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/test_calendar_api.py:1128: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    received_at=datetime.utcnow() - timedelta(days=90),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+50 passed, 425 warnings in 78.40s (0:01:18)
+
+STDERR:

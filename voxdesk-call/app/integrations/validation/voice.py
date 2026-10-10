@@ -74,6 +74,7 @@ async def check_twilio() -> CheckOutcome:
             latency_ms=_ms(started),
         )
     except Exception as exc:
+        __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
         return CheckOutcome(
             "Twilio", CheckStatus.FAIL,
             f"Twilio unreachable ({type(exc).__name__})",

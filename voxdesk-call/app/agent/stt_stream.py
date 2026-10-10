@@ -46,6 +46,7 @@ class STTStreamRequest:
     timeout_seconds: float = 10.0
     cancel_event: asyncio.Event | None = None
     replay_audio: Callable[[], AsyncIterator[bytes]] | None = None
+    keywords: tuple[tuple[str, float], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -119,17 +120,19 @@ class DeepgramStreamingProvider:
 
     def _listen_url(self, request: STTStreamRequest) -> str:
         """Build a fixed-origin URL with user-controlled query values encoded."""
-        params = urlencode(
-            {
-                "encoding": request.encoding,
-                "sample_rate": request.sample_rate,
-                "language": request.language,
-                "model": request.model,
-                "interim_results": "true",
-                "smart_format": "true",
-                "endpointing": 250,
-            }
-        )
+        query_items: list[tuple[str, str | int]] = [
+            ("encoding", request.encoding),
+            ("sample_rate", request.sample_rate),
+            ("language", request.language),
+            ("model", request.model),
+            ("interim_results", "true"),
+            ("smart_format", "true"),
+            ("endpointing", 250),
+        ]
+        for word, boost in request.keywords or ():
+            if str(word).strip():
+                query_items.append(("keywords", f"{str(word).strip()}:{float(boost):g}"))
+        params = urlencode(query_items)
         return f"{self._endpoint}/v1/listen?{params}"
 
     async def stream(
@@ -219,6 +222,7 @@ class DeepgramStreamingProvider:
                     await websocket.close()
                 except Exception as close_error:
                     # Closing is best effort; never mask the provider failure.
+                    __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
                     _ = close_error
 
     async def _send_audio(self, websocket, audio: AsyncIterator[bytes], cancel_event: asyncio.Event | None) -> None:

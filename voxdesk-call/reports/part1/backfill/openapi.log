@@ -1,0 +1,5 @@
+[2m2026-10-07T08:06:51.002867Z[0m [[32m[1minfo     [0m] [1mdashboard.not_built           [0m [36mcanonical[0m=[35mdashboard (Vite)[0m [36mdist_dir[0m=[35m/home/user/voxdesk-call-ainul-islam/voxdesk-call/dashboard/dist[0m [36mshadow_next_present[0m=[35mFalse[0m
+Added scoped routes: ['/api/analysis/backfill/preview', '/api/analysis/results/export']
+Changed existing backfill documentation only: ['/api/analysis/backfill']
+Changed schema components: ['app__api__post_call_analysis_routes__BackfillRequest', 'BackfillOut']
+Actual route count: 1159

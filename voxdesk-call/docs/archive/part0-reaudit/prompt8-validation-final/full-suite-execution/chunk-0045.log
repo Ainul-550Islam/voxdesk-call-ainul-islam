@@ -1,0 +1,55 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_calendar_timezones.py::TestFormatting::test_spoken_times_are_local_and_natural[0-0-12 am] tests/test_calendar_timezones.py::TestFormatting::test_spoken_time_uses_the_local_zone_not_utc tests/test_calendar_timezones.py::TestFormatting::test_parse_clock_accepts_the_shapes_a_model_emits[3-expected0] tests/test_calendar_timezones.py::TestFormatting::test_parse_clock_accepts_the_shapes_a_model_emits[3pm-expected1] tests/test_calendar_timezones.py::TestFormatting::test_parse_clock_accepts_the_shapes_a_model_emits[15:30-expected2] tests/test_calendar_timezones.py::TestFormatting::test_parse_clock_accepts_the_shapes_a_model_emits[10:30 am-expected3] tests/test_calendar_timezones.py::TestFormatting::test_parse_clock_accepts_the_shapes_a_model_emits[12am-expected4] tests/test_calendar_timezones.py::TestFormatting::test_parse_clock_accepts_the_shapes_a_model_emits[12pm-expected5] tests/test_calendar_timezones.py::TestFormatting::test_parse_clock_refuses_nonsense_rather_than_guessing[25] tests/test_calendar_timezones.py::TestFormatting::test_parse_clock_refuses_nonsense_rather_than_guessing[half past] tests/test_calendar_timezones.py::TestFormatting::test_parse_clock_refuses_nonsense_rather_than_guessing[] tests/test_calendar_timezones.py::TestFormatting::test_parse_clock_refuses_nonsense_rather_than_guessing[9:99] tests/test_calendar_timezones.py::TestFormatting::test_parse_clock_refuses_nonsense_rather_than_guessing[abc] tests/test_calendar_timezones.py::TestFormatting::test_parse_clock_refuses_nonsense_rather_than_guessing[13pm] tests/test_calendar_timezones.py::TestFormatting::test_combine_local_builds_an_instant_from_a_date_and_a_time tests/test_calendar_timezones.py::TestNaturalLanguage::test_relative_days_resolve[tomorrow-expected0] tests/test_calendar_timezones.py::TestNaturalLanguage::test_relative_days_resolve[today-expected1] tests/test_calendar_timezones.py::TestNaturalLanguage::test_relative_days_resolve[day after tomorrow-expected2] tests/test_calendar_timezones.py::TestNaturalLanguage::test_relative_days_resolve[in 3 days-expected3] tests/test_calendar_timezones.py::TestNaturalLanguage::test_relative_days_resolve[next Tuesday-expected4] tests/test_calendar_timezones.py::TestNaturalLanguage::test_relative_days_resolve[Friday-expected5] tests/test_calendar_timezones.py::TestNaturalLanguage::test_relative_days_resolve[this coming Monday-expected6] tests/test_calendar_timezones.py::TestNaturalLanguage::test_relative_days_resolve[2026-12-24-expected7] tests/test_calendar_timezones.py::TestNaturalLanguage::test_a_weekday_matching_today_asks_which_one tests/test_calendar_timezones.py::TestNaturalLanguage::test_times_resolve_including_spoken_words[at 3pm-expected0] tests/test_calendar_timezones.py::TestNaturalLanguage::test_times_resolve_including_spoken_words[around 10:30-expected1] tests/test_calendar_timezones.py::TestNaturalLanguage::test_times_resolve_including_spoken_words[half past four-expected2] tests/test_calendar_timezones.py::TestNaturalLanguage::test_times_resolve_including_spoken_words[quarter to five-expected3] tests/test_calendar_timezones.py::TestNaturalLanguage::test_times_resolve_including_spoken_words[quarter past nine-expected4] tests/test_calendar_timezones.py::TestNaturalLanguage::test_times_resolve_including_spoken_words[at noon-expected5] tests/test_calendar_timezones.py::TestNaturalLanguage::test_times_resolve_including_spoken_words[at midnight-expected6] tests/test_calendar_timezones.py::TestNaturalLanguage::test_times_resolve_including_spoken_words[at three in the morning-expected7] tests/test_calendar_timezones.py::TestNaturalLanguage::test_times_resolve_including_spoken_words[at 15:30-expected8] tests/test_calendar_timezones.py::TestNaturalLanguage::test_an_unqualified_middling_hour_asks tests/test_calendar_timezones.py::TestNaturalLanguage::test_hours_that_only_make_sense_one_way_are_resolved[at 5-expected0] tests/test_calendar_timezones.py::TestNaturalLanguage::test_hours_that_only_make_sense_one_way_are_resolved[at 9-expected1] tests/test_calendar_timezones.py::TestNaturalLanguage::test_part_of_day_disambiguates tests/test_calendar_timezones.py::TestNaturalLanguage::test_part_of_day_is_extracted[Friday afternoon-afternoon] tests/test_calendar_timezones.py::TestNaturalLanguage::test_part_of_day_is_extracted[tomorrow morning-morning] tests/test_calendar_timezones.py::TestNaturalLanguage::test_part_of_day_is_extracted[tonight-evening] tests/test_calendar_timezones.py::TestNaturalLanguage::test_an_iso_date_does_not_leak_digits_into_the_time tests/test_calendar_timezones.py::TestNaturalLanguage::test_a_relative_day_count_is_not_read_as_a_time tests/test_calendar_timezones.py::TestNaturalLanguage::test_unparseable_input_returns_nothing_rather_than_today tests/test_calendar_timezones.py::TestNaturalLanguage::test_an_explicit_time_argument_wins tests/test_calendar_timezones.py::TestNaturalLanguage::test_the_relative_day_is_the_business_local_day tests/test_call_callbacks.py::test_status_webhook_rejects_a_bad_signature_when_verification_is_on tests/test_call_callbacks.py::test_transfer_status_webhook_rejects_a_bad_signature tests/test_call_callbacks.py::test_unknown_call_sid_is_acknowledged_but_changes_nothing tests/test_call_callbacks.py::test_completed_callback_finishes_the_call tests/test_call_callbacks.py::test_no_answer_and_busy_map_correctly
+..................................................                       [100%]
+=============================== warnings summary ===============================
+tests/test_call_callbacks.py::test_status_webhook_rejects_a_bad_signature_when_verification_is_on
+tests/test_call_callbacks.py::test_status_webhook_rejects_a_bad_signature_when_verification_is_on
+tests/test_call_callbacks.py::test_status_webhook_rejects_a_bad_signature_when_verification_is_on
+tests/test_call_callbacks.py::test_status_webhook_rejects_a_bad_signature_when_verification_is_on
+tests/test_call_callbacks.py::test_status_webhook_rejects_a_bad_signature_when_verification_is_on
+tests/test_call_callbacks.py::test_status_webhook_rejects_a_bad_signature_when_verification_is_on
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/test_call_callbacks.py::test_status_webhook_rejects_a_bad_signature_when_verification_is_on
+tests/test_call_callbacks.py::test_transfer_status_webhook_rejects_a_bad_signature
+tests/test_call_callbacks.py::test_completed_callback_finishes_the_call
+tests/test_call_callbacks.py::test_no_answer_and_busy_map_correctly
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_call_callbacks.py::test_status_webhook_rejects_a_bad_signature_when_verification_is_on
+tests/test_call_callbacks.py::test_transfer_status_webhook_rejects_a_bad_signature
+tests/test_call_callbacks.py::test_completed_callback_finishes_the_call
+tests/test_call_callbacks.py::test_completed_callback_finishes_the_call
+tests/test_call_callbacks.py::test_completed_callback_finishes_the_call
+tests/test_call_callbacks.py::test_no_answer_and_busy_map_correctly
+tests/test_call_callbacks.py::test_no_answer_and_busy_map_correctly
+tests/test_call_callbacks.py::test_no_answer_and_busy_map_correctly
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/test_call_callbacks.py::test_status_webhook_rejects_a_bad_signature_when_verification_is_on
+tests/test_call_callbacks.py::test_transfer_status_webhook_rejects_a_bad_signature
+tests/test_call_callbacks.py::test_completed_callback_finishes_the_call
+tests/test_call_callbacks.py::test_no_answer_and_busy_map_correctly
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_call_callbacks.py::test_status_webhook_rejects_a_bad_signature_when_verification_is_on
+tests/test_call_callbacks.py::test_transfer_status_webhook_rejects_a_bad_signature
+tests/test_call_callbacks.py::test_completed_callback_finishes_the_call
+tests/test_call_callbacks.py::test_no_answer_and_busy_map_correctly
+tests/test_call_callbacks.py::test_no_answer_and_busy_map_correctly
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/test_transfer.py:43: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    started_at=datetime.utcnow(),
+
+tests/test_call_callbacks.py::test_completed_callback_finishes_the_call
+tests/test_call_callbacks.py::test_no_answer_and_busy_map_correctly
+tests/test_call_callbacks.py::test_no_answer_and_busy_map_correctly
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/call_state.py:259: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call.ended_at = ended_at or datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+50 passed, 30 warnings in 53.99s
+
+STDERR:

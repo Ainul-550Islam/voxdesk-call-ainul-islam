@@ -1,0 +1,20 @@
+sss                                                                      [100%]
+=============================== warnings summary ===============================
+tests/qa/test_post_call_runtime.py::test_live_qa_provider_roundtrip
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/qa/test_post_call_runtime.py::test_live_qa_provider_roundtrip
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/qa/test_post_call_runtime.py::test_live_qa_provider_roundtrip
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+SKIPPED [1] tests/qa/test_post_call_runtime.py:284: Requires VOXDESK_LIVE_QA=1 and QA_LIVE_OPENAI_API_KEY; invokes a paid external model
+SKIPPED [1] tests/ai/test_post_call_llm.py:208: Requires explicit post-call live opt-in and provider credential
+SKIPPED [1] tests/webhooks/test_webhook_lifecycle_real.py:307: Set VOXDESK_WEBHOOK_LIVE=1 and configure the signed echo receiver
+3 skipped, 61 deselected, 3 warnings in 0.75s

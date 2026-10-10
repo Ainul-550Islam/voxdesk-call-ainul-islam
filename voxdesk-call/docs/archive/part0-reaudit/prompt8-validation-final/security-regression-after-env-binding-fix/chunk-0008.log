@@ -1,0 +1,87 @@
+$ /usr/local/bin/python -m pytest -q tests/test_ssrf.py::test_google_provider_accepts_public_https_base_url tests/test_telephony_security_idempotency.py::test_webhook_signature_verification_tamper_and_replay_rejection tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing tests/test_telephony_security_idempotency.py::test_cross_organization_isolation_across_telephony_resources
+....                                                                     [100%]
+=============================== warnings summary ===============================
+tests/test_telephony_security_idempotency.py::test_webhook_signature_verification_tamper_and_replay_rejection
+tests/test_telephony_security_idempotency.py::test_webhook_signature_verification_tamper_and_replay_rejection
+tests/test_telephony_security_idempotency.py::test_webhook_signature_verification_tamper_and_replay_rejection
+tests/test_telephony_security_idempotency.py::test_webhook_signature_verification_tamper_and_replay_rejection
+tests/test_telephony_security_idempotency.py::test_webhook_signature_verification_tamper_and_replay_rejection
+tests/test_telephony_security_idempotency.py::test_webhook_signature_verification_tamper_and_replay_rejection
+  /usr/local/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/test_telephony_security_idempotency.py::test_webhook_signature_verification_tamper_and_replay_rejection
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+tests/test_telephony_security_idempotency.py::test_cross_organization_isolation_across_telephony_resources
+tests/test_telephony_security_idempotency.py::test_cross_organization_isolation_across_telephony_resources
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_telephony_security_idempotency.py: 36 warnings
+  /usr/local/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/test_telephony_security_idempotency.py::test_webhook_signature_verification_tamper_and_replay_rejection
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+tests/test_telephony_security_idempotency.py::test_cross_organization_isolation_across_telephony_resources
+tests/test_telephony_security_idempotency.py::test_cross_organization_isolation_across_telephony_resources
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+tests/test_telephony_security_idempotency.py::test_cross_organization_isolation_across_telephony_resources
+tests/test_telephony_security_idempotency.py::test_cross_organization_isolation_across_telephony_resources
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+tests/test_telephony_security_idempotency.py::test_cross_organization_isolation_across_telephony_resources
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/phone_numbers.py:195: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+  /usr/local/lib/python3.13/site-packages/pydantic/main.py:214: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/idempotency.py:154: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    received_at=datetime.utcnow(),
+
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/webhooks.py:292: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_telephony_security_idempotency.py::test_webhook_idempotency_out_of_order_and_usage_no_double_billing
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/services/telephony_usage.py:113: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    recorded_at=datetime.utcnow(),
+
+tests/test_telephony_security_idempotency.py::test_cross_organization_isolation_across_telephony_resources
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/sip.py:104: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_telephony_security_idempotency.py::test_cross_organization_isolation_across_telephony_resources
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/runtime.py:401: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/test_telephony_security_idempotency.py::test_cross_organization_isolation_across_telephony_resources
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/runtime.py:478: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    occurred_at=datetime.utcnow(),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+4 passed, 76 warnings in 51.76s
+
+STDERR:

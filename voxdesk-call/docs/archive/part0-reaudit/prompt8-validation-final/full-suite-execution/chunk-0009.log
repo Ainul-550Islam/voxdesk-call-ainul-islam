@@ -1,0 +1,79 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/auth/test_mfa_enrollment.py::test_the_seed_is_returned_once_and_stored_as_ciphertext_only tests/auth/test_mfa_enrollment.py::test_a_pending_factor_gates_nothing_until_it_is_confirmed tests/auth/test_mfa_enrollment.py::test_confirmation_activates_the_factor_and_shows_the_codes_once tests/auth/test_mfa_enrollment.py::test_confirmation_with_a_code_from_another_seed_is_refused tests/auth/test_mfa_enrollment.py::test_the_provisioning_uri_identifies_the_deployment_and_the_seed tests/auth/test_mfa_enrollment.py::test_a_factor_is_scoped_to_the_user_and_tenant_that_enrolled_it tests/auth/test_mfa_lockout.py::test_wrong_codes_lock_the_challenge_and_then_refuse_the_right_one tests/auth/test_mfa_lockout.py::test_the_lockout_belongs_to_one_user tests/auth/test_mfa_lockout.py::test_step_up_verification_is_rate_limited_per_user tests/auth/test_mfa_lockout.py::test_starting_enrollments_is_rate_limited tests/auth/test_mfa_lockout.py::test_a_consumed_challenge_cannot_be_answered_again tests/auth/test_mfa_lockout.py::test_a_lockout_lifts_when_its_window_passes tests/auth/test_mfa_logging.py::test_the_enrollment_seed_never_reaches_a_log tests/auth/test_mfa_logging.py::test_neither_the_seed_nor_the_codes_reach_a_log tests/auth/test_mfa_logging.py::test_the_audit_trail_records_the_event_without_the_secret tests/auth/test_mfa_logging.py::test_the_challenge_token_is_stored_only_as_a_hash tests/auth/test_mfa_logging.py::test_status_reports_the_posture_and_none_of_the_material tests/auth/test_mfa_logging.py::test_the_factor_row_never_holds_the_seed_in_the_clear tests/auth/test_mfa_verification.py::test_the_password_step_alone_yields_no_token tests/auth/test_mfa_verification.py::test_a_correct_code_completes_the_login_and_marks_the_session tests/auth/test_mfa_verification.py::test_a_wrong_code_is_refused_and_creates_no_session tests/auth/test_mfa_verification.py::test_a_code_that_was_already_accepted_cannot_be_replayed tests/auth/test_mfa_verification.py::test_an_unknown_challenge_token_is_refused tests/auth/test_mfa_verification.py::test_a_step_up_challenge_cannot_be_used_to_finish_a_login tests/auth/test_password_reset.py::test_the_same_answer_comes_back_for_a_real_and_an_unknown_address tests/auth/test_password_reset.py::test_an_inactive_account_is_sent_nothing tests/auth/test_password_reset.py::test_a_reset_ends_every_session_and_works_once tests/auth/test_password_reset.py::test_an_expired_link_is_refused tests/auth/test_password_reset.py::test_a_reset_token_is_not_an_email_verification_token tests/auth/test_password_reset.py::test_the_password_policy_applies_to_a_reset_link tests/auth/test_password_reset.py::test_a_token_for_another_account_cannot_be_used_against_yours tests/auth/test_password_reset.py::test_requests_are_rate_limited_per_address tests/auth/test_password_reset.py::test_the_flow_is_audited_without_ever_recording_the_token tests/auth/test_principals.py::test_the_four_kinds_and_which_of_them_are_machines tests/auth/test_principals.py::test_scopes_are_a_second_gate_and_none_means_unlimited tests/auth/test_principals.py::test_a_human_session_and_a_key_both_work_but_are_not_the_same_caller tests/auth/test_principals.py::test_scope_narrowing_survives_the_owners_role tests/auth/test_principals.py::test_the_actor_of_a_machine_credential_is_the_person_who_made_it tests/auth/test_principals.py::test_a_key_belongs_to_the_workspace_that_issued_it tests/auth/test_principals.py::test_suspending_the_actor_stops_their_credentials tests/auth/test_principals.py::test_the_credential_families_do_not_cross tests/auth/test_principals.py::test_a_token_that_is_not_a_token_is_refused_everywhere tests/auth/test_recovery_codes.py::test_codes_are_stored_only_as_digests tests/auth/test_recovery_codes.py::test_a_recovery_code_logs_in_once_and_only_once tests/auth/test_recovery_codes.py::test_a_used_code_is_recorded_in_the_audit_trail tests/auth/test_recovery_codes.py::test_regenerating_retires_the_previous_set tests/auth/test_recovery_codes.py::test_regenerating_needs_a_fresh_proof_of_presence tests/auth/test_recovery_codes.py::test_a_recovery_code_outside_the_set_is_refused tests/auth/test_service_accounts.py::test_a_credential_carries_exactly_its_scopes tests/auth/test_service_accounts.py::test_a_credential_is_returned_once_and_never_listed_again
+..................................................                       [100%]
+=============================== warnings summary ===============================
+tests/auth/test_mfa_enrollment.py::test_the_seed_is_returned_once_and_stored_as_ciphertext_only
+tests/auth/test_mfa_enrollment.py::test_the_seed_is_returned_once_and_stored_as_ciphertext_only
+tests/auth/test_mfa_enrollment.py::test_the_seed_is_returned_once_and_stored_as_ciphertext_only
+tests/auth/test_mfa_enrollment.py::test_the_seed_is_returned_once_and_stored_as_ciphertext_only
+tests/auth/test_mfa_enrollment.py::test_the_seed_is_returned_once_and_stored_as_ciphertext_only
+tests/auth/test_mfa_enrollment.py::test_the_seed_is_returned_once_and_stored_as_ciphertext_only
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/auth/test_mfa_enrollment.py: 6 warnings
+tests/auth/test_mfa_lockout.py: 6 warnings
+tests/auth/test_mfa_logging.py: 6 warnings
+tests/auth/test_mfa_verification.py: 6 warnings
+tests/auth/test_password_reset.py: 9 warnings
+tests/auth/test_principals.py: 8 warnings
+tests/auth/test_recovery_codes.py: 6 warnings
+tests/auth/test_service_accounts.py: 2 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/auth/test_mfa_enrollment.py: 44 warnings
+tests/auth/test_mfa_lockout.py: 39 warnings
+tests/auth/test_mfa_logging.py: 35 warnings
+tests/auth/test_mfa_verification.py: 40 warnings
+tests/auth/test_password_reset.py: 47 warnings
+tests/auth/test_principals.py: 49 warnings
+tests/auth/test_recovery_codes.py: 49 warnings
+tests/auth/test_service_accounts.py: 10 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/auth/test_mfa_enrollment.py: 6 warnings
+tests/auth/test_mfa_lockout.py: 6 warnings
+tests/auth/test_mfa_logging.py: 6 warnings
+tests/auth/test_mfa_verification.py: 6 warnings
+tests/auth/test_password_reset.py: 9 warnings
+tests/auth/test_principals.py: 8 warnings
+tests/auth/test_recovery_codes.py: 6 warnings
+tests/auth/test_service_accounts.py: 2 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/auth/test_mfa_enrollment.py: 6 warnings
+tests/auth/test_mfa_lockout.py: 7 warnings
+tests/auth/test_mfa_logging.py: 6 warnings
+tests/auth/test_mfa_verification.py: 6 warnings
+tests/auth/test_password_reset.py: 12 warnings
+tests/auth/test_principals.py: 10 warnings
+tests/auth/test_recovery_codes.py: 6 warnings
+tests/auth/test_service_accounts.py: 2 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/auth/test_mfa_enrollment.py: 16 warnings
+tests/auth/test_mfa_lockout.py: 83 warnings
+tests/auth/test_mfa_logging.py: 66 warnings
+tests/auth/test_mfa_verification.py: 85 warnings
+tests/auth/test_password_reset.py: 13 warnings
+tests/auth/test_principals.py: 14 warnings
+tests/auth/test_recovery_codes.py: 160 warnings
+tests/auth/test_service_accounts.py: 9 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/auth/identity/models.py:69: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow()
+
+tests/auth/test_principals.py::test_the_four_kinds_and_which_of_them_are_machines
+  tests/auth/test_principals.py:51: PytestWarning: The test <Function test_the_four_kinds_and_which_of_them_are_machines> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_the_four_kinds_and_which_of_them_are_machines():
+
+tests/auth/test_principals.py::test_scopes_are_a_second_gate_and_none_means_unlimited
+  tests/auth/test_principals.py:64: PytestWarning: The test <Function test_scopes_are_a_second_gate_and_none_means_unlimited> is marked with '@pytest.mark.asyncio' but it is not an async function. Please remove the asyncio mark. If the test is not marked explicitly, check for global marks applied via 'pytestmark'.
+    def test_scopes_are_a_second_gate_and_none_means_unlimited():
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+50 passed, 920 warnings in 98.23s (0:01:38)
+
+STDERR:

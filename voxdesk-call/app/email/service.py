@@ -75,6 +75,7 @@ async def send(
             detail={"provider": provider, "outcome": result.outcome, "category": result.category},
         )
     except Exception as exc:
+        __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
         row.status, row.error_category = "permanent_failure", type(exc).__name__
     await session.flush()
     return row

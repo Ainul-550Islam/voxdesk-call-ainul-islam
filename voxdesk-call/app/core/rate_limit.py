@@ -146,8 +146,9 @@ class _RedisLimiter:
     """Redis fixed-window limiter. Lazily imports redis so the dependency is
     optional (in-process fallback is used when Redis is absent)."""
 
-    def __init__(self, url: str) -> None:
+    def __init__(self, url: str, *, fail_closed_in_prod: bool = True) -> None:
         self._url = url
+        self.fail_closed_in_prod = fail_closed_in_prod
         self._client = None
 
     def _get(self):
@@ -184,8 +185,13 @@ class _RedisLimiter:
 
 
 class RateLimiter:
-    def __init__(self, redis_url: str) -> None:
-        self._backend = _RedisLimiter(redis_url) if redis_url else _SlidingWindow()
+    def __init__(self, redis_url: str, *, fail_closed_in_prod: bool = True) -> None:
+        self.fail_closed_in_prod = fail_closed_in_prod
+        self._backend = (
+            _RedisLimiter(redis_url, fail_closed_in_prod=fail_closed_in_prod)
+            if redis_url
+            else _SlidingWindow()
+        )
 
     async def allow(self, key: str, limit: int, window: float) -> bool:
         # The in-process backend is synchronous, the Redis one is async; both
@@ -197,12 +203,14 @@ class RateLimiter:
 
 
 _limiter: RateLimiter | None = None
+_limiter_url: str | None = None
 
 
 def _get_limiter() -> RateLimiter:
-    global _limiter
-    if _limiter is None:
+    global _limiter, _limiter_url
+    if _limiter is None or _limiter_url != settings.redis_url:
         _limiter = RateLimiter(settings.redis_url)
+        _limiter_url = settings.redis_url
     return _limiter
 
 
@@ -242,19 +250,22 @@ def add_rate_limit_middleware(app: FastAPI) -> None:
 # independent of `RATE_LIMIT_ENABLED`, and separately resettable in tests.
 
 _identity_limiter: RateLimiter | None = None
+_identity_limiter_url: str | None = None
 
 
 def identity_limiter() -> RateLimiter:
-    global _identity_limiter
-    if _identity_limiter is None:
+    global _identity_limiter, _identity_limiter_url
+    if _identity_limiter is None or _identity_limiter_url != settings.redis_url:
         _identity_limiter = RateLimiter(settings.redis_url)
+        _identity_limiter_url = settings.redis_url
     return _identity_limiter
 
 
 def reset_identity_limiter() -> None:
     """Drop the identity limiter's state (tests, and after a Redis failover)."""
-    global _identity_limiter
+    global _identity_limiter, _identity_limiter_url
     _identity_limiter = None
+    _identity_limiter_url = None
 
 
 async def allow_identity_action(
@@ -290,3 +301,23 @@ async def rate_limit(key: str, limit: int, window: float = 60.0) -> bool:
     finally:
         if backend._client is not None:
             await backend._client.aclose()
+
+
+async def enforce_tenant_rate_limit(
+    tenant_id: object,
+    action: str,
+    limit: int,
+    *,
+    window: float = 60.0,
+) -> None:
+    """Shared tenant-scoped rate limiter (Redis when configured, sliding window fallback)."""
+    from fastapi import HTTPException
+
+    allowed = await allow_identity_action(
+        action=f"tenant:{action}",
+        who=str(tenant_id),
+        limit=int(limit),
+        window=window,
+    )
+    if not allowed:
+        raise HTTPException(status_code=429, detail=f"rate limit {action} {limit}/min")

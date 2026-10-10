@@ -1,0 +1,5 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/workflow/test_workflow_persistence.py::test_state_machine tests/workflow/test_workflow_persistence.py::test_workflow_schemas_strict_validation tests/workflow/test_workflow_persistence.py::test_workflow_store_protocol_surface
+...                                                                      [100%]
+3 passed in 0.05s
+
+STDERR:

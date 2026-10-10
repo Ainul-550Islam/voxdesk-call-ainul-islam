@@ -9,9 +9,9 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.audit.events import normalize_event_type, storage_action
+from app.audit.events import AuditEventType, normalize_event_type, storage_action
 from app.audit.redaction import configured_secret_values, redact_tree, redact_text
-from app.db.models import AuditLog, Environment, User
+from app.db.models import AuditAction, AuditLog, Environment, User
 
 
 class AuditScopeError(ValueError):
@@ -161,3 +161,34 @@ async def record_event(
     )
     session.add(row)
     return row
+
+
+async def record_enterprise_audit(
+    db: AsyncSession,
+    tenant_id: uuid.UUID | str,
+    user_id: uuid.UUID | str | None,
+    action: str | AuditAction | AuditEventType,
+    detail: dict[str, Any] | None = None,
+    *,
+    environment_id: uuid.UUID | str | None = None,
+    resource_type: str | None = None,
+    resource_id: Any = None,
+) -> AuditLog:
+    """Insert an ``AuditLog`` row in the caller's transaction and flush immediately.
+
+    Never swallows exceptions: if the audit insert fails, the caller's
+    transaction rolls back and the request fails (500).
+    """
+    row = await record_event(
+        db,
+        tenant_id=tenant_id,
+        actor_user_id=user_id,
+        event_type=action,
+        environment_id=environment_id,
+        resource_type=resource_type,
+        resource_id=resource_id,
+        detail=detail or {},
+    )
+    await db.flush()
+    return row
+

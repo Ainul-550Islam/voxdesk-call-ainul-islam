@@ -1,0 +1,262 @@
+........F.......................                                         [100%]
+=================================== FAILURES ===================================
+_____________ test_trigger_permissions_isolation_and_atomic_audit ______________
+
+client = <httpx.AsyncClient object at 0x7f18eb9ce720>
+db = <sqlalchemy.ext.asyncio.session.AsyncSession object at 0x7f18eb84fad0>
+tenant_a = <app.db.models.Tenant object at 0x7f18eb84fb60>
+tenant_b = <app.db.models.Tenant object at 0x7f18eb88d940>
+owner_a = <app.db.models.User object at 0x7f18eb88c7a0>
+owner_b = <app.db.models.User object at 0x7f18eb84d970>
+viewer_a = <app.db.models.User object at 0x7f18eb9cfb90>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f18eb963aa0>
+
+    async def test_trigger_permissions_isolation_and_atomic_audit(client, db, tenant_a, tenant_b, owner_a, owner_b, viewer_a, monkeypatch):
+        from app.api import workflow_event_routes as routes
+        call, lead, flow, version, headers, body = await setup(client, db, tenant_a, owner_a)
+        assert (await client.post("/api/workflows/triggers", headers=await auth_headers(client, owner_b), json=body)).status_code == 404
+        assert (await client.post("/api/workflows/triggers", headers=await auth_headers(client, viewer_a), json=body)).status_code == 403
+        assert (await client.post("/api/workflows/triggers", headers=await auth_headers(client, owner_a), json=body)).status_code == 422
+        wrong = {**body, "config": {runtime.BINDING: str(uuid.uuid4())}}
+        assert (await client.post("/api/workflows/triggers", headers=headers, json=wrong)).status_code == 404
+        async def fail(*args, **kwargs):
+            raise RuntimeError("audit unavailable")
+        with monkeypatch.context() as patch:
+            patch.setattr(routes, "record_event", fail)
+            with pytest.raises(RuntimeError):
+                await client.post("/api/workflows/triggers", headers=headers, json=body)
+        assert await db.scalar(select(func.count()).select_from(WorkflowTrigger)) == 0
+        response = await client.post("/api/workflows/triggers", headers=headers, json=body)
+        assert response.status_code == 201
+        url = "/api/workflows/triggers/" + response.json()["id"]
+        foreign = await auth_headers(client, owner_b)
+        assert (await client.get(url, headers=foreign)).status_code == 404
+        assert (await client.patch(url, headers=foreign, json={"is_enabled": False})).status_code == 404
+        assert (await client.delete(url, headers=foreign)).status_code == 404
+>       assert (await client.get("/api/workflows/triggers", headers=foreign)).json()["total"] == 0
+E       KeyError: 'total'
+
+tests/telephony/test_post_call_workflow.py:157: KeyError
+----------------------------- Captured stdout call -----------------------------
+[2m2026-10-07T11:28:22.774418Z[0m [[32m[1minfo     [0m] [1midentity.email_rendered       [0m [36mbody_chars[0m=[35m261[0m [36mrequest_id[0m=[35m3ca9628f6c664150875276814883f9a3[0m [36msubject[0m=[35mNew sign-in to your account - Tenant A[0m [36mto[0m=[35mo***@example.com[0m [36mtransport[0m=[35mlog[0m
+[2m2026-10-07T11:28:22.791594Z[0m [[32m[1minfo     [0m] [1midentity.email_rendered       [0m [36mbody_chars[0m=[35m261[0m [36mrequest_id[0m=[35ma5000ff0a28145028e181e73546bae91[0m [36msubject[0m=[35mNew sign-in to your account - Tenant B[0m [36mto[0m=[35mo***@example.com[0m [36mtransport[0m=[35mlog[0m
+[2m2026-10-07T11:28:22.808527Z[0m [[33m[1mwarning  [0m] [1mhttp_exception                [0m [36mactor_type[0m=[35mhuman[0m [36mactor_user_id[0m=[35me16ce716-af8e-41ae-932b-923782ef5a1c[0m [36mdetail[0m=[35mworkflow not found[0m [36mrequest_id[0m=[35mc5d33d9c43874d84ac164e0b8bd4dd84[0m [36mstatus[0m=[35m404[0m [36mtenant_id[0m=[35m13f9cca1-393c-4aa6-90c0-6ba2289a549a[0m
+[2m2026-10-07T11:28:22.826546Z[0m [[32m[1minfo     [0m] [1midentity.email_rendered       [0m [36mbody_chars[0m=[35m261[0m [36mrequest_id[0m=[35mc09ef2008fca4a558dda4a0212fb08c2[0m [36msubject[0m=[35mNew sign-in to your account - Tenant A[0m [36mto[0m=[35mv***@example.com[0m [36mtransport[0m=[35mlog[0m
+[2m2026-10-07T11:28:22.839772Z[0m [[33m[1mwarning  [0m] [1mhttp_exception                [0m [36mactor_type[0m=[35mhuman[0m [36mactor_user_id[0m=[35m782aea20-a925-4632-8bc5-f4e926e4bdab[0m [36mdetail[0m=[35mRequires permission: tenant:update[0m [36mrequest_id[0m=[35m1a2f9ddb1c9547ca879e0e06f97cfcd6[0m [36mstatus[0m=[35m403[0m [36mtenant_id[0m=[35m143f1df7-dba8-4c68-98bf-409cf4384347[0m
+[2m2026-10-07T11:28:22.858303Z[0m [[32m[1minfo     [0m] [1midentity.email_rendered       [0m [36mbody_chars[0m=[35m261[0m [36mrequest_id[0m=[35mae2867f7207b4a4f8d57ccd78badf2f8[0m [36msubject[0m=[35mNew sign-in to your account - Tenant A[0m [36mto[0m=[35mo***@example.com[0m [36mtransport[0m=[35mlog[0m
+[2m2026-10-07T11:28:22.880524Z[0m [[33m[1mwarning  [0m] [1mhttp_exception                [0m [36mactor_type[0m=[35mhuman[0m [36mactor_user_id[0m=[35ma4b58f8e-93d1-4dd6-ab39-ab51fcd14b04[0m [36mdetail[0m=[35mIdempotency-Key is required[0m [36mrequest_id[0m=[35m6fe3594e72d54bc6b22f2c7b129149c5[0m [36mstatus[0m=[35m422[0m [36mtenant_id[0m=[35m143f1df7-dba8-4c68-98bf-409cf4384347[0m
+[2m2026-10-07T11:28:22.897469Z[0m [[33m[1mwarning  [0m] [1mhttp_exception                [0m [36mactor_type[0m=[35mhuman[0m [36mactor_user_id[0m=[35ma4b58f8e-93d1-4dd6-ab39-ab51fcd14b04[0m [36mdetail[0m=[35menvironment not found[0m [36mrequest_id[0m=[35m5a61b1e138084a7a8c6992e1a25167d8[0m [36mstatus[0m=[35m404[0m [36mtenant_id[0m=[35m143f1df7-dba8-4c68-98bf-409cf4384347[0m
+[2m2026-10-07T11:28:22.922957Z[0m [[31m[1merror    [0m] [1munhandled_exception           [0m [36mrequest_id[0m=[35mebcbaf57964c4481b491fe396077978f[0m
+  + Exception Group Traceback (most recent call last):
+  |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/_utils.py", line 85, in create_collapsing_task_group
+  |     async with anyio.create_task_group() as tg:
+  |                ^^^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 847, in __aexit__
+  |     raise BaseExceptionGroup(
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    |     await self.app(scope, receive, _send)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/middleware/public_boundary.py", line 60, in _public_boundary_middleware
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/middleware/security_middleware.py", line 98, in __call__
+    |     await self.app(scope, limited_receive, limited_send)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/core/security_headers.py", line 79, in _security_headers_middleware
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/core/errors.py", line 289, in _request_id_middleware
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    |     await self.app(scope, receive, send)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     raise exc
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    |     await self.app(scope, receive, send)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/routing.py", line 670, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/routing.py", line 690, in app
+    |     await route.handle(scope, receive, send)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/routing.py", line 280, in handle
+    |     await self.app(scope, receive, send)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 134, in app
+    |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     raise exc
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 120, in app
+    |     response = await f(request)
+    |                ^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 674, in app
+    |     raw_response = await run_endpoint_function(
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 328, in run_endpoint_function
+    |     return await dependant.call(**values)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/api/workflow_event_routes.py", line 205, in create_trigger
+    |     await _audit(session, ctx, trigger, "workflow.trigger_created", env)
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/api/workflow_event_routes.py", line 92, in _audit
+    |     await record_event(session, tenant_id=ctx.tenant_id, environment_id=env.id if env else None,
+    |   File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/telephony/test_post_call_workflow.py", line 144, in fail
+    |     raise RuntimeError("audit unavailable")
+    | RuntimeError: audit unavailable
+    +------------------------------------
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/middleware/public_boundary.py", line 60, in _public_boundary_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/middleware/security_middleware.py", line 98, in __call__
+    await self.app(scope, limited_receive, limited_send)
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/core/security_headers.py", line 79, in _security_headers_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/core/errors.py", line 289, in _request_id_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/routing.py", line 690, in app
+    await route.handle(scope, receive, send)
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/routing.py", line 280, in handle
+    await self.app(scope, receive, send)
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 134, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 120, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 674, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 328, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/api/workflow_event_routes.py", line 205, in create_trigger
+    await _audit(session, ctx, trigger, "workflow.trigger_created", env)
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/app/api/workflow_event_routes.py", line 92, in _audit
+    await record_event(session, tenant_id=ctx.tenant_id, environment_id=env.id if env else None,
+  File "/home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/telephony/test_post_call_workflow.py", line 144, in fail
+    raise RuntimeError("audit unavailable")
+RuntimeError: audit unavailable
+[2m2026-10-07T11:28:22.972395Z[0m [[32m[1minfo     [0m] [1midentity.email_rendered       [0m [36mbody_chars[0m=[35m261[0m [36mrequest_id[0m=[35mad63b2b18d8e458b9ef5282004ae2e17[0m [36msubject[0m=[35mNew sign-in to your account - Tenant B[0m [36mto[0m=[35mo***@example.com[0m [36mtransport[0m=[35mlog[0m
+[2m2026-10-07T11:28:22.986981Z[0m [[33m[1mwarning  [0m] [1mhttp_exception                [0m [36mactor_type[0m=[35mhuman[0m [36mactor_user_id[0m=[35me16ce716-af8e-41ae-932b-923782ef5a1c[0m [36mdetail[0m=[35mtrigger not found[0m [36mrequest_id[0m=[35m3c9bce197ed24df8af8428a38a3a487c[0m [36mstatus[0m=[35m404[0m [36mtenant_id[0m=[35m13f9cca1-393c-4aa6-90c0-6ba2289a549a[0m
+[2m2026-10-07T11:28:22.999823Z[0m [[33m[1mwarning  [0m] [1mhttp_exception                [0m [36mactor_type[0m=[35mhuman[0m [36mactor_user_id[0m=[35me16ce716-af8e-41ae-932b-923782ef5a1c[0m [36mdetail[0m=[35mtrigger not found[0m [36mrequest_id[0m=[35m85033e64ad2b405e9f3e4861eeb9c4ee[0m [36mstatus[0m=[35m404[0m [36mtenant_id[0m=[35m13f9cca1-393c-4aa6-90c0-6ba2289a549a[0m
+[2m2026-10-07T11:28:23.010170Z[0m [[33m[1mwarning  [0m] [1mhttp_exception                [0m [36mactor_type[0m=[35mhuman[0m [36mactor_user_id[0m=[35me16ce716-af8e-41ae-932b-923782ef5a1c[0m [36mdetail[0m=[35mtrigger not found[0m [36mrequest_id[0m=[35m4399150125054e09b4cdfd9e49911bee[0m [36mstatus[0m=[35m404[0m [36mtenant_id[0m=[35m13f9cca1-393c-4aa6-90c0-6ba2289a549a[0m
+[2m2026-10-07T11:28:23.021046Z[0m [[33m[1mwarning  [0m] [1mhttp_exception                [0m [36mactor_type[0m=[35mhuman[0m [36mactor_user_id[0m=[35me16ce716-af8e-41ae-932b-923782ef5a1c[0m [36mdetail[0m=[35mworkflow not found[0m [36mrequest_id[0m=[35md4594fe08b43440a8790443e73b32df8[0m [36mstatus[0m=[35m404[0m [36mtenant_id[0m=[35m13f9cca1-393c-4aa6-90c0-6ba2289a549a[0m
+=============================== warnings summary ===============================
+tests/telephony/test_post_call_workflow.py::test_real_effect_pinned_version_and_replay
+tests/telephony/test_post_call_workflow.py::test_real_effect_pinned_version_and_replay
+tests/telephony/test_post_call_workflow.py::test_real_effect_pinned_version_and_replay
+tests/telephony/test_post_call_workflow.py::test_real_effect_pinned_version_and_replay
+tests/telephony/test_post_call_workflow.py::test_real_effect_pinned_version_and_replay
+tests/telephony/test_post_call_workflow.py::test_real_effect_pinned_version_and_replay
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:295: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.10/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+tests/telephony/test_post_call_workflow.py: 13 warnings
+tests/telephony/test_post_call_pipeline.py: 21 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2938: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/telephony/test_post_call_workflow.py: 200 warnings
+tests/telephony/test_post_call_pipeline.py: 75 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/lib/python3.12/site-packages/sqlalchemy/sql/schema.py:3596: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/telephony/test_post_call_workflow.py: 13 warnings
+tests/telephony/test_post_call_pipeline.py: 21 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:2968: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/telephony/test_post_call_workflow.py: 14 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/db/models.py:3023: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/telephony/test_post_call_workflow.py: 12 warnings
+tests/telephony/test_post_call_pipeline.py: 18 warnings
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/tests/conftest.py:569: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "started_at": datetime.utcnow(),
+
+tests/telephony/test_post_call_workflow.py::test_real_effect_pinned_version_and_replay
+tests/telephony/test_post_call_workflow.py::test_audit_failure_rolls_back_effect_and_execution
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/leads/models.py:25: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow()
+
+tests/telephony/test_post_call_pipeline.py::test_terminal_transition_enqueues_once_in_same_transaction
+tests/telephony/test_post_call_pipeline.py::test_enqueue_failure_rolls_back_terminal_fact
+tests/telephony/test_post_call_pipeline.py::test_real_worker_governed_http_persists_output_and_usage
+tests/telephony/test_post_call_pipeline.py::test_real_status_callback_admits_job
+  /home/user/voxdesk-call-ainul-islam/voxdesk-call/app/telephony/call_state.py:261: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    call.ended_at = ended_at or datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/telephony/test_post_call_workflow.py::test_trigger_permissions_isolation_and_atomic_audit
+1 failed, 31 passed, 399 warnings in 31.03s

@@ -1,0 +1,5 @@
+$ /home/user/voxdesk-call-ainul-islam/voxdesk-call/.venv/bin/python -m pytest -q tests/test_crm_credentials.py::test_duplicate_key_ids_are_rejected tests/test_crm_credentials.py::test_a_key_ring_never_prints_key_material tests/test_crm_credentials.py::test_generated_keys_are_the_right_size_and_random tests/test_crm_credentials.py::test_production_refuses_to_boot_without_an_encryption_key tests/test_crm_credentials.py::test_a_malformed_encryption_key_is_a_boot_failure
+.....                                                                    [100%]
+5 passed in 0.07s
+
+STDERR:

@@ -1,0 +1,5 @@
+python scripts/verify_contracts.py
+contracts: 5 .proto files
+FAIL  contracts                [compile] protoc not found; install protobuf-compiler or pass --protoc / set VOXDESK_PROTOC
+contract verification FAILED: 1 problem(s).
+make: *** [Makefile:46: contracts-check] Error 1

@@ -1,22 +1,20 @@
-# VoxDesk SLO measurement (Step 7 observability).
+# VoxDesk SLO measurement (Step 7 & Part 8 / Gate G9 observability).
 #
-# These are *recording rules*, not alerts: they turn the raw counters into
-# the two numbers an operator watches against their SLO targets —
-# availability and error budget — so "are we meeting our SLO?" is one query,
-# not a spreadsheet.
+# These are *recording rules*, not alerts: they turn the raw counters and
+# histograms into the four operational SLO signals an operator watches against
+# their targets in docs/SLO-ALERTS.md:
+#   1. HTTP API availability           >= 99.9%   (voxdesk:slo:availability:*)
+#   2. Voice E2E turn latency (p95)    <= 1.2s    (voxdesk:slo:voice_e2e_latency_p95:*)
+#   3. Webhook delivery success rate   >= 99.5%   (voxdesk:slo:webhook_delivery_success:*)
+#   4. Post-call completion time (p95) <= 10.0s   (voxdesk:slo:post_call_completion_p95:*)
 #
-# The availability SLO is process-level HTTP availability (the standard
-# definition): 1 - (5xx / total). It deliberately does NOT count 4xx (a 404
-# is correct behaviour, not a miss) and it does not count call-level outcomes,
-# which have their own signals in `voxdesk_calls_total`. Targets live in
-# docs/SLO-ALERTS.md; these rules only measure.
-#
-# `:30d` windows are only meaningful after 30 days of retained data — before
-# that they read optimistically high (early periods have no errors yet).
+# `:30d` windows are meaningful after 30 days of retained Prometheus data;
+# `:5m` is the live operational window used by dashboards and burn-rate checks.
 groups:
   - name: voxdesk-slo
     interval: 1m
     rules:
+      # 1. HTTP API Availability (1 - 5xx / total)
       - record: voxdesk:slo:http_requests:rate5m
         expr: sum(rate(voxdesk_http_requests_total[5m]))
 
@@ -37,4 +35,57 @@ groups:
             sum(increase(voxdesk_http_requests_total{status=~"5.."}[30d]))
             /
             clamp_min(sum(increase(voxdesk_http_requests_total[30d])), 0.0001)
+          )
+
+      # 2. p95 End-to-End Voice Latency (from Sub-Phase 2A LatencyObserver)
+      - record: voxdesk:slo:voice_e2e_latency_p95:5m
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(voxdesk_voice_e2e_latency_seconds_bucket[5m])) by (le)
+          )
+
+      - record: voxdesk:slo:voice_e2e_latency_p95:30d
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(increase(voxdesk_voice_e2e_latency_seconds_bucket[30d])) by (le)
+          )
+
+      # 3. Webhook / Outbox Side-Effect Delivery Success Rate
+      - record: voxdesk:slo:webhook_delivery_success:5m
+        expr: |
+          1 - (
+            sum(rate(voxdesk_external_side_effects_total{kind="message_webhook",outcome="failure"}[5m]))
+            /
+            clamp_min(
+              sum(rate(voxdesk_external_side_effects_total{kind="message_webhook",outcome=~"success|failure"}[5m])),
+              0.0001
+            )
+          )
+
+      - record: voxdesk:slo:webhook_delivery_success:30d
+        expr: |
+          1 - (
+            sum(increase(voxdesk_external_side_effects_total{kind="message_webhook",outcome="failure"}[30d]))
+            /
+            clamp_min(
+              sum(increase(voxdesk_external_side_effects_total{kind="message_webhook",outcome=~"success|failure"}[30d])),
+              0.0001
+            )
+          )
+
+      # 4. Post-Call Workflow & Analysis Completion Time (p95 seconds)
+      - record: voxdesk:slo:post_call_completion_p95:5m
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(voxdesk_runtime_event_duration_seconds_bucket{component="workflow",event="execution"}[5m])) by (le)
+          )
+
+      - record: voxdesk:slo:post_call_completion_p95:30d
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(increase(voxdesk_runtime_event_duration_seconds_bucket{component="workflow",event="execution"}[30d])) by (le)
           )
