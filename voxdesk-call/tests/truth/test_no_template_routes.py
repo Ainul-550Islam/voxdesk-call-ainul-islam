@@ -11,7 +11,14 @@ def test_no_template_routes_and_preserved_real_modules():
     assert 'app.api.retell_parity_routes' in modules
     assert 'app.api.conductor_routes' in modules
     expected = json.loads(Path('tests/truth/routes_snapshot.json').read_text())
-    assert len(app.routes) == expected['route_count']
+    # The /assets mount and the GET /{full_path:path} SPA fallback are mounted only when a
+    # dashboard build exists, so the expected count must follow the build state.
+    dashboard_routes = 2
+    build_present = Path('dashboard/dist/index.html').is_file()
+    expected_count = expected['route_count'] + dashboard_routes * (
+        int(build_present) - int(expected['dashboard_build_present'])
+    )
+    assert len(app.routes) == expected_count
 
 
 def test_no_api_line_count_banners():

@@ -29,7 +29,8 @@ from app.telephony.call_session import validate_call_state_transition
 from app.telephony.enums import TelephonyCallState
 from app.telephony.exceptions import CallStateTransitionError
 from app.telephony.media_gateway import media_gateway_manager
-from app.telephony.webhooks import DEFAULT_WEBHOOK_SECRET, compute_webhook_hmac_signature
+from app.telephony.webhooks import compute_webhook_hmac_signature
+from tests.webhook_secret import TEST_WEBHOOK_SECRET
 from tests.conftest import auth_headers, make_tenant, make_user
 
 
@@ -37,7 +38,7 @@ def _signed_webhook_headers(
     body_dict: dict,
     *,
     org_id: str | None = None,
-    secret: str = DEFAULT_WEBHOOK_SECRET,
+    secret: str = TEST_WEBHOOK_SECRET,
 ) -> tuple[bytes, dict[str, str]]:
     raw = json.dumps(body_dict).encode("utf-8")
     ts = str(int(time.time()))

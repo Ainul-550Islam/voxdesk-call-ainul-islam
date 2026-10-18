@@ -53,10 +53,12 @@ from app.telephony.schemas import (
     coerce_e164,
 )
 
-DEFAULT_WEBHOOK_SECRET = "voxdesk-telephony-webhook-secret"
-
-
 def get_webhook_signing_secret(provider: str) -> str:
+    """Return the signing secret for a provider. Fails closed when none is configured.
+
+    There is deliberately no built-in default: a public default secret would let
+    anyone forge webhooks on a deployment that forgot to configure one.
+    """
     prov = (provider or "").strip().lower()
     if prov == "twilio" and (settings.twilio_auth_token or "").strip():
         return settings.twilio_auth_token.strip()
@@ -64,7 +66,13 @@ def get_webhook_signing_secret(provider: str) -> str:
         return str(getattr(settings, "telnyx_public_key")).strip()
     if prov == "vonage" and (settings.vonage_api_secret or "").strip():
         return settings.vonage_api_secret.strip()
-    return (getattr(settings, "telephony_webhook_secret", None) or DEFAULT_WEBHOOK_SECRET).strip()
+    secret = (getattr(settings, "telephony_webhook_secret", None) or "").strip()
+    if not secret:
+        raise ProviderWebhookVerificationError(
+            f"No webhook signing secret configured for provider '{(provider or '').upper()}'.",
+            detail={"provider": (provider or "").upper(), "reason": "webhook_secret_not_configured"},
+        )
+    return secret
 
 
 def compute_webhook_hmac_signature(
@@ -125,21 +133,9 @@ def verify_incoming_webhook_signature(
         raw_body=raw_body,
         timestamp=None,
     )
-    # Also allow fallback check against DEFAULT_WEBHOOK_SECRET in test environments
-    fallback_with_ts = compute_webhook_hmac_signature(
-        secret=DEFAULT_WEBHOOK_SECRET,
-        raw_body=raw_body,
-        timestamp=timestamp_hdr,
-    )
-    fallback_raw = compute_webhook_hmac_signature(
-        secret=DEFAULT_WEBHOOK_SECRET,
-        raw_body=raw_body,
-        timestamp=None,
-    )
-
     valid = any(
         hmac.compare_digest(provided_sig, candidate)
-        for candidate in (expected_with_ts, expected_raw, fallback_with_ts, fallback_raw)
+        for candidate in (expected_with_ts, expected_raw)
     )
     if not valid:
         raise ProviderWebhookVerificationError(

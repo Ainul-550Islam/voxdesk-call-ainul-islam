@@ -6,7 +6,8 @@ import time
 import pytest
 
 from app.core.config import settings
-from app.telephony.webhooks import DEFAULT_WEBHOOK_SECRET, compute_webhook_hmac_signature
+from app.telephony.webhooks import compute_webhook_hmac_signature
+from tests.webhook_secret import TEST_WEBHOOK_SECRET
 from tests.acd_support import production
 from tests.conftest import auth_headers
 from tests.e2e._support import create_published_voice_agent
@@ -15,7 +16,7 @@ from tests.e2e._support import create_published_voice_agent
 def _signed_payload(payload: dict, tenant_id: str) -> tuple[bytes, dict[str, str]]:
     raw = json.dumps(payload).encode("utf-8")
     timestamp = str(int(time.time()))
-    provider_secret = (settings.twilio_auth_token or "").strip() or DEFAULT_WEBHOOK_SECRET
+    provider_secret = (settings.twilio_auth_token or "").strip() or TEST_WEBHOOK_SECRET
     signature = compute_webhook_hmac_signature(
         secret=provider_secret, raw_body=raw, timestamp=timestamp
     )

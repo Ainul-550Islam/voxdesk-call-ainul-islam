@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import hmac
 import secrets
-import time
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -64,12 +63,9 @@ from app.services.public_key_service import (
     resolve_tenant_agent,
 )
 from app.services.public_origin_service import validate_origin_against_allowlist
+from app.core.rate_limit import allow_identity_action, reset_identity_limiter
 
 WIDGET_SESSION_TOKEN_PREFIX = "vdws"
-
-# Sliding-window rate-limit buckets: key -> list[monotonic_timestamp]
-_RATE_BUCKETS: dict[str, list[float]] = {}
-
 
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
@@ -84,23 +80,28 @@ def _ensure_aware(dt: datetime | None) -> datetime | None:
 
 
 def reset_widget_rate_limits() -> None:
-    """Clear in-memory rate-limit windows (used by integration tests)."""
-    _RATE_BUCKETS.clear()
+    """Clear the shared widget rate-limit state (used by integration tests)."""
+    reset_identity_limiter()
 
 
-def _enforce_widget_rate_limit(bucket_key: str, limit_per_minute: int) -> None:
-    now_mono = time.monotonic()
-    cutoff = now_mono - 60.0
-    history = [ts for ts in _RATE_BUCKETS.get(bucket_key, []) if ts > cutoff]
-    if len(history) >= max(1, limit_per_minute):
-        _RATE_BUCKETS[bucket_key] = history
+async def _enforce_widget_rate_limit(bucket_key: str, limit_per_minute: int) -> None:
+    """Spend one unit of a public-widget budget in the shared limiter.
+
+    Shared across replicas when REDIS_URL is set (in-process otherwise). Like the other
+    identity limits, an unavailable Redis refuses the request rather than allowing it.
+    """
+    allowed = await allow_identity_action(
+        action="public_widget",
+        who=bucket_key,
+        limit=max(1, int(limit_per_minute)),
+        window=60.0,
+    )
+    if not allowed:
         raise AppError(
             status_code=429,
             code="RATE_LIMITED",
             message="Public widget rate limit exceeded. Please wait before retrying.",
         )
-    history.append(now_mono)
-    _RATE_BUCKETS[bucket_key] = history
 
 
 def _is_voice_transport_configured() -> tuple[bool, str, str | None]:
@@ -215,11 +216,11 @@ async def get_public_widget_bootstrap_config(
         required_capability=PublicWidgetCapability.WIDGET_CONFIG_READ,
         client_ip=client_ip,
     )
-    _enforce_widget_rate_limit(
+    await _enforce_widget_rate_limit(
         f"key:{key_row.id}", int(key_row.rate_limit_per_minute or 30)
     )
     if client_ip:
-        _enforce_widget_rate_limit(
+        await _enforce_widget_rate_limit(
             f"ip:{client_ip}", max(30, int(key_row.rate_limit_per_minute or 30) * 2)
         )
 
@@ -274,11 +275,11 @@ async def create_public_widget_session(
         required_capability=PublicWidgetCapability.WIDGET_SESSION_CREATE,
         client_ip=client_ip,
     )
-    _enforce_widget_rate_limit(
+    await _enforce_widget_rate_limit(
         f"key:{key_row.id}", int(key_row.rate_limit_per_minute or 30)
     )
     if client_ip:
-        _enforce_widget_rate_limit(
+        await _enforce_widget_rate_limit(
             f"ip:{client_ip}", max(30, int(key_row.rate_limit_per_minute or 30) * 2)
         )
 
@@ -583,11 +584,11 @@ async def authenticate_widget_session(
                 message="Widget session request origin does not match the authorized session origin.",
             )
 
-    _enforce_widget_rate_limit(
+    await _enforce_widget_rate_limit(
         f"key:{key_row.id}", int(key_row.rate_limit_per_minute or 30)
     )
     if client_ip:
-        _enforce_widget_rate_limit(
+        await _enforce_widget_rate_limit(
             f"ip:{client_ip}", max(30, int(key_row.rate_limit_per_minute or 30) * 2)
         )
 
@@ -920,11 +921,11 @@ async def create_public_widget_voice_bootstrap(
         required_capability=PublicWidgetCapability.WIDGET_VOICE_START,
         client_ip=client_ip,
     )
-    _enforce_widget_rate_limit(
+    await _enforce_widget_rate_limit(
         f"key:{key_row.id}", int(key_row.rate_limit_per_minute or 30)
     )
     if client_ip:
-        _enforce_widget_rate_limit(
+        await _enforce_widget_rate_limit(
             f"ip:{client_ip}", max(30, int(key_row.rate_limit_per_minute or 30) * 2)
         )
 

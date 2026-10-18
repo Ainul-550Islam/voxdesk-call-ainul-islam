@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from starlette.middleware.trustedhost import TrustedHostMiddleware
+from app.middleware.loopback_probe import LoopbackProbeTrustedHostMiddleware
 
 from app.api.agent_flow_routes import router as agent_flow_router
 from app.api.agent_management_routes import router as agent_management_router
@@ -310,7 +310,7 @@ app.add_middleware(
 # cache-poisoning at the application layer too.
 if settings.trusted_host_list:
     app.add_middleware(
-        TrustedHostMiddleware,
+        LoopbackProbeTrustedHostMiddleware,
         allowed_hosts=settings.trusted_host_list,
     )
 

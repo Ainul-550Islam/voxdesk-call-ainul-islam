@@ -190,3 +190,4 @@ email-validator==2.2.0     # EmailStr validation for pydantic
 # 4.2.0 is excluded: it fails at signing time with an UnboundLocalError for the
 # enveloped method; 5.1.0 is the version the tests were written against.
 signxml==5.1.0
+psutil==7.2.2  # used by scripts/boot_probe.py (process/port probe)

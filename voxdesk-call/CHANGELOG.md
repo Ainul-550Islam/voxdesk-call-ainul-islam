@@ -7,6 +7,107 @@ unverified provider connections or third-party compliance certifications.
 
 ---
 
+## [Unreleased] — 2026-10-18 (Round 8: media-stream close hardening)
+
+### Fixed
+- **`media_stream` close after a malformed frame or a completed response.** A non-JSON `start`
+  frame, a binary frame (`receive_text` raises `KeyError("text")`), or a non-object payload
+  escaped the handler after `accept()`. Those cases now close once with 1008. All closes in the
+  handler go through `_safe_close()`, which swallows `RuntimeError` and `WebSocketDisconnect` raised
+  when the ASGI response has already completed. Verified live against the app via the test client
+  (no-token start, immediate disconnect, bad JSON, binary frame: each closes 1008, no ASGI
+  `RuntimeError`). Regression tests: `tests/telephony/test_media_stream_disconnect.py` (+4 tests).
+  Test run: `tests/telephony tests/security tests/test_stream_lifecycle.py` → 501 passed, 2 skipped
+  (`audit_logs/telephony_security_r8.log`). Full-file payload: `audit_tools/payload/twilio_handler.py`.
+
+## [Unreleased] — 2026-10-10 (Production-readiness audit)
+
+### Behavior-changing fixes (review separately)
+- **Per-source login velocity limit.** `POST /auth/login` had only a per-account lockout, so one
+  client could try many accounts without a throttle (live check before the change: 12 attempts,
+  all 401). The handler now spends a per-IP budget (`LOGIN_IP_LIMIT_PER_MINUTE`, default 30 per
+  60 s) through the shared identity limiter before any account lookup. Over budget returns 429
+  with `Retry-After: 60` and logs `auth.login.ip_rate_limited`. The budget is in Redis when
+  `REDIS_URL` is set, so it holds across replicas, and in-process otherwise. Regression:
+  `tests/security/test_login_ip_velocity.py` (3 tests; the two blocking tests fail with the check
+  disabled). `tests/conftest.py` clears the identity limiter state, including the `voxdesk:rate:v1:identity:*` keys in the Redis a test used, so counters do not leak between tests.
+- **Public widget budgets are shared across replicas.** The widget limiter kept counts in a
+  per-process dictionary, so N API replicas allowed N times the budget. Its per-key and per-IP
+  budgets now go through the shared identity limiter (`allow_identity_action`): Redis when
+  `REDIS_URL` is set, in-process otherwise. Trade-off, chosen deliberately: as with the other
+  identity limits, an unavailable Redis refuses widget requests (429, `rate_limit.backend_unavailable`
+  logged) rather than allowing them. To change this, edit `_enforce_widget_rate_limit` in
+  `app/services/public_widget_service.py`. Regression: `tests/security/test_widget_shared_rate_limit.py`.
+- **Declared the `audioop` dependency of the load tests.** `loadtest/voice_ws_user.py` imports
+  `audioop`, removed in Python 3.13. `requirements-test.txt` now pins `audioop-lts==0.2.2` for
+  Python 3.13 only (`python_version >= "3.13"`). Python 3.12 has `audioop` in the standard library.
+  Verified: `scripts/verify_dependencies.py` passes and `loadtest.voice_ws_user` imports on 3.13.
+- **Media stream handshake: no second close after a client disconnect.** A client that dropped
+  during the Twilio media-stream handshake raised `WebSocketDisconnect`, and the handler then called
+  `websocket.close()` on the closed socket. The ASGI server logged a `RuntimeError`
+  ("response already completed"). Disconnects now return quietly. Handshake timeouts still close
+  with 1008. Found by the live Caddy check. Regression: `tests/telephony/test_media_stream_disconnect.py`
+  (fails on the old handler).
+- **Caddy crash-loop with empty DOMAIN.** `docker-compose.prod.yml` and
+  `docker-compose.staging.yml` passed `DOMAIN: ${DOMAIN:-}` (and `GRAFANA_DOMAIN`). An empty value
+  expands to an empty site address, and `caddy validate` rejects it (`server block without any key
+  is global configuration`). The compose defaults are now `http://localhost` and
+  `http://grafana.localhost`, the same fallbacks the Caddyfile uses. Verified with `caddy validate`
+  on the rebuilt tree: defaults and real hostnames pass; an empty `DOMAIN` still fails by design.
+- **Telephony webhook fail-closed.** The public default secret
+  `voxdesk-telephony-webhook-secret` is removed. Webhooks are rejected with
+  `ProviderWebhookVerificationError` when `TELEPHONY_WEBHOOK_SECRET` is unset, and the
+  default is no longer a fallback candidate when a secret is set. Production refuses
+  placeholder values. Regression: `tests/security/test_telephony_webhook_fail_closed.py`.
+- **Migration graph fixed.** Ten legacy duplicate-number migrations were deleted (the
+  canonical short-named files carry identical operations; `app/db/migration_compatibility.py`
+  maps them). The graph had 5 Alembic heads, so `alembic upgrade head` (run by the
+  production entrypoint) would fail. It now has one head, `0062_drop_pcap_artifacts`.
+  Verified: PostgreSQL upgrade → downgrade base → upgrade round trip, and `alembic check`
+  reports no drift.
+- **Production healthcheck.** `/health` returned 400 under `TRUSTED_HOSTS` because the
+  Dockerfile probe sends `Host: 127.0.0.1:8000`. `app/middleware/loopback_probe.py`
+  replaces `TrustedHostMiddleware` in `app/main.py`. It exempts only `GET`/`HEAD /health`
+  from a `127.0.0.1` or `::1` peer. All other paths and hosts stay enforced. Regression:
+  `tests/security/test_loopback_probe_trusted_host.py`.
+- **Compose secret wiring.** `docker-compose.prod.yml` requires `TELEPHONY_WEBHOOK_SECRET`
+  (`:?` fail-closed interpolation). `docker-compose.staging.yml` passes it with an empty
+  default. `.env.example` documents it.
+- **Deleted placeholder code.** 94 NUL-filled route modules (truncated, unloadable), the
+  unmounted `app/api/advanced_analytics_routes.py`, 15 duplicate dashboard HTML mockups
+  under `dashboard/src/pages/**`, and the directories `realtime-engine/`,
+  `voxdesk-concurrency-engine/`, and `voxdesk-native-audio-engine/` (the repository's
+  `verify_no_filler` gate forbids them). Recoverable from git history (`a76cb82`).
+- **Stale artifacts removed from the repo root** (no tests or gates read them):
+  two `.zip` evidence bundles, `ROUND4-LINT-CLEANUP.patch.gz`, `FINAL_TEST_RESULTS.json`,
+  `PROMPT8B_FINAL_REPORT.md`, `PROMPT8_FINAL_REPORT.md`, `BACKEND_SUITE_REPAIR_REPORT.md`,
+  and `tests_manifest.txt`. Recoverable from git history.
+
+### Build, CI, and tests
+- Added `requirements-test.txt` with pinned test tooling (pytest, pytest-asyncio,
+  pytest-timeout, aiosqlite, httpx, respx, fakeredis, ruff). CI installs it.
+- CI installs `redis-server` and sets `DATABASE_URL` to the Postgres service
+  (`voxdesk_ci`) for the Tests step.
+- `requirements.txt` declares `psutil==7.2.2`. `scripts/boot_probe.py` imports it, and
+  `verify_dependencies` failed without it.
+- Registered the `timeout` pytest marker in `pytest.ini`.
+- `tests/truth/test_no_template_routes.py` now derives its expected route count from
+  whether the dashboard build exists. The `/assets` mount and the SPA fallback route are
+  mounted only when `dashboard/dist` is present.
+- Added `tests/webhook_secret.py` (test-only secret, never used in production code).
+
+### Security notes
+- **Tracked secret file removed.** `.env.check` was committed with populated values
+  (`SECRET_KEY`, `JWT_SECRET`, owner/demo passwords, gateway ingest and webhook secrets).
+  The file is generated by `scripts/make_check_env.py` (mode 0600) and is now untracked and
+  ignored via `.gitignore`. **Every value in that file must be treated as exposed and rotated**,
+  because it remains in git history.
+- Production refuses to boot without `TELEPHONY_WEBHOOK_SECRET`; covered by
+  `tests/test_config.py::test_production_without_telephony_webhook_secret_is_refused`.
+- No hardcoded production credentials were introduced. Test secrets are test-only constants.
+
+---
+
 ## [1.0.0] — 2026-10-08 (First Truthful Sell-Ready Release — Gates G0–G9)
 
 ### Gate G0 — Truth & Anti-Facade Foundation (PART 0)

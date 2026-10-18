@@ -76,6 +76,7 @@ services:
       FORWARDED_ALLOW_IPS: ${STAGING_CADDY_PROXY_IPV4:-172.31.0.10}
       TRUSTED_HOSTS: ${TRUSTED_HOSTS:-}
       CONDUCTOR_WEBHOOK_SECRET: ${CONDUCTOR_WEBHOOK_SECRET:-}
+      TELEPHONY_WEBHOOK_SECRET: ${TELEPHONY_WEBHOOK_SECRET:-}
       RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
       METRICS_ENABLED: ${METRICS_ENABLED:-true}
       METRICS_TOKEN: ${METRICS_TOKEN:-}
@@ -221,8 +222,8 @@ services:
     image: caddy:2.9-alpine
     restart: unless-stopped
     environment:
-      DOMAIN: ${DOMAIN:-}
-      GRAFANA_DOMAIN: ${GRAFANA_DOMAIN:-}
+      DOMAIN: ${DOMAIN:-http://localhost}
+      GRAFANA_DOMAIN: ${GRAFANA_DOMAIN:-http://grafana.localhost}
     ports:
       - "8080:80"               # staging HTTP (distinct from production 80/443)
       - "8443:443"              # staging HTTPS (when DOMAIN is set)

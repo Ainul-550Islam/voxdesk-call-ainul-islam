@@ -16,7 +16,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import Agent, AgentVersion, UserRole
 from app.db.telephony_models import TelephonyProviderEvent, TelephonyUsageLedger
-from app.telephony.webhooks import DEFAULT_WEBHOOK_SECRET, compute_webhook_hmac_signature
+from app.telephony.webhooks import compute_webhook_hmac_signature
+from tests.webhook_secret import TEST_WEBHOOK_SECRET
 from tests.acd_support import production
 from tests.conftest import auth_headers, make_tenant, make_user
 
@@ -25,7 +26,7 @@ def _make_signed_request(
     payload: dict,
     *,
     org_id: str,
-    secret: str = DEFAULT_WEBHOOK_SECRET,
+    secret: str = TEST_WEBHOOK_SECRET,
     timestamp: int | None = None,
 ) -> tuple[bytes, dict[str, str]]:
     raw = json.dumps(payload).encode("utf-8")

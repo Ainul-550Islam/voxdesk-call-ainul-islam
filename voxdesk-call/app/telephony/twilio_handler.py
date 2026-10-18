@@ -288,6 +288,20 @@ async def outbound_answer(
     return PlainTextResponse(str(response), media_type="application/xml")
 
 
+async def _safe_close(websocket, code: int) -> None:
+    """Close a WebSocket at most once, never raising.
+
+    A close sent after the peer has gone, or after the ASGI response has
+    completed, raises RuntimeError or WebSocketDisconnect in the server.
+    That is harmless for the client and only adds noise, so it is logged
+    at debug level and swallowed.
+    """
+    try:
+        await websocket.close(code=code)
+    except (RuntimeError, WebSocketDisconnect) as exc:
+        log.debug("ws.close_after_completion", code=code, error=str(exc))
+
+
 @router.websocket("/ws")
 async def media_stream(websocket: WebSocket):
     """
@@ -300,7 +314,7 @@ async def media_stream(websocket: WebSocket):
     if is_draining():
         await websocket.accept()
         log.warning("ws.rejected_node_draining")
-        await websocket.close(code=1012)
+        await _safe_close(websocket, 1012)
         return
 
     await websocket.accept()
@@ -320,9 +334,21 @@ async def media_stream(websocket: WebSocket):
         start_msg = await (
             asyncio.wait_for(_await_start(), timeout) if timeout and timeout > 0 else _await_start()
         )
-    except (WebSocketDisconnect, asyncio.TimeoutError):
-        log.warning("ws.handshake_incomplete")
-        await websocket.close(code=1008)  # policy violation
+    except WebSocketDisconnect:
+        # The client already closed the socket. Closing it again raises
+        # "response already completed" in the ASGI server.
+        log.warning("ws.handshake_incomplete", reason="client_disconnected")
+        return
+    except asyncio.TimeoutError:
+        log.warning("ws.handshake_incomplete", reason="timeout")
+        await _safe_close(websocket, 1008)  # policy violation
+        return
+    except (ValueError, TypeError, KeyError, AttributeError, RuntimeError):
+        # Malformed frame: non-JSON text, a binary frame (no "text" key),
+        # or a non-object payload. Reject once with 1008 and stop; never
+        # let the exception escape after accept().
+        log.warning("ws.handshake_incomplete", reason="malformed_frame")
+        await _safe_close(websocket, 1008)
         return
 
     start = start_msg.get("start", {})
@@ -338,7 +364,7 @@ async def media_stream(websocket: WebSocket):
 
     if not verify_stream_token(call_sid, token):
         log.warning("ws.rejected_bad_stream_token", call_sid=call_sid)
-        await websocket.close(code=1008)  # policy violation
+        await _safe_close(websocket, 1008)  # policy violation
         return
 
     async with get_sessionmaker()() as session:
@@ -346,7 +372,7 @@ async def media_stream(websocket: WebSocket):
             await session.execute(select(Call).where(Call.call_sid == call_sid))
         ).scalar_one_or_none()
         if call is None:
-            await websocket.close()
+            await _safe_close(websocket, 1000)
             return
         tenant = await session.get(Tenant, call.tenant_id)
 

@@ -47,6 +47,9 @@ class Settings(BaseSettings):
     refresh_token_days: int = 14
     max_failed_logins: int = 8              # then a temporary lockout
     lockout_minutes: int = 15
+    # Per client IP, per minute, across all sign-in attempts (existing or not).
+    # Shared across replicas when REDIS_URL is set; in-process otherwise.
+    login_ip_limit_per_minute: int = 30
 
     # Comma-separated browser origins allowed to call the API.
     cors_origins: str = "http://localhost:5173"
@@ -604,6 +607,9 @@ class Settings(BaseSettings):
     stripe_webhook_secret: str = ""
     # HMAC key for Conductor callback events. The route fails closed when absent.
     conductor_webhook_secret: str = ""
+    # Shared HMAC key for generic telephony webhooks (no built-in default; the
+    # verifier fails closed when this is empty). Never logged or returned by an API.
+    telephony_webhook_secret: str = ""
     stripe_publishable_key: str = ""      # safe for a browser; not a secret
 
     # Where Stripe returns the browser. Required only when checkout is used.
@@ -787,6 +793,11 @@ class Settings(BaseSettings):
             problems.append(
                 "CONDUCTOR_WEBHOOK_SECRET is required in production; "
                 "Conductor callbacks must fail closed and be signed"
+            )
+        if self.is_production and not self.telephony_webhook_secret:
+            problems.append(
+                "TELEPHONY_WEBHOOK_SECRET is required in production; generic telephony "
+                "webhooks must fail closed and be signed"
             )
         if self.is_production and self.twilio_skip_webhook_verify:
             problems.append(

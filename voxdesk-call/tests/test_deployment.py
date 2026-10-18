@@ -37,6 +37,7 @@ def _valid_prod(**overrides) -> Settings:
         forwarded_allow_ips="127.0.0.1,::1",
         trusted_hosts="app.example.com",
         conductor_webhook_secret="g" * 32,
+        telephony_webhook_secret="t" * 32,
         log_level="INFO",
         secret_key="a" * 48,
         jwt_secret="b" * 48,

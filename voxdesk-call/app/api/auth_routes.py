@@ -26,6 +26,7 @@ from app.auth.identity import sessions
 from app.auth.identity.models import ChallengePurpose
 from app.auth.rbac import describe_roles, permissions_for
 from app.core.config import settings
+from app.core.rate_limit import allow_identity_action
 from app.db.models import AuditAction, User
 from app.db.session import get_session
 from app.domain.public_site_models import PublicSignupRequest
@@ -184,6 +185,25 @@ async def login(
     )
     ip = _client_ip(request)
     agent = request.headers.get("user-agent", "")[:300]
+
+    # Per-source velocity limit. It runs before any account lookup, so it also
+    # throttles credential stuffing across many accounts from one address.
+    if not await allow_identity_action(
+        action="auth.login.ip",
+        who=ip,
+        limit=settings.login_ip_limit_per_minute,
+        window=60.0,
+    ):
+        log.warning(
+            "auth.login.ip_rate_limited",
+            ip=ip,
+            limit_per_minute=settings.login_ip_limit_per_minute,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail={"code": "rate_limited", "message": "Too many sign-in attempts. Try again shortly."},
+            headers={"Retry-After": "60"},
+        )
 
     try:
         user = await service.authenticate(

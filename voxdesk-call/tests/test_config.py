@@ -24,6 +24,7 @@ def _valid_prod(monkeypatch, **overrides) -> Settings:
         redis_url="redis://127.0.0.1:6379/0",
         trusted_hosts="app.example.com",
         conductor_webhook_secret="g" * 32,
+        telephony_webhook_secret="t" * 32,
         secret_key="a" * 48,
         jwt_secret="b" * 48,
         twilio_account_sid="AC" + "0" * 32,
@@ -147,3 +148,10 @@ def test_wildcard_cors_is_rejected_when_credentials_allowed():
     s = Settings(_env_file=None, cors_origins="http://a.com, *")
     problems = s.validate_security()
     assert any("CORS_ORIGINS" in p for p in problems)
+
+
+def test_production_without_telephony_webhook_secret_is_refused(monkeypatch):
+    """Generic telephony webhooks fail closed: production must not boot without the secret."""
+    s = _valid_prod(monkeypatch, telephony_webhook_secret="")
+    problems = s.validate_security()
+    assert any("TELEPHONY_WEBHOOK_SECRET" in p for p in problems), problems

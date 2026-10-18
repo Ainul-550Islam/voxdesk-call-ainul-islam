@@ -18,8 +18,14 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from app.auth import password as pw
 from app.core.config import settings
+from tests.webhook_secret import TEST_WEBHOOK_SECRET
 from app.db.models import Base, Tenant, User, UserRole
 from app.db.session import get_session
+
+# Tests sign generic telephony webhooks with a test-only key. Production code has no
+# default secret; this only fills the setting when the environment left it empty.
+if not settings.telephony_webhook_secret:
+    settings.telephony_webhook_secret = TEST_WEBHOOK_SECRET
 
 # Register every SQLAlchemy model before the SQLite fixture calls
 # Base.metadata.create_all(). A monolithic pytest collection can accidentally
@@ -1047,3 +1053,40 @@ def stripe_event(event_type: str, obj: dict, *, event_id=None, created=None) -> 
         "created": created if created is not None else int(_t.time()),
         "data": {"object": obj},
     }).encode()
+
+
+@pytest.fixture(autouse=True)
+def _reset_identity_rate_limits(monkeypatch):
+    """Isolate the identity limiter (per-IP login velocity) between tests.
+
+    Some modules point settings.redis_url at a session-scoped Redis, and the counters
+    persist there across tests; every test client shares one address. Requesting
+    ``monkeypatch`` makes this teardown run before the module-level URL override is undone,
+    so the keys of the Redis the test actually used are cleared.
+    """
+    from app.core.rate_limit import reset_identity_limiter
+
+    reset_identity_limiter()
+    yield
+    _clear_identity_keys()
+    reset_identity_limiter()
+
+
+def _clear_identity_keys() -> None:
+    from app.core.config import settings
+
+    url = (settings.redis_url or "").strip()
+    if not url:
+        return
+    import redis
+
+    client = redis.Redis.from_url(url)
+    try:
+        for key in client.scan_iter(match="voxdesk:rate:v1:identity:*"):
+            client.delete(key)
+    except redis.exceptions.RedisError:
+        # The test already stopped or pointed at an unreachable Redis on purpose; its
+        # counters died with that instance, so there is nothing left to clear.
+        return
+    finally:
+        client.close()
