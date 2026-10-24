@@ -138,6 +138,30 @@ class Permission(str, enum.Enum):
     VOICE_CLONE_READ = "voice_clone:read"
     VOICE_CLONE_WRITE = "voice_clone:write"
 
+    # BATCH03:compliance_v2_permissions
+    # Compliance control plane (Batch 03). Named in the same resource:action
+    # vocabulary as everything above; the role bundles live in
+    # app.compliance_v2.permissions.
+    COMPLIANCE_SIEM_READ = "compliance_siem:read"
+    COMPLIANCE_SIEM_WRITE = "compliance_siem:write"
+    COMPLIANCE_AUDIT_VERIFY = "compliance_audit:verify"
+    COMPLIANCE_AUDIT_EXPORT = "compliance_audit:export"
+    COMPLIANCE_KMS_REKEY = "compliance_kms:rekey"
+    COMPLIANCE_RESIDENCY_READ = "compliance_residency:read"
+    COMPLIANCE_RESIDENCY_WRITE = "compliance_residency:write"
+    COMPLIANCE_EVIDENCE_READ = "compliance_evidence:read"
+    COMPLIANCE_EVIDENCE_RUN = "compliance_evidence:run"
+    COMPLIANCE_ACCESS_REVIEW_READ = "compliance_access_review:read"
+    COMPLIANCE_ACCESS_REVIEW_WRITE = "compliance_access_review:write"
+    COMPLIANCE_INCIDENT_READ = "compliance_incident:read"
+    COMPLIANCE_INCIDENT_WRITE = "compliance_incident:write"
+    COMPLIANCE_DSAR_READ = "compliance_dsar:read"
+    COMPLIANCE_DSAR_WRITE = "compliance_dsar:write"
+    COMPLIANCE_PHI_POLICY_READ = "compliance_phi_policy:read"
+    COMPLIANCE_PHI_POLICY_MANAGE = "compliance_phi_policy:manage"
+    COMPLIANCE_BREAK_GLASS_REQUEST = "compliance_break_glass:request"
+    COMPLIANCE_BREAK_GLASS_APPROVE = "compliance_break_glass:approve"
+
 
 # Convenience bundles used when composing roles. Kept here so `rbac.py` reads
 # as a policy document rather than a wall of enum members.

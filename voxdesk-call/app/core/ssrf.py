@@ -24,8 +24,11 @@ literal components and never resolves DNS:
 * no ``userinfo`` component (a URL like ``https://admin:secret@host`` smuggles
   a credential into the destination);
 * a host that is an IP literal is rejected when it is loopback, private
-  (RFC 1918 / RFC 4193 ULA), link-local (RFC 3927 / ``fe80::/10``), reserved,
-  multicast, unspecified, or the metadata address ``169.254.169.254``;
+  (RFC 1918 / RFC 4193 ULA), carrier-grade NAT (``100.64.0.0/10``, which is
+  where several cloud metadata services live), link-local (RFC 3927 /
+  ``fe80::/10``), reserved, multicast, unspecified, or one of the published
+  metadata addresses (``169.254.169.254``, ``169.254.170.2``,
+  ``169.254.169.123``, ``192.0.0.192``, ``100.100.100.200``);
 * a hostname of ``localhost`` / ``*.localhost``, or one ending in ``.local``
   (mDNS) / ``.internal`` / ``.localhost``, or the well-known cloud metadata
   names, is rejected.
@@ -66,6 +69,26 @@ _METADATA_HOSTS = frozenset(
 #: Suffixes that identify non-public / special-use names.
 _BLOCKED_SUFFIXES = (".localhost", ".local", ".internal")
 
+#: Addresses published by cloud providers for instance metadata and the
+#: auxiliary services that sit next to it. ``ipaddress`` classifies some of them
+#: as ordinary link-local addresses and others as *public*, so they are listed
+#: explicitly rather than inferred.
+_METADATA_ADDRESSES = frozenset(
+    {
+        "169.254.169.254",  # AWS, GCP, Azure, OpenStack, DigitalOcean
+        "169.254.170.2",  # AWS ECS task metadata
+        "169.254.169.123",  # AWS time sync
+        "192.0.0.192",  # Oracle Cloud metadata
+        "100.100.100.200",  # Alibaba Cloud metadata
+        "fd00:ec2::254",  # AWS IMDS over IPv6
+    }
+)
+
+#: Shared address space (RFC 6598). Python's ``ipaddress`` treats it as public,
+#: but it is not routable on the internet and is used internally by carriers and
+#: by at least one cloud's metadata service.
+_SHARED_ADDRESS_SPACE = ipaddress.ip_network("100.64.0.0/10")
+
 _HOST_RE = re.compile(r"^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$")
 
 
@@ -80,6 +103,10 @@ def _ip_classification(host: str) -> str | None:
     except ValueError:
         return None
 
+    if str(addr) in _METADATA_ADDRESSES:
+        return "cloud metadata address"
+    if addr.version == 4 and addr in _SHARED_ADDRESS_SPACE:
+        return "shared address space (RFC 6598)"
     if addr.is_unspecified:
         return "unspecified address"
     if addr.is_loopback:

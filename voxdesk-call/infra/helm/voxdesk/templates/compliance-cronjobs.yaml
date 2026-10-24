@@ -1,0 +1,127 @@
+{{- /*
+Compliance control-plane CronJobs.
+
+Each cycle that must run even when nobody is logged in gets its own job. The
+scheduler Deployment (scheduler.yaml) also starts these loops; the CronJobs exist
+for deployments that run the API without a scheduler process, and for the daily
+evidence run where "it ran at some point today" matters more than interval
+precision.
+
+concurrencyPolicy: Forbid everywhere — two concurrent rekey jobs would fight over
+the same rows, and two evidence runs would write two snapshots for the same day.
+startingDeadlineSeconds is short on purpose: a tick that could not start within
+ten minutes is stale, and the next scheduled one supersedes it.
+
+Every value has a default, so the chart renders with no `compliance:` block in
+values.yaml. Override under `compliance:` — see docs/COMPLIANCE_V2_RUNBOOK.md for
+the matching environment variables.
+*/ -}}
+{{- $compliance := .Values.compliance | default dict -}}
+{{- $enabled := $compliance.enabled | default true -}}
+{{- $evidenceDir := $compliance.evidenceDir | default "/var/lib/voxdesk/evidence" -}}
+{{- $defaultSchedules := dict
+      "evidence_run" "0 2 * * *"
+      "breach_clock_tick" "*/10 * * * *"
+      "access_review_tick" "15 * * * *"
+      "rekey_tick" "30 3 * * *"
+      "residency_audit_tick" "45 6 * * *" -}}
+{{- $jobs := $compliance.jobs | default (list
+      (dict "name" "evidence_run" "module" "scripts.compliance_evidence_run" "schedule" "0 2 * * *" "enabled" true)
+      (dict "name" "breach_clock_tick" "module" "scripts.scheduler" "args" (list) "schedule" "*/10 * * * *" "enabled" true)
+      (dict "name" "access_review_tick" "module" "scripts.scheduler" "schedule" "15 * * * *" "enabled" true)
+      (dict "name" "rekey_tick" "module" "scripts.scheduler" "schedule" "30 3 * * *" "enabled" false)
+      (dict "name" "residency_audit_tick" "module" "scripts.scheduler" "schedule" "45 6 * * *" "enabled" true)) -}}
+{{- if $enabled }}
+{{- $fullname := include "voxdesk.fullname" . -}}
+{{- $image := printf "%s:%s" (required "image.repository is required" .Values.image.repository) (required "image.tag is required" .Values.image.tag) -}}
+{{- $secret := required "secrets.existingSecret is required" .Values.secrets.existingSecret -}}
+{{- range $job := $jobs }}
+{{- if ($job.enabled | default true) }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ $fullname }}-{{ $job.name | replace "_" "-" }}
+  labels:
+    {{- include "voxdesk.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: compliance
+spec:
+  schedule: {{ ($job.schedule | default (get $defaultSchedules $job.name) | default "0 3 * * *") | quote }}
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  suspend: {{ $job.suspend | default false }}
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: {{ $job.activeDeadlineSeconds | default 1800 }}
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: {{ include "voxdesk.name" $ }}-compliance
+            app.kubernetes.io/instance: {{ $.Release.Name }}
+            app.kubernetes.io/component: compliance
+          annotations:
+            # These jobs read and write personal data; no proxy sidecar rewriting
+            # their egress, no second writer replica.
+            sidecar.istio.io/inject: "false"
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: {{ $job.name | replace "_" "-" }}
+              image: {{ $image | quote }}
+              command: ["python", "-m", {{ $job.module | default "scripts.scheduler" | quote }}]
+              {{- if $job.args }}
+              args:
+                {{- range $arg := $job.args }}
+                - {{ $arg | quote }}
+                {{- end }}
+              {{- end }}
+              env:
+                - name: APP_ENV
+                  value: {{ $.Values.config.appEnv | quote }}
+                - name: DATABASE_URL
+                  value: {{ required "config.databaseUrl is required" $.Values.config.databaseUrl | quote }}
+                - name: REDIS_URL
+                  value: {{ required "config.redisUrl is required" $.Values.config.redisUrl | quote }}
+                - name: COMPLIANCE_EVIDENCE_DIR
+                  value: {{ $evidenceDir | quote }}
+                - name: KMS_PROVIDER
+                  value: {{ $compliance.kmsProvider | default "aws" | quote }}
+                - name: DATA_REGIONS
+                  value: {{ $compliance.regions | default (list "us-east-1") | join "," | quote }}
+                - name: DEFAULT_REGION
+                  value: {{ $compliance.defaultRegion | default "us-east-1" | quote }}
+                - name: SIEM_ENABLED
+                  value: {{ $compliance.siemEnabled | default true | quote }}
+              envFrom:
+                - secretRef:
+                    name: {{ $secret }}
+              resources:
+                {{- toYaml ($job.resources | default $compliance.resources | default (dict
+                      "requests" (dict "cpu" "100m" "memory" "256Mi")
+                      "limits" (dict "cpu" "1" "memory" "1Gi"))) | nindent 16 }}
+              volumeMounts:
+                - name: evidence
+                  mountPath: {{ $evidenceDir | quote }}
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+          volumes:
+            - name: evidence
+              {{- if $compliance.evidencePersistentVolumeClaim }}
+              persistentVolumeClaim:
+                claimName: {{ $compliance.evidencePersistentVolumeClaim }}
+              {{- else }}
+              emptyDir: {}
+              {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

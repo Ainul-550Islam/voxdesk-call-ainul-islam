@@ -190,3 +190,21 @@ def describe_roles() -> list[dict]:
         }
         for role in sorted(UserRole, key=role_level, reverse=True)
     ]
+
+
+# BATCH03:compliance_v2_permissions
+def _extend_roles_with_compliance_v2() -> None:
+    """Add the Batch 03 permission bundles to the roles that should hold them.
+
+    ``_OWNER`` is derived from the enum, so the owner already holds every new
+    permission; only the manager and admin bundles need extending. The bundle
+    itself lives in ``app.compliance_v2.permissions`` so this file stays a
+    policy document rather than growing a second table.
+    """
+    from app.compliance_v2.permissions import compliance_v2_role_bundles
+
+    for role, extra in compliance_v2_role_bundles().items():
+        ROLE_PERMISSIONS[role] = ROLE_PERMISSIONS[role] | extra
+
+
+_extend_roles_with_compliance_v2()

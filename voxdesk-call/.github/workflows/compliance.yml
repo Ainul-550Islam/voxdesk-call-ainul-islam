@@ -1,0 +1,201 @@
+name: compliance
+
+# Batch 03 control-plane gates.
+#
+# Everything here runs offline: the live provider tests are excluded by
+# `-m "not live"`, and the security harness makes assertions against the mounted
+# application rather than against a deployed environment. A job that needs
+# credentials belongs in a separate, manually dispatched workflow — putting one
+# here would mean the gate silently skips on forks and silently passes.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: compliance-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  APP_ENV: test
+  # The harness and the evidence runner must not touch a real KMS or a real
+  # bucket; the development provider writes to a throwaway file.
+  KMS_PROVIDER: local_dev
+  COMPLIANCE_EVIDENCE_DIR: ${{ github.workspace }}/evidence/compliance
+  AUDIT_SIGNING_KEY_PATH: ${{ github.workspace }}/evidence/compliance/audit_signing.pem
+
+jobs:
+  dependencies:
+    name: dependency and image scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install audit tooling
+        run: pip install --quiet pip-audit==3.7.0
+
+      - name: pip-audit (runtime + test requirements)
+        run: |
+          mkdir -p evidence/compliance
+          pip-audit -r requirements.txt -r requirements-test.txt \
+            --format json --output evidence/compliance/pip-audit.json --progress-spinner off
+
+      - name: trivy filesystem scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          format: json
+          output: evidence/compliance/trivy.json
+          exit-code: "1"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: compliance-scan-evidence
+          path: evidence/compliance/*.json
+          if-no-files-found: warn
+
+  registry:
+    name: PII registry and contracts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements-test.txt
+
+      - name: Every personal-data column is in the DSAR registry
+        run: python3 scripts/check_pii_registry.py --json evidence/compliance/pii-registry.json
+
+      - name: Contract vocabulary and tenancy
+        run: python3 scripts/verify_contracts.py --skip-compile
+
+      - name: Migration is a single head
+        run: python3 -m alembic heads
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: compliance-registry-evidence
+          path: evidence/compliance/pii-registry.json
+          if-no-files-found: warn
+
+  security:
+    name: authorization matrix, SSRF and headers
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements-test.txt
+
+      - name: Authorization matrix (fails on any unguarded route)
+        run: python3 scripts/authz_matrix_cli.py --fail-on-gap --json evidence/compliance/authz-matrix.json
+
+      - name: SSRF, headers/CORS and rate-limit probes
+        run: >-
+          python3 -m security_harness.runner --app --strict
+          --evidence-dir evidence/compliance/security
+
+      - name: Security regression suite
+        run: python3 -m pytest tests/security_v2 -q
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: compliance-security-evidence
+          path: |
+            evidence/compliance/authz-matrix.json
+            evidence/compliance/security/
+          if-no-files-found: warn
+
+  compliance-tests:
+    name: compliance test suite (offline)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: voxdesk
+          POSTGRES_PASSWORD: voxdesk-ci
+          POSTGRES_DB: voxdesk_ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U voxdesk"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql+asyncpg://voxdesk:voxdesk-ci@localhost:5432/voxdesk_ci
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements-test.txt
+
+      - name: pytest (live tests excluded)
+        run: |
+          python3 -m pytest tests/compliance_v2 tests/security_v2 -m "not live" -q \
+            --junitxml evidence/compliance/junit.xml
+
+      - name: Schema for the evidence runner
+        run: |
+          python3 - <<'PY'
+          import asyncio
+          import app.db.models  # noqa: F401  registers the model set
+          from app.db.models import Base
+          from sqlalchemy.ext.asyncio import create_async_engine
+
+          async def main() -> None:
+              engine = create_async_engine(__import__("os").environ["DATABASE_URL"])
+              async with engine.begin() as conn:
+                  await conn.run_sync(Base.metadata.create_all)
+              await engine.dispose()
+
+          asyncio.run(main())
+          PY
+
+      - name: Evidence runner produces a summary the reviewer can read
+        run: |
+          # This job runs against a freshly created, empty database, so FAIL
+          # findings are expected and are not evidence of a failure to build:
+          # "no retention run is recorded" is true of a database that was
+          # created thirty seconds ago. The summary is uploaded as an artefact
+          # and reviewed; ERROR (the collector itself broke) and exit 2 (the
+          # tool could not run) are what fail this job.
+          python3 scripts/compliance_evidence_run.py \
+            --fail-on ERROR \
+            --json evidence/compliance/evidence-summary.json || status=$?
+          exit ${status:-0}
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: compliance-test-evidence
+          path: evidence/compliance/
+          if-no-files-found: warn
