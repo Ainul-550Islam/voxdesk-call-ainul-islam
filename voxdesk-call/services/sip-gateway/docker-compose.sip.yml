@@ -1,14 +1,41 @@
 version: "3.9"
 
 services:
-  sip-gateway:
+  # The signalling proxy (Kamailio) of ADR-001. Optional: the Go gateway
+  # speaks SIP itself, so a deployment that does not need a proxy can run the
+  # gateway alone.
+  kamailio:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.kamailio
     ports:
       - "5060:5060/udp"
       - "5060:5060/tcp"
       - "5061:5061/tcp"
     environment:
       - VOXDESK_API_URL=http://host.docker.internal:8000
+    restart: unless-stopped
+
+  # The media gateway: the SIP user agent, the RTP sockets and the
+  # WebSocket bridge into the VoxDesk application.
+  sip-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080/tcp"
+      # The RTP port range has to be reachable: the carrier sends the media
+      # to the addresses the gateway announced in its SDP offer.
+      - "30000-30100:30000-30100/udp"
+    environment:
+      - VOXDESK_SIP_GATEWAY_TOKEN=${VOXDESK_SIP_GATEWAY_TOKEN:?VOXDESK_SIP_GATEWAY_TOKEN is required}
+      - VOXDESK_SIP_MEDIA_WS_URL=${VOXDESK_SIP_MEDIA_WS_URL:?VOXDESK_SIP_MEDIA_WS_URL is required}
+      - VOXDESK_SIP_HOST=${VOXDESK_SIP_HOST:-sip.voxdesk.local}
+      - VOXDESK_SIP_API_ADDR=:8080
+      - VOXDESK_SIP_PORT=5060
+      - VOXDESK_SIP_CODEC=${VOXDESK_SIP_CODEC:-PCMU}
+      - VOXDESK_MEDIA_PORT_MIN=30000
+      - VOXDESK_MEDIA_PORT_MAX=30100
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped

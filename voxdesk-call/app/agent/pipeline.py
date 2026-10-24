@@ -63,6 +63,36 @@ from app.telephony.takeover import is_takeover_pending
 MAX_TOOL_CALLS_PER_CALL = 12
 
 
+def build_voice_transport_params(runtime_cfg, serializer) -> FastAPIWebsocketParams:
+    """The transport configuration every voice carrier shares.
+
+    Extracted so a carrier that needs its own transport (Vonage mixes binary
+    audio and JSON control events on one socket; the SIP gateway speaks a
+    JSON media protocol) can build *exactly* the same transport parameters
+    instead of re-implementing the VAD, denoise and ambient-mixer wiring.
+    """
+    turn_cfg = build_turn_config(runtime_cfg)
+    denoise_filter = build_denoise_filter(runtime_cfg.denoise_enabled)
+    ambient_mixer = build_ambient_mixer(
+        runtime_cfg.ambient_sound,
+        ambient_volume=runtime_cfg.ambient_volume,
+    )
+    transport_kwargs = {
+        "audio_in_enabled": True,
+        "audio_out_enabled": True,
+        "add_wav_header": False,
+        "serializer": serializer,
+        "vad_analyzer": turn_cfg.vad_analyzer,
+    }
+    if turn_cfg.turn_analyzer is not None:
+        transport_kwargs["turn_analyzer"] = turn_cfg.turn_analyzer
+    if denoise_filter is not None:
+        transport_kwargs["audio_in_filter"] = denoise_filter
+    if ambient_mixer is not None:
+        transport_kwargs["audio_out_mixer"] = ambient_mixer
+    return FastAPIWebsocketParams(**transport_kwargs)
+
+
 class GovernedHearing(FrameProcessor):
     """Drop a transcript the input guardrail refuses. A signal is not a block."""
 
@@ -155,6 +185,7 @@ async def run_voice_agent(
     *,
     runtime_config: RuntimeConfig | None = None,
     carrier_provider: str = "twilio",
+    transport=None,
 ) -> None:
     """Run the voice pipeline inside a call-scoped correlation context.
 
@@ -177,6 +208,7 @@ async def run_voice_agent(
             call,
             runtime_config=runtime_config,
             carrier_provider=carrier_provider,
+            transport=transport,
         )
 
 
@@ -190,9 +222,434 @@ async def _run_voice_agent(
     *,
     runtime_config: RuntimeConfig | None = None,
     carrier_provider: str = "twilio",
+    transport=None,
 ) -> None:
-    """একটা ফোন কল শুরু থেকে শেষ পর্যন্ত চালায়।"""
+    """একটা ফোন কল শুরু থেকে শেষ পর্যন্ত চালায়।
 
+    Two runtimes serve a call. The speech-to-speech runtime replaces the
+    STT -> LLM -> TTS chain with a live provider session; when the provider
+    cannot be reached the call fails over to the cascaded pipeline before
+    the caller hears anything, and when it dies mid-call the cascaded chain
+    is rebuilt with the conversation history carried over.
+    """
+    # ---------------------------------------------------- 2E RuntimeConfig --
+    runtime_cfg = runtime_config or await resolve_runtime_config(session, call, tenant=tenant)
+
+    # ------------------------------------------------------ tool wiring ---
+    # Both runtimes execute the same tools through the same handlers. The
+    # task lives in a holder, because the handler is built before the
+    # runtime that owns the task exists.
+    task_holder: dict = {"task": None}
+
+    async def _push_frame_to_task(frame):
+        current = task_holder.get("task")
+        if current is not None:
+            await current.queue_frames([frame])
+
+    handlers = FunctionHandlers(
+        session=session,
+        tenant=tenant,
+        call=call,
+        runtime_config=runtime_cfg,
+        frame_pusher=_push_frame_to_task,
+    )
+
+    # ---------------------------------------------------------- transport --
+    if transport is None:
+        serializer = build_serializer(
+            carrier_provider,
+            stream_sid=stream_sid,
+            call_sid=call_sid,
+            auto_hang_up=True,
+        )
+        transport = FastAPIWebsocketTransport(
+            websocket=websocket,
+            params=build_voice_transport_params(runtime_cfg, serializer),
+        )
+
+    # ------------------------------------------------- 2C speech-to-speech -
+    s2s_runtime, s2s_prepared = await _build_s2s_runtime(
+        session=session,
+        tenant=tenant,
+        call=call,
+        runtime_cfg=runtime_cfg,
+        handlers=handlers,
+    )
+    if s2s_runtime is not None:
+        preflight_error = await _s2s_preflight(s2s_runtime)
+        if preflight_error is None:
+            await _run_s2s_agent(
+                s2s_runtime,
+                websocket=websocket,
+                stream_sid=stream_sid,
+                call_sid=call_sid,
+                session=session,
+                tenant=tenant,
+                call=call,
+                runtime_cfg=runtime_cfg,
+                transport=transport,
+                handlers=handlers,
+                task_holder=task_holder,
+                prepared=s2s_prepared,
+            )
+            return
+
+        # The provider is not reachable. The caller is still on the line, so
+        # the call falls over to the cascaded pipeline -- before a single
+        # audio frame was played.
+        fallback = await _s2s_failover(
+            error=preflight_error,
+            session=session,
+            tenant=tenant,
+            call=call,
+            runtime_cfg=runtime_cfg,
+            history=s2s_runtime.history,
+            provider=s2s_runtime.provider,
+        )
+        await _finalize_s2s(
+            s2s_runtime,
+            session=session,
+            tenant=tenant,
+            call=call,
+            error=str(preflight_error),
+            fallback_activated=fallback is not None,
+        )
+        # The provider never ran: the governed token reservation goes back.
+        await _release_s2s_reservation(session, tenant, s2s_prepared)
+        if fallback is None:
+            # The operator disabled the fallback: the call ends here.
+            return
+        await _run_cascaded_agent(
+            websocket,
+            stream_sid,
+            call_sid,
+            session,
+            tenant,
+            call,
+            runtime_config=runtime_cfg,
+            carrier_provider=carrier_provider,
+            transport=transport,
+            handlers=handlers,
+            task_holder=task_holder,
+            fallback=fallback,
+        )
+        return
+
+    await _run_cascaded_agent(
+        websocket,
+        stream_sid,
+        call_sid,
+        session,
+        tenant,
+        call,
+        runtime_config=runtime_cfg,
+        carrier_provider=carrier_provider,
+        transport=transport,
+        handlers=handlers,
+        task_holder=task_holder,
+    )
+
+
+# ----------------------------------------------------------------------
+# 2C speech-to-speech runtime
+# ----------------------------------------------------------------------
+
+
+async def _build_s2s_runtime(*, session, tenant, call, runtime_cfg, handlers):
+    """Build the speech-to-speech runtime for this call.
+
+    Returns ``(runtime, prepared)``. ``(None, None)`` means the call stays
+    on the cascaded pipeline -- the feature is off, no provider credential
+    exists, or the tenant's speech-to-speech budget is spent.
+    """
+    from app.agent.s2s.s2s_pipeline import build_s2s_runtime, s2s_runtime_requested
+
+    if not s2s_runtime_requested(runtime_cfg):
+        return None, None
+
+    from app.ai.runtime import prepare_voice
+
+    try:
+        prepared = await prepare_voice(session, tenant, call)
+    except Exception as exc:
+        log.warning("s2s.runtime.governance_failed", error=type(exc).__name__)
+        return None, None
+
+    try:
+        runtime = await build_s2s_runtime(
+            session=session,
+            tenant=tenant,
+            call=call,
+            runtime_cfg=runtime_cfg,
+            handlers=handlers,
+            system_prompt=prepared.system_prompt or runtime_cfg.system_prompt,
+        )
+    except Exception as exc:
+        log.warning("s2s.runtime.build_failed", error=type(exc).__name__)
+        runtime = None
+
+    if runtime is None:
+        # Nothing ran: the token reservation of the governance check goes
+        # back to the tenant.
+        await _release_s2s_reservation(session, tenant, prepared)
+        return None, None
+    return runtime, prepared
+
+
+async def _release_s2s_reservation(session, tenant, prepared) -> None:
+    """Give back the token reservation of a session that never ran."""
+    if not getattr(prepared, "budget_reserved", False):
+        return
+    try:
+        from app.ai.gateway import release_reservation
+
+        await release_reservation(session, tenant.id, 1)
+    except Exception as exc:
+        log.warning("s2s.runtime.reservation_release_failed", error=type(exc).__name__)
+
+
+async def _s2s_preflight(runtime) -> BaseException | None:
+    """Open the provider socket before the caller hears anything."""
+    try:
+        await runtime.session.connect()
+    except Exception as exc:
+        return exc
+    return None
+
+
+async def _s2s_failover(*, error, session, tenant, call, runtime_cfg, history, provider):
+    """Rebuild the cascaded pipeline, carrying the conversation over."""
+    from app.agent.s2s.s2s_failover import failover_to_cascaded
+    from app.carriers_v2.settings import get_carrier_v2_settings
+
+    carrier = get_carrier_v2_settings()
+    try:
+        return await failover_to_cascaded(
+            error=error,
+            session=session,
+            tenant=tenant,
+            call=call,
+            runtime_config=runtime_cfg,
+            history=history,
+            fallback_enabled=carrier.s2s_fallback_enabled,
+            provider=provider,
+        )
+    except Exception as exc:
+        log.warning("s2s.failover.build_failed", error=type(exc).__name__)
+        return None
+
+
+async def _finalize_s2s(
+    runtime,
+    *,
+    session,
+    tenant,
+    call,
+    error: str = "",
+    fallback_activated: bool = False,
+    prepared=None,
+) -> None:
+    """Close the provider session and write what the call consumed."""
+    from app.agent.s2s.s2s_failover import failover_reason
+    from app.agent.s2s.s2s_pipeline import finalize_s2s_runtime
+
+    await finalize_s2s_runtime(
+        runtime,
+        session=session,
+        tenant=tenant,
+        call=call,
+        error=error,
+        failover_reason=failover_reason(error) if error else "",
+        fallback_activated=fallback_activated,
+    )
+
+    # The governed token reservation is settled with what the provider
+    # actually measured, exactly like the cascaded path does.
+    if prepared is not None and getattr(prepared, "budget_reserved", False):
+        measured = runtime.meter.usage.input_tokens + runtime.meter.usage.output_tokens
+        try:
+            from app.ai.budget import reconcile
+
+            await reconcile(session, tenant.id, reserved=1, actual=measured)
+        except Exception as exc:
+            log.warning("s2s.call.budget_reconcile_failed", error=type(exc).__name__)
+
+
+def _build_fallback_chain(fallback) -> list:
+    """The cascaded chain that takes over a failed speech-to-speech call."""
+    if fallback is None or fallback.stt is None or fallback.llm is None:
+        return []
+    from pipecat.processors.aggregators.openai_llm_context import OpenAILLMContext
+
+    system_prompt = fallback.system_prompt or ""
+    messages: list[dict[str, str]] = []
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+    for entry in fallback.history or []:
+        role = "user" if entry.get("role") == "user" else "assistant"
+        content = str(entry.get("content") or "")
+        if content:
+            messages.append({"role": role, "content": content})
+    context = OpenAILLMContext(messages=messages)
+    aggregator = fallback.llm.create_context_aggregator(context)
+    chain = [fallback.stt, aggregator.user(), fallback.llm]
+    blocked = tuple(getattr(fallback, "blocked_output", ()) or ())
+    chain.append(GovernedSpeech(blocked_substrings=blocked))
+    if fallback.tts is not None:
+        chain.append(fallback.tts)
+    chain.append(aggregator.assistant())
+    return chain
+
+
+async def _run_s2s_agent(
+    runtime,
+    *,
+    websocket: WebSocket,
+    stream_sid: str,
+    call_sid: str,
+    session: AsyncSession,
+    tenant: Tenant,
+    call: Call,
+    runtime_cfg: RuntimeConfig,
+    transport,
+    handlers: FunctionHandlers,
+    task_holder: dict | None = None,
+    prepared=None,
+) -> None:
+    """Run the call on the speech-to-speech provider.
+
+    The provider replaces the STT -> LLM -> TTS chain: the caller's audio
+    goes straight to it and its audio comes straight back. A provider that
+    fails mid-call rebuilds the cascaded chain underneath the running
+    pipeline, so the caller keeps talking to a live assistant.
+    """
+    from pipecat.observers.turn_tracking_observer import TurnTrackingObserver
+    from pipecat.pipeline.pipeline import Pipeline
+    from pipecat.pipeline.runner import PipelineRunner
+    from pipecat.pipeline.task import PipelineParams, PipelineTask
+
+    from app.agent.s2s.s2s_failover import failover_reason
+
+    processor = runtime.processor
+    turn_cfg = build_turn_config(runtime_cfg)
+
+    latency_observer = LatencyObserver(
+        tenant_plan=getattr(tenant.plan, "value", str(tenant.plan)),
+        stt_provider="s2s",
+        llm_provider=runtime.provider,
+        tts_provider=runtime.provider,
+    )
+    latency_tracker = LatencyTrackingProcessor(latency_observer)
+    turn_tracking_observer = TurnTrackingObserver()
+
+    async def _on_provider_error(reason: str) -> None:
+        """A provider failure mid-call: rebuild the cascaded chain."""
+        if runtime.failed:
+            return
+        runtime.error = reason
+        fallback = await _s2s_failover(
+            error=reason,
+            session=session,
+            tenant=tenant,
+            call=call,
+            runtime_cfg=runtime_cfg,
+            history=runtime.history,
+            provider=runtime.provider,
+        )
+        if fallback is None:
+            # The operator disabled the fallback: the call ends.
+            log.warning("s2s.call.fallback_disabled", provider=runtime.provider)
+            return
+        chain = _build_fallback_chain(fallback)
+        if not chain:
+            return
+        activated = await processor.activate_chain(chain)
+        if not activated:
+            return
+        runtime.fallback_activated = True
+        runtime.failover_reason = failover_reason(reason)
+        log.info(
+            "s2s.call.fallback_active",
+            provider=runtime.provider,
+            reason=runtime.failover_reason,
+            history=len(runtime.history),
+        )
+
+    processor.on_error = _on_provider_error
+
+    pipeline = Pipeline(
+        [
+            transport.input(),
+            processor,
+            latency_tracker,
+            transport.output(),
+        ]
+    )
+
+    task = PipelineTask(
+        pipeline,
+        params=PipelineParams(
+            allow_interruptions=turn_cfg.allow_interruptions,
+            enable_metrics=True,
+            enable_usage_metrics=True,
+            audio_in_sample_rate=8000,
+            audio_out_sample_rate=8000,
+        ),
+        observers=[latency_observer, turn_tracking_observer],
+    )
+    if task_holder is not None:
+        task_holder["task"] = task
+
+    @transport.event_handler("on_client_connected")
+    async def _on_connected(_transport, _client):
+        log.info(
+            "call.connected",
+            call_sid=call_sid,
+            tenant=tenant.name,
+            llm=f"{runtime.provider}/{runtime.model}",
+        )
+
+    @transport.event_handler("on_client_disconnected")
+    async def _on_disconnected(_transport, _client):
+        await handle_pipeline_disconnect(call, task=task, session=session)
+
+    runner = PipelineRunner(handle_sigint=False)
+    try:
+        await runner.run(task)
+    except Exception:
+        log.exception("s2s.call.run_failed", call_sid=call_sid, tenant=tenant.name)
+        raise
+    finally:
+        try:
+            await _finalize_s2s(
+                runtime,
+                session=session,
+                tenant=tenant,
+                call=call,
+                error=runtime.error,
+                fallback_activated=runtime.fallback_activated,
+                prepared=prepared,
+            )
+        except Exception:
+            log.exception("s2s.call.finalize_failed", call_sid=call_sid)
+
+
+async def _run_cascaded_agent(
+    websocket: WebSocket,
+    stream_sid: str,
+    call_sid: str,
+    session: AsyncSession,
+    tenant: Tenant,
+    call: Call,
+    *,
+    runtime_config: RuntimeConfig | None = None,
+    carrier_provider: str = "twilio",
+    transport=None,
+    handlers: FunctionHandlers | None = None,
+    task_holder: dict | None = None,
+    fallback=None,
+) -> None:
+    """The cascaded STT -> LLM -> TTS runtime."""
     # ---------------------------------------------------- 2E RuntimeConfig --
     runtime_cfg = runtime_config or await resolve_runtime_config(session, call, tenant=tenant)
 
@@ -202,13 +659,18 @@ async def _run_voice_agent(
     # is ``voice_llm``, which refuses a disabled provider before build_llm.
     from app.ai.runtime import guard_spoken_text, voice_llm
 
-    llm, prepared = await voice_llm(
-        session,
-        tenant,
-        call,
-        temperature=runtime_cfg.temperature,
-        max_tokens=runtime_cfg.max_tokens or 110,
-    )
+    if fallback is not None:
+        # The speech-to-speech provider failed: the cascaded services were
+        # already rebuilt with the conversation history.
+        llm, prepared = fallback.llm, fallback.prepared
+    else:
+        llm, prepared = await voice_llm(
+            session,
+            tenant,
+            call,
+            temperature=runtime_cfg.temperature,
+            max_tokens=runtime_cfg.max_tokens or 110,
+        )
     choice = prepared.choice
     log.info(
         "llm.selected",
@@ -227,43 +689,15 @@ async def _run_voice_agent(
 
     # ---------------------------------------------------------- 2B/2F/2G ---
     turn_cfg = build_turn_config(runtime_cfg)
-    serializer = build_serializer(
-        carrier_provider,
-        stream_sid=stream_sid,
-        call_sid=call_sid,
-        auto_hang_up=True,
-    )
-    denoise_filter = build_denoise_filter(runtime_cfg.denoise_enabled)
-    ambient_mixer = build_ambient_mixer(
-        runtime_cfg.ambient_sound,
-        ambient_volume=runtime_cfg.ambient_volume,
-    )
-
-    transport_kwargs = {
-        "audio_in_enabled": True,
-        "audio_out_enabled": True,
-        "add_wav_header": False,
-        "serializer": serializer,
-        "vad_analyzer": turn_cfg.vad_analyzer,
-    }
-    if turn_cfg.turn_analyzer is not None:
-        transport_kwargs["turn_analyzer"] = turn_cfg.turn_analyzer
-    if denoise_filter is not None:
-        transport_kwargs["audio_in_filter"] = denoise_filter
-    if ambient_mixer is not None:
-        transport_kwargs["audio_out_mixer"] = ambient_mixer
-
-    transport = FastAPIWebsocketTransport(
-        websocket=websocket,
-        params=FastAPIWebsocketParams(**transport_kwargs),
-    )
 
     # ---------------------------------------------------------- services ---
     # Each builder validates its own configuration and raises a typed
     # ProviderError (configuration_error / unsupported_feature) *before* any
     # network activity, so a misconfigured deployment fails fast instead of
     # starting a call that can never work.
-    if (
+    if fallback is not None:
+        stt, tts = fallback.stt, fallback.tts
+    elif (
         runtime_cfg.stt_provider != "deepgram"
         or runtime_cfg.stt_fallback_providers
         or runtime_cfg.boosted_keywords
@@ -272,7 +706,9 @@ async def _run_voice_agent(
     else:
         stt = build_stt(tenant)
 
-    if (
+    if fallback is not None:
+        tts = fallback.tts
+    elif (
         runtime_cfg.tts_provider != "elevenlabs"
         or runtime_cfg.tts_fallback_providers
         or runtime_cfg.voice_settings
@@ -282,19 +718,14 @@ async def _run_voice_agent(
         tts = build_tts(tenant)
 
     # ------------------------------------------------------ tool wiring ---
-    task: PipelineTask | None = None
+    # The task lives in the holder the dispatcher created, so the tool
+    # handlers can push frames into whichever runtime is running.
+    task = task_holder.get("task") if task_holder else None
 
     async def _push_frame_to_task(frame):
-        if task is not None:
-            await task.queue_frames([frame])
-
-    handlers = FunctionHandlers(
-        session=session,
-        tenant=tenant,
-        call=call,
-        runtime_config=runtime_cfg,
-        frame_pusher=_push_frame_to_task,
-    )
+        current = task_holder.get("task") if task_holder else None
+        if current is not None:
+            await current.queue_frames([frame])
 
     # escalate_to_human is withheld when there is no usable destination or the
     # call cannot be transferred -- see FunctionHandlers.available_tools().
@@ -358,21 +789,36 @@ async def _run_voice_agent(
     )
     lang_profile = resolve_language_config(runtime_cfg.language or tenant.language)
 
+    # A failover carries the conversation so far: the assistant keeps its
+    # place instead of starting the call again.
+    carried_history = list(getattr(fallback, "history", []) or []) if fallback else []
+
+    context_messages = [
+        {
+            "role": "system",
+            "content": (
+                (
+                    runtime_cfg.system_prompt
+                    or prepared.system_prompt
+                    or build_system_prompt(tenant, choice.provider)
+                )
+                + lang_profile.llm_instruction
+            ),
+        },
+    ]
+    if carried_history:
+        # The greeting was already delivered by the speech-to-speech
+        # provider, so the history replaces it.
+        for entry in carried_history:
+            role = "user" if entry.get("role") == "user" else "assistant"
+            content = str(entry.get("content") or "")
+            if content:
+                context_messages.append({"role": role, "content": content})
+    else:
+        context_messages.append({"role": "assistant", "content": greeting})
+
     context = OpenAILLMContext(
-        messages=[
-            {
-                "role": "system",
-                "content": (
-                    (
-                        runtime_cfg.system_prompt
-                        or prepared.system_prompt
-                        or build_system_prompt(tenant, choice.provider)
-                    )
-                    + lang_profile.llm_instruction
-                ),
-            },
-            {"role": "assistant", "content": greeting},
-        ],
+        messages=context_messages,
         tools=active_tools,
     )
     context_aggregator = llm.create_context_aggregator(context)
@@ -460,6 +906,8 @@ async def _run_voice_agent(
         ),
         observers=[latency_observer, turn_tracking_observer],
     )
+    if task_holder is not None:
+        task_holder["task"] = task
 
     # ------------------------------------------------------- lifecycle ----
     @transport.event_handler("on_client_connected")

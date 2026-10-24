@@ -1,0 +1,63 @@
+# The SIP stack: the signalling proxy, the VoxDesk SIP media gateway and the
+# application it bridges the audio into.
+#
+#   docker compose -f infra/docker/docker-compose.sip.yml up --build
+#
+# Required environment:
+#   VOXDESK_SIP_GATEWAY_TOKEN  shared secret; must match SIP_GATEWAY_TOKEN
+#   VOXDESK_SIP_MEDIA_WS_URL   the application's media socket
+#                              (ws://host.docker.internal:8000/telephony/sip/ws)
+
+services:
+  # The signalling proxy of ADR-001. It terminates the SIP connections and
+  # forwards them to the gateway.
+  kamailio:
+    build:
+      context: ../../services/sip-gateway
+      dockerfile: Dockerfile.kamailio
+    ports:
+      - "5060:5060/udp"
+      - "5060:5060/tcp"
+      - "5061:5061/tcp"
+    restart: unless-stopped
+
+  # The media gateway: the SIP user agent, the RTP sockets and the WebSocket
+  # bridge into the VoxDesk application.
+  sip-gateway:
+    build:
+      context: ../../services/sip-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080/tcp"
+      # The RTP port range has to be reachable: the carrier sends the media
+      # to the addresses the gateway announced in its SDP offer.
+      - "30000-30100:30000-30100/udp"
+    environment:
+      - VOXDESK_SIP_GATEWAY_TOKEN=${VOXDESK_SIP_GATEWAY_TOKEN:?VOXDESK_SIP_GATEWAY_TOKEN is required}
+      - VOXDESK_SIP_MEDIA_WS_URL=${VOXDESK_SIP_MEDIA_WS_URL:?VOXDESK_SIP_MEDIA_WS_URL is required}
+      - VOXDESK_SIP_HOST=${VOXDESK_SIP_HOST:-sip.voxdesk.local}
+      - VOXDESK_SIP_API_ADDR=:8080
+      - VOXDESK_SIP_PORT=5060
+      - VOXDESK_SIP_CODEC=${VOXDESK_SIP_CODEC:-PCMU}
+      - VOXDESK_MEDIA_PORT_MIN=30000
+      - VOXDESK_MEDIA_PORT_MAX=30100
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  # The application: it owns the agent, the pipeline and the media socket the
+  # gateway bridges into.
+  api:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000/tcp"
+    environment:
+      - SIP_GATEWAY_URL=http://sip-gateway:8080
+      - SIP_GATEWAY_TOKEN=${VOXDESK_SIP_GATEWAY_TOKEN:?VOXDESK_SIP_GATEWAY_TOKEN is required}
+    depends_on:
+      - sip-gateway
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped

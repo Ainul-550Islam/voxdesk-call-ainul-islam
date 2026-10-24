@@ -161,7 +161,10 @@ async def test_vonage_voice_and_recording_fail_clearly(monkeypatch):
     adapter = VonageAdapter()
     with pytest.raises(ProviderConfigurationError):
         await adapter.create_outbound(to_number="+15551212000", from_number="+15551213000")
-    with pytest.raises(UnsupportedCapability):
+    # Recording is a real Voice API call, so without the application
+    # credentials it is refused for the missing signing key, not as an
+    # unsupported capability.
+    with pytest.raises(ProviderConfigurationError):
         await adapter.start_recording("call-1")
     with pytest.raises(UnsupportedCapability):
         await adapter.send_whatsapp()
@@ -172,7 +175,10 @@ async def test_vonage_voice_and_recording_fail_clearly(monkeypatch):
         f"-----BEGIN {'PRIVATE'} KEY-----\nabc\n-----END {'PRIVATE'} KEY-----",
         raising=False,
     )
-    with pytest.raises(UnsupportedCapability):
+    # The Voice API is implemented, so the call is no longer an unsupported
+    # capability: it is attempted and refused because the request carries no
+    # answer document (an answer URL or an NCCO).
+    with pytest.raises(ProviderValidationError):
         await adapter.create_outbound(to_number="+15551212000", from_number="+15551213000")
 
 
