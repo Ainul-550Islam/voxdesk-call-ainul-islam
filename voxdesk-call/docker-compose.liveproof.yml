@@ -1,0 +1,222 @@
+# Live proof stack: API + realtime edge + media engine on real dependencies.
+#
+# One composition the live-proof harness can measure end to end:
+#   * the API that answers carriers and owns the database;
+#   * gateway-go, the browser-facing WebSocket edge;
+#   * media-engine-rs, the SFU the edge steers to;
+#   * Postgres and Redis, because the API and the webhook contracts need real
+#     ones -- the offline suite cannot stand in for either.
+#
+# Two capacity profiles. The limits are passed to Docker per container, so the
+# profile is the same file with different numbers, and the harness never has to
+# guess what the box was:
+#
+#   small (2 vCPU / 2 GB) -- laptop or CI runner (the defaults below)
+#     docker compose -f docker-compose.liveproof.yml up -d
+#
+#   large (8 vCPU / 16 GB) -- capacity measurement host
+#     LIVEPROOF_CPUS=8  LIVEPROOF_MEM=16g \
+#     LIVEPROOF_ENGINE_CPUS=8 LIVEPROOF_ENGINE_MEM=16g \
+#     LIVEPROOF_DB_CPUS=4 LIVEPROOF_DB_MEM=8g \
+#     docker compose -f docker-compose.liveproof.yml up -d
+#
+#   docker compose -f docker-compose.liveproof.yml ps
+#   curl -s 127.0.0.1:8000/health && curl -s 127.0.0.1:8790/healthz && curl -s 127.0.0.1:8791/healthz
+#   docker compose -f docker-compose.liveproof.yml down -v
+#
+# Every published port is bound to 127.0.0.1: this is a measurement rig, not a
+# deployment. Provider credentials are passed through from the caller's
+# environment and never written here; an empty value keeps the live harness
+# refusing to run, which is the honest outcome. Both realtime services keep their
+# own fail-closed boot checks: a missing or placeholder secret stops the container
+# before it binds a port.
+
+name: voxdesk-liveproof
+
+x-limits: &limits
+  cpus: "${LIVEPROOF_CPUS:-2.0}"
+  mem_limit: "${LIVEPROOF_MEM:-2g}"
+
+x-engine-limits: &engine-limits
+  cpus: "${LIVEPROOF_ENGINE_CPUS:-2.0}"
+  mem_limit: "${LIVEPROOF_ENGINE_MEM:-2g}"
+
+x-db-limits: &db-limits
+  cpus: "${LIVEPROOF_DB_CPUS:-2.0}"
+  mem_limit: "${LIVEPROOF_DB_MEM:-2g}"
+
+x-common-env: &common-env
+  # The gateway verifies tokens signed with the API's secret, so both read the
+  # same variable. The default is a development value; a deployment injects its
+  # own and the gateway refuses anything shorter than 32 characters.
+  JWT_SECRET: ${JWT_SECRET:-liveproof-development-jwt-secret-0123456789abcdef}
+  JWT_ISSUER: ${JWT_ISSUER:-voxdesk}
+  JWT_AUDIENCE: ${JWT_AUDIENCE:-voxdesk-api}
+  VOXDESK_GATEWAY_INGEST_SECRET: ${VOXDESK_GATEWAY_INGEST_SECRET:-liveproof-development-ingest-secret}
+
+x-live-providers: &live-providers
+  TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+  TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
+  TWILIO_PHONE_NUMBER: ${TWILIO_PHONE_NUMBER:-}
+  DEEPGRAM_API_KEY: ${DEEPGRAM_API_KEY:-}
+  ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY:-}
+  OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+  TELNYX_API_KEY: ${TELNYX_API_KEY:-}
+  TELNYX_PUBLIC_KEY: ${TELNYX_PUBLIC_KEY:-}
+  TELNYX_CONNECTION_ID: ${TELNYX_CONNECTION_ID:-}
+  LIVE_PROOF_ENABLED: ${LIVE_PROOF_ENABLED:-0}
+  LIVE_PROOF_TEST_NUMBER: ${LIVE_PROOF_TEST_NUMBER:-}
+  LIVE_PROOF_CALLER_ID: ${LIVE_PROOF_CALLER_ID:-}
+  LIVE_PROOF_MAX_MINUTES: ${LIVE_PROOF_MAX_MINUTES:-3.0}
+  LIVE_PROOF_MAX_USD: ${LIVE_PROOF_MAX_USD:-0.50}
+  LIVE_PROOF_EVIDENCE_DIR: ${LIVE_PROOF_EVIDENCE_DIR:-/srv/evidence/live}
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: voxdesk-liveproof-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-voxdesk}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-voxdesk-liveproof-only}
+      POSTGRES_DB: ${POSTGRES_DB:-voxdesk}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - liveproof-pgdata:/var/lib/postgresql/data
+    <<: *db-limits
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-voxdesk} -d ${POSTGRES_DB:-voxdesk}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+    networks: [liveproof]
+
+  redis:
+    image: redis:7-alpine
+    container_name: voxdesk-liveproof-redis
+    command: redis-server --appendonly yes
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - liveproof-redisdata:/data
+    <<: *db-limits
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+    networks: [liveproof]
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: voxdesk/api:liveproof
+    container_name: voxdesk-liveproof-api
+    environment:
+      <<: [*common-env, *live-providers]
+      APP_ENV: ${APP_ENV:-development}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-voxdesk}:${POSTGRES_PASSWORD:-voxdesk-liveproof-only}@db:5432/${POSTGRES_DB:-voxdesk}
+      REDIS_URL: redis://redis:6379/0
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://127.0.0.1:8000}
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - liveproof-evidence:/srv/evidence
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    <<: *limits
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+    networks: [liveproof]
+
+  gateway:
+    build:
+      context: ./services/realtime/gateway-go
+      dockerfile: Dockerfile
+    image: voxdesk/gateway-go:liveproof
+    container_name: voxdesk-liveproof-gateway
+    environment:
+      <<: *common-env
+      VOXDESK_GATEWAY_PORT: "8790"
+      VOXDESK_GATEWAY_METRICS_TOKEN: ${VOXDESK_GATEWAY_METRICS_TOKEN:-liveproof-metrics-token}
+      VOXDESK_GATEWAY_MAX_CONNECTIONS: ${VOXDESK_GATEWAY_MAX_CONNECTIONS:-20000}
+      VOXDESK_GATEWAY_MAX_CONNS_PER_TENANT: ${VOXDESK_GATEWAY_MAX_CONNS_PER_TENANT:-5000}
+      VOXDESK_GATEWAY_ALLOWED_ORIGINS: ${VOXDESK_GATEWAY_ALLOWED_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
+      VOXDESK_GATEWAY_BROKER: memory
+      VOXDESK_GATEWAY_MEDIA_ENGINE_URL: http://media-engine:9001
+      VOXDESK_GATEWAY_ENGINE_STEER: ${VOXDESK_GATEWAY_ENGINE_STEER:-off}
+    ports:
+      - "127.0.0.1:8790:8790"
+    depends_on:
+      api:
+        condition: service_started
+      media-engine:
+        condition: service_healthy
+    <<: *limits
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8790/healthz"]
+      interval: 15s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+    networks: [liveproof]
+
+  media-engine:
+    build:
+      context: ./services/realtime/media-engine-rs
+      dockerfile: Dockerfile
+    image: voxdesk/media-engine-rs:liveproof
+    container_name: voxdesk-liveproof-media-engine
+    environment:
+      VOXDESK_PORT: "5000"
+      VOXDESK_CONTROL_ADDR: "0.0.0.0:9001"
+      # Advertised SDP candidate. A single-host proof run advertises loopback; a
+      # deployment must set this to the host's routable address.
+      VOXDESK_PUBLIC_IP: ${VOXDESK_PUBLIC_IP:-127.0.0.1}
+      VOXDESK_ENGINE_LABEL: liveproof-1
+    ports:
+      - "127.0.0.1:8791:9001"
+      - "127.0.0.1:5000:5000/udp"
+    <<: *engine-limits
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/bin/bash",
+          "-c",
+          "exec 3<>/dev/tcp/127.0.0.1/9001 && printf 'GET /v1/health HTTP/1.1\\r\\nHost: x\\r\\n\\r\\n' >&3 && grep -q ready <&3",
+        ]
+      interval: 15s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+    networks: [liveproof]
+
+volumes:
+  liveproof-pgdata:
+  liveproof-redisdata:
+  liveproof-evidence:
+
+networks:
+  liveproof:
+    driver: bridge

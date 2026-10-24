@@ -188,6 +188,7 @@ from app.api.v1.telephony_webhook_routes import router as telephony_webhook_v1_r
 from app.middleware.public_boundary import add_public_boundary_middleware
 from app.api.voice_catalog_routes import router as voice_catalog_router
 from app.telephony.telnyx_handler import router as telnyx_voice_router
+from app.api.live_proof_routes import router as live_proof_router
 from app.middleware.security_middleware import add_security_middleware
 
 # Observability: Sentry error reporting is optional and off unless a DSN is
@@ -496,6 +497,7 @@ app.include_router(enterprise_security_v1_router)
 app.include_router(parity_v1_router)
 app.include_router(voice_catalog_router)
 app.include_router(telnyx_voice_router)
+app.include_router(live_proof_router)
 app.include_router(analytics_dashboard_router)
 app.include_router(sms_router)
 

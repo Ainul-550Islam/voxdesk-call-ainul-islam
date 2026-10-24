@@ -15,6 +15,7 @@ import app.auth.identity.models  # noqa: F401
 import app.compliance.models  # noqa: F401
 import app.contact_center.models  # noqa: F401
 import app.db.enterprise_models  # noqa: F401
+import app.db.live_proof_models  # noqa: F401
 import app.db.retell_models  # noqa: F401
 import app.db.telephony_models  # noqa: F401
 import app.deployment.models  # noqa: F401

@@ -133,3 +133,6 @@ verify-sale:
 	python3 scripts/make_due_diligence_pack.py
 	test ! -s scripts/fake_success_allowlist.txt
 	ls -lh dist/due-diligence-*.zip dist/SHA256SUMS
+
+# Batch 01: hygiene guards, live proof and gateway load targets.
+include Makefile.batch01.mk

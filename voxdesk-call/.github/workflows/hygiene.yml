@@ -1,0 +1,59 @@
+name: hygiene
+
+# Blocking on pull requests and on the default branch: a corrupt file, an
+# unmounted route module, or a documented number that no longer matches the code
+# is a release blocker, not a warning.
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hygiene-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  hygiene:
+    name: truth guards and hygiene scanners
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install pinned test/runtime dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-test.txt
+
+      - name: Zero-byte and NUL-only source scan
+        run: python scripts/find_zero_byte_files.py --check --json
+
+      - name: Dead-router and filler-marker scan
+        run: python scripts/verify_no_dead_routers.py --json
+
+      - name: Documented numbers match the code
+        run: python scripts/verify_docs_match_code.py --json
+
+      - name: Tracked text files carry no NUL bytes and no unexpected empty files
+        run: python scripts/verify_no_null_bytes.py
+
+      - name: Repository truth guards
+        run: make verify-truth
+
+      - name: Alembic must have exactly one head
+        run: |
+          alembic heads
+          test "$(alembic heads | grep -c '(head)')" -eq 1

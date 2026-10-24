@@ -1,6 +1,6 @@
 {
   "dashboard_build_present": false,
-  "route_count": 1182,
+  "route_count": 1188,
   "routes": [
     {
       "methods": [
@@ -8150,6 +8150,48 @@
       "methods": [],
       "name": "telnyx_ws_root",
       "path": "/telephony/telnyx/ws"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "live_proof_readiness",
+      "path": "/api/live-proof/readiness"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "list_runs",
+      "path": "/api/live-proof/runs"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_run",
+      "path": "/api/live-proof/runs/{run_id}"
+    },
+    {
+      "methods": [
+        "GET"
+      ],
+      "name": "get_evidence",
+      "path": "/api/live-proof/runs/{run_id}/evidence"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "start_run",
+      "path": "/api/live-proof/runs"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "abort_run",
+      "path": "/api/live-proof/runs/{run_id}/abort"
     },
     {
       "methods": [

@@ -5,9 +5,9 @@ Generated deterministically by `scripts/build_api_docs.sh` from `app.main:app.op
 ## Summary Metrics
 
 - **OpenAPI Version**: `3.1.0`
-- **Total Unique Paths**: `969`
-- **Total HTTP Operations**: `1166`
-- **Total Tag Groups**: `122`
+- **Total Unique Paths**: `974`
+- **Total HTTP Operations**: `1172`
+- **Total Tag Groups**: `123`
 - **Machine-Readable Schema**: [`openapi.json`](openapi.json) (mirrored at [`../../contracts/openapi.json`](../../contracts/openapi.json))
 - **Static HTML Reference (Redoc / Scalar + Offline Explorer)**: [`index.html`](index.html)
 
@@ -16,9 +16,9 @@ Generated deterministically by `scripts/build_api_docs.sh` from `app.main:app.op
 | HTTP Method | Operation Count |
 |---|---:|
 | `DELETE` | 54 |
-| `GET` | 497 |
+| `GET` | 501 |
 | `PATCH` | 55 |
-| `POST` | 546 |
+| `POST` | 548 |
 | `PUT` | 14 |
 
 ## Tag Inventory
@@ -93,6 +93,7 @@ Generated deterministically by `scripts/build_api_docs.sh` from `app.main:app.op
 | `leads` | 11 | `POST /api/tenants/{tenant_id}/lead-merges`, `GET /api/tenants/{tenant_id}/lead-records`, `POST /api/tenants/{tenant_id}/lead-records` (+8 more) |
 | `legal-agent` | 11 | `GET /api/legal/clause-library`, `GET /api/legal/clause-library/{clause_key}`, `GET /api/legal/playbooks` (+8 more) |
 | `live-monitoring` | 19 | `GET /api/calls/monitor/config`, `GET /api/calls/monitor/health`, `DELETE /api/calls/monitoring/idempotency/cache` (+16 more) |
+| `live-proof` | 6 | `GET /api/live-proof/readiness`, `GET /api/live-proof/runs`, `POST /api/live-proof/runs` (+3 more) |
 | `mcp` | 5 | `GET /api/mcp/servers`, `POST /api/mcp/servers`, `POST /api/mcp/servers/{server_id}/discover` (+2 more) |
 | `messaging-sms` | 4 | `POST /messaging/sms/send`, `POST /messaging/sms/status`, `POST /messaging/sms/twilio` (+1 more) |
 | `model-registry` | 15 | `GET /api/governance/models`, `POST /api/governance/models`, `GET /api/governance/models/approved` (+12 more) |

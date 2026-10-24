@@ -3,9 +3,26 @@
 Requests go to the documented v2 API. A missing key, connection id or HTTP
 error is a typed failure. This adapter never invents a call id or a number id.
 WhatsApp is not implemented.
+
+Batch 01 additions, all in the same adapter so there is one Telnyx credential
+surface to review:
+
+* :attr:`TelnyxAdapter.supports_ai_media_stream` -- the capability flag. It is
+  true only when the API key, the webhook public key *and* the connection id are
+  present. Anything less keeps it false and every media-stream entry point
+  answers ``501 UNSUPPORTED_CAPABILITY``; a half-configured carrier streaming
+  silence to a real caller is the failure mode this flag exists to prevent.
+* Call Control v2 commands (:meth:`answer`, :meth:`transfer_call`,
+  :meth:`hangup_call`, :meth:`send_dtmf`) with bounded retries on 5xx/timeout,
+  **no** retry on 4xx, and a stable ``Idempotency-Key`` reused across attempts so
+  a retried command cannot answer, transfer or hang up a call twice.
 """
 
 from __future__ import annotations
+
+import asyncio
+import hashlib
+import json
 
 from app.core.value_types import dictionary_value, list_value
 
@@ -13,7 +30,10 @@ from app.core.config import settings
 from app.telephony.capabilities import CapabilitySet, from_provider_features
 from app.telephony.phone import normalize
 from app.telephony.provider_errors import (
+    ProviderAuthenticationError,
+    ProviderAuthorizationError,
     ProviderConfigurationError,
+    ProviderRateLimitedError,
     ProviderTimeoutError,
     ProviderUnavailableError,
     ProviderValidationError,
@@ -57,6 +77,194 @@ class TelnyxAdapter(TelephonyAdapter):
         # A configured key alone does not mean every country supports every channel.
         return CapabilitySet(source="unconfirmed")
 
+    # ------------------------------------------------- Telnyx AI media stream --
+
+    @property
+    def missing_media_stream_settings(self) -> tuple[str, ...]:
+        """The credential names still missing for AI media streaming, in order."""
+        missing = []
+        if not (settings.telnyx_api_key or "").strip():
+            missing.append("TELNYX_API_KEY")
+        if not (settings.telnyx_public_key or "").strip():
+            missing.append("TELNYX_PUBLIC_KEY")
+        if not (settings.telnyx_connection_id or "").strip():
+            missing.append("TELNYX_CONNECTION_ID")
+        return tuple(missing)
+
+    @property
+    def supports_ai_media_stream(self) -> bool:
+        """True only when the whole media-stream credential set is configured.
+
+        Deliberately not a vendor claim: Telnyx does stream AI media, but this
+        deployment can only do it when it holds the key that controls the call,
+        the public key that proves a webhook came from Telnyx, and the connection
+        id the stream is attached to.
+        """
+        return not self.missing_media_stream_settings
+
+    def media_stream_capability(self) -> dict:
+        """Machine-readable capability row. ``state`` is READY or NOT_CONFIGURED."""
+        missing = self.missing_media_stream_settings
+        return {
+            "provider": self.name,
+            "supports_ai_media_stream": not missing,
+            "state": "NOT_CONFIGURED" if missing else "READY",
+            "missing": list(missing),
+            "serializer": "TelnyxMediaStream",
+            "encodings": ["PCMU", "PCMA", "L16"],
+            "sample_rates": [8000],
+            "pipeline_sample_rate": 16000,
+            "stream_endpoint": "/telephony/telnyx/ws",
+            "call_control_api": "v2",
+        }
+
+    def require_ai_media_stream(self) -> None:
+        """Raise ``UnsupportedCapability`` (UNSUPPORTED_CAPABILITY) when absent."""
+        missing = self.missing_media_stream_settings
+        if missing:
+            raise UnsupportedCapability(
+                "Telnyx AI media streaming is not configured; missing "
+                + ", ".join(missing),
+                provider=self.name,
+            )
+
+    # ------------------------------------------------- Telnyx Call Control v2 --
+
+    def _call_control_idempotency_key(
+        self, command: str, call_control_id: str, payload: dict | None
+    ) -> str:
+        """Stable, bounded key: retrying a command must not apply it twice."""
+        material = json.dumps(
+            {"command": command, "call": call_control_id, "payload": payload or {}},
+            sort_keys=True,
+            separators=(",", ":"),
+            default=str,
+        )
+        digest = hashlib.sha256(material.encode("utf-8")).hexdigest()[:40]
+        return f"voxdesk-telnyx-{command}-{digest}"
+
+    async def answer(self, external_id: str) -> CallResult:
+        """Answer a ringing inbound call (``call.answer``)."""
+        self.require_configured()
+        if not external_id:
+            raise ProviderValidationError("Call id is required", provider=self.name)
+        await self.call_control("answer", external_id, {})
+        return CallResult(self.name, external_id, "in_progress")
+
+    async def send_dtmf(self, external_id: str, digits: str) -> CallResult:
+        """Send DTMF digits on a live call (``call.dtmf``)."""
+        self.require_configured()
+        if not external_id:
+            raise ProviderValidationError("Call id is required", provider=self.name)
+        cleaned = (digits or "").strip()
+        if not cleaned:
+            raise ProviderValidationError("Digits are required", provider=self.name)
+        if len(cleaned) > 32 or any(character not in "0123456789*#ABCDabcd" for character in cleaned):
+            raise ProviderValidationError("Digits must be DTMF characters only", provider=self.name)
+        await self.call_control("send_dtmf", external_id, {"digits": cleaned})
+        return CallResult(self.name, external_id, "dtmf_sent")
+
+    async def hangup_call(self, external_id: str) -> CallResult:
+        """Hang up a live call (``call.hangup``). Retried only when allowed."""
+        self.require_configured()
+        if not external_id:
+            raise ProviderValidationError("Call id is required", provider=self.name)
+        await self.call_control("hangup", external_id, {})
+        return CallResult(self.name, external_id, "completed")
+
+    async def transfer_call(
+        self, external_id: str, destination: str, *, from_number: str = ""
+    ) -> CallResult:
+        """Warm transfer to another E.164 destination (``call.transfer``)."""
+        self.require_configured()
+        if not external_id:
+            raise ProviderValidationError("Call id is required", provider=self.name)
+        target = normalize(destination)
+        payload: dict[str, str] = {"to": target}
+        if from_number:
+            payload["from"] = normalize(from_number)
+        await self.call_control("transfer", external_id, payload)
+        return CallResult(self.name, external_id, "transfer_requested", to_number=target)
+
+    async def call_control(
+        self,
+        command: str,
+        external_id: str,
+        payload: dict,
+        *,
+        idempotency_key: str | None = None,
+    ) -> dict:
+        """Execute one Call Control v2 action with retries and idempotency.
+
+        Retry policy: transport failures, timeouts, 429 and 5xx are retried up to
+        ``TELNYX_CALL_CONTROL_MAX_RETRIES`` times with exponential backoff and
+        the *same* idempotency key. 4xx (other than 429) means the carrier
+        understood and refused the request; retrying cannot change the answer,
+        so it surfaces immediately as a typed error.
+        """
+        self.require_configured()
+        name = (command or "").strip().lower()
+        if name not in {
+            "answer",
+            "hangup",
+            "transfer",
+            "send_dtmf",
+            "record_start",
+            "record_stop",
+            "streaming_start",
+            "streaming_stop",
+        }:
+            raise ProviderValidationError("Unsupported call-control command", provider=self.name)
+        if not external_id:
+            raise ProviderValidationError("Call id is required", provider=self.name)
+
+        key = idempotency_key or self._call_control_idempotency_key(name, external_id, payload)
+        attempts = max(0, int(settings.telnyx_call_control_max_retries)) + 1
+        backoff = float(settings.telnyx_call_control_retry_backoff_seconds or 0.0)
+        last_error: Exception | None = None
+
+        for attempt in range(attempts):
+            try:
+                return await self._request(
+                    "POST",
+                    f"/calls/{external_id}/actions/{name}",
+                    payload,
+                    headers={"Idempotency-Key": key},
+                    timeout=float(settings.telnyx_call_control_timeout_seconds or 8.0),
+                )
+            except (ProviderUnavailableError, ProviderTimeoutError, ProviderRateLimitedError) as exc:
+                last_error = exc
+                if attempt + 1 >= attempts:
+                    break
+                if backoff > 0:
+                    await asyncio.sleep(backoff * (2**attempt))
+            except (ProviderAuthenticationError, ProviderAuthorizationError) as exc:
+                # A credential problem is never fixed by retrying.
+                raise exc
+        assert last_error is not None
+        raise last_error
+
+    async def start_media_stream(
+        self, external_id: str, *, stream_url: str, client_state: str = ""
+    ) -> dict:
+        """Attach a bidirectional media stream to a live call (``streaming_start``).
+
+        Refused with ``UNSUPPORTED_CAPABILITY`` unless the full credential set is
+        present, so a call is never answered into a stream that cannot be
+        authenticated.
+        """
+        self.require_ai_media_stream()
+        if not (stream_url or "").startswith("wss://"):
+            raise ProviderValidationError("A wss:// stream URL is required", provider=self.name)
+        payload = {
+            "stream_url": stream_url,
+            "stream_bidirectional_mode": "rtp",
+            "stream_bidirectional_codec": "PCMU",
+        }
+        if client_state:
+            payload["client_state"] = client_state
+        return await self.call_control("streaming_start", external_id, payload)
+
     async def create_outbound(
         self, *, to_number: str, from_number: str, answer_url: str = ""
     ) -> CallResult:
@@ -87,19 +295,12 @@ class TelnyxAdapter(TelephonyAdapter):
         return CallResult(self.name, external, "queued", to_number=destination, from_number=caller)
 
     async def hangup(self, external_id: str) -> CallResult:
-        self.require_configured()
-        if not external_id:
-            raise ProviderValidationError("Call id is required", provider=self.name)
-        await self._request("POST", f"/calls/{external_id}/actions/hangup", {})
-        return CallResult(self.name, external_id, "completed")
+        """Abstract-adapter entry point; shares the retrying call-control path."""
+        return await self.hangup_call(external_id)
 
     async def transfer(self, external_id: str, destination: str) -> CallResult:
-        self.require_configured()
-        if not external_id:
-            raise ProviderValidationError("Call id is required", provider=self.name)
-        dest = normalize(destination)
-        await self._request("POST", f"/calls/{external_id}/actions/transfer", {"to": dest})
-        return CallResult(self.name, external_id, "transfer_requested", to_number=dest)
+        """Abstract-adapter entry point; shares the retrying call-control path."""
+        return await self.transfer_call(external_id, destination)
 
     async def search_numbers(self, *, country: str, limit: int = 10) -> list[NumberResult]:
         self.require_configured()
@@ -208,16 +409,29 @@ class TelnyxAdapter(TelephonyAdapter):
     async def send_whatsapp(self, *_args, **_kwargs) -> None:
         raise UnsupportedCapability("Telnyx WhatsApp is not implemented", provider=self.name)
 
-    async def _request(self, method: str, path: str, payload: dict | None, query: str = "") -> dict:
+    async def _request(
+        self,
+        method: str,
+        path: str,
+        payload: dict | None,
+        query: str = "",
+        *,
+        headers: dict | None = None,
+        timeout: float | None = None,
+    ) -> dict:
         url = settings.telnyx_api_base.rstrip("/") + path
         if query:
             url = f"{url}?{query}"
-        headers = {
+        request_headers = {
             "Authorization": f"Bearer {settings.telnyx_api_key}",
             "Content-Type": "application/json",
         }
+        if headers:
+            request_headers.update(headers)
         try:
-            result = await self._send(method, url, headers=headers, payload=payload)
+            result = await self._send(
+                method, url, headers=request_headers, payload=payload, timeout=timeout
+            )
         except ProviderTimeoutError:
             raise
         except ProviderUnavailableError:
@@ -227,9 +441,15 @@ class TelnyxAdapter(TelephonyAdapter):
         return require_body(result, provider=self.name)
 
     async def _send(
-        self, method: str, url: str, *, headers: dict, payload: dict | None
+        self,
+        method: str,
+        url: str,
+        *,
+        headers: dict,
+        payload: dict | None,
+        timeout: float | None = None,
     ) -> HttpResult:
-        timeout = float(settings.telephony_http_timeout_seconds or 8)
+        timeout = float(timeout or settings.telephony_http_timeout_seconds or 8)
         if self._transport is not None:
             return await self._transport(
                 method, url, headers=headers, json=payload, timeout=timeout

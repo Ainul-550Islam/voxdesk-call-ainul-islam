@@ -97,6 +97,97 @@ def carrier_media_capabilities() -> dict[str, dict]:
     return supported_media_serializers()
 
 
+def media_serializer_for(provider: str) -> str:
+    """The media-stream serializer a carrier is served by.
+
+    Telnyx is served by :class:`app.telephony.providers.telnyx_media.TelnyxMediaStream`
+    (Batch 01), which owns the wire codec and the barge-in queue; Twilio keeps the
+    runtime-configurable Twilio transport. Unknown carriers are a validation
+    error rather than a silent fallback, because a wrong serializer answers a
+    live caller with noise.
+    """
+    name = (provider or "").strip().lower()
+    mapping = {
+        "twilio": "TwilioMediaStream",
+        "telnyx": "TelnyxMediaStream",
+        "plivo": "PlivoMediaStream",
+        "sip": "SIPBridgeFrameSerializer",
+    }
+    if name not in mapping:
+        raise ProviderValidationError("Provider has no media serializer", provider=name or "unknown")
+    return mapping[name]
+
+
+async def resolve_media_capability(session, tenant_id: uuid.UUID, provider: str) -> dict:
+    """Resolve the *effective* AI media-stream capability for one tenant.
+
+    Three inputs, all required:
+
+    1. the deployment credential set (``TelnyxAdapter.supports_ai_media_stream``);
+    2. the tenant's provider binding being enabled (a tenant that has not opted
+       into the carrier must not be routed to it);
+    3. the serializer registration for that carrier.
+
+    The returned dict always carries ``supports_ai_media_stream`` and a ``state``
+    of ``READY`` or ``NOT_CONFIGURED`` plus the reason, so a caller can answer
+    ``501 UNSUPPORTED_CAPABILITY`` with an explanation instead of a stack trace.
+    """
+    name = (provider or "").strip().lower()
+    if name not in SUPPORTED:
+        raise ProviderValidationError("Provider is not supported", provider=name)
+
+    adapter = build(name)
+    deployment = (
+        adapter.media_stream_capability()
+        if hasattr(adapter, "media_stream_capability")
+        else {
+            "provider": name,
+            "supports_ai_media_stream": False,
+            "state": "UNSUPPORTED_CAPABILITY",
+            "missing": ["media_stream_adapter"],
+        }
+    )
+    serializer = media_serializer_for(name)
+
+    row = await binding_for(session, tenant_id, name)
+    tenant_enabled = bool(row is not None and row.enabled)
+    deployment_ready = bool(deployment.get("supports_ai_media_stream"))
+
+    if deployment_ready and tenant_enabled:
+        state, reason = "READY", "deployment credentials present and tenant binding enabled"
+    elif not deployment_ready:
+        state = "NOT_CONFIGURED"
+        reason = "deployment is missing " + ", ".join(deployment.get("missing") or ["credentials"])
+    elif name != "twilio" and row is None:
+        state = "NOT_CONFIGURED"
+        reason = f"tenant {tenant_id} has no enabled {name} provider binding"
+    else:
+        state = "NOT_CONFIGURED"
+        reason = f"tenant {tenant_id} has disabled the {name} provider binding"
+
+    return {
+        "provider": name,
+        "tenant_id": str(tenant_id),
+        "supports_ai_media_stream": deployment_ready and tenant_enabled,
+        "state": state,
+        "reason": reason,
+        "serializer": serializer,
+        "deployment": deployment,
+        "tenant_binding_enabled": tenant_enabled,
+    }
+
+
+async def require_media_capability(session, tenant_id: uuid.UUID, provider: str) -> dict:
+    """``resolve_media_capability``, or ``UNSUPPORTED_CAPABILITY`` when absent."""
+    capability = await resolve_media_capability(session, tenant_id, provider)
+    if not capability["supports_ai_media_stream"]:
+        raise UnsupportedCapability(
+            f"{provider} AI media streaming is not available: {capability['reason']}",
+            provider=provider,
+        )
+    return capability
+
+
 async def binding_for(session, tenant_id: uuid.UUID, provider: str) -> ProviderBinding | None:
     return (
         await session.execute(

@@ -87,6 +87,46 @@ class Settings(BaseSettings):
     telnyx_public_key: str = ""
     telnyx_connection_id: str = ""
     telnyx_api_base: str = "https://api.telnyx.com/v2"
+    # ---- Telnyx bidirectional AI media streaming (Batch 01, Block C) ----
+    # The media-stream capability is the *combination* of three settings: the
+    # API key that controls the call, the public key that verifies the carrier's
+    # webhook signature, and the connection id the media stream belongs to.
+    # Missing any one of them keeps `supports_ai_media_stream` false and the
+    # runtime answers 501 UNSUPPORTED_CAPABILITY -- never a half-configured
+    # stream that would answer a real caller with silence.
+    telnyx_media_stream_enabled: bool = True
+    telnyx_media_sample_rate: int = 8000
+    telnyx_media_frame_ms: int = 20
+    telnyx_media_handshake_timeout_seconds: float = 15.0
+    telnyx_call_control_timeout_seconds: float = 8.0
+    telnyx_call_control_max_retries: int = 2
+    telnyx_call_control_retry_backoff_seconds: float = 0.25
+    # Replay protection for the per-stream token written into the media URL.
+    telnyx_stream_token_ttl_seconds: int = 120
+
+    # ---- Live-proof harness (Batch 01, Block B) ----
+    # Everything a live run needs, and nothing with a usable default: an unset
+    # key makes the probe raise ProviderNotConfigured instead of inventing a
+    # metric. The caps are hard: the guard aborts the run when either is hit.
+    live_proof_enabled: bool = False
+    live_proof_evidence_dir: str = "evidence/live"
+    # The number the probe dials -- the agent's number, not the operator's phone.
+    live_proof_test_number: str = ""
+    # The caller id the probe dials from; must be a number owned by the account.
+    live_proof_caller_id: str = ""
+    live_proof_max_minutes: float = 3.0
+    live_proof_max_usd: float = 0.50
+    # Operator-configured rate used to convert elapsed PSTN minutes into the
+    # spend figure in the evidence file. It is a *rate*, never a provider bill.
+    live_proof_usd_per_minute: float = 0.05
+    # Silence between scripted caller lines; also the answer window the agent
+    # gets before the next line is spoken.
+    live_proof_turn_gap_seconds: float = 6.0
+    live_proof_timeout_seconds: float = 180.0
+    live_proof_poll_interval_seconds: float = 2.0
+    # Pipe-separated caller lines spoken by the PSTN leg, in order.
+    live_proof_script: str = "Hello, I would like to book an appointment|Tomorrow at ten in the morning|Yes, my name is Alex Morgan|Thanks, goodbye"
+
     vonage_api_key: str = ""
     vonage_api_secret: str = ""
     vonage_signature_secret: str = ""
@@ -983,7 +1023,129 @@ class Settings(BaseSettings):
         if self.realtime_publish_timeout_seconds <= 0:
             problems.append("REALTIME_PUBLISH_TIMEOUT_SECONDS must be positive")
 
+        problems.extend(self.telnyx_media_problems())
+        problems.extend(self.live_proof_problems())
+
         return problems
+
+    def telnyx_media_problems(self) -> list[str]:
+        """Configuration problems for the Telnyx media-stream capability.
+
+        A *partially* configured Telnyx is the failure this method exists to
+        name: an API key with no public key cannot verify a webhook signature,
+        and a connection id with no key cannot answer a call. None of these is a
+        boot failure outside production -- the capability simply stays false and
+        the runtime answers 501 -- but in production the operator is told.
+        """
+        problems: list[str] = []
+        api_key = (self.telnyx_api_key or "").strip()
+        public_key = (self.telnyx_public_key or "").strip()
+        connection_id = (self.telnyx_connection_id or "").strip()
+
+        for name, value in (
+            ("TELNYX_API_KEY", api_key),
+            ("TELNYX_PUBLIC_KEY", public_key),
+            ("TELNYX_CONNECTION_ID", connection_id),
+        ):
+            if value and _looks_placeholder(value):
+                problems.append(f"{name} looks like a placeholder, not a credential")
+
+        if self.telnyx_media_enabled:
+            missing = [
+                name
+                for name, value in (
+                    ("TELNYX_API_KEY", api_key),
+                    ("TELNYX_PUBLIC_KEY", public_key),
+                    ("TELNYX_CONNECTION_ID", connection_id),
+                )
+                if not value
+            ]
+            if missing and (api_key or public_key or connection_id) and self.is_production:
+                problems.append(
+                    "Telnyx media streaming is partially configured; missing "
+                    + ", ".join(missing)
+                    + ". The capability stays disabled (501 UNSUPPORTED_CAPABILITY) "
+                    "until all three are present"
+                )
+        if self.telnyx_media_sample_rate not in {8000, 16000}:
+            problems.append("TELNYX_MEDIA_SAMPLE_RATE must be 8000 or 16000")
+        if self.telnyx_media_frame_ms not in {10, 20, 40}:
+            problems.append("TELNYX_MEDIA_FRAME_MS must be 10, 20 or 40")
+        if self.telnyx_media_handshake_timeout_seconds < 0:
+            problems.append("TELNYX_MEDIA_HANDSHAKE_TIMEOUT_SECONDS must not be negative")
+        if self.telnyx_call_control_timeout_seconds <= 0:
+            problems.append("TELNYX_CALL_CONTROL_TIMEOUT_SECONDS must be positive")
+        if self.telnyx_call_control_max_retries < 0:
+            problems.append("TELNYX_CALL_CONTROL_MAX_RETRIES must not be negative")
+        if self.telnyx_call_control_retry_backoff_seconds < 0:
+            problems.append("TELNYX_CALL_CONTROL_RETRY_BACKOFF_SECONDS must not be negative")
+        if self.telnyx_stream_token_ttl_seconds <= 0:
+            problems.append("TELNYX_STREAM_TOKEN_TTL_SECONDS must be positive")
+        return problems
+
+    def live_proof_problems(self) -> list[str]:
+        """Configuration problems for the live-proof harness.
+
+        Only reported when the harness is switched on: an installation that
+        never runs a live probe should not be asked for provider keys.
+        """
+        problems: list[str] = []
+        if self.live_proof_max_minutes <= 0:
+            problems.append("LIVE_PROOF_MAX_MINUTES must be positive")
+        if self.live_proof_max_usd <= 0:
+            problems.append("LIVE_PROOF_MAX_USD must be positive")
+        if self.live_proof_usd_per_minute < 0:
+            problems.append("LIVE_PROOF_USD_PER_MINUTE must not be negative")
+        if self.live_proof_turn_gap_seconds <= 0:
+            problems.append("LIVE_PROOF_TURN_GAP_SECONDS must be positive")
+        if self.live_proof_timeout_seconds <= 0:
+            problems.append("LIVE_PROOF_TIMEOUT_SECONDS must be positive")
+        if self.live_proof_poll_interval_seconds <= 0:
+            problems.append("LIVE_PROOF_POLL_INTERVAL_SECONDS must be positive")
+        if not self.live_proof_enabled:
+            return problems
+
+        if self.is_production:
+            problems.append(
+                "LIVE_PROOF_ENABLED must not be set in production; a live probe "
+                "dials a real number and spends real provider money, so it is an "
+                "operator-run action in a test environment only"
+            )
+        if not (self.live_proof_test_number or "").strip():
+            problems.append("LIVE_PROOF_TEST_NUMBER is required when LIVE_PROOF_ENABLED is set")
+        for name, value in (
+            ("TWILIO_ACCOUNT_SID", self.twilio_account_sid),
+            ("TWILIO_AUTH_TOKEN", self.twilio_auth_token),
+            ("TWILIO_PHONE_NUMBER", self.twilio_phone_number),
+            ("DEEPGRAM_API_KEY", self.deepgram_api_key),
+            ("ELEVENLABS_API_KEY", self.elevenlabs_api_key),
+            ("OPENAI_API_KEY", self.openai_api_key),
+        ):
+            if not (value or "").strip():
+                problems.append(f"{name} is required when LIVE_PROOF_ENABLED is set")
+            elif _looks_placeholder(value):
+                problems.append(f"{name} looks like a placeholder, not a credential")
+        return problems
+
+    @property
+    def telnyx_media_enabled(self) -> bool:
+        """True only when the whole Telnyx media-stream credential set is present.
+
+        This is the single source of truth for the capability flag: the provider
+        adapter, the factory and the runtime all read it, so there is exactly
+        one definition of "Telnyx AI media streaming is available".
+        """
+        return bool(
+            self.telnyx_media_stream_enabled
+            and (self.telnyx_api_key or "").strip()
+            and (self.telnyx_public_key or "").strip()
+            and (self.telnyx_connection_id or "").strip()
+        )
+
+    @property
+    def live_proof_script_lines(self) -> list[str]:
+        """Caller lines the PSTN leg speaks, in order. Empty lines are dropped."""
+        return [line.strip() for line in (self.live_proof_script or "").split("|") if line.strip()]
 
     @property
     def ws_base_url(self) -> str:

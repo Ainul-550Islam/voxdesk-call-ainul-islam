@@ -1,6 +1,24 @@
 {
   "components": {
     "schemas": {
+      "AbortOut": {
+        "additionalProperties": false,
+        "properties": {
+          "changed": {
+            "title": "Changed",
+            "type": "boolean"
+          },
+          "run": {
+            "$ref": "#/components/schemas/LiveProofRunOut"
+          }
+        },
+        "required": [
+          "run",
+          "changed"
+        ],
+        "title": "AbortOut",
+        "type": "object"
+      },
       "AcceptBody": {
         "properties": {
           "email": {
@@ -13524,6 +13542,45 @@
         "title": "EvidenceEventOut",
         "type": "object"
       },
+      "EvidenceOut": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence": {
+            "title": "Evidence",
+            "type": "object"
+          },
+          "provider_fakes": {
+            "title": "Provider Fakes",
+            "type": "boolean"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "sha256_actual": {
+            "title": "Sha256 Actual",
+            "type": "string"
+          },
+          "sha256_matches": {
+            "title": "Sha256 Matches",
+            "type": "boolean"
+          },
+          "sha256_recorded": {
+            "title": "Sha256 Recorded",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "sha256_recorded",
+          "sha256_actual",
+          "sha256_matches",
+          "provider_fakes",
+          "evidence"
+        ],
+        "title": "EvidenceOut",
+        "type": "object"
+      },
       "EvidencePackageOut": {
         "properties": {
           "created_at": {
@@ -16362,6 +16419,269 @@
           "created_at"
         ],
         "title": "LineageOut",
+        "type": "object"
+      },
+      "LiveProofRunListOut": {
+        "additionalProperties": false,
+        "properties": {
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "runs": {
+            "items": {
+              "$ref": "#/components/schemas/LiveProofRunOut"
+            },
+            "title": "Runs",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "limit",
+          "offset",
+          "runs"
+        ],
+        "title": "LiveProofRunListOut",
+        "type": "object"
+      },
+      "LiveProofRunOut": {
+        "additionalProperties": false,
+        "properties": {
+          "call_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Call Id"
+          },
+          "call_sid": {
+            "title": "Call Sid",
+            "type": "string"
+          },
+          "cost_usd": {
+            "title": "Cost Usd",
+            "type": "number"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "object"
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          },
+          "e2e_p50_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "E2E P50 Ms"
+          },
+          "e2e_p95_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "E2E P95 Ms"
+          },
+          "e2e_p99_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "E2E P99 Ms"
+          },
+          "error": {
+            "title": "Error",
+            "type": "string"
+          },
+          "evidence_path": {
+            "title": "Evidence Path",
+            "type": "string"
+          },
+          "evidence_sha256": {
+            "title": "Evidence Sha256",
+            "type": "string"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "is_evidence": {
+            "title": "Is Evidence",
+            "type": "boolean"
+          },
+          "llm_ttfb_p50_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Ttfb P50 Ms"
+          },
+          "provider_fakes": {
+            "title": "Provider Fakes",
+            "type": "boolean"
+          },
+          "provider_set": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Provider Set",
+            "type": "array"
+          },
+          "recording_sha256": {
+            "title": "Recording Sha256",
+            "type": "string"
+          },
+          "requested_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested By"
+          },
+          "requested_to_number": {
+            "title": "Requested To Number",
+            "type": "string"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "stt_ttfb_p50_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stt Ttfb P50 Ms"
+          },
+          "tenant_id": {
+            "title": "Tenant Id",
+            "type": "string"
+          },
+          "tts_ttfb_p50_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tts Ttfb P50 Ms"
+          },
+          "turns": {
+            "title": "Turns",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "tenant_id",
+          "status",
+          "provider_set",
+          "requested_to_number",
+          "call_sid",
+          "call_id",
+          "turns",
+          "e2e_p50_ms",
+          "e2e_p95_ms",
+          "e2e_p99_ms",
+          "stt_ttfb_p50_ms",
+          "llm_ttfb_p50_ms",
+          "tts_ttfb_p50_ms",
+          "cost_usd",
+          "provider_fakes",
+          "is_evidence",
+          "evidence_path",
+          "evidence_sha256",
+          "recording_sha256",
+          "requested_by",
+          "detail",
+          "error",
+          "duration_seconds",
+          "created_at",
+          "started_at",
+          "finished_at"
+        ],
+        "title": "LiveProofRunOut",
         "type": "object"
       },
       "LiveSessionListOut": {
@@ -22880,6 +23200,74 @@
         "title": "QuotaBody",
         "type": "object"
       },
+      "ReadinessOut": {
+        "additionalProperties": false,
+        "properties": {
+          "calls_are_real": {
+            "title": "Calls Are Real",
+            "type": "boolean"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "max_minutes": {
+            "title": "Max Minutes",
+            "type": "number"
+          },
+          "max_usd": {
+            "title": "Max Usd",
+            "type": "number"
+          },
+          "missing_settings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing Settings",
+            "type": "array"
+          },
+          "problems": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Problems",
+            "type": "array"
+          },
+          "provider_set": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Provider Set",
+            "type": "array"
+          },
+          "ready": {
+            "title": "Ready",
+            "type": "boolean"
+          },
+          "router_prefix": {
+            "title": "Router Prefix",
+            "type": "string"
+          },
+          "usd_per_minute": {
+            "title": "Usd Per Minute",
+            "type": "number"
+          }
+        },
+        "required": [
+          "enabled",
+          "ready",
+          "calls_are_real",
+          "problems",
+          "missing_settings",
+          "provider_set",
+          "max_minutes",
+          "max_usd",
+          "usd_per_minute",
+          "router_prefix"
+        ],
+        "title": "ReadinessOut",
+        "type": "object"
+      },
       "ReassignBody": {
         "properties": {
           "tenant_id": {
@@ -28376,6 +28764,85 @@
           "protocol"
         ],
         "title": "StartOut",
+        "type": "object"
+      },
+      "StartRunRequest": {
+        "additionalProperties": false,
+        "description": "What an operator may vary about one live run.\n\nCaps can only *lower* the configured ceiling, never raise it: the operator's\nenvironment is the budget authority.",
+        "properties": {
+          "caller_id": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Caller Id"
+          },
+          "max_minutes": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 60.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Minutes"
+          },
+          "max_usd": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 100.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Usd"
+          },
+          "note": {
+            "default": "",
+            "maxLength": 280,
+            "title": "Note",
+            "type": "string"
+          },
+          "script": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 12,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Script"
+          },
+          "to_number": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To Number"
+          }
+        },
+        "title": "StartRunRequest",
         "type": "object"
       },
       "StatsOut": {
@@ -65830,6 +66297,335 @@
         ]
       }
     },
+    "/api/live-proof/readiness": {
+      "get": {
+        "description": "Whether this deployment could run an honest live proof right now.",
+        "operationId": "live_proof_readiness_api_live_proof_readiness_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Live Proof Readiness",
+        "tags": [
+          "live-proof"
+        ]
+      }
+    },
+    "/api/live-proof/runs": {
+      "get": {
+        "operationId": "list_runs_api_live_proof_runs_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 16,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveProofRunListOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Runs",
+        "tags": [
+          "live-proof"
+        ]
+      },
+      "post": {
+        "description": "Place one real PSTN call against this tenant's agent and record the proof.",
+        "operationId": "start_run_api_live_proof_runs_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartRunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveProofRunOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Start Run",
+        "tags": [
+          "live-proof"
+        ]
+      }
+    },
+    "/api/live-proof/runs/{run_id}": {
+      "get": {
+        "operationId": "get_run_api_live_proof_runs__run_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveProofRunOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Run",
+        "tags": [
+          "live-proof"
+        ]
+      }
+    },
+    "/api/live-proof/runs/{run_id}/abort": {
+      "post": {
+        "description": "Mark a stuck run aborted so the next run is not blocked by it.\n\nThe carrier leg is ended by the probe's own cost guard; this route only\nreconciles the durable row when a process died mid-run. It cannot make a run\ninto evidence: the status becomes ``aborted``.",
+        "operationId": "abort_run_api_live_proof_runs__run_id__abort_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AbortOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Abort Run",
+        "tags": [
+          "live-proof"
+        ]
+      }
+    },
+    "/api/live-proof/runs/{run_id}/evidence": {
+      "get": {
+        "operationId": "get_evidence_api_live_proof_runs__run_id__evidence_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvidenceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Evidence",
+        "tags": [
+          "live-proof"
+        ]
+      }
+    },
     "/api/llm/presets": {
       "get": {
         "description": "\u09a1\u09cd\u09af\u09be\u09b6\u09ac\u09cb\u09b0\u09cd\u09a1\u09c7 \u09a1\u09cd\u09b0\u09aa\u09a1\u09be\u0989\u09a8 \u09ad\u09b0\u09be\u09b0 \u099c\u09a8\u09cd\u09af -- \u0995\u09cd\u09b2\u09be\u09af\u09bc\u09c7\u09a8\u09cd\u099f \u09a8\u09bf\u099c\u09c7\u0987 AI \u09ac\u09a6\u09b2\u09be\u09a4\u09c7 \u09aa\u09be\u09b0\u09ac\u09c7\u0964",
@@ -101076,7 +101872,7 @@
     },
     "/telephony/telnyx/voice": {
       "post": {
-        "description": "Handle inbound Telnyx Call Control v2 `call.initiated` / `call.answered` webhook.",
+        "description": "Handle an inbound Telnyx Call Control v2 ``call.initiated`` webhook.",
         "operationId": "telnyx_inbound_voice_telephony_telnyx_voice_post",
         "responses": {
           "200": {
