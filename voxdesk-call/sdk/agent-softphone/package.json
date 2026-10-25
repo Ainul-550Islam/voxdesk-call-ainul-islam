@@ -1,0 +1,31 @@
+{
+  "name": "@voxdesk/agent-softphone",
+  "version": "0.4.0",
+  "description": "VoxDesk Batch 04 human-agent Twilio Voice SDK client",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "engines": {"node": ">=20"},
+  "scripts": {
+    "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@twilio/voice-sdk": "2.18.5"
+  },
+  "devDependencies": {
+    "@types/node": "20.14.0",
+    "tsup": "8.3.5",
+    "typescript": "5.9.3",
+    "vitest": "3.2.7"
+  }
+}

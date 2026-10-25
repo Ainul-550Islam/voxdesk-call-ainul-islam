@@ -1,0 +1,128 @@
+{{- if .Values.coturn.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "voxdesk.fullname" . }}-coturn
+  labels:
+    {{- include "voxdesk.labels" . | nindent 4 }}
+    app.kubernetes.io/component: coturn
+data:
+  turnserver.conf: |
+    {{- tpl (.Files.Get "coturn/turnserver.conf.tpl") . | nindent 4 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "voxdesk.fullname" . }}-coturn
+  labels:
+    {{- include "voxdesk.labels" . | nindent 4 }}
+    app.kubernetes.io/component: coturn
+spec:
+  replicas: {{ .Values.coturn.replicas | default 1 }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "voxdesk.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: coturn
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "voxdesk.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: coturn
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+    spec:
+      # TURN allocations use relay ports outside the Service. Host networking
+      # exposes the configured relay range on the same node external-ip.
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: coturn
+          image: {{ .Values.coturn.image | quote }}
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args:
+            - exec turnserver -c /etc/coturn/turnserver.conf --static-auth-secret="$CC2_TURN_STATIC_SECRET"
+          env:
+            - name: CC2_TURN_STATIC_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required "coturn.secretName is required" .Values.coturn.secretName }}
+                  key: {{ required "coturn.secretKey is required" .Values.coturn.secretKey }}
+          ports:
+            - name: turn-udp
+              containerPort: 3478
+              protocol: UDP
+            - name: turn-tcp
+              containerPort: 3478
+              protocol: TCP
+            {{- if .Values.coturn.tls.enabled }}
+            - name: turns-tcp
+              containerPort: 5349
+              protocol: TCP
+            {{- end }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/coturn/turnserver.conf
+              subPath: turnserver.conf
+              readOnly: true
+            {{- if .Values.coturn.tls.enabled }}
+            - name: tls
+              mountPath: /etc/coturn/tls
+              readOnly: true
+            {{- end }}
+          readinessProbe:
+            tcpSocket: {port: turn-tcp}
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket: {port: turn-tcp}
+            periodSeconds: 20
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.coturn.resources | nindent 12 }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "voxdesk.fullname" . }}-coturn
+        {{- if .Values.coturn.tls.enabled }}
+        - name: tls
+          secret:
+            secretName: {{ required "coturn.tls.secretName is required when TLS is enabled" .Values.coturn.tls.secretName }}
+        {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "voxdesk.fullname" . }}-coturn
+  labels:
+    {{- include "voxdesk.labels" . | nindent 4 }}
+    app.kubernetes.io/component: coturn
+spec:
+  type: {{ .Values.coturn.service.type }}
+  selector:
+    app.kubernetes.io/name: {{ include "voxdesk.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: coturn
+  ports:
+    - name: turn-udp
+      port: 3478
+      targetPort: turn-udp
+      protocol: UDP
+    - name: turn-tcp
+      port: 3478
+      targetPort: turn-tcp
+      protocol: TCP
+    {{- if .Values.coturn.tls.enabled }}
+    - name: turns-tcp
+      port: 5349
+      targetPort: turns-tcp
+      protocol: TCP
+    {{- end }}
+{{- end }}

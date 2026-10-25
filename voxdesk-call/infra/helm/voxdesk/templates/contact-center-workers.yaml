@@ -1,0 +1,66 @@
+{{- if .Values.contactCenterWorkers.enabled }}
+{{- if not .Values.scheduler.enabled }}{{ fail "contactCenterWorkers requires scheduler.enabled for singular durable jobs" }}{{ end }}
+{{- $worker := .Values.contactCenterWorkers }}
+{{- if ($worker.autoscaling | default dict).enabled | default false }}
+{{- fail "contactCenterWorkers is singleton maintenance; scale the canonical durable JobWorker instead" }}
+{{- end }}
+{{- if ($worker.cron | default dict).enabled | default false }}
+{{- fail "contactCenterWorkers cannot run only as a CronJob because safe-harbor recovery requires the continuous maintenance loop" }}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "voxdesk.fullname" . }}-contact-center-workers
+  labels:
+    {{- include "voxdesk.labels" . | nindent 4 }}
+spec:
+  # Maintenance is deliberately singular; durable JobWorker replicas provide
+  # call throughput and claim jobs through the canonical database queue.
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "voxdesk.name" . }}-contact-center-workers
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "voxdesk.name" . }}-contact-center-workers
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      terminationGracePeriodSeconds: {{ $worker.terminationGracePeriodSeconds | default 45 }}
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: contact-center-maintenance
+          image: "{{ required "image.repository is required" .Values.image.repository }}:{{ required "image.tag is required" .Values.image.tag }}"
+          command: ["python", "-m", "app.contact_center_v2.worker"]
+          env:
+            - name: APP_ENV
+              value: {{ .Values.config.appEnv | quote }}
+            - name: DATABASE_URL
+              value: {{ required "config.databaseUrl is required" .Values.config.databaseUrl | quote }}
+            - name: REDIS_URL
+              value: {{ required "config.redisUrl is required" .Values.config.redisUrl | quote }}
+            - name: CC2_MAINTENANCE_ENABLED
+              value: "true"
+          envFrom:
+            - secretRef:
+                name: {{ required "secrets.existingSecret is required" .Values.secrets.existingSecret }}
+          resources:
+            {{- toYaml $worker.resources | nindent 12 }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "voxdesk.fullname" . }}-contact-center-workers
+  labels:
+    {{- include "voxdesk.labels" . | nindent 4 }}
+spec:
+  # A single recoverable maintenance pod must not stall voluntary node drains.
+  maxUnavailable: {{ ($worker.pdb | default dict).maxUnavailable | default 1 }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "voxdesk.name" . }}-contact-center-workers
+      app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
