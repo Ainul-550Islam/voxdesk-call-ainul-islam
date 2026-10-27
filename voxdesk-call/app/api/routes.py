@@ -591,11 +591,27 @@ async def transcript(
     )
     if call is None:
         raise HTTPException(status_code=404, detail="call not found")
-    return [
+    turns = [
         {"speaker": t.speaker.value if hasattr(t.speaker, "value") else str(t.speaker),
          "text": _safe_call_text(t.text), "at": t.created_at}
         for t in sorted(call.turns, key=lambda x: x.created_at)
     ]
+    # BATCH06: apply the tenant's HIPAA minimum-necessary policy to the
+    # transcript surface. With HIPAA mode off this is a byte-for-byte no-op; a
+    # viewer in HIPAA mode gets the turn envelope (speaker/timestamp) without
+    # the PHI text, exactly as the compliance control requires.
+    from app.compliance_v2.hipaa import minimum_necessary
+    from app.compliance_v2.hipaa.phi_tagging import load_policy
+
+    policy = await load_policy(session, ctx.tenant_id)
+    filtered, _ = minimum_necessary.filter_records(
+        turns,
+        table="turns",
+        role=ctx.role,
+        surface=minimum_necessary.SURFACE_TRANSCRIPT,
+        policy=policy,
+    )
+    return filtered
 
 
 # ----------------------------------------------------------- analytics ----

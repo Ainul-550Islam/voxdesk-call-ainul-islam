@@ -109,6 +109,21 @@ PUBLIC_ROUTES: dict[str, str] = {
     "/api/v1/telephony/webhooks/{provider}/status": "provider webhook, signature verified",
     "/api/v1/telephony/webhooks/{provider}/dtmf": "provider webhook, signature verified",
     "/api/v1/telephony/webhooks/{provider}/recording": "provider webhook, signature verified",
+    # ---- carrier v2 (Batch 02) — Vonage voice NCCO + signed event callback ---
+    # The carrier, not a signed-in user, is the caller. The NCCO answer webhook
+    # and the event callback both verify the Vonage JWT/signature on the raw
+    # body before trusting it (app/telephony/vonage_handler.py).
+    "/telephony/vonage/answer": "Vonage answer webhook, JWT/signature verified",
+    "/telephony/vonage/events": "Vonage event callback, signature verified",
+    # ---- integrations v2 (Batch 05) — provider-signed inbound webhooks -----
+    # Receive path carries the provider + connection id and runs HMAC/Ed25519
+    # verification (and the Zoom/Graph GET challenge handshake) inside
+    # app.integrations_v2.core.webhook_inbound before the body is trusted.
+    "/webhooks/int2/{provider}/{connection_id}": "vendor inbound webhook, signature/handshake verified",
+    "/webhooks/int2/slack/{connection_id}/commands": "Slack slash command, request signature verified",
+    "/webhooks/int2/slack/{connection_id}/interactions": "Slack interaction, request signature verified",
+    "/webhooks/int2/slack/{connection_id}/interactivity": "Slack interactivity, request signature verified",
+    "/webhooks/int2/slack/{connection_id}/slash": "Slack slash command, request signature verified",
     # ---- third-party inbound webhooks (token in path + signature) ---------
     "/public/webhooks/{endpoint_id}": "inbound public webhook, endpoint token in the path",
     "/api/integrations/crm/inbound/{provider}/{token}": "CRM inbound webhook, path token verified",

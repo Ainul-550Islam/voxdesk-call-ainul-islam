@@ -14,6 +14,14 @@ import app.anomaly.persistence  # noqa: F401
 import app.auth.identity.models  # noqa: F401
 import app.compliance.models  # noqa: F401
 import app.contact_center.models  # noqa: F401
+# BATCH06:model_registration — Batch 02-05 shipped four model modules whose
+# tables migrations 0064-0067 create, but which env.py never imported. They are
+# imported here so autogenerate sees their mapped tables on Base.metadata and
+# proposes an empty diff against the migrated schema (instead of DROP TABLE).
+import app.db.carrier_s2s_models  # noqa: F401
+import app.db.compliance_v2_models  # noqa: F401
+import app.db.contact_center_v2_models  # noqa: F401
+import app.db.integrations_v2_models  # noqa: F401
 import app.db.enterprise_models  # noqa: F401
 import app.db.live_proof_models  # noqa: F401
 import app.db.retell_models  # noqa: F401

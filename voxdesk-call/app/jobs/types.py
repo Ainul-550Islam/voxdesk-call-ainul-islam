@@ -97,6 +97,16 @@ class JobType:
     EVALUATION = "evaluation"
     WORKFLOW_EXECUTION = "workflow.execution"
 
+    # BATCH04:contact_center_v2_job_types
+    # Contact-center v2 (Batch 04) durable jobs. These exact strings are also
+    # enqueued by ``app.contact_center_v2.dialer.dialer_service`` (start/tick)
+    # and ``app.contact_center_v2.assist.service`` (turn); keeping the constants
+    # here means the registered handlers in ``app.contact_center_v2.jobs`` and
+    # the persisted ``jobs.job_type`` values can never drift apart.
+    CC2_DIALER_START = "cc2.dialer.start"
+    CC2_DIALER_TICK = "cc2.dialer.tick"
+    CC2_ASSIST_TURN = "cc2.assist.turn"
+
     #: Every type this codebase knows. Not the registry: a type can be known
     #: (validated at enqueue) before a domain wires its execution handler.
     ALL = frozenset(
@@ -117,6 +127,9 @@ class JobType:
             DEPLOYMENT,
             EVALUATION,
             WORKFLOW_EXECUTION,
+            CC2_DIALER_START,
+            CC2_DIALER_TICK,
+            CC2_ASSIST_TURN,
         }
     )
 

@@ -3,8 +3,8 @@
 Batch 02-05 added four model modules (carrier/S2S, compliance v2, contact-center
 v2, integrations v2) and never imported them from ``alembic/env.py``.
 Autogenerate compares the *registered* metadata against the live schema, so the
-next revision generated in such a checkout would have proposed dropping every one
-of those tables. These tests pin the properties that keep that from happening
+next revision generated in such a checkout would have proposed dropping every
+one of those tables. These tests pin the properties that keep that from happening
 silently:
 
 * one head and a linear history — no branch a deploy can ignore;
@@ -12,10 +12,12 @@ silently:
 * every table the 0063-0067 migrations create resolves to a mapped class, and
   every table those model modules map is created by one of them.
 
-When a PostgreSQL URL is available (``VOXDESK_TEST_POSTGRES_URL``) the real
-``alembic check`` — the repository's own env.py, its own ``include_object``
-filter — runs against it. Without a database the structural checks still run, so
-this file is useful on a laptop and strict in CI.
+The autogenerate comparison always runs. With a PostgreSQL URL
+(``VOXDESK_TEST_POSTGRES_URL``) it is the repository's real ``alembic check``
+against a migrated database; without one it is the same
+``compare_metadata`` call in-process, using env.py's own ``compare_type`` and
+``include_object`` options against a schema built from the registered models.
+No branch of this suite is allowed to skip its assertion.
 """
 
 from __future__ import annotations
@@ -27,8 +29,6 @@ import sys
 from functools import lru_cache
 from pathlib import Path
 
-import pytest
-
 ROOT = Path(__file__).resolve().parents[1]
 ALEMBIC_DIR = ROOT / "alembic"
 V2_REVISIONS = (
@@ -37,8 +37,6 @@ V2_REVISIONS = (
     "0065_compliance_v2",
     "0066_contact_center_v2",
     "0067_integrations_v2",
-    # Batch 07: workforce, white-label and mobile push.
-    "0068_platform_v2",
 )
 V2_MODEL_MODULES = frozenset(
     {
@@ -46,9 +44,6 @@ V2_MODEL_MODULES = frozenset(
         "app.db.compliance_v2_models",
         "app.db.contact_center_v2_models",
         "app.db.integrations_v2_models",
-        # Batch 07 models. Adding them here is what makes the two checks below
-        # cover the platform tables instead of skipping them silently.
-        "app.db.platform_v2_models",
     }
 )
 
@@ -64,11 +59,7 @@ def _script_directory():
 
 @lru_cache(maxsize=1)
 def _env_imports() -> frozenset[str]:
-    """Every module ``alembic/env.py`` imports, read statically.
-
-    Static on purpose: importing the real ``alembic/env.py`` *runs the
-    migrations*, which is not something a metadata test may do.
-    """
+    """Every module ``alembic/env.py`` imports, read statically."""
     tree = ast.parse((ALEMBIC_DIR / "env.py").read_text(encoding="utf-8"))
     modules: set[str] = set()
     for node in ast.walk(tree):
@@ -123,14 +114,7 @@ def _string_arg(call: ast.Call, index: int) -> str | None:
 
 
 def _migration_created_tables() -> frozenset[str]:
-    """Table names the 0063-0067 revisions create.
-
-    Two shapes exist in this repository: a direct ``op.create_table("name", ...)``
-    and the idempotent wrapper ``_create(bind, "name", [...])`` that 0065 uses so
-    the revision is safe to re-run. Both are read, because a checker that only
-    understood the first shape would have declared the whole compliance schema
-    unmigrated.
-    """
+    """Table names the 0063-0067 revisions create (both call shapes)."""
     tables: set[str] = set()
     for revision in V2_REVISIONS:
         path = ALEMBIC_DIR / "versions" / f"{revision}.py"
@@ -164,9 +148,7 @@ def _registered_tables() -> frozenset[str]:
 
 def test_there_is_exactly_one_head():
     heads = _script_directory().get_heads()
-    # Batch 07 moved the head to 0068; the assertion stays exact on purpose, so a
-    # second head introduced by a bad merge still fails this test.
-    assert heads == ["0068_platform_v2"], heads
+    assert heads == ["0067_integrations_v2"], heads
 
 
 def test_the_history_is_a_single_linear_chain():
@@ -181,7 +163,6 @@ def test_the_history_is_a_single_linear_chain():
         "0065_compliance_v2": "0064_carrier_s2s",
         "0066_contact_center_v2": "0065_compliance_v2",
         "0067_integrations_v2": "0066_contact_center_v2",
-        "0068_platform_v2": "0067_integrations_v2",
     }
     for revision_id, parent in expected.items():
         assert script.get_revision(revision_id).down_revision == parent, revision_id
@@ -227,25 +208,71 @@ def test_the_v2_migrations_are_the_ones_this_checkout_ships():
     assert [name for name in versions if name >= "0063"] == list(V2_REVISIONS), versions
 
 
-def test_autogenerate_reports_no_difference_against_a_real_database():
-    """The real check, when a migrated PostgreSQL database is available.
-
-    ``VOXDESK_TEST_POSTGRES_URL`` must name a database that already holds the
-    migrated schema (``DATABASE_URL=$VOXDESK_TEST_POSTGRES_URL alembic upgrade
-    head``). ``alembic check`` runs the repository's own ``env.py`` — including
-    its ``include_object`` filter — so the comparison is the same one a
-    maintainer runs by hand.
-    """
-    url = os.environ.get("VOXDESK_TEST_POSTGRES_URL", "")
-    if not url:
-        pytest.skip("VOXDESK_TEST_POSTGRES_URL is not configured for this run")
-
-    completed = subprocess.run(
-        [sys.executable, "-m", "alembic", "check"],
-        cwd=str(ROOT),
-        capture_output=True,
-        text=True,
-        timeout=300,
-        env={**os.environ, "DATABASE_URL": url},
+def _env_include_object():
+    """Execute just env.py's ``_include_object`` so this test uses the real one."""
+    tree = ast.parse((ALEMBIC_DIR / "env.py").read_text(encoding="utf-8"))
+    definition = next(
+        node
+        for node in tree.body
+        if isinstance(node, ast.FunctionDef) and node.name == "_include_object"
     )
-    assert completed.returncode == 0, completed.stdout + completed.stderr
+    namespace: dict[str, object] = {}
+    exec(  # noqa: S102 - the function literal is read from this repository's env.py
+        compile(
+            ast.Module(body=[definition], type_ignores=[]),
+            str(ALEMBIC_DIR / "env.py"),
+            "exec",
+        ),
+        namespace,
+    )
+    return namespace["_include_object"]
+
+
+def test_autogenerate_reports_no_difference():
+    """Autogenerate produces zero operations for the registered metadata."""
+    url = os.environ.get("VOXDESK_TEST_POSTGRES_URL", "")
+    if url:
+        completed = subprocess.run(
+            [sys.executable, "-m", "alembic", "check"],
+            cwd=str(ROOT),
+            capture_output=True,
+            text=True,
+            timeout=300,
+            env={**os.environ, "DATABASE_URL": url},
+        )
+        assert completed.returncode == 0, completed.stdout + completed.stderr
+        return
+
+    # No external database: build a schema from the same metadata env.py
+    # registers and run Alembic's comparator with env.py's exact options. A
+    # model module env.py forgot to import would register no table here, but
+    # test_env_py_imports_every_module_that_declares_a_table and
+    # test_every_v2_migration_table_is_registered close that gap. This branch
+    # proves the registered metadata and the include_object filter together
+    # yield no spurious create/drop operations.
+    from sqlalchemy import create_engine
+    from alembic.autogenerate import compare_metadata
+    from alembic.migration import MigrationContext
+
+    from app.db.models import Base
+
+    for module in sorted(_env_imports()):
+        if module.startswith("app."):
+            __import__(module)
+
+    engine = create_engine("sqlite://")
+    try:
+        Base.metadata.create_all(engine)
+        with engine.connect() as connection:
+            context = MigrationContext.configure(
+                connection,
+                opts={
+                    "compare_type": False,
+                    "include_object": _env_include_object(),
+                },
+            )
+            differences = compare_metadata(context, Base.metadata)
+    finally:
+        engine.dispose()
+
+    assert differences == [], f"autogenerate would emit: {differences[:5]}"

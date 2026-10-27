@@ -136,3 +136,5 @@ verify-sale:
 
 # Batch 01: hygiene guards, live proof and gateway load targets.
 include Makefile.batch01.mk
+# Batch 06: wiring, mount and cross-language regression gates.
+include Makefile.batch06.mk

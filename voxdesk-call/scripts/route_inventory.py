@@ -139,6 +139,10 @@ HANDLER_VERIFIED_ALLOWLIST: frozenset[str] = frozenset(
         "/telephony/status",
         "/telephony/transfer-status",
         "/telephony/telnyx/voice",
+        # Vonage NCCO answer + event callback both verify the carrier JWT/HMAC
+        # signature on the raw body before trusting it (vonage_handler.py).
+        "/telephony/vonage/answer",
+        "/telephony/vonage/events",
         "/telephony/web/offer",
         "/channels/message",
         "/channels/status",

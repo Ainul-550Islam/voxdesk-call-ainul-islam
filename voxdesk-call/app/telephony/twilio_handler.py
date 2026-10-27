@@ -77,6 +77,19 @@ async def incoming_call(
     if not await _verify_twilio(request):
         return PlainTextResponse("forbidden", status_code=403)
 
+    # BATCH06: route the signed contact-center-v2 branches (softphone agent /
+    # customer legs, callbacks, consults) through their own handler. It is a
+    # no-op for ordinary inbound calls (no ``cc2`` query param -> returns None),
+    # and it must run only AFTER the Twilio signature has been verified so an
+    # unauthenticated caller can never reach the conference/softphone logic.
+    from app.contact_center_v2.telephony import handle_voice
+
+    cc2_response = await handle_voice(
+        request, session, call_sid=CallSid, from_uri=From
+    )
+    if cc2_response is not None:
+        return cc2_response
+
     tenant = await find_tenant_for_called_number(session, To)
     if tenant is None:
         tenant = (

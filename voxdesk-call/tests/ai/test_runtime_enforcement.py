@@ -387,7 +387,9 @@ def test_voice_media_chain_wires_the_guardrail_processors():
     before it can be spoken, and a refused transcript never reaches the model.
     Source-level proof because Pipecat cannot be imported here."""
     source = open("app/agent/pipeline.py", encoding="utf-8").read()
-    block = source[source.index("pipeline = Pipeline("):source.index("task = PipelineTask(")]
+    # Objective reason: the first `Pipeline(` is the S2S chain, so anchor on the voice-media block.
+    voice = source.index("stt_usage,")
+    block = source[source.rindex("pipeline = Pipeline(", 0, voice):source.index("task = PipelineTask(", voice)]
     i_stt_usage = block.index("stt_usage,")
     i_hearing = block.index("GovernedHearing()")
     i_user_ctx = block.index("context_aggregator.user()")

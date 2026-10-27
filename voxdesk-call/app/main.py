@@ -191,6 +191,19 @@ from app.telephony.telnyx_handler import router as telnyx_voice_router
 from app.api.live_proof_routes import router as live_proof_router
 from app.middleware.security_middleware import add_security_middleware
 
+# Batch 06 wire-up: the carrier/telephony-v2, contact-center-v2, integrations-v2
+# and compliance-v2 surfaces are each composed by a single package aggregator.
+# main.py mounts one router per package (keeping public/private dependencies and
+# signature checks where each package already owns them) rather than importing
+# the 23 leaf route modules directly.
+from app.api.carrier_router import router as carrier_router
+from app.api.compliance_v2 import router as compliance_v2_router
+from app.api.contact_center_v2_router import router as contact_center_v2_router
+from app.api.integrations_v2_router import router as integrations_v2_router
+# Batch 03 data-residency guard: refuse a request that names a region the
+# caller's tenant may not use, on the placement-bearing paths only.
+from app.compliance_v2.residency.middleware import add_residency_middleware
+
 # Observability: Sentry error reporting is optional and off unless a DSN is
 # configured. Initialised at import time so it covers startup failures too.
 if settings.sentry_dsn:
@@ -501,6 +514,17 @@ app.include_router(live_proof_router)
 app.include_router(analytics_dashboard_router)
 app.include_router(sms_router)
 
+# Batch 06: mount the four v2 package surfaces through their aggregators. Each
+# leaf module keeps its own prefix, permission dependency, and (for public
+# webhooks) its own signature verification. They are registered after the
+# existing product routers so no new path can shadow a literal route declared
+# earlier, and before the placeholder-quarantine pass below (which only removes
+# generated ``/endpoint-N`` stubs, never these reviewed handlers).
+app.include_router(carrier_router)
+app.include_router(compliance_v2_router)
+app.include_router(contact_center_v2_router)
+app.include_router(integrations_v2_router)
+
 # Quarantine synthetic route generators before the application starts serving.
 # Their `/endpoint-N` handlers return fabricated identifiers/counts/timestamps;
 # a small set of neighbouring generic status/search/export handlers are also
@@ -611,6 +635,11 @@ _suppress_generated_placeholder_routes(app)
 install_error_handling(app)
 add_security_headers(app)
 add_security_middleware(app, max_request_body_bytes=settings.max_request_body_bytes)
+# Batch 03/06: the residency guard is a pure-ASGI middleware installed inside
+# the security boundary and outside the public-boundary classifier. It is a
+# no-op unless a request to a placement-bearing path actually names a region
+# (header or query param), so it never becomes a second authentication layer.
+add_residency_middleware(app)
 add_public_boundary_middleware(app)
 add_drain_middleware(app)
 add_rate_limit_middleware(app)
@@ -693,3 +722,30 @@ def _mount_dashboard_if_built(app: FastAPI, dist_dir: str | None = None) -> None
 
 
 _mount_dashboard_if_built(app)
+
+
+def _order_routes_so_literals_win(app: FastAPI) -> None:
+    """Keep a literal path from being swallowed by an earlier wildcard.
+
+    Starlette resolves a request against the route table in registration order,
+    so a parameterised route registered before a literal sibling silently wins:
+    ``GET /api/calls/{call_id}`` mounted before ``GET /api/calls/search`` answers
+    the latter with a UUID-validation 422. Batch 06 mounts four new aggregators
+    and must not reintroduce that class of bug. A stable sort by path
+    specificity (fewer ``{param}`` segments first) fixes every such pair while
+    preserving the relative order of equally-specific operations, and pins the
+    SPA ``/{full_path:path}`` catch-all to the very end.
+    """
+    routes = list(app.router.routes)
+
+    def _key(pair):
+        index, route = pair
+        path = getattr(route, "path", "") or ""
+        catchall = ":path}" in path
+        # (catch-all last, then fewer params first, then original index)
+        return (1 if catchall else 0, path.count("{"), index)
+
+    app.router.routes = [route for _, route in sorted(enumerate(routes), key=_key)]
+
+
+_order_routes_so_literals_win(app)

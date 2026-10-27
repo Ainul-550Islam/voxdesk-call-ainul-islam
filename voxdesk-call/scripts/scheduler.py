@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import asyncio
 import signal
+from dataclasses import dataclass
+from typing import Any, Awaitable, Callable
 
 import structlog
 from sqlalchemy import select
@@ -20,6 +22,7 @@ from sqlalchemy import select
 from app.core import observability
 from app.core.config import settings
 from app.core.logging import log  # noqa: F401  (configures structlog)
+from app.core.tick_lock import tick_lock  # BATCH06: one process-safe lock per v2 tick
 from app.db.models import Campaign, Tenant
 from app.db.session import get_sessionmaker
 from app.billing.reconciliation import run_reconciliation_tick
@@ -347,6 +350,161 @@ async def outbox_dispatch_loop() -> None:
         await _sleep(OUTBOX_INTERVAL_SECONDS)
 
 
+# ---------------------------------------------------------------------------
+# Batch 06: the v2 maintenance tick table.
+#
+# Batch 03-05 shipped compliance/contact-center/integrations ``jobs.py`` modules
+# full of periodic passes and handler factories, and none of them was ever
+# called from the worker process. This table is the single place that turns a
+# pass into a *scheduled* pass: each entry names the target inside its jobs
+# module, owns a positive interval and a distinct lock key, and runs under
+# ``app.core.tick_lock.tick_lock`` so two schedulers never execute the same pass
+# at the same time. The whole package honours one settings kill switch so a
+# drained node can be turned off without a deploy.
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class ScheduledTick:
+    """One periodic maintenance pass, guarded by a cross-process lock."""
+
+    name: str
+    target: str
+    interval_seconds: float
+    lock: str
+    run: Callable[[], Awaitable[Any]]
+
+    async def execute(self) -> Any:
+        """Run the body only when the lock is held; otherwise do nothing."""
+        async with tick_lock(self.lock) as acquired:
+            if not acquired:
+                return None
+            return await self.run()
+
+
+#: Contact-center passes take an ``AsyncSession`` as their first argument, so
+#: they are wrapped in a session-owning runner. Each is a distinct recovery
+#: path (a stale device never disabled, a preview lease never released, ...).
+CC2_TICKS: tuple[tuple[str, int], ...] = (
+    ("pacing_tick_guard", 10),
+    ("callback_dispatch_tick", 15),
+    ("preview_reservation_reaper", 30),
+    ("abandon_rollup", 30),
+    ("occupancy_rollup", 30),
+    ("stale_device_reaper", 60),
+)
+
+#: Compliance cycles open their own session and take no required argument. The
+#: interval mirrors the module's own ``*_INTERVAL_SECONDS`` constants.
+COMPLIANCE_TICKS: tuple[tuple[str, str, int], ...] = (
+    ("siem_dispatch_cycle", "siem_dispatch", 30),
+    ("dsar_tick_cycle", "dsar_tick", 300),
+    ("breach_clock_cycle", "breach_clock", 300),
+    ("access_review_cycle", "access_review", 3600),
+    ("break_glass_expiry_cycle", "break_glass_expiry", 300),
+    ("session_logoff_cycle", "session_logoff", 600),
+    ("evidence_daily_cycle", "evidence_daily", 86400),
+)
+
+#: The integrations package owns one composite cycle that opens its own session
+#: and runs token refresh, sync, subscription renewal, writeback retry and
+#: webhook-replay GC in sequence.
+INT2_TICKS: tuple[tuple[str, int], ...] = (
+    ("run_scheduled_integrations_v2_cycle", 60),
+)
+
+
+def _cc2_tick(name: str, interval: int) -> ScheduledTick:
+    """Wrap a session-taking CC2 pass in a zero-argument coroutine."""
+
+    async def run() -> Any:
+        from app.contact_center_v2 import jobs as cc2_jobs
+
+        maker = get_sessionmaker()
+        async with maker() as session:
+            result = await getattr(cc2_jobs, name)(session)
+            await session.commit()
+            return result
+
+    return ScheduledTick(
+        name=f"cc2.{name}",
+        target=name,
+        interval_seconds=float(interval),
+        lock=f"v2:cc2:{name}",
+        run=run,
+    )
+
+
+def _compliance_tick(cycle: str, loop_name: str, interval: int) -> ScheduledTick:
+    """A compliance cycle is already a zero-argument coroutine function."""
+    from app.compliance_v2 import jobs as compliance_jobs
+
+    return ScheduledTick(
+        name=f"compliance.{loop_name}",
+        target=cycle,
+        interval_seconds=float(interval),
+        lock=f"v2:compliance:{loop_name}",
+        run=getattr(compliance_jobs, cycle),
+    )
+
+
+def _int2_tick(cycle: str, interval: int) -> ScheduledTick:
+    from app.integrations_v2 import jobs as int2_jobs
+
+    return ScheduledTick(
+        name=f"int2.{cycle}",
+        target=cycle,
+        interval_seconds=float(interval),
+        lock=f"v2:int2:{cycle}",
+        run=getattr(int2_jobs, cycle),
+    )
+
+
+def scheduled_v2_ticks() -> list[ScheduledTick]:
+    """Build the tick table, honouring each package's settings kill switch."""
+    from app.compliance_v2.settings import get_compliance_v2_settings
+    from app.contact_center_v2.settings import get_cc2_settings
+    from app.integrations_v2.settings import get_int2_settings
+
+    ticks: list[ScheduledTick] = []
+    if get_cc2_settings().maintenance_enabled:
+        ticks.extend(_cc2_tick(name, interval) for name, interval in CC2_TICKS)
+    if get_compliance_v2_settings().scheduler_enabled:
+        ticks.extend(
+            _compliance_tick(cycle, loop_name, interval)
+            for cycle, loop_name, interval in COMPLIANCE_TICKS
+        )
+    if get_int2_settings().scheduler_enabled:
+        ticks.extend(_int2_tick(cycle, interval) for cycle, interval in INT2_TICKS)
+    return ticks
+
+
+async def _run_tick_periodically(tick: ScheduledTick) -> None:
+    """Run one tick on its interval until shutdown, surviving any exception."""
+    while not _stop.is_set():
+        try:
+            await tick.execute()
+            observability.record_job_run(f"v2_{tick.name}", ok=True)
+        except Exception as exc:  # noqa: BLE001 - a poisoned pass must not kill the loop
+            observability.record_job_run(f"v2_{tick.name}", ok=False)
+            logger.error(
+                "scheduler.v2_tick_failed", tick=tick.name, error=str(exc)[:300]
+            )
+        await _sleep(max(1, int(tick.interval_seconds)))
+
+
+async def v2_ticks_loop() -> None:
+    """Gather every registered v2 maintenance tick under its own lock."""
+    ticks = scheduled_v2_ticks()
+    if not ticks:
+        # Every package is disabled; wait on shutdown rather than returning so
+        # main()'s gather keeps a live coroutine for the whole process lifetime.
+        while not _stop.is_set():
+            await _sleep(60)
+        return
+    await asyncio.gather(*(_run_tick_periodically(tick) for tick in ticks))
+
+
 def _start_metrics_server() -> None:
     """Serve /metrics for the scheduler's own Prometheus registry.
 
@@ -386,6 +544,9 @@ async def main() -> None:
         stuck_sweep_loop(),
         # Batch 07: the durable job platform and the outbox admission cycle.
         durable_jobs_loop(), outbox_dispatch_loop(),
+        # Batch 06: the compliance / contact-center / integrations v2 maintenance
+        # ticks, each guarded by its own cross-process lock.
+        v2_ticks_loop(),
     )
     await drain_and_shutdown(
         reason="scheduler_shutdown",

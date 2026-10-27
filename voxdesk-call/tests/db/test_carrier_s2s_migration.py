@@ -199,15 +199,21 @@ def _revisions() -> dict[str, tuple[str, str]]:
     return revisions
 
 
+# BATCH06 objective reason: batches 03-05 extend the single linear chain past
+# 0064, so the invariant is "0064 has exactly one successor and no branch", not
+# "0064 is the terminal head" — the original assertion is now factually stale.
 def test_batch_02_adds_no_head_of_its_own() -> None:
-    """No revision points at ``0064_carrier_s2s``: the head is unchanged."""
-    successors = [
-        name
-        for revision, (name, down) in _revisions().items()
+    """0064 sits correctly on one linear chain between 0063 and 0065."""
+    revisions = _revisions()
+    assert revisions["0064_carrier_s2s"][1] == "0063_live_proof_runs"
+    successors = sorted(
+        revision
+        for revision, (_name, down) in revisions.items()
         if down == "0064_carrier_s2s" and revision != "0064_carrier_s2s"
-    ]
-    assert successors == [], (
-        "a revision follows 0064_carrier_s2s: " + ", ".join(successors)
+    )
+    assert successors == ["0065_compliance_v2"], (
+        "0064_carrier_s2s must have exactly one successor on the linear chain, "
+        "found: " + ", ".join(successors)
     )
 
 

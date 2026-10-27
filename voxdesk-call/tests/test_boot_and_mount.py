@@ -108,7 +108,9 @@ def _live_routes():
 _INHERITED_ENV_ALLOWLIST = ("PATH", "HOME", "LANG", "LC_ALL", "TMPDIR", "SYSTEMROOT")
 
 
-@pytest.mark.timeout(600)
+# A full suite keeps thousands of modules resident, so a fresh child import can
+# be starved for minutes by memory pressure even though it takes ~20s alone.
+@pytest.mark.timeout(1200)
 def test_the_application_imports_in_a_clean_interpreter():
     """`import app.main` must succeed with nothing pre-imported."""
     probe = textwrap.dedent(
@@ -132,7 +134,7 @@ def test_the_application_imports_in_a_clean_interpreter():
         cwd=str(ROOT),
         capture_output=True,
         text=True,
-        timeout=540,
+        timeout=1080,
         env=child_env,
     )
     elapsed = time.monotonic() - started
@@ -235,12 +237,12 @@ def test_no_route_is_registered_twice():
 
 
 def test_residency_guard_is_installed():
-    """Batch 03 shipped the guard; Batch 06 has to install it."""
-    from app.compliance_v2.settings import get_compliance_v2_settings
+    """Batch 03 shipped the guard; Batch 06 has to install it unconditionally.
 
-    if not get_compliance_v2_settings().residency_guard_enabled:
-        pytest.skip("residency guard disabled by configuration for this deployment")
-
+    The guard is a no-op until a placement-bearing request names a region, so
+    installing it in every deployment is safe and is what makes the Batch 03
+    class reachable at all.
+    """
     from app.main import app
 
     installed = {middleware.cls.__name__ for middleware in app.user_middleware}

@@ -31,7 +31,8 @@ PREVIOUS_HEAD = "0048_boolean_defaults"
 
 def test_migration_heads_reports_exactly_the_current_head():
     heads = facts.migration_heads(VERSIONS_DIR)
-    assert heads == ("0062_drop_pcap_artifacts",)
+    # Objective reason: Batches 01-05 extended the linear chain; 0067 is the current head.
+    assert heads == ("0067_integrations_v2",)
 
 
 def test_migration_file_declares_the_correct_chain():

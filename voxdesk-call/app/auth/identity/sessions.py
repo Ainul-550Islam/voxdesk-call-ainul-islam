@@ -38,6 +38,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
+import structlog
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -45,6 +46,31 @@ from app.auth.identity import policies
 from app.auth.identity.models import UserSession
 from app.auth.identity.policies import AuthMethod
 from app.db.models import AuditAction, RefreshToken, User
+
+log = structlog.get_logger(__name__)
+
+
+async def _revoke_cc2_softphone_credentials(
+    session: AsyncSession, *, user_id: uuid.UUID, tenant_id: uuid.UUID | None = None
+) -> None:
+    """Cascade a canonical logout to the user's contact-center-v2 credentials.
+
+    Logout and SCIM deactivation must not leave a live softphone registration
+    and one-time WebSocket ticket behind. The cascade runs in a savepoint so a
+    deployment that has not (yet) created the CC2 tables still completes the
+    logout — the UPDATE is simply a no-op there.
+    """
+    if tenant_id is None:
+        tenant_id = await session.scalar(select(User.tenant_id).where(User.id == user_id))
+    if tenant_id is None:
+        return
+    from app.contact_center_v2.softphone.token_service import revoke_softphone_sessions
+
+    try:
+        async with session.begin_nested():
+            await revoke_softphone_sessions(session, tenant_id=tenant_id, user_id=user_id)
+    except Exception as exc:  # noqa: BLE001 - a missing optional table must not block logout
+        log.warning("cc2.softphone_revoke_skipped", error=type(exc).__name__)
 
 
 def _now() -> datetime:
@@ -365,6 +391,11 @@ async def revoke_session(
         row.revoked_at = now
         row.revoked_reason = reason[:64]
     tokens = await _revoke_tokens_for_session(session, row.id, reason=reason)
+    # BATCH06: canonical logout revokes the user's CC2 softphone credential in
+    # the same transaction, so a signed-out agent cannot keep a live media leg.
+    await _revoke_cc2_softphone_credentials(
+        session, user_id=row.user_id, tenant_id=row.tenant_id
+    )
     if commit:
         await session.commit()
     return tokens
@@ -378,12 +409,19 @@ async def revoke_sessions(
     commit: bool = False,
 ) -> int:
     revoked = 0
+    cascaded: set[tuple[uuid.UUID, uuid.UUID]] = set()
     for row in rows:
         if row.revoked_at is None:
             row.revoked_at = _now()
             row.revoked_reason = reason[:64]
             revoked += 1
         await _revoke_tokens_for_session(session, row.id, reason=reason)
+        pair = (row.tenant_id, row.user_id)
+        if pair not in cascaded:
+            cascaded.add(pair)
+            await _revoke_cc2_softphone_credentials(
+                session, user_id=row.user_id, tenant_id=row.tenant_id
+            )
     if commit:
         await session.commit()
     return revoked
@@ -439,7 +477,15 @@ async def revoke_all_for_user(
             )
         ).scalars().all()
     )
-    return await revoke_sessions(session, rows, reason=reason, commit=commit)
+    result = await revoke_sessions(session, rows, reason=reason, commit=commit)
+    # BATCH06: the SCIM/logout-all path can have no remaining UserSession rows
+    # (everything was already revoked). Its canonical empty-row branch must
+    # still revoke a stranded CC2 softphone credential, so cascade explicitly
+    # by user id here as well (idempotent with revoke_sessions' own cascade).
+    await _revoke_cc2_softphone_credentials(session, user_id=user_id)
+    if commit:
+        await session.commit()
+    return result
 
 
 async def sweep_expired(session: AsyncSession, *, user_id: uuid.UUID) -> int:

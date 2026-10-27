@@ -58,7 +58,6 @@ def test_the_tick_table_is_the_caller_of_every_cc2_pass():
     targets = [tick.target for tick in scheduler.scheduled_v2_ticks()]
     for name in CC2_TICKS:
         assert targets.count(name) == 1, f"{name} registered {targets.count(name)} times"
-    # And the module really exports what the table claims to call.
     from app.contact_center_v2 import jobs as cc2_jobs
 
     for name in CC2_TICKS:
@@ -110,7 +109,6 @@ def test_every_tick_has_a_positive_interval_and_a_callable():
 
 def test_the_lock_helper_actually_excludes_a_second_holder():
     """The lock is not decorative: a competing pass must be refused."""
-
     from app.core.tick_lock import tick_lock
 
     async def scenario() -> tuple[bool, bool]:
@@ -172,19 +170,14 @@ def test_each_v2_tick_is_disabled_by_its_own_settings_flag(monkeypatch):
     from app.compliance_v2.settings import get_compliance_v2_settings
     from app.contact_center_v2.settings import get_cc2_settings
     from app.integrations_v2.settings import get_int2_settings
-    from app.platform_v2.settings import get_plat2_settings
 
     cc2 = get_cc2_settings()
     compliance = get_compliance_v2_settings()
     int2 = get_int2_settings()
-    # Batch 07's platform ticks honour their own kill switch for the same reason
-    # the other packages do: a drained node must be able to switch them off.
-    plat2 = get_plat2_settings()
 
     monkeypatch.setattr(cc2, "maintenance_enabled", False, raising=False)
     monkeypatch.setattr(compliance, "scheduler_enabled", False, raising=False)
     monkeypatch.setattr(int2, "scheduler_enabled", False, raising=False)
-    monkeypatch.setattr(plat2, "scheduler_enabled", False, raising=False)
 
     assert _scheduler().scheduled_v2_ticks() == []
 

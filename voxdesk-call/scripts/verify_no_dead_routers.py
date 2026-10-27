@@ -147,9 +147,97 @@ def module_name_for(path: Path, root: Path = ROOT) -> str:
     return ".".join(relative.parts)
 
 
-def classify_modules(root: Path = ROOT) -> list[ModuleVerdict]:
+def _file_for_module(root: Path, module: str) -> Path | None:
+    """The source file backing ``module`` (``.py`` or package ``__init__.py``)."""
+    rel = Path(*module.split("."))
+    candidate = root / rel.with_suffix(".py")
+    if candidate.is_file():
+        return candidate
+    init = root / rel / "__init__.py"
+    if init.is_file():
+        return init
+    return None
+
+
+def _submodule_imports(tree: ast.Module):
+    """Yield ``(local_name, dotted_module)`` for submodule-style imports.
+
+    A ``from pkg import thing`` where ``pkg.thing`` could itself be a module is a
+    candidate composition edge; the caller verifies the target is a real file.
+    Importing a bare attribute (``from x import router``) yields
+    ``x.router`` which never resolves to a file, so it is filtered out there.
+    """
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.module and not node.level:
+            for alias in node.names:
+                yield (alias.asname or alias.name), f"{node.module}.{alias.name}"
+        elif isinstance(node, ast.Import):
+            for alias in node.names:
+                if "." in alias.name:
+                    yield alias.name.rsplit(".", 1)[-1], alias.name
+
+
+def composed_modules(root: Path, entry_modules) -> set[str]:
+    """Route modules folded into a mounted aggregator via ``include_router``.
+
+    Batch 06 keeps ``app/main.py`` small by mounting one aggregator per v2
+    package; the leaf route modules are composed inside those aggregators rather
+    than imported by the entry point directly. A scanner that read only
+    ``app/main.py`` would call every such leaf an orphan. This walks the
+    ``from pkg import submodule`` edges of each mounted module (transitively) and
+    returns those submodules whose ``<name>.<attr>`` is referenced by the
+    composing module — i.e. whose router is actually included, either directly
+    in ``include_router(...)`` or through an ``AREAS``-style mapping.
+
+    Only *submodule* imports count, so a plain ``from x import router`` (the
+    shape of the legacy allowlisted dead routers) is never mistaken for a live
+    composition edge.
+    """
+    reachable: set[str] = set()
+    queue = list(entry_modules)
+    seen: set[str] = set()
+    while queue:
+        module = queue.pop()
+        if module in seen:
+            continue
+        seen.add(module)
+        path = _file_for_module(root, module)
+        if path is None:
+            continue
+        try:
+            tree = ast.parse(_read(path), filename=str(path))
+        except SyntaxError:
+            continue
+        candidates: dict[str, str] = {}
+        for local, dotted in _submodule_imports(tree):
+            if _file_for_module(root, dotted) is not None:
+                candidates[local] = dotted
+        if not candidates:
+            continue
+        used = {
+            node.value.id
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name)
+        }
+        for local, dotted in candidates.items():
+            if local in used and dotted not in reachable:
+                reachable.add(dotted)
+                queue.append(dotted)
+    # A deliberately-unmounted legacy dead router is never "composed" by a v2
+    # aggregator; exclude the allowlist explicitly so a stray same-named import
+    # cannot reclassify it. The strict-mode backlog test relies on this.
+    return reachable - set(ALLOWLIST)
+
+
+def mounted_modules(root: Path = ROOT) -> set[str]:
+    """Every route module reachable from ``app/main.py`` (direct or composed)."""
     mounted, imported = mounted_names(root / ENTRYPOINT)
-    mounted_modules = {imported[name] for name in mounted if name in imported}
+    direct = {imported[name] for name in mounted if name in imported}
+    return direct | composed_modules(root, direct)
+
+
+def classify_modules(root: Path = ROOT) -> list[ModuleVerdict]:
+    reachable = mounted_modules(root)
     verdicts: list[ModuleVerdict] = []
     for path in sorted((root / ROUTE_PACKAGE).rglob("*.py")):
         if path.name == "__init__.py":
@@ -163,8 +251,8 @@ def classify_modules(root: Path = ROOT) -> list[ModuleVerdict]:
             )
             continue
         builds_router = defines_router(tree)
-        if module in mounted_modules:
-            status, reason = "mounted", "imported and include_router()'d in app/main.py"
+        if module in reachable:
+            status, reason = "mounted", "imported and include_router()'d in app/main.py (directly or via an aggregator)"
         elif not builds_router:
             status, reason = "helper", "module defines no APIRouter; nothing to mount"
         elif module in ALLOWLIST:

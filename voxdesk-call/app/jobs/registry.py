@@ -13,6 +13,13 @@ def bootstrap() -> dict[str, object]:
     from app.telephony import post_call  # noqa: F401 - registers POST_CALL
     from app.deployment import runtime as deployment_runtime  # noqa: F401 - registers deployment handler
     from app.services import simulation_service  # noqa: F401 - registers evaluation handler
+    # BATCH06: contact-center-v2 durable jobs (dialer start/tick, assist turn and
+    # ACD callback) were enqueued by their services but had no execution handler
+    # because this bootstrap never imported their jobs module. Importing it once
+    # registers all four; Python's module cache keeps bootstrap() idempotent, so
+    # ACD_CALLBACK is registered exactly once, never double-registered.
+    from app import contact_center_v2 as _cc2_pkg  # noqa: F401
+    from app.contact_center_v2 import jobs as _cc2_jobs  # noqa: F401 - registers CC2_* + ACD_CALLBACK handlers
     return {name: handler_for(name) for name in registered_job_types() if handler_for(name) is not None}
 
 

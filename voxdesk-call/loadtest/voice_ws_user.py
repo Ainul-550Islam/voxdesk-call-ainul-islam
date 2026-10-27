@@ -19,6 +19,7 @@ Safety contract:
 from __future__ import annotations
 
 import argparse
+import functools
 import asyncio
 import audioop
 import base64
@@ -457,6 +458,100 @@ async def _provider_fake_voice_agent(
     }
 
 
+#: ``media_stream`` imports ``run_voice_agent`` and ``get_sessionmaker`` freshly
+#: on every call. Patching those two module globals per synthetic call is a
+#: last-writer-wins race once several calls run concurrently (the chaos suite
+#: launches four in one ``asyncio.gather``): only the call that installed the
+#: last hook gets a result. Install one stable dispatcher instead and route each
+#: invocation to the hook registered for its own ``call_sid``.
+_HOOK_REGISTRY: dict[str, Any] = {}
+_HARNESS_STATE: dict[str, Any] = {
+    "refs": 0,
+    "orig_voice_agent": None,
+    "orig_sessionmaker": None,
+    "sessionmaker": None,
+}
+#: A shared ``session_factory`` may be backed by a single-connection SQLite
+#: ``StaticPool`` (the chaos suite is). Concurrent sessions on that one DBAPI
+#: connection silently lose inserts and turns, so a call using such a pool is
+#: serialised for its whole lifetime. Real connection pools stay concurrent.
+_SINGLE_CONNECTION_LOCKS: dict[int, asyncio.Lock] = {}
+
+
+def _call_lock() -> asyncio.Lock:
+    loop = asyncio.get_running_loop()
+    return _SINGLE_CONNECTION_LOCKS.setdefault(id(loop), asyncio.Lock())
+
+
+def _uses_single_connection(maker: Any) -> bool:
+    engine = maker.kw.get("bind") if hasattr(maker, "kw") else getattr(maker, "bind", None)
+    return type(getattr(engine, "pool", None)).__name__ == "StaticPool"
+
+
+def _serialise_single_connection(fn):
+    @functools.wraps(fn)
+    async def wrapper(*args, **kwargs):
+        maker = kwargs.get("session_factory")
+        if maker is not None and _uses_single_connection(maker):
+            async with _call_lock():
+                return await fn(*args, **kwargs)
+        return await fn(*args, **kwargs)
+
+    return wrapper
+
+
+def _install_voice_agent_dispatcher() -> None:
+    import app.agent.pipeline as pipeline_mod
+    import app.telephony.twilio_handler as th_mod
+
+    if _HARNESS_STATE["refs"] == 0:
+        _HARNESS_STATE["orig_voice_agent"] = pipeline_mod.run_voice_agent
+        _HARNESS_STATE["orig_sessionmaker"] = th_mod.get_sessionmaker
+
+        async def _dispatch(
+            websocket: Any,
+            stream_sid: str,
+            call_sid: str,
+            session: Any,
+            tenant: Any,
+            call: Any,
+            **kwargs: Any,
+        ) -> None:
+            hook = _HOOK_REGISTRY.get(call_sid)
+            target = hook if hook is not None else _HARNESS_STATE["orig_voice_agent"]
+            await target(
+                websocket=websocket,
+                stream_sid=stream_sid,
+                call_sid=call_sid,
+                session=session,
+                tenant=tenant,
+                call=call,
+                **kwargs,
+            )
+
+        def _dispatch_sessionmaker() -> Any:
+            override = _HARNESS_STATE["sessionmaker"]
+            if override is not None:
+                return override
+            return _HARNESS_STATE["orig_sessionmaker"]()
+
+        pipeline_mod.run_voice_agent = _dispatch
+        th_mod.get_sessionmaker = _dispatch_sessionmaker
+    _HARNESS_STATE["refs"] += 1
+
+
+def _release_voice_agent_dispatcher() -> None:
+    import app.agent.pipeline as pipeline_mod
+    import app.telephony.twilio_handler as th_mod
+
+    _HARNESS_STATE["refs"] -= 1
+    if _HARNESS_STATE["refs"] == 0:
+        pipeline_mod.run_voice_agent = _HARNESS_STATE["orig_voice_agent"]
+        th_mod.get_sessionmaker = _HARNESS_STATE["orig_sessionmaker"]
+        _HARNESS_STATE["sessionmaker"] = None
+
+
+@_serialise_single_connection
 async def run_synthetic_ws_call(
     *,
     host: str = "http://localhost:8000",
@@ -473,7 +568,6 @@ async def run_synthetic_ws_call(
     if safety_err:
         raise RuntimeError(safety_err)
 
-    import app.agent.pipeline as pipeline_mod
     import app.db.models  # noqa: F401
     import app.db.telephony_models  # noqa: F401
     from app.db.models import Call, CallDirection, CallStatus, Tenant
@@ -526,13 +620,9 @@ async def run_synthetic_ws_call(
     rng = random.Random(seed)
     captured_result: dict[str, Any] = {}
 
-    orig_run_voice_agent = pipeline_mod.run_voice_agent
-    orig_sessionmaker = None
+    _install_voice_agent_dispatcher()
     if session_factory is not None:
-        import app.telephony.twilio_handler as th_mod
-
-        orig_sessionmaker = th_mod.get_sessionmaker
-        th_mod.get_sessionmaker = lambda: session_factory
+        _HARNESS_STATE["sessionmaker"] = session_factory
 
     async def _hooked_run_voice_agent(
         websocket: Any,
@@ -557,16 +647,13 @@ async def run_synthetic_ws_call(
         )
         captured_result.update(res)
 
-    pipeline_mod.run_voice_agent = _hooked_run_voice_agent
+    _HOOK_REGISTRY[call_sid] = _hooked_run_voice_agent
     t0 = time.perf_counter()
     try:
         await media_stream(ws)  # type: ignore[arg-type]
     finally:
-        pipeline_mod.run_voice_agent = orig_run_voice_agent
-        if orig_sessionmaker is not None:
-            import app.telephony.twilio_handler as th_mod
-
-            th_mod.get_sessionmaker = orig_sessionmaker
+        _HOOK_REGISTRY.pop(call_sid, None)
+        _release_voice_agent_dispatcher()
 
     wall_ms = round((time.perf_counter() - t0) * 1000.0, 3)
     captured_result["wall_ms"] = wall_ms

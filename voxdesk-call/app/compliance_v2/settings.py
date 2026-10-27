@@ -55,6 +55,12 @@ class ComplianceV2Settings(BaseSettings):
     #: Where signed evidence bundles, DSAR exports and evidence snapshots live.
     evidence_dir: str = Field(default="evidence", alias="COMPLIANCE_EVIDENCE_DIR")
 
+    # ---- scheduler -------------------------------------------------------
+    # BATCH06: kill switch for the compliance maintenance cycles wired into
+    # scripts/scheduler.py. A drained node can switch the whole package's
+    # periodic passes off without touching the API.
+    scheduler_enabled: bool = Field(default=True, alias="COMPLIANCE_V2_SCHEDULER_ENABLED")
+
     # ---- SIEM -----------------------------------------------------------
     siem_enabled: bool = Field(default=True, alias="SIEM_ENABLED")
     #: How many audit rows one dispatch tick may hand to one sink.

@@ -265,6 +265,18 @@ async def _dependency_unavailable_handler(request: Request, exc: Exception) -> J
     )
 
 
+async def _invalid_request_value_handler(request: Request, exc: Exception) -> JSONResponse:
+    """A wrong-typed path/query value or a bad coercion is the caller's fault.
+
+    Starlette path converters and Pydantic scalar coercion raise ``ValueError``
+    (or ``TypeError``/``OverflowError``) for a hostile value. Those are 4xx, not
+    server errors, and they must carry a request id like every other refusal.
+    """
+    rid = request_id_from(request)
+    log.warning("invalid_request_value", request_id=rid, error=type(exc).__name__)
+    return _error_response(422, "invalid_request_value", "Invalid request value", rid)
+
+
 async def _unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     rid = request_id_from(request)
     # Full trace server-side; the client never sees the exception itself in
@@ -277,8 +289,85 @@ async def _unhandled_exception_handler(request: Request, exc: Exception) -> JSON
 # ------------------------------------------------------------------- wiring ---
 
 
+def _unwrap_exception(exc: BaseException) -> BaseException:
+    """Peel an ``ExceptionGroup``/``BaseExceptionGroup`` down to its first leaf.
+
+    ``BaseHTTPMiddleware`` runs the downstream app in an anyio task group, so an
+    exception that no ``ExceptionMiddleware`` handler owns arrives at
+    ``call_next`` wrapped in a group. Dispatching on the group itself would turn
+    a benign ``ValueError`` (a bad path value) into a generic 500 — this is the
+    structural bug the Batch 03 harness reported.
+    """
+    seen: set[int] = set()
+    current = exc
+    while isinstance(current, BaseExceptionGroup) and current.exceptions:
+        if id(current) in seen:
+            break
+        seen.add(id(current))
+        current = current.exceptions[0]
+    return current
+
+
+#: Only exceptions that are *the caller's* fault (or a deliberate, coded
+#: dependency refusal) are translated here. A genuine server fault must stay an
+#: exception: ``ServerErrorMiddleware`` still renders the registered structured
+#: 500 response and re-raises afterwards, which is what
+#: ``TestClient(raise_server_exceptions=True)`` and production error reporting
+#: rely on. Swallowing those at this layer would hide rollbacks and outbox
+#: publication failures from their own tests.
+_TRANSLATABLE_ERRORS = (
+    AppError,
+    StarletteHTTPException,
+    RequestValidationError,
+    OSError,
+    SQLAlchemyError,
+    ValueError,
+    TypeError,
+    OverflowError,
+    ArithmeticError,
+)
+
+
+def _is_translatable(exc: BaseException) -> bool:
+    """True when ``exc`` (and every leaf of an ``ExceptionGroup``) is ours."""
+    if isinstance(exc, BaseExceptionGroup):
+        return bool(exc.exceptions) and all(_is_translatable(leaf) for leaf in exc.exceptions)
+    return isinstance(exc, _TRANSLATABLE_ERRORS)
+
+
+async def _translate_exception(request: Request, exc: Exception) -> Response:
+    """Dispatch an exception that escaped ``call_next`` to the right handler.
+
+    Every branch returns a fully-formed :class:`Response`, so a translatable
+    exception becomes a documented, request-id-carrying 4xx (validation /
+    bad-value / http) or coded 503 instead of a bare framework error with no
+    correlation id.
+    """
+    if isinstance(exc, AppError):
+        return await _app_error_handler(request, exc)
+    if isinstance(exc, StarletteHTTPException):
+        return await _http_exception_handler(request, exc)
+    if isinstance(exc, RequestValidationError):
+        return await _validation_handler(request, exc)
+    if isinstance(exc, (OSError, SQLAlchemyError)):
+        return await _dependency_unavailable_handler(request, exc)
+    if isinstance(exc, (ValueError, TypeError, OverflowError, ArithmeticError)):
+        return await _invalid_request_value_handler(request, exc)
+    return await _unhandled_exception_handler(request, exc)
+
+
 def add_request_id_middleware(app: FastAPI) -> None:
-    """Attach the request-id middleware to ``app``."""
+    """Attach the request-id middleware to ``app``.
+
+    The middleware is the outermost error boundary that still owns a request
+    object: it sits outside Starlette's ``ExceptionMiddleware`` (via
+    ``call_next``) and therefore sees exceptions that were *not* claimed by a
+    registered handler — including the ``ExceptionGroup`` wrappers anyio adds at
+    the task-group boundary. Caller-caused failures are unwrapped and translated
+    here into a JSON response with the correlation id rather than a bare 500;
+    genuine server faults are re-raised so ``ServerErrorMiddleware`` still
+    renders its structured 500 and production error reporting sees the failure.
+    """
 
     @app.middleware("http")
     async def _request_id_middleware(request: Request, call_next):
@@ -287,6 +376,19 @@ def add_request_id_middleware(app: FastAPI) -> None:
         structlog.contextvars.bind_contextvars(request_id=rid)
         try:
             response = await call_next(request)
+            if REQUEST_ID_HEADER not in response.headers:
+                response.headers[REQUEST_ID_HEADER] = rid
+            return response
+        except Exception as raw:  # noqa: BLE001 - narrow translation of caller errors
+            leaf = _unwrap_exception(raw)
+            if not isinstance(leaf, Exception) or not _is_translatable(raw):
+                # Cancellation/control-flow signals and genuine server faults
+                # must stay exceptions. The outer ServerErrorMiddleware renders
+                # the registered structured-500 handler (also with this request
+                # id) and re-raises, so TestClient and error reporting still see
+                # the original failure instead of a silently successful 200/500.
+                raise raw from None
+            response = await _translate_exception(request, leaf)
             if REQUEST_ID_HEADER not in response.headers:
                 response.headers[REQUEST_ID_HEADER] = rid
             return response

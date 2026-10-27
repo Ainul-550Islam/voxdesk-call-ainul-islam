@@ -1,6 +1,6 @@
 """Carrier + telephony-v2 HTTP surface, composed once.
 
-Mounted by ``app/main.py`` as ``carrier_router``.
+Mounted by ``app/main.py`` as ``carrier_router`` (Batch 06).
 
 What this composes
 ------------------
@@ -17,25 +17,17 @@ What this deliberately does **not** compose
 :mod:`app.telephony.web_transport` (``POST /telephony/web/offer`` and
 ``/telephony/web/ws``) is already included by
 :mod:`app.api.web_call_live_routes`, which ``app/main.py`` mounts. Including it
-again here would register both paths twice: the first copy would win at
-runtime, and ``contracts/openapi.json`` would gain duplicate operation ids,
-which is a hard failure for every generated client.
-
-Why an aggregator at all
-------------------------
-``app/main.py`` should mount a batch with one line per surface, not one line per
-module, and ``scripts/verify_no_dead_routers.py`` reads these explicit
-``include_router`` edges from source (it never imports the app) to prove every
-carrier route module is reachable.
+again here would register both paths twice: the first copy would win at runtime,
+and ``contracts/openapi.json`` would gain duplicate operation ids, which is a
+hard failure for every generated client.
 
 Public paths
 ------------
-``/telephony/vonage/answer``, ``/telephony/vonage/events`` and
-``/telephony/web/offer`` are reachable without a session because the carrier or
-the browser page is the caller. Each verifies its own credential — the Vonage
-JWT/HMAC signature on the raw body, or the short-lived media token this product
-minted itself — before the body is trusted, and all three are on the reviewed
-public allowlist in ``security_harness/authz_matrix.PUBLIC_ROUTES``.
+``/telephony/vonage/answer`` and ``/telephony/vonage/events`` are reachable
+without a session because the carrier is the caller. Each verifies its own
+credential — the Vonage JWT/HMAC signature on the raw body — before the body is
+trusted, and both are on the reviewed public allowlist in
+``security_harness/authz_matrix.PUBLIC_ROUTES``.
 """
 
 from __future__ import annotations

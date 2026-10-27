@@ -50,6 +50,11 @@ class IntegrationsV2Settings(BaseSettings):
 
     model_config = SettingsConfigDict(extra="ignore", populate_by_name=True)
 
+    # BATCH06: kill switch for the integrations-v2 maintenance cycle wired into
+    # scripts/scheduler.py. A drained node can switch the whole package's
+    # periodic passes off without touching the API.
+    scheduler_enabled: bool = Field(default=True, validation_alias="INT2_SCHEDULER_ENABLED")
+
     # Zendesk
     zendesk_enabled: bool = Field(default=False, validation_alias="ZENDESK_ENABLED")
     zendesk_client_id: str = Field(default="", validation_alias="ZENDESK_CLIENT_ID")

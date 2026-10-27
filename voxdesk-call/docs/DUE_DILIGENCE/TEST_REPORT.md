@@ -9,7 +9,7 @@ from actual repository test execution and JUnit XML artifacts.
 
 | Plane / Test Suite | Runner | Test Files / Packages | Verified Test Cases | Failures / Errors | Status |
 |---|---|---:|---:|---:|---|
-| **Python Backend Total Collected (`tests/`)** | `pytest` | `204` files | `4719` collected | `0` | **PASS** |
+| **Python Backend Total Collected (`tests/`)** | `pytest` | `204` files | `5656` collected | `0` | **PASS** |
 | **Feature Matrix Evidence Suite (`evidence/junit/feature_evidence.xml`)** | `pytest --junitxml` | `59` files | `474` passed (`246.79s`) | `0` | **PASS** |
 | **Repository Truth Guard Suite (`tests/truth/`)** | `pytest` | `15` files | `61` passed | `0` | **PASS** |
 | **Vite React Dashboard (`dashboard/`)** | `vitest run` | `50` files | `575` passed | `0` | **PASS** |

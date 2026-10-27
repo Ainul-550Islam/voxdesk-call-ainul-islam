@@ -1,9 +1,9 @@
 """One aggregator for the whole Batch 04 contact-center-v2 HTTP surface.
 
-``app/main.py`` mounts this single router. The per-area modules keep their own
-prefixes, permissions and tests; this file exists so the entry point stays one
-line per surface and so a new CC2 area has exactly one obvious place to be
-registered.
+``app/main.py`` mounts this single router (Batch 06). The per-area modules keep
+their own prefixes, permissions and tests; this file exists so the entry point
+stays one line per surface and so a new CC2 area has exactly one obvious place
+to be registered.
 
 Composed surfaces
 -----------------

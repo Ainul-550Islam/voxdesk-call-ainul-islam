@@ -363,10 +363,13 @@ async def _handle_telnyx_ws_session(websocket: WebSocket, call_id: str) -> None:
             await _close_with_error(websocket, "UNSUPPORTED_CAPABILITY", exc.message)
             return
 
-        # Answer a still-ringing call through Call Control v2. A failure here is
-        # real and is surfaced: the pipeline is not started for a call the
-        # carrier did not answer.
-        if call.status in {CallStatus.RINGING, CallStatus.QUEUED} and call_control_id:
+        # Answer a call that has not started media through Call Control v2. A
+        # failure here is real and is surfaced: the pipeline is not started for
+        # a call the carrier did not answer. RINGING is the pre-answer webhook
+        # state; IN_PROGRESS is what this handler persists when it creates the
+        # Call row before the media socket opens. (BATCH06: the old set named a
+        # non-existent CallStatus.QUEUED, which raised AttributeError here.)
+        if call.status in {CallStatus.RINGING, CallStatus.IN_PROGRESS} and call_control_id:
             try:
                 await adapter.answer(call_control_id)
             except TelephonyError as exc:

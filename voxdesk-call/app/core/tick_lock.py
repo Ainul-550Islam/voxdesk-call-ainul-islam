@@ -1,4 +1,4 @@
-"""One process-safe lock per periodic tick.
+"""One process-safe lock per periodic tick (Batch 06).
 
 The scheduler runs as a separate process and is deployed more than once: a
 restart overlap, two replicas, or a blue/green switch all mean two schedulers

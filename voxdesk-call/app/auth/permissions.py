@@ -162,6 +162,19 @@ class Permission(str, enum.Enum):
     COMPLIANCE_BREAK_GLASS_REQUEST = "compliance_break_glass:request"
     COMPLIANCE_BREAK_GLASS_APPROVE = "compliance_break_glass:approve"
 
+    # BATCH04:contact_center_v2_permissions
+    # Contact-center v2 (Batch 04) capabilities, named in the same
+    # ``resource:action`` vocabulary as everything above. The route modules for
+    # the dialer, softphone, agent-assist, ACD, agent-state and supervisor
+    # surfaces ask for these through ``require_permission``; the role bundles
+    # live in ``app.auth.rbac`` so there stays exactly one authorization policy.
+    ASSIST_READ = "assist:read"
+    ASSIST_WRITE = "assist:write"
+    DIALER_READ = "dialer:read"
+    DIALER_WRITE = "dialer:write"
+    DIALER_OPERATE = "dialer:operate"
+    SOFTPHONE_USE = "softphone:use"
+
 
 # Convenience bundles used when composing roles. Kept here so `rbac.py` reads
 # as a policy document rather than a wall of enum members.

@@ -10,7 +10,7 @@ import jwt
 from jwt import ExpiredSignatureError, InvalidTokenError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.ws.monitor_ws import _signing_secret
+from app.core.realtime_signing import signing_secret as _signing_secret
 from app.db.models import User, UserRole
 
 REALTIME_TOKEN_SCOPE = "cc2.realtime"

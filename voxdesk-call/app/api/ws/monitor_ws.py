@@ -25,8 +25,8 @@ from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from jwt import ExpiredSignatureError, InvalidTokenError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import settings
 from app.core.logging import log
+from app.core.realtime_signing import signing_secret
 from app.db.enterprise_models import LiveCallSession
 from app.db.models import Call, CallStatus
 from app.db.session import get_session
@@ -57,17 +57,9 @@ class MonitorTokenExpiredError(MonitorTokenError):
 
 
 def _signing_secret() -> str:
-    import hashlib
-
-    for attr in ("media_stream_signing_secret", "jwt_secret_key", "secret_key"):
-        val = (getattr(settings, attr, None) or "").strip()
-        if val:
-            if len(val.encode("utf-8")) < 32:
-                return hashlib.sha256(val.encode("utf-8")).hexdigest()
-            return val
-    if getattr(settings, "environment", "development").lower() == "production":
-        raise RuntimeError("Monitoring WebSocket signing secret is not configured")
-    return "dev-voxdesk-monitor-ws-signing-secret-do-not-use-in-prod"
+    # Shared with app.contact_center_v2.realtime.websocket; keeping the single
+    # derivation outside this package avoids a circular package import.
+    return signing_secret()
 
 
 def issue_monitor_ws_token(

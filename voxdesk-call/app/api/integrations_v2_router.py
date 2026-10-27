@@ -1,8 +1,8 @@
 """One aggregator for the whole Batch 05 integrations-v2 HTTP surface.
 
-``app/main.py`` mounts this single router. Two very different kinds of endpoint
-live behind it, and they are composed in one place so the public/private split is
-visible in a single file:
+``app/main.py`` mounts this single router (Batch 06). Two very different kinds of
+endpoint live behind it, and they are composed in one place so the public/private
+split is visible in a single file:
 
 **Authenticated product APIs** (per-tenant, permissioned per handler):
 

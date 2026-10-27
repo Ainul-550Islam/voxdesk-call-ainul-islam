@@ -42,6 +42,10 @@ _AGENT: frozenset[Permission] = (
         Permission.QUEUE_READ,
         Permission.AGENT_STATE_READ,
         Permission.AGENT_STATE_WRITE,
+        # BATCH04:contact_center_v2_roles — an agent uses the softphone and
+        # reads agent-assist suggestions/compliance scripts in their own queue.
+        Permission.ASSIST_READ,
+        Permission.SOFTPHONE_USE,
     }
 )
 
@@ -63,6 +67,15 @@ _MANAGER: frozenset[Permission] = _VIEWER | OPERATIONAL_WRITE | {
     Permission.VOICE_PROFILE_READ,
     Permission.VOICE_CLONE_READ,
     Permission.GOVERNANCE_READ,
+    # BATCH04:contact_center_v2_roles — a manager/supervisor owns the dialer
+    # policy lifecycle, curates agent-assist compliance scripts and may use the
+    # softphone. Admin inherits this whole bundle (see ``_ADMIN`` below).
+    Permission.ASSIST_READ,
+    Permission.ASSIST_WRITE,
+    Permission.DIALER_READ,
+    Permission.DIALER_WRITE,
+    Permission.DIALER_OPERATE,
+    Permission.SOFTPHONE_USE,
 }
 
 _ADMIN: frozenset[Permission] = _MANAGER | TEAM_MANAGEMENT | {

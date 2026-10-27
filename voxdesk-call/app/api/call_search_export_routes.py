@@ -546,7 +546,24 @@ async def get_call_replay(
             .all()
         )
 
-    if include_transcript and turns:
+    # BATCH06: minimum-necessary on the replay surface. The guard is a no-op
+    # with HIPAA mode off; in HIPAA mode a role that may not see PHI "text"
+    # (e.g. a viewer) gets a null transcript and timeline rows with the text
+    # field removed, while still seeing that the turns happened.
+    from app.compliance_v2.hipaa import minimum_necessary
+    from app.compliance_v2.hipaa.phi_tagging import load_policy
+
+    policy = await load_policy(session, ctx.tenant_id)
+    replay_allowed = (
+        minimum_necessary.allowlist_for(
+            ctx.role, minimum_necessary.SURFACE_REPLAY, policy=policy
+        )
+        if policy.hipaa_mode
+        else None
+    )
+    text_visible = replay_allowed is None or "text" in replay_allowed
+
+    if include_transcript and turns and text_visible:
         transcript = "\n".join(
             f"{turn.speaker.value if hasattr(turn.speaker, 'value') else turn.speaker}: {turn.text}"
             for turn in turns
@@ -588,6 +605,23 @@ async def get_call_replay(
         except Exception:
             __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
             timeline = []
+
+    # BATCH06: strip PHI "text" from transcript_turn timeline rows for a role
+    # the tenant's minimum-necessary policy does not allow to see it. The event,
+    # speaker and timestamp survive so the timeline stays truthful.
+    if policy.hipaa_mode and timeline:
+        timeline = [
+            minimum_necessary.filter_record(
+                event,
+                table="turns",
+                role=ctx.role,
+                surface=minimum_necessary.SURFACE_REPLAY,
+                policy=policy,
+            ).record
+            if event.get("event") == "transcript_turn"
+            else event
+            for event in timeline
+        ]
 
     # No recording access token is minted by this read endpoint. The canonical
     # recording-management API owns authorized access; inventing a token here

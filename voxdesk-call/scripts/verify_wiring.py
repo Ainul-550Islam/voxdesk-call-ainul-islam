@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Static wiring proof for the whole application surface.
+"""Static wiring proof for the whole application surface (Batch 06).
 
-Four independent questions, answered from real source and a real boot:
+Five independent questions, answered from real source and a real boot:
 
 1. **Does the app boot?** ``app.main`` is imported in this process. A
    ``Permission``/``JobType``/model that does not exist fails here, at the same
@@ -23,6 +23,7 @@ Four independent questions, answered from real source and a real boot:
    ``app/compliance_v2/jobs.py``, ``app/contact_center_v2/jobs.py`` and
    ``app/integrations_v2/jobs.py`` — no misses, no duplicates — and every
    registered tick must carry a lock key.
+5. **Is every persisted v2 job type backed by exactly one registered handler?**
 
 Output is JSON on stdout so CI can attach it; the process exits 1 when any
 question is unanswered. ``--no-boot`` skips the import (used by the guard's own
@@ -32,9 +33,13 @@ from __future__ import annotations
 
 import argparse
 import ast
+import contextlib
+import inspect
+import io
 import json
 import os
 import sys
+from importlib import import_module
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -74,7 +79,10 @@ def _python_files(base: Path):
 # ---------------------------------------------------------------------------
 def check_boot() -> dict:
     try:
-        import app.main as main_module
+        # Importing app.main emits startup diagnostics to stdout; suppress them
+        # so this script's stdout stays pure JSON for CI consumers.
+        with contextlib.redirect_stdout(io.StringIO()):
+            import app.main as main_module
     except Exception as exc:  # noqa: BLE001 - the failure is the finding
         return {
             "ok": False,
@@ -83,8 +91,9 @@ def check_boot() -> dict:
     app = main_module.app
     from fastapi.routing import APIRoute, APIWebSocketRoute
 
-    api_routes = [route for route in app.routes if isinstance(route, APIRoute)]
-    sockets = [route for route in app.routes if isinstance(route, APIWebSocketRoute)]
+    with contextlib.redirect_stdout(io.StringIO()):
+        api_routes = [route for route in app.routes if isinstance(route, APIRoute)]
+        sockets = [route for route in app.routes if isinstance(route, APIWebSocketRoute)]
     return {
         "ok": True,
         "api_routes": len(api_routes),
@@ -124,13 +133,14 @@ def check_mounts() -> dict:
     orphans = [item["module"] for item in scan(ROOT) if item["kind"] == "orphan_route_module"]
 
     try:
-        import app.main as main_module
+        with contextlib.redirect_stdout(io.StringIO()):
+            import app.main as main_module
 
-        served: dict[str, int] = {}
-        for route in main_module.app.routes:
-            module = str(getattr(getattr(route, "endpoint", None), "__module__", "") or "")
-            if module:
-                served[module] = served.get(module, 0) + 1
+            served: dict[str, int] = {}
+            for route in main_module.app.routes:
+                module = str(getattr(getattr(route, "endpoint", None), "__module__", "") or "")
+                if module:
+                    served[module] = served.get(module, 0) + 1
     except Exception:  # noqa: BLE001 - check_boot already reported it
         served = {}
 
@@ -236,9 +246,6 @@ def check_enums() -> dict:
                 enum_name = node.value.id
                 if enum_name not in classes:
                     continue
-                # Dunder attributes (``__members__``, ``__name__``, ``__doc__``) belong
-                # to the class object, not to its member set, and are never declared in
-                # the body. Checking them would flag the interpreter's own API.
                 if node.attr.startswith("__") and node.attr.endswith("__"):
                     continue
                 checked += 1
@@ -262,15 +269,7 @@ def check_enums() -> dict:
 # 4. scheduler
 # ---------------------------------------------------------------------------
 def _tick_exports(module_name: str) -> set[str]:
-    """Tick-shaped callables a v2 jobs module publishes.
-
-    A "tick" is a module-level coroutine function that takes no *required*
-    argument — the scheduler owns the session, the clock and the lock, and a
-    pass that needed a caller-supplied argument could not be scheduled.
-    """
-    from importlib import import_module
-    import inspect
-
+    """Tick-shaped callables a v2 jobs module publishes (no required args)."""
     module = import_module(module_name)
     exported = getattr(module, "__all__", None)
     names = exported if exported is not None else [name for name in dir(module) if not name.startswith("_")]
@@ -295,6 +294,18 @@ def _tick_exports(module_name: str) -> set[str]:
     return ticks
 
 
+def _cc2_expected() -> set[str]:
+    """The CC2 tick names the scheduler is required to run (session-taking)."""
+    return {
+        "pacing_tick_guard",
+        "callback_dispatch_tick",
+        "preview_reservation_reaper",
+        "abandon_rollup",
+        "occupancy_rollup",
+        "stale_device_reaper",
+    }
+
+
 def check_scheduler() -> dict:
     import scripts.scheduler as scheduler
 
@@ -305,9 +316,6 @@ def check_scheduler() -> dict:
     duplicate_locks = sorted({lock for lock in locks if locks.count(lock) > 1})
     unlocked = sorted(tick.name for tick in ticks if not tick.lock.strip())
 
-    # `target` names the pass inside its jobs module; comparing it (rather than
-    # the wrapper's `__name__`) is what lets a tick be wrapped in a transaction
-    # helper without the proof losing sight of what it wraps.
     cc2_ticks = set(_cc2_expected())
     wired_cc2 = {tick.target for tick in ticks} & cc2_ticks
     compliance_ticks = _tick_exports("app.compliance_v2.jobs")
@@ -316,7 +324,7 @@ def check_scheduler() -> dict:
     wired_int2 = {tick.target for tick in ticks} & int2_ticks
 
     expected = {
-        "app.contact_center_v2.jobs": set(_cc2_expected()),
+        "app.contact_center_v2.jobs": cc2_ticks,
         "app.compliance_v2.jobs": compliance_ticks,
         "app.integrations_v2.jobs": int2_ticks,
     }
@@ -349,31 +357,13 @@ def check_scheduler() -> dict:
     }
 
 
-def _cc2_expected() -> set[str]:
-    """The CC2 tick names the scheduler is required to run.
-
-    List, not discovery: these functions take a session, so they are not
-    "tick-shaped" by the signature rule above. Each one is a distinct
-    maintenance pass with its own lock, and dropping one silently stops a
-    recovery path (an abandoned attempt never reconciled, a stale device never
-    disabled), so they are named explicitly here as well as in the scheduler.
-    """
-    return {
-        "pacing_tick_guard",
-        "callback_dispatch_tick",
-        "preview_reservation_reaper",
-        "abandon_rollup",
-        "occupancy_rollup",
-        "stale_device_reaper",
-    }
-
-
 def check_job_handlers() -> dict:
     """Every persisted v2 job type has exactly one registered handler."""
     from app.jobs.registry import bootstrap
     from app.jobs.types import handler_for
 
-    registered = bootstrap()
+    with contextlib.redirect_stdout(io.StringIO()):
+        registered = bootstrap()
     required = [
         "cc2.dialer.start",
         "cc2.dialer.tick",

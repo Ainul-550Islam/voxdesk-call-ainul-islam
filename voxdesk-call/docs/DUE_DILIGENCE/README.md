@@ -1,17 +1,17 @@
 # VoxDesk — Technical Due-Diligence Evidence Index
 
 This directory (`docs/DUE_DILIGENCE/`) and the generated archive
-`dist/due-diligence-2026-10-10.zip` provide a self-contained, cryptographically checksummed
+`dist/due-diligence-2026-10-27.zip` provide a self-contained, cryptographically checksummed
 evidence package for technical due-diligence reviewers.
 
 ---
 
 ## 1. Repository & Runtime Snapshot (`scripts/repo_stats.py`)
 
-- **Source Files (`app/`, `services/`, `dashboard/`, `dashboard-next/`, `sdk/`, `tests/`, `scripts/`, `alembic/`)**: `1679`
-- **Physical Source Lines**: `322,507`
-- **Registered FastAPI Routes (`app.main:app`)**: `1182` (`969` OpenAPI paths / `1,166` HTTP operations)
-- **Collected Pytest Nodes**: `4,719`
+- **Source Files (`app/`, `services/`, `dashboard/`, `dashboard-next/`, `sdk/`, `tests/`, `scripts/`, `alembic/`)**: `1989`
+- **Physical Source Lines**: `389,283`
+- **Registered FastAPI Routes (`app.main:app`)**: `1412` (`969` OpenAPI paths / `1,166` HTTP operations)
+- **Collected Pytest Nodes**: `5,656`
 - **Alembic Migration Head**: `0062_drop_pcap_artifacts` (`239` tables)
 - **Fake-Success Allowlist (`scripts/fake_success_allowlist.txt`)**: `0` bytes (`0` entries)
 
@@ -35,7 +35,7 @@ evidence package for technical due-diligence reviewers.
 | **Capacity Model & Load Test** | [`docs/CAPACITY_MODEL.md`](../CAPACITY_MODEL.md), `evidence/loadtest/` | Single-worker concurrency ramp (`10 -> 60` calls), CPU/RSS/FD telemetry, and cost-per-minute model. |
 | **Disaster Recovery Drill** | [`docs/DR_RUNBOOK.md`](../DR_RUNBOOK.md), `evidence/dr/dr_drill_report.json` | Automated PostgreSQL dump/drop/restore/audit-chain verification (`RPO = 0.35s`, `RTO = 2.23s`). |
 | **Demo Script & Recordings** | [`docs/DEMO/SCRIPT.md`](../DEMO/SCRIPT.md), `evidence/demo/` | 10-minute walkthrough script and 8 captured execution traces + WAV audio artifacts (`manifest.json`). |
-| **CycloneDX SBOMs** | `sbom/*.cdx.json` | CycloneDX 1.5 SBOMs for Python (`44`), Node (`24`), Go (`24`), and Rust (`159`). |
+| **CycloneDX SBOMs** | `sbom/*.cdx.json` | CycloneDX 1.5 SBOMs for Python (`45`), Node (`24`), Go (`24`), and Rust (`159`). |
 | **Third-Party Licenses** | [`THIRD_PARTY_LICENSES.md`](../../THIRD_PARTY_LICENSES.md) | Dependency license table + CC0 synthesized ambient WAV provenance. |
 | **Governance & Security** | [`LICENSE`](../../LICENSE), [`NOTICE`](../../NOTICE), [`SECURITY.md`](../../SECURITY.md), [`CHANGELOG.md`](../../CHANGELOG.md) | Commercial license templates, attribution, vulnerability policy, and release history. |
 
