@@ -1,0 +1,251 @@
+"""The ORM metadata and the migration history must describe the same schema.
+
+Batch 02-05 added four model modules (carrier/S2S, compliance v2, contact-center
+v2, integrations v2) and never imported them from ``alembic/env.py``.
+Autogenerate compares the *registered* metadata against the live schema, so the
+next revision generated in such a checkout would have proposed dropping every one
+of those tables. These tests pin the properties that keep that from happening
+silently:
+
+* one head and a linear history — no branch a deploy can ignore;
+* every module that declares a table is imported by ``alembic/env.py``;
+* every table the 0063-0067 migrations create resolves to a mapped class, and
+  every table those model modules map is created by one of them.
+
+When a PostgreSQL URL is available (``VOXDESK_TEST_POSTGRES_URL``) the real
+``alembic check`` — the repository's own env.py, its own ``include_object``
+filter — runs against it. Without a database the structural checks still run, so
+this file is useful on a laptop and strict in CI.
+"""
+
+from __future__ import annotations
+
+import ast
+import os
+import subprocess
+import sys
+from functools import lru_cache
+from pathlib import Path
+
+import pytest
+
+ROOT = Path(__file__).resolve().parents[1]
+ALEMBIC_DIR = ROOT / "alembic"
+V2_REVISIONS = (
+    "0063_live_proof_runs",
+    "0064_carrier_s2s",
+    "0065_compliance_v2",
+    "0066_contact_center_v2",
+    "0067_integrations_v2",
+    # Batch 07: workforce, white-label and mobile push.
+    "0068_platform_v2",
+)
+V2_MODEL_MODULES = frozenset(
+    {
+        "app.db.carrier_s2s_models",
+        "app.db.compliance_v2_models",
+        "app.db.contact_center_v2_models",
+        "app.db.integrations_v2_models",
+        # Batch 07 models. Adding them here is what makes the two checks below
+        # cover the platform tables instead of skipping them silently.
+        "app.db.platform_v2_models",
+    }
+)
+
+
+def _script_directory():
+    from alembic.config import Config
+    from alembic.script import ScriptDirectory
+
+    config = Config(str(ROOT / "alembic.ini"))
+    config.set_main_option("script_location", str(ALEMBIC_DIR))
+    return ScriptDirectory.from_config(config)
+
+
+@lru_cache(maxsize=1)
+def _env_imports() -> frozenset[str]:
+    """Every module ``alembic/env.py`` imports, read statically.
+
+    Static on purpose: importing the real ``alembic/env.py`` *runs the
+    migrations*, which is not something a metadata test may do.
+    """
+    tree = ast.parse((ALEMBIC_DIR / "env.py").read_text(encoding="utf-8"))
+    modules: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.module:
+            modules.add(node.module)
+        elif isinstance(node, ast.Import):
+            for alias in node.names:
+                modules.add(alias.name)
+    return frozenset(modules)
+
+
+@lru_cache(maxsize=1)
+def _modules_declaring_tables() -> dict[str, frozenset[str]]:
+    """Module dotted path -> the table names its mapped classes declare."""
+    declared: dict[str, frozenset[str]] = {}
+    for path in sorted((ROOT / "app").rglob("*.py")):
+        if "__pycache__" in path.parts:
+            continue
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8", errors="replace"))
+        except SyntaxError:
+            continue
+        tables: set[str] = set()
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.ClassDef):
+                continue
+            for statement in node.body:
+                targets = (
+                    statement.targets if isinstance(statement, ast.Assign) else []
+                )
+                if (
+                    any(
+                        isinstance(target, ast.Name) and target.id == "__tablename__"
+                        for target in targets
+                    )
+                    and isinstance(statement.value, ast.Constant)
+                    and isinstance(statement.value.value, str)
+                ):
+                    tables.add(statement.value.value)
+        if tables:
+            declared[".".join(path.relative_to(ROOT).with_suffix("").parts)] = frozenset(tables)
+    return declared
+
+
+def _string_arg(call: ast.Call, index: int) -> str | None:
+    if len(call.args) <= index:
+        return None
+    argument = call.args[index]
+    if isinstance(argument, ast.Constant) and isinstance(argument.value, str):
+        return argument.value
+    return None
+
+
+def _migration_created_tables() -> frozenset[str]:
+    """Table names the 0063-0067 revisions create.
+
+    Two shapes exist in this repository: a direct ``op.create_table("name", ...)``
+    and the idempotent wrapper ``_create(bind, "name", [...])`` that 0065 uses so
+    the revision is safe to re-run. Both are read, because a checker that only
+    understood the first shape would have declared the whole compliance schema
+    unmigrated.
+    """
+    tables: set[str] = set()
+    for revision in V2_REVISIONS:
+        path = ALEMBIC_DIR / "versions" / f"{revision}.py"
+        assert path.is_file(), path
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            func = node.func
+            if isinstance(func, ast.Attribute) and func.attr == "create_table":
+                name = _string_arg(node, 0)
+            elif isinstance(func, ast.Name) and func.id.startswith("_create"):
+                name = _string_arg(node, 1)
+            else:
+                continue
+            if name:
+                tables.add(name)
+    return frozenset(tables)
+
+
+def _registered_tables() -> frozenset[str]:
+    """The tables the *alembic import set* registers on ``Base.metadata``."""
+    from app.db.models import Base
+
+    for module in sorted(_env_imports()):
+        if not module.startswith("app."):
+            continue
+        __import__(module)
+    return frozenset(Base.metadata.tables)
+
+
+def test_there_is_exactly_one_head():
+    heads = _script_directory().get_heads()
+    # Batch 07 moved the head to 0068; the assertion stays exact on purpose, so a
+    # second head introduced by a bad merge still fails this test.
+    assert heads == ["0068_platform_v2"], heads
+
+
+def test_the_history_is_a_single_linear_chain():
+    script = _script_directory()
+    for revision in script.walk_revisions():
+        assert not isinstance(revision.down_revision, tuple), (
+            f"{revision.revision} merges two branches"
+        )
+    expected = {
+        "0063_live_proof_runs": "0062_drop_pcap_artifacts",
+        "0064_carrier_s2s": "0063_live_proof_runs",
+        "0065_compliance_v2": "0064_carrier_s2s",
+        "0066_contact_center_v2": "0065_compliance_v2",
+        "0067_integrations_v2": "0066_contact_center_v2",
+        "0068_platform_v2": "0067_integrations_v2",
+    }
+    for revision_id, parent in expected.items():
+        assert script.get_revision(revision_id).down_revision == parent, revision_id
+
+
+def test_env_py_imports_every_module_that_declares_a_table():
+    """An unimported model module is invisible to autogenerate."""
+    imported = _env_imports()
+    missing = sorted(
+        module
+        for module, _tables in _modules_declaring_tables().items()
+        if not any(
+            module == candidate
+            or module.startswith(f"{candidate}.")
+            or candidate.startswith(f"{module}.")
+            for candidate in imported
+        )
+    )
+    assert missing == [], f"alembic/env.py never imports: {missing}"
+
+
+def test_every_v2_migration_table_is_registered():
+    registered = _registered_tables()
+    missing = sorted(table for table in _migration_created_tables() if table not in registered)
+    assert missing == [], f"migrations create tables no mapped class registers: {missing}"
+
+
+def test_every_v2_model_table_has_a_migration():
+    declared: set[str] = set()
+    for module in V2_MODEL_MODULES:
+        declared |= set(_modules_declaring_tables().get(module, frozenset()))
+    assert declared, "the v2 model modules declare no tables"
+
+    registered = _registered_tables()
+    created = _migration_created_tables()
+    missing = sorted(table for table in declared if table in registered and table not in created)
+    assert missing == [], f"v2 model tables with no migration: {missing}"
+
+
+def test_the_v2_migrations_are_the_ones_this_checkout_ships():
+    """Guard against a rename that would make the checks above vacuous."""
+    versions = sorted(path.stem for path in (ALEMBIC_DIR / "versions").glob("006*.py"))
+    assert [name for name in versions if name >= "0063"] == list(V2_REVISIONS), versions
+
+
+def test_autogenerate_reports_no_difference_against_a_real_database():
+    """The real check, when a migrated PostgreSQL database is available.
+
+    ``VOXDESK_TEST_POSTGRES_URL`` must name a database that already holds the
+    migrated schema (``DATABASE_URL=$VOXDESK_TEST_POSTGRES_URL alembic upgrade
+    head``). ``alembic check`` runs the repository's own ``env.py`` — including
+    its ``include_object`` filter — so the comparison is the same one a
+    maintainer runs by hand.
+    """
+    url = os.environ.get("VOXDESK_TEST_POSTGRES_URL", "")
+    if not url:
+        pytest.skip("VOXDESK_TEST_POSTGRES_URL is not configured for this run")
+
+    completed = subprocess.run(
+        [sys.executable, "-m", "alembic", "check"],
+        cwd=str(ROOT),
+        capture_output=True,
+        text=True,
+        timeout=300,
+        env={**os.environ, "DATABASE_URL": url},
+    )
+    assert completed.returncode == 0, completed.stdout + completed.stderr

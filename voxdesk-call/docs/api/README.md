@@ -5,9 +5,9 @@ Generated deterministically by `scripts/build_api_docs.sh` from `app.main:app.op
 ## Summary Metrics
 
 - **OpenAPI Version**: `3.1.0`
-- **Total Unique Paths**: `974`
-- **Total HTTP Operations**: `1172`
-- **Total Tag Groups**: `123`
+- **Total Unique Paths**: `1164`
+- **Total HTTP Operations**: `1391`
+- **Total Tag Groups**: `149`
 - **Machine-Readable Schema**: [`openapi.json`](openapi.json) (mirrored at [`../../contracts/openapi.json`](../../contracts/openapi.json))
 - **Static HTML Reference (Redoc / Scalar + Offline Explorer)**: [`index.html`](index.html)
 
@@ -15,16 +15,17 @@ Generated deterministically by `scripts/build_api_docs.sh` from `app.main:app.op
 
 | HTTP Method | Operation Count |
 |---|---:|
-| `DELETE` | 54 |
-| `GET` | 501 |
-| `PATCH` | 55 |
-| `POST` | 548 |
-| `PUT` | 14 |
+| `DELETE` | 61 |
+| `GET` | 597 |
+| `PATCH` | 58 |
+| `POST` | 649 |
+| `PUT` | 26 |
 
 ## Tag Inventory
 
 | Tag | Operations | Sample Endpoints |
 |---|---:|---|
+| `Carrier Media` | 4 | `GET /api/v1/carriers/capabilities`, `POST /api/v1/carriers/{carrier}/test-connection`, `GET /api/v1/s2s/sessions` (+1 more) |
 | `Telephony Runtime` | 18 | `GET /api/v1/telephony/calls`, `POST /api/v1/telephony/calls/outbound`, `GET /api/v1/telephony/calls/{call_id}` (+15 more) |
 | `Telephony Webhooks` | 4 | `POST /api/v1/telephony/webhooks/{provider}/dtmf`, `POST /api/v1/telephony/webhooks/{provider}/inbound`, `POST /api/v1/telephony/webhooks/{provider}/recording` (+1 more) |
 | `ab-testing` | 56 | `GET /api/ab-testing/experiments`, `GET /api/ab-testing/experiments`, `POST /api/ab-testing/experiments` (+53 more) |
@@ -34,6 +35,7 @@ Generated deterministically by `scripts/build_api_docs.sh` from `app.main:app.op
 | `agent-lifecycle` | 7 | `POST /api/v1/agents/import`, `GET /api/v1/agents/lifecycle/health`, `DELETE /api/v1/agents/{agent_id}` (+4 more) |
 | `agent-state` | 5 | `POST /api/agent-state/accept`, `POST /api/agent-state/complete`, `POST /api/agent-state/heartbeat` (+2 more) |
 | `agent-test` | 4 | `GET /api/v1/agent-tests/{session_id}`, `POST /api/v1/agent-tests/{session_id}/events`, `GET /api/v1/agent-tests/{session_id}/health` (+1 more) |
+| `agent-tools-v2` | 7 | `GET /api/v1/agent-tools/enablements`, `PUT /api/v1/agent-tools/enablements`, `POST /api/v1/agent-tools/tools/{tool_name}/dry-run` (+4 more) |
 | `agent-versions` | 3 | `GET /api/agents/{agent_id}/environments`, `POST /api/agents/{agent_id}/promote`, `GET /api/agents/{agent_id}/versions/diff` |
 | `agents` | 10 | `GET /api/agents`, `POST /api/agents`, `GET /api/agents/{agent_id}` (+7 more) |
 | `ai-evals` | 5 | `GET /api/tenants/{tenant_id}/ai/evals/datasets`, `POST /api/tenants/{tenant_id}/ai/evals/datasets`, `POST /api/tenants/{tenant_id}/ai/evals/runs` (+2 more) |
@@ -58,12 +60,32 @@ Generated deterministically by `scripts/build_api_docs.sh` from `app.main:app.op
 | `calls-search-export` | 26 | `POST /api/calls/consent/check`, `GET /api/calls/dnc`, `POST /api/calls/dnc` (+23 more) |
 | `campaigns` | 14 | `GET /api/campaigns`, `POST /api/campaigns`, `GET /api/campaigns/{campaign_id}` (+11 more) |
 | `channels` | 2 | `POST /channels/message`, `POST /channels/status` |
+| `collab-v2` | 13 | `POST /api/v1/collab/alerts/send`, `GET /api/v1/collab/channels`, `POST /api/v1/collab/meetings` (+10 more) |
 | `compliance` | 17 | `POST /api/compliance/checks`, `GET /api/compliance/findings`, `GET /api/compliance/findings/{finding_id}` (+14 more) |
 | `compliance-templates` | 3 | `GET /api/compliance/industry-templates`, `POST /api/compliance/industry-templates/frameworks/{framework_id}/activate`, `POST /api/compliance/industry-templates/{template_key}/frameworks` |
+| `compliance-v2` | 76 | `GET /api/tenants/{tenant_id}/compliance/access-reviews/campaigns`, `POST /api/tenants/{tenant_id}/compliance/access-reviews/campaigns`, `GET /api/tenants/{tenant_id}/compliance/access-reviews/campaigns/{campaign_id}` (+73 more) |
+| `compliance-v2-access-review` | 6 | `GET /api/tenants/{tenant_id}/compliance/access-reviews/campaigns`, `POST /api/tenants/{tenant_id}/compliance/access-reviews/campaigns`, `GET /api/tenants/{tenant_id}/compliance/access-reviews/campaigns/{campaign_id}` (+3 more) |
+| `compliance-v2-audit` | 8 | `GET /api/tenants/{tenant_id}/compliance/audit/exports`, `POST /api/tenants/{tenant_id}/compliance/audit/exports`, `GET /api/tenants/{tenant_id}/compliance/audit/exports/{export_id}` (+5 more) |
+| `compliance-v2-dsar` | 11 | `GET /api/tenants/{tenant_id}/compliance/dsar/registry`, `GET /api/tenants/{tenant_id}/compliance/dsar/requests`, `POST /api/tenants/{tenant_id}/compliance/dsar/requests` (+8 more) |
+| `compliance-v2-evidence` | 6 | `GET /api/tenants/{tenant_id}/compliance/evidence/controls`, `GET /api/tenants/{tenant_id}/compliance/evidence/latest`, `POST /api/tenants/{tenant_id}/compliance/evidence/runs` (+3 more) |
+| `compliance-v2-hipaa` | 10 | `GET /api/tenants/{tenant_id}/compliance/hipaa/break-glass`, `POST /api/tenants/{tenant_id}/compliance/hipaa/break-glass`, `POST /api/tenants/{tenant_id}/compliance/hipaa/break-glass/expire` (+7 more) |
+| `compliance-v2-incidents` | 8 | `GET /api/tenants/{tenant_id}/compliance/incidents`, `POST /api/tenants/{tenant_id}/compliance/incidents`, `GET /api/tenants/{tenant_id}/compliance/incidents/clocks/due` (+5 more) |
+| `compliance-v2-kms` | 6 | `GET /api/tenants/{tenant_id}/compliance/kms/health`, `GET /api/tenants/{tenant_id}/compliance/kms/jobs`, `GET /api/tenants/{tenant_id}/compliance/kms/jobs/{job_id}` (+3 more) |
+| `compliance-v2-residency` | 7 | `GET /api/tenants/{tenant_id}/compliance/residency/check`, `POST /api/tenants/{tenant_id}/compliance/residency/check-key`, `GET /api/tenants/{tenant_id}/compliance/residency/pin` (+4 more) |
+| `compliance-v2-security` | 3 | `GET /api/tenants/{tenant_id}/compliance/security/harness/allowlist`, `GET /api/tenants/{tenant_id}/compliance/security/harness/corpus`, `POST /api/tenants/{tenant_id}/compliance/security/harness/run` |
+| `compliance-v2-siem` | 10 | `GET /api/tenants/{tenant_id}/compliance/siem/dead-letters`, `POST /api/tenants/{tenant_id}/compliance/siem/dead-letters/{dead_letter_id}/redrive`, `POST /api/tenants/{tenant_id}/compliance/siem/dispatch` (+7 more) |
 | `conductor` | 20 | `GET /api/v1/conductor/context`, `GET /api/v1/conductor/proposals`, `POST /api/v1/conductor/proposals` (+17 more) |
 | `conductor-reviews` | 4 | `POST /api/v1/conductor/reviews/proposals/{proposal_id}/accept-safe`, `POST /api/v1/conductor/reviews/proposals/{proposal_id}/changes/{change_id}/accept`, `GET /api/v1/conductor/reviews/proposals/{proposal_id}/grouped-changes` (+1 more) |
 | `conductor-webhooks` | 1 | `POST /api/v1/conductor/webhooks/events` |
 | `connectors` | 9 | `GET /api/connectors`, `POST /api/connectors`, `GET /api/connectors/providers` (+6 more) |
+| `contact-center-v2-acd` | 15 | `PUT /api/cc2/acd/agents/{user_id}/skills`, `GET /api/cc2/acd/callbacks`, `POST /api/cc2/acd/callbacks` (+12 more) |
+| `contact-center-v2-agent-states` | 7 | `GET /api/cc2/agent-states/intervals`, `GET /api/cc2/agent-states/me`, `POST /api/cc2/agent-states/me` (+4 more) |
+| `contact-center-v2-assist` | 12 | `GET /api/cc2/assist/calls/{call_id}/adherence`, `GET /api/cc2/assist/calls/{call_id}/alerts`, `POST /api/cc2/assist/calls/{call_id}/start` (+9 more) |
+| `contact-center-v2-assist-realtime` | 1 | `GET /api/cc2/assist/calls/{call_id}/stream-ticket` |
+| `contact-center-v2-dialer` | 17 | `POST /api/cc2/dialer/policies`, `GET /api/cc2/dialer/policies/{policy_id}`, `PATCH /api/cc2/dialer/policies/{policy_id}` (+14 more) |
+| `contact-center-v2-softphone` | 19 | `GET /api/cc2/softphone/calls`, `POST /api/cc2/softphone/calls`, `GET /api/cc2/softphone/calls/{call_id}` (+16 more) |
+| `contact-center-v2-supervisor` | 2 | `GET /api/cc2/supervisor/occupancy`, `GET /api/cc2/supervisor/wallboard` |
+| `contact-center-v2-supervisor-realtime` | 1 | `GET /api/cc2/supervisor/stream-ticket` |
 | `conversation-intelligence` | 11 | `GET /api/conversations/{call_id}/coaching`, `GET /api/conversations/{call_id}/compliance`, `GET /api/conversations/{call_id}/evidence` (+8 more) |
 | `crm-writeback` | 14 | `POST /api/crm/backfill`, `POST /api/crm/calls/{call_id}/disposition`, `POST /api/crm/calls/{call_id}/fields` (+11 more) |
 | `deployment` | 13 | `GET /api/deployment/revisions/{revision_id}`, `POST /api/deployment/revisions/{revision_id}/approve`, `POST /api/deployment/revisions/{revision_id}/deploy` (+10 more) |
@@ -80,10 +102,13 @@ Generated deterministically by `scripts/build_api_docs.sh` from `app.main:app.op
 | `gdpr` | 3 | `POST /api/gdpr/erasure`, `GET /api/gdpr/export`, `GET /api/gdpr/status` |
 | `governance` | 16 | `POST /api/governance/evaluate`, `GET /api/governance/policies`, `POST /api/governance/policies` (+13 more) |
 | `health` | 3 | `GET /health`, `GET /health/dependencies`, `GET /health/ready` |
+| `helpdesk-v2` | 7 | `POST /api/v1/helpdesk/calls/log`, `GET /api/v1/helpdesk/requesters/lookup`, `POST /api/v1/helpdesk/tickets` (+4 more) |
 | `identity` | 78 | `GET /api/api-keys`, `POST /api/api-keys`, `GET /api/api-keys/scopes` (+75 more) |
 | `inbox` | 17 | `GET /api/inbox/counts`, `GET /api/inbox/threads`, `POST /api/inbox/threads` (+14 more) |
 | `insight` | 2 | `POST /api/insight/analyze`, `GET /api/insight/{execution_id}` |
 | `integrations` | 10 | `GET /api/integrations/crm`, `GET /api/integrations/crm/`, `POST /api/integrations/crm/inbound/{provider}/{token}` (+7 more) |
+| `integrations-v2` | 31 | `GET /api/v1/integrations/catalog`, `GET /api/v1/integrations/connections`, `POST /api/v1/integrations/connections/mapping/preview` (+28 more) |
+| `integrations-v2-webhooks` | 4 | `POST /webhooks/int2/slack/{connection_id}/commands`, `POST /webhooks/int2/slack/{connection_id}/interactions`, `GET /webhooks/int2/{provider}/{connection_id}` (+1 more) |
 | `jobs` | 9 | `GET /api/jobs`, `GET /api/jobs/dlq`, `GET /api/jobs/metrics` (+6 more) |
 | `knowledge` | 9 | `GET /api/knowledge/documents`, `POST /api/knowledge/documents`, `GET /api/knowledge/documents/{document_id}` (+6 more) |
 | `knowledge-base-collections` | 12 | `GET /api/kb/collections`, `POST /api/kb/collections`, `GET /api/kb/collections/{collection_id}` (+9 more) |
@@ -143,6 +168,7 @@ Generated deterministically by `scripts/build_api_docs.sh` from `app.main:app.op
 | `transfer-control` | 26 | `GET /api/calls/transfers/analytics/summary`, `POST /api/calls/transfers/bulk`, `DELETE /api/calls/transfers/cache` (+23 more) |
 | `translation-agent` | 2 | `POST /api/translation/jobs`, `GET /api/translation/jobs/{execution_id}` |
 | `voice-catalog` | 3 | `GET /api/voices/catalog`, `POST /api/voices/clone`, `GET /api/voices/providers` |
+| `vonage-voice` | 3 | `GET /telephony/vonage/answer`, `POST /telephony/vonage/answer`, `POST /telephony/vonage/events` |
 | `web-call-transport` | 1 | `POST /telephony/web/offer` |
 | `web-calls-live` | 6 | `POST /api/public/web-calls`, `POST /api/web-calls`, `GET /api/web-calls/{call_id}` (+3 more) |
 | `webhooks-lifecycle` | 33 | `GET /api/webhooks`, `POST /api/webhooks`, `POST /api/webhooks/bulk/delete` (+30 more) |

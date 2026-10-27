@@ -1,0 +1,163 @@
+{{- /*
+Batch 07 CronJobs: workforce management, white-label and mobile.
+
+The scheduler Deployment already runs these passes as in-process ticks
+(`scripts/scheduler.py` -> `_platform_v2_ticks()`), and each tick takes a Redis
+lock (`platform_v2:<name>`), so running both is safe: the lock decides, not the
+deployment topology. These CronJobs exist for installations that run the API
+without the scheduler process.
+
+The intervals mirror `app/platform_v2/jobs.py` exactly, because two different
+definitions of "how often the rota rollup runs" is how a runbook stops being
+true. `tests/platform_v2/test_helm_cronjobs.py` asserts the schedules in this
+template match the constants in the module.
+
+concurrencyPolicy: Forbid on every job — two rollups over the same hour fight
+over the same interval rows, and two solver runs would write two competing
+schedule versions. Cluster-wide, the Redis lock is the second line of defence.
+
+Everything has a default, so the chart renders with no `platform:` block.
+*/ -}}
+{{- $platform := .Values.platform | default dict -}}
+{{- /* `default` treats false as empty, so a boolean an operator turns OFF has to
+       be read with `dig`; `$platform.enabled | default true` made the whole block
+       impossible to disable from a values file. */ -}}
+{{- $enabled := dig "enabled" true $platform -}}
+{{- $artifactsDir := $platform.solverArtifactsDir | default "/var/lib/voxdesk/solver" -}}
+{{- $jobs := $platform.jobs | default (list
+      (dict "name" "wfm-rollup" "module" "scripts.platform_jobs" "args" (list "wfm_rollup") "schedule" "5 * * * *" "enabled" true)
+      (dict "name" "wfm-forecast" "module" "scripts.platform_jobs" "args" (list "wfm_forecast") "schedule" "15 3 * * *" "enabled" true)
+      (dict "name" "wfm-forecast-score" "module" "scripts.platform_jobs" "args" (list "wfm_forecast_score") "schedule" "40 */6 * * *" "enabled" true)
+      (dict "name" "wfm-adherence" "module" "scripts.platform_jobs" "args" (list "wfm_adherence") "schedule" "20 * * * *" "enabled" true)
+      (dict "name" "wl-domain-reverify" "module" "scripts.platform_jobs" "args" (list "wl_domain_reverify") "schedule" "*/30 * * * *" "enabled" true)
+      (dict "name" "wl-cert-refresh" "module" "scripts.platform_jobs" "args" (list "wl_cert_refresh") "schedule" "*/15 * * * *" "enabled" true)
+      (dict "name" "wl-sender-domain" "module" "scripts.platform_jobs" "args" (list "wl_sender_domain") "schedule" "25 */6 * * *" "enabled" true)
+      (dict "name" "mobile-push-retry" "module" "scripts.platform_jobs" "args" (list "mobile_push_retry") "schedule" "*/5 * * * *" "enabled" true)
+      (dict "name" "mobile-token-gc" "module" "scripts.platform_jobs" "args" (list "mobile_token_gc") "schedule" "0 4 * * *" "enabled" true)) -}}
+{{- if $enabled }}
+{{- $fullname := include "voxdesk.fullname" . -}}
+{{- $image := printf "%s:%s" (required "image.repository is required" .Values.image.repository) (required "image.tag is required" .Values.image.tag) -}}
+{{- $secret := required "secrets.existingSecret is required" .Values.secrets.existingSecret -}}
+{{- range $job := $jobs }}
+{{- if (dig "enabled" true $job) }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ $fullname }}-{{ $job.name }}
+  labels:
+    {{- include "voxdesk.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: platform-jobs
+spec:
+  schedule: {{ $job.schedule | quote }}
+  timeZone: {{ $platform.timezone | default "Etc/UTC" | quote }}
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  suspend: {{ dig "suspend" false $job }}
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: {{ $job.activeDeadlineSeconds | default 3600 }}
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: {{ include "voxdesk.name" $ }}-platform-jobs
+            app.kubernetes.io/instance: {{ $.Release.Name }}
+            app.kubernetes.io/component: platform-jobs
+          annotations:
+            sidecar.istio.io/inject: "false"
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: {{ $job.name }}
+              image: {{ $image | quote }}
+              command: ["python", "-m", {{ $job.module | default "scripts.platform_jobs" | quote }}]
+              {{- if $job.args }}
+              args:
+                {{- range $arg := $job.args }}
+                - {{ $arg | quote }}
+                {{- end }}
+              {{- end }}
+              env:
+                - name: APP_ENV
+                  value: {{ $.Values.config.appEnv | quote }}
+                - name: DATABASE_URL
+                  value: {{ required "config.databaseUrl is required" $.Values.config.databaseUrl | quote }}
+                - name: REDIS_URL
+                  value: {{ required "config.redisUrl is required" $.Values.config.redisUrl | quote }}
+                # The passes below all read PLAT2_* settings; the defaults here
+                # mirror app/platform_v2/settings.py so a deployment that sets
+                # nothing behaves exactly like the code's defaults.
+                # `tests/platform_v2/test_helm_cronjobs.py` compares this block
+                # against the settings model, so the two cannot drift apart — the
+                # only intentional difference is BRANDING_ASSET_DIR, which points
+                # at the mounted volume rather than the code's relative default.
+                - name: PLAT2_SCHEDULER_ENABLED
+                  value: {{ dig "schedulerEnabled" true $platform | quote }}
+                - name: WFM_INTERVAL_MINUTES
+                  value: {{ $platform.wfmIntervalMinutes | default 15 | quote }}
+                - name: WFM_TIMEZONE
+                  value: {{ $platform.wfmTimezone | default "UTC" | quote }}
+                - name: WFM_SOLVER_TIMEOUT_SECONDS
+                  value: {{ $platform.solverTimeoutSeconds | default 30 | quote }}
+                - name: WFM_SOLVER_SEED
+                  value: {{ $platform.solverSeed | default 20260707 | quote }}
+                - name: PUBLIC_BASE_URL
+                  value: {{ $platform.publicBaseUrl | default (printf "https://%s" (required "domain name is required for widget CSP" ($platform.domain | default "localhost")) ) | quote }}
+                - name: CUSTOM_DOMAIN_CNAME_TARGET
+                  value: {{ $platform.customDomainCnameTarget | default "edge.voxdesk.app" | quote }}
+                - name: TLS_ASK_ENABLED
+                  value: {{ dig "tlsAskEnabled" true $platform | quote }}
+                - name: BRANDING_ASSET_DIR
+                  value: {{ $platform.brandingAssetDir | default "/var/lib/voxdesk/brand-assets" | quote }}
+                - name: FCM_ENABLED
+                  value: {{ $platform.fcmEnabled | default false | quote }}
+                - name: APNS_ENABLED
+                  value: {{ $platform.apnsEnabled | default false | quote }}
+                - name: PUSH_TOKEN_GC_DAYS
+                  value: {{ $platform.pushTokenGcDays | default 30 | quote }}
+                - name: MOBILE_AUTH_PER_MINUTE
+                  value: {{ $platform.mobileAuthPerMinute | default 30 | quote }}
+              envFrom:
+                - secretRef:
+                    name: {{ $secret }}
+              resources:
+                {{- toYaml ($job.resources | default $platform.resources | default (dict
+                      "requests" (dict "cpu" "250m" "memory" "512Mi")
+                      "limits" (dict "cpu" "2" "memory" "2Gi"))) | nindent 16 }}
+              volumeMounts:
+                # The CP-SAT solver writes an artefacts file per solve; a real
+                # volume is what lets an operator inspect a bad plan afterwards.
+                - name: solver-artifacts
+                  mountPath: {{ $artifactsDir | quote }}
+                - name: brand-assets
+                  mountPath: {{ $platform.brandingAssetDir | default "/var/lib/voxdesk/brand-assets" | quote }}
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+          volumes:
+            - name: solver-artifacts
+              {{- if $platform.solverArtifactsPersistentVolumeClaim }}
+              persistentVolumeClaim:
+                claimName: {{ $platform.solverArtifactsPersistentVolumeClaim }}
+              {{- else }}
+              emptyDir: {}
+              {{- end }}
+            - name: brand-assets
+              {{- if $platform.brandAssetsPersistentVolumeClaim }}
+              persistentVolumeClaim:
+                claimName: {{ $platform.brandAssetsPersistentVolumeClaim }}
+              {{- else }}
+              emptyDir: {}
+              {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

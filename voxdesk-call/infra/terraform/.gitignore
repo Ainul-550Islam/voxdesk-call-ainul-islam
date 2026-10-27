@@ -1,0 +1,15 @@
+# Terraform working state never belongs in a repository.
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfplan
+plan.tfplan
+crash.log
+override.tf
+override.tf.json
+
+# Filled in per environment; the .example files are the contract.
+terraform.tfvars
+terraform.tfvars.json
+backend.hcl

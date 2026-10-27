@@ -1,0 +1,39 @@
+# Global options for the white-label edge — Batch 07.
+#
+# `on_demand_tls` is a global directive: it cannot live inside a site block, and a
+# file that contains a global block cannot be imported *into* another global
+# block. So the edge Caddyfile imports this file inside its `{}` and
+# `tenant-domains.caddy` at the top level:
+#
+#     {
+#         admin off
+#         import /etc/caddy/edge-global.caddy
+#     }
+#
+#     import /etc/caddy/tenant-domains.caddy
+#
+# Without an `ask` endpoint, on-demand TLS lets anyone who points a DNS record at
+# this edge make it request certificates until Let's Encrypt rate-limits the whole
+# account. The hook below is therefore required, not optional.
+
+# Hostname on-demand certificates are requested for, answered by the API.
+on_demand_tls {
+	# `{query}` is the SNI hostname Caddy is being asked about. The API answers
+	# 200 `{"allow": true}` only for an `active` verified domain and 403 for
+	# everything else — including an unknown host, which must never fall back to
+	# a default tenant.
+	ask http://api:8000/api/platform/tls/ask?domain={query}
+}
+
+# Ask calls stay inside the compose/k8s network: a second hop out to the public
+# internet for a decision that never leaves the cluster would make certificate
+# issuance depend on our own public edge.
+servers {
+	trusted_proxies static private_ranges
+}
+
+# Storage for issued certificates must be shared by every edge replica. Two
+# replicas with two volumes will solve the same ACME challenge twice.
+storage file_system {
+	root /var/lib/caddy/certificates
+}

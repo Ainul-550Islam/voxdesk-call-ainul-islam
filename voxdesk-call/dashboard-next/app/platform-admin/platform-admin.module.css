@@ -1,0 +1,400 @@
+/* Platform admin console — self-contained styles.
+   Inline-critical rules only: no @import, no external fonts, so the console renders
+   correctly in a sandboxed preview and behind a tenant's own CSP. */
+
+.shell {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  min-height: 100vh;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: #f7f8fa;
+  color: #12151a;
+}
+
+.sidebar {
+  background: #12151a;
+  color: #e8eaed;
+  padding: 20px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+}
+
+.brand small {
+  display: block;
+  font-weight: 400;
+  font-size: 11px;
+  color: #9aa3af;
+  margin-top: 2px;
+}
+
+.navList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.navLink {
+  display: block;
+  padding: 7px 10px;
+  border-radius: 6px;
+  color: #cfd4db;
+  text-decoration: none;
+  font-size: 13px;
+}
+
+.navLink:hover {
+  background: #1e242c;
+  color: #ffffff;
+}
+
+.navLinkActive {
+  background: #2a3340;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.main {
+  padding: 24px 28px 48px;
+  max-width: 1180px;
+}
+
+.pageTitle {
+  font-size: 20px;
+  margin: 0 0 4px;
+}
+
+.pageLead {
+  margin: 0 0 20px;
+  color: #4a5462;
+  font-size: 13px;
+  max-width: 78ch;
+  line-height: 1.5;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.panel {
+  background: #ffffff;
+  border: 1px solid #e3e6eb;
+  border-radius: 10px;
+  padding: 16px 18px;
+  margin-bottom: 18px;
+}
+
+.panelHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.panelTitle {
+  font-size: 14px;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #3c4552;
+}
+
+.panelSubtitle {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #5c6672;
+  max-width: 70ch;
+  line-height: 1.45;
+}
+
+.panelActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.metric {
+  background: #ffffff;
+  border: 1px solid #e3e6eb;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.metricLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #5c6672;
+}
+
+.metricValue {
+  font-size: 20px;
+  font-weight: 650;
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.metricHint {
+  font-size: 11px;
+  color: #6b7480;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.pill {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.pill_ok {
+  background: #e6f5ec;
+  color: #14532d;
+  border-color: #bfe5cd;
+}
+
+.pill_warn {
+  background: #fdf3e2;
+  color: #7a4b04;
+  border-color: #f0d6a6;
+}
+
+.pill_bad {
+  background: #fdeaea;
+  color: #8a1c1c;
+  border-color: #f3c3c3;
+}
+
+.pill_info {
+  background: #e8f0fd;
+  color: #1b3f7a;
+  border-color: #c3d6f6;
+}
+
+.pill_neutral {
+  background: #eef0f3;
+  color: #444c57;
+  border-color: #dadee4;
+}
+
+.callout {
+  margin: 10px 0 0;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  border-left: 3px solid #9aa3af;
+  background: #f4f6f8;
+  color: #3c4552;
+}
+
+.callout_info {
+  border-left-color: #3b6fd4;
+  background: #eef3fc;
+}
+
+.callout_warn {
+  border-left-color: #b97a09;
+  background: #fdf6e8;
+}
+
+.callout_bad {
+  border-left-color: #b02a2a;
+  background: #fceded;
+}
+
+.callout_ok {
+  border-left-color: #1f7a45;
+  background: #eaf6ef;
+}
+
+.callout_neutral {
+  border-left-color: #9aa3af;
+}
+
+.state {
+  font-size: 13px;
+  color: #4a5462;
+  margin: 8px 0;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.table th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #5c6672;
+  border-bottom: 1px solid #e3e6eb;
+  padding: 6px 8px;
+  font-weight: 600;
+}
+
+.table td {
+  padding: 7px 8px;
+  border-bottom: 1px solid #eef0f3;
+  vertical-align: top;
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+.numeric {
+  font-variant-numeric: tabular-nums;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11.5px;
+  word-break: break-all;
+}
+
+.button {
+  font: inherit;
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 7px;
+  border: 1px solid #c7ccd4;
+  background: #ffffff;
+  color: #1c2229;
+  cursor: pointer;
+}
+
+.button:hover {
+  background: #f2f4f7;
+}
+
+.buttonPrimary {
+  background: #1f4fa8;
+  border-color: #1f4fa8;
+  color: #ffffff;
+}
+
+.buttonPrimary:hover {
+  background: #1a4390;
+}
+
+.button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.bars {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.barRow {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr) 84px;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.barTrack {
+  background: #eef0f3;
+  border-radius: 4px;
+  height: 10px;
+  overflow: hidden;
+}
+
+.barFill {
+  background: #2f6fd0;
+  height: 100%;
+  border-radius: 4px;
+}
+
+.barZero {
+  background: #d7dbe1;
+  height: 100%;
+  border-radius: 4px;
+}
+
+.inlineForm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-end;
+  margin-bottom: 12px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11px;
+  color: #5c6672;
+}
+
+.field input,
+.field select {
+  font: inherit;
+  font-size: 12.5px;
+  padding: 6px 8px;
+  border: 1px solid #c7ccd4;
+  border-radius: 6px;
+  color: #12151a;
+  background: #ffffff;
+  min-width: 140px;
+}
+
+.checklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12.5px;
+}
+
+.checklist li {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.split {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 820px) {
+  .shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sidebar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+}

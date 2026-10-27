@@ -1,0 +1,7 @@
+# Copy to terraform.tfvars and fill in. redis_auth_token comes from
+# TF_VAR_redis_auth_token in CI, never from a file in the repository.
+region             = "ap-south-1"
+domain_name        = "staging.voxdesk.example.com"
+hosted_zone_name   = "voxdesk.example.com"
+assets_bucket_name = "voxdesk-staging-brand-assets"
+alarm_email_endpoints = ["platform@example.com"]

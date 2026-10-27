@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- The SDK talks to the tenant's API over HTTPS only. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!--
+        POST_NOTIFICATIONS is a runtime permission on API 33+. It is declared here so
+        the host app can request it, but the SDK never requests permissions on its own
+        initiative: a permission dialog without context gets denied, and a denied
+        notification permission looks like a broken SDK rather than a declined prompt.
+    -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+</manifest>

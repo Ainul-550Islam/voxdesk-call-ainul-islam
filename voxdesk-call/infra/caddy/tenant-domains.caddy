@@ -1,0 +1,80 @@
+# Batch 07 — white-label tenant domains at the edge.
+#
+# This file is the *site* half of the tenant-domain edge; the global directives
+# it depends on (the `on_demand_tls` ask hook and `servers.trusted_proxies`) live
+# in `edge-global.caddy`, because a global block cannot be imported into another
+# global block. The edge Caddyfile looks like:
+#
+#     {
+#         admin off
+#         import /etc/caddy/edge-global.caddy
+#     }
+#
+#     import /etc/caddy/tenant-domains.caddy
+#
+# The API answers the ask call with 200 `{"allow": true}` only when the hostname
+# is a row in `wl_custom_domains` whose status is `active` for a tenant whose plan
+# allows custom domains. Everything else — pending_dns, verifying, issuing_cert,
+# failed, disabled, and above all an unknown host — gets 403 and no certificate is
+# ever requested. `app/platform_v2/whitelabel/tls.py::AskDecision` is that
+# decision. There is no default tenant: an unknown Host is not routed anywhere.
+#
+# Ask calls are authenticated with `X-Voxdesk-Ask-Token` (TLS_ASK_TOKEN), so the
+# endpoint cannot be used to enumerate which hostnames exist: without the header
+# the API returns 403 before it looks at the domain at all. The edge must send it
+# (`header_up X-Voxdesk-Ask-Token {$TLS_ASK_TOKEN}` in the real deployment).
+#
+# Certificate storage must be shared between edge replicas; two replicas with two
+# separate storage volumes will solve the same challenge twice and fight over the
+# issued certificate.
+
+# Tenant sites. `*.{$TENANT_DOMAIN_SUFFIX}` only covers customers on our own
+# subdomain; real white-label customers point their *own* hostname at the edge,
+# which no static site block can enumerate. That is exactly what on-demand TLS is
+# for: the empty-host site below catches any Host that no other site matched, and
+# the `ask` hook decides whether it is allowed to have a certificate. A Host that
+# the API refuses never gets past the TLS handshake.
+{$TENANT_DOMAIN_SUFFIX:voxdesk.example.com}, :443 {
+	tls {
+		on_demand
+	}
+
+	encode zstd gzip
+
+	# Same headers as the primary site. A tenant domain must not be a weaker
+	# origin than ours — it serves the same application.
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		# The widget is meant to be framed; the admin UI is not. The application
+		# sets the per-response policy (whitelabel/templates.py::csp) with a
+		# nonce, so the edge only supplies the conservative default.
+		-Server
+	}
+
+	request_body {
+		max_size 25MB
+	}
+
+	# The TLS ask endpoint is answered by the API directly and must never be
+	# reachable from the internet through a tenant host.
+	@tls_ask path /api/platform/tls/*
+	respond @tls_ask "not found" 404
+
+	# Widget script and embed: served by the API, cached briefly at the edge.
+	# The nonce in the path is the widget's public cache key, so a 60-second TTL
+	# is safe and keeps a busy embed from hammering the API.
+	@widget path /widget/*/widget.js
+	header @widget Cache-Control "public, max-age=60"
+	reverse_proxy @widget api:8000
+
+	handle {
+		reverse_proxy api:8000
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}

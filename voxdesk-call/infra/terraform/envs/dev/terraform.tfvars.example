@@ -1,0 +1,7 @@
+# Copy to terraform.tfvars and fill in. Nothing here is a secret except
+# redis_auth_token, which CI injects with TF_VAR_redis_auth_token.
+region            = "ap-south-1"
+domain_name       = "dev.voxdesk.example.com"
+hosted_zone_name  = "voxdesk.example.com"
+assets_bucket_name = "voxdesk-dev-brand-assets"
+alarm_email_endpoints = ["platform@example.com"]
