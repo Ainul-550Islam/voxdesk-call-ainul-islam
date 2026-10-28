@@ -35,6 +35,36 @@ output "assets_bucket" {
   value       = module.assets.bucket_name
 }
 
+output "platform_assets_irsa" {
+  description = "IRSA identity and storage location for the platform-v2 API deployment."
+  value = {
+    namespace       = module.platform_v2_assets.namespace
+    service_account = module.platform_v2_assets.service_account_name
+    role_arn        = module.platform_v2_assets.role_arn
+    bucket_name     = module.platform_v2_assets.bucket_name
+    bucket_region   = module.platform_v2_assets.bucket_region
+    kms_key_arn     = module.platform_v2_assets.kms_key_arn
+  }
+}
+
+output "platform_assets_helm_values" {
+  description = "Values fragment for infra/helm/voxdesk to activate the IRSA-backed S3 asset store."
+  value = {
+    serviceAccount = {
+      create = true
+      name   = module.platform_v2_assets.service_account_name
+      annotations = {
+        "eks.amazonaws.com/role-arn" = module.platform_v2_assets.role_arn
+      }
+    }
+    platform = {
+      brandingAssetBucket   = module.platform_v2_assets.bucket_name
+      brandingAssetRegion   = module.platform_v2_assets.bucket_region
+      brandingAssetKmsKeyId = module.platform_v2_assets.kms_key_arn
+    }
+  }
+}
+
 output "alerts_topic_arn" {
   description = "SNS topic for alarms."
   value       = module.observability.alerts_topic_arn

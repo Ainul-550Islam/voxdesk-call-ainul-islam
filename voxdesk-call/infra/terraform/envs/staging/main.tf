@@ -92,6 +92,22 @@ module "assets" {
   tags = local.common_tags
 }
 
+module "platform_v2_assets" {
+  source = "../../modules/platform_v2_assets"
+
+  name                 = "${local.name}-platform-assets"
+  oidc_provider_arn    = module.eks.oidc_provider_arn
+  oidc_issuer_url      = module.eks.oidc_issuer_url
+  kubernetes_namespace = var.kubernetes_namespace
+  service_account_name = var.platform_service_account_name
+  bucket_name          = module.assets.bucket_name
+  bucket_arn           = module.assets.bucket_arn
+  bucket_region        = var.region
+  kms_key_arn          = module.assets.kms_key_arn
+
+  tags = local.common_tags
+}
+
 module "observability" {
   source = "../../modules/observability"
 

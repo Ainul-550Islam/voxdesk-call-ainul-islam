@@ -26,7 +26,7 @@ from __future__ import annotations
 
 import math
 import statistics
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 
 from app.platform_v2.errors import ValidationFailed

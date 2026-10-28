@@ -24,6 +24,7 @@ The two validators that matter
 from __future__ import annotations
 
 import os
+import re
 from functools import lru_cache
 
 from pydantic import Field, field_validator, model_validator
@@ -149,6 +150,11 @@ class PlatformV2Settings(BaseSettings):
     branding_max_asset_bytes: int = Field(default=512_000, alias="BRANDING_MAX_ASSET_BYTES")
     branding_max_theme_bytes: int = Field(default=32_768, alias="BRANDING_MAX_THEME_BYTES")
     branding_asset_dir: str = Field(default="var/branding", alias="BRANDING_ASSET_DIR")
+    #: When set, validated assets use the encrypted tenant-prefix S3 bucket;
+    #: blank keeps filesystem storage for local development and tests.
+    branding_asset_s3_bucket: str = Field(default="", alias="BRANDING_ASSET_S3_BUCKET")
+    branding_asset_s3_region: str = Field(default="", alias="BRANDING_ASSET_S3_REGION")
+    branding_asset_s3_kms_key_id: str = Field(default="", alias="BRANDING_ASSET_S3_KMS_KEY_ID")
 
     # ---- email sender domains ------------------------------------------
     email_dkim_selector: str = Field(default="voxdesk", alias="EMAIL_DKIM_SELECTOR")
@@ -189,6 +195,36 @@ class PlatformV2Settings(BaseSettings):
     mobile_auth_requests_per_minute: int = Field(default=30, alias="MOBILE_AUTH_PER_MINUTE")
 
     # ---- validators -----------------------------------------------------
+    @field_validator("branding_asset_s3_bucket")
+    @classmethod
+    def _asset_bucket_is_a_bucket_name(cls, value: str) -> str:
+        cleaned = str(value or "").strip()
+        if not cleaned:
+            return ""
+        if (
+            len(cleaned) < 3
+            or len(cleaned) > 63
+            or not re.fullmatch(r"[a-z0-9][a-z0-9.-]*[a-z0-9]", cleaned)
+            or ".." in cleaned
+            or ".-" in cleaned
+            or "-." in cleaned
+        ):
+            raise ValueError("BRANDING_ASSET_S3_BUCKET must be a valid S3 bucket name")
+        return cleaned
+
+    @field_validator("branding_asset_s3_region")
+    @classmethod
+    def _asset_region_is_a_region_name(cls, value: str) -> str:
+        cleaned = str(value or "").strip()
+        if cleaned and not re.fullmatch(r"[a-z0-9-]+", cleaned):
+            raise ValueError("BRANDING_ASSET_S3_REGION must be an AWS region name")
+        return cleaned
+
+    @field_validator("branding_asset_s3_kms_key_id")
+    @classmethod
+    def _asset_kms_key_is_trimmed(cls, value: str) -> str:
+        return str(value or "").strip()
+
     @field_validator("wfm_interval_minutes")
     @classmethod
     def _interval_is_supported(cls, value: int) -> int:
@@ -332,6 +368,17 @@ class PlatformV2Settings(BaseSettings):
             problems.append(
                 "TLS_ASK_ENABLED is on and custom domains are configured but TLS_ASK_TOKEN is empty; "
                 "the ask endpoint would approve any hostname"
+            )
+        if self.branding_asset_s3_bucket and not self.branding_asset_s3_region:
+            problems.append(
+                "BRANDING_ASSET_S3_BUCKET is set but BRANDING_ASSET_S3_REGION is empty"
+            )
+        if not self.branding_asset_s3_bucket and (
+            self.branding_asset_s3_region or self.branding_asset_s3_kms_key_id
+        ):
+            problems.append(
+                "BRANDING_ASSET_S3_REGION and BRANDING_ASSET_S3_KMS_KEY_ID require "
+                "BRANDING_ASSET_S3_BUCKET"
             )
         if problems:
             raise ValueError("; ".join(problems))

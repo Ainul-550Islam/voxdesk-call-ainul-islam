@@ -143,6 +143,7 @@ def test_an_inverted_window_is_refused():
 @pytest.mark.parametrize(
     "start_minute,workday",
     [(24 * 60, 480), (-1, 480), (540, 0), (540, 24 * 60 + 1)],
+    ids=["start-at-day-end", "negative-start", "zero-duration", "duration-over-day"],
 )
 def test_an_impossible_working_day_is_refused(start_minute: int, workday: int):
     with pytest.raises(ValidationFailed):

@@ -30,7 +30,6 @@ from __future__ import annotations
 
 import hashlib
 import uuid
-from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Any, Protocol
@@ -40,7 +39,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.platform_v2_models import MobileDevice, PushDelivery, PushToken
+from app.db.platform_v2_models import MobileDevice, PushDelivery
 from app.platform_v2.mobile import apns as apns_mod
 from app.platform_v2.mobile import devices as devices_mod
 from app.platform_v2.mobile import fcm as fcm_mod

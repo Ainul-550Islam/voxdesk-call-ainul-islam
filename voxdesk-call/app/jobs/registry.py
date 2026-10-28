@@ -20,6 +20,9 @@ def bootstrap() -> dict[str, object]:
     # ACD_CALLBACK is registered exactly once, never double-registered.
     from app import contact_center_v2 as _cc2_pkg  # noqa: F401
     from app.contact_center_v2 import jobs as _cc2_jobs  # noqa: F401 - registers CC2_* + ACD_CALLBACK handlers
+    # BATCH07:platform_v2_jobs — the WFM, white-label, and mobile enqueue sites
+    # use the same durable worker, retry budget, lease, and dead-letter path.
+    from app.platform_v2 import jobs as _platform_v2_jobs  # noqa: F401 - registers Batch 07 handlers
     return {name: handler_for(name) for name in registered_job_types() if handler_for(name) is not None}
 
 

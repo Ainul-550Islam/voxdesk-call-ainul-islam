@@ -175,6 +175,23 @@ class Permission(str, enum.Enum):
     DIALER_OPERATE = "dialer:operate"
     SOFTPHONE_USE = "softphone:use"
 
+    # BATCH07:platform_v2_permissions
+    # Workforce, white-label, and mobile capabilities use the same permission
+    # vocabulary and require_permission dependency as the rest of the API.
+    WFM_READ = "wfm:read"
+    WFM_WRITE = "wfm:write"
+    WFM_SCHEDULE = "wfm:schedule"
+    WFM_APPROVE = "wfm:approve"
+    WFM_PUBLISH = "wfm:publish"
+    BRAND_READ = "brand:read"
+    BRAND_WRITE = "brand:write"
+    DOMAIN_READ = "domain:read"
+    DOMAIN_WRITE = "domain:write"
+    DOMAIN_VERIFY = "domain:verify"
+    MOBILE_READ = "mobile:read"
+    MOBILE_WRITE = "mobile:write"
+    MOBILE_PUSH_SEND = "mobile:push_send"
+
 
 # Convenience bundles used when composing roles. Kept here so `rbac.py` reads
 # as a policy document rather than a wall of enum members.

@@ -50,7 +50,7 @@ def calls_for(name: str) -> set[tuple[str, str]]:
     return found
 
 
-@pytest.mark.parametrize("name", sorted(SDK_SOURCES))
+@pytest.mark.parametrize("name", sorted(SDK_SOURCES), ids=sorted(SDK_SOURCES))
 def test_every_sdk_call_is_a_route_the_api_serves(name: str, operations: dict[str, set[str]]):
     unknown = []
     for verb, path in sorted(calls_for(name)):
@@ -61,7 +61,7 @@ def test_every_sdk_call_is_a_route_the_api_serves(name: str, operations: dict[st
     assert not unknown, unknown
 
 
-@pytest.mark.parametrize("name", sorted(SDK_SOURCES))
+@pytest.mark.parametrize("name", sorted(SDK_SOURCES), ids=sorted(SDK_SOURCES))
 def test_no_sdk_calls_an_admin_surface(name: str):
     """A client on a phone must never hold a branding, domain or WFM-admin route."""
     admin = ("/api/whitelabel/", "/api/wfm/schedules", "/api/wfm/forecasts", "/api/wfm/history")
@@ -69,7 +69,7 @@ def test_no_sdk_calls_an_admin_surface(name: str):
     assert not offenders, offenders
 
 
-@pytest.mark.parametrize("name", sorted(SDK_SOURCES))
+@pytest.mark.parametrize("name", sorted(SDK_SOURCES), ids=sorted(SDK_SOURCES))
 def test_every_sdk_registers_devices_through_the_api(name: str):
     """Push registration goes through /devices + /devices/{param}/token, not the provider."""
     calls = calls_for(name)
@@ -114,7 +114,7 @@ def test_the_balance_check_catches_a_broken_file_and_survives_an_apostrophe():
     assert verify.balanced("// the customer's app bundle\nfun f() { return 1 }\n") == []
 
 
-@pytest.mark.parametrize("name", sorted(SDK_SOURCES))
+@pytest.mark.parametrize("name", sorted(SDK_SOURCES), ids=sorted(SDK_SOURCES))
 def test_no_shipped_sdk_source_contains_a_placeholder(name: str):
     language, root = SDK_SOURCES[name]
     offenders = []

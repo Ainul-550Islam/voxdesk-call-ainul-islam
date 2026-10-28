@@ -40,7 +40,7 @@ if str(REPO_ROOT) not in sys.path:
 
 
 def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
-    from app.platform_v2.jobs import LOOP_NAMES
+    from app.platform_v2.jobs import CYCLE_LOCK_TTL_SECONDS, LOOP_NAMES
 
     parser = argparse.ArgumentParser(description="Run one platform-v2 maintenance cycle")
     parser.add_argument("cycle", nargs="?", help=f"one of: {', '.join(LOOP_NAMES)}")
@@ -49,8 +49,8 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     parser.add_argument(
         "--lock-ttl",
         type=int,
-        default=3600,
-        help="lock TTL in seconds (default 3600); the scheduler uses 2x the interval",
+        default=CYCLE_LOCK_TTL_SECONDS,
+        help=f"lock TTL in seconds (default {CYCLE_LOCK_TTL_SECONDS}); shared with the scheduler",
     )
     parser.add_argument(
         "--no-lock",
@@ -100,22 +100,13 @@ async def _run(cycle: str, json_path: str | None, lock_ttl: int, no_lock: bool) 
         locked=not no_lock,
     )
 
-    context = tick_lock(lock_name, ttl_seconds=max(60, lock_ttl))
-    async with context as acquired:
-        if no_lock:
-            acquired = True
-        if not acquired:
-            # Not a failure: another replica owns this cycle. The CronJob exits 0 so
-            # Kubernetes does not count a skipped pass as a broken job.
-            logger.info("platform_jobs.skipped_lock_held", cycle=cycle, run_id=str(run_id))
-            _emit({"cycle": cycle, "status": "skipped_lock_held", "run_id": str(run_id)}, json_path)
-            return 0
-
+    async def run_cycle() -> tuple[int, Any | None]:
         maker = get_sessionmaker()
         async with maker() as session:
             try:
                 result: Any = await CYCLES[cycle](session)
                 await session.commit()
+                return 0, result
             except Exception as exc:  # noqa: BLE001 - the exit code carries the failure
                 await session.rollback()
                 logger.error(
@@ -135,8 +126,22 @@ async def _run(cycle: str, json_path: str | None, lock_ttl: int, no_lock: bool) 
                     },
                     json_path,
                 )
-                return 1
+                return 1, None
 
+    if no_lock:
+        status_code, result = await run_cycle()
+    else:
+        async with tick_lock(lock_name, ttl_seconds=max(60, lock_ttl)) as acquired:
+            if not acquired:
+                # Not a failure: another replica owns this cycle. The CronJob exits 0 so
+                # Kubernetes does not count a skipped pass as a broken job.
+                logger.info("platform_jobs.skipped_lock_held", cycle=cycle, run_id=str(run_id))
+                _emit({"cycle": cycle, "status": "skipped_lock_held", "run_id": str(run_id)}, json_path)
+                return 0
+            status_code, result = await run_cycle()
+
+    if status_code:
+        return status_code
     logger.info("platform_jobs.done", cycle=cycle, run_id=str(run_id), result=str(result)[:300])
     _emit({"cycle": cycle, "status": "ok", "run_id": str(run_id), "result": result}, json_path)
     return 0

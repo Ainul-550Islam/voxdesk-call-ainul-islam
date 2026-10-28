@@ -107,6 +107,20 @@ class JobType:
     CC2_DIALER_TICK = "cc2.dialer.tick"
     CC2_ASSIST_TURN = "cc2.assist.turn"
 
+    # BATCH07:platform_v2_job_types
+    # Workforce, white-label, and mobile jobs are persisted by their API and
+    # maintenance cycles; each value is registered by app.platform_v2.jobs.
+    WFM_HISTORY_ROLLUP = "wfm.history_rollup"
+    WFM_FORECAST_GENERATE = "wfm.forecast_generate"
+    WFM_FORECAST_SCORE = "wfm.forecast_score"
+    WFM_ADHERENCE_SWEEP = "wfm.adherence_sweep"
+    WFM_SCHEDULE_PUBLISH = "wfm.schedule_publish"
+    WL_DOMAIN_REVERIFY = "wl.domain_reverify"
+    WL_CERT_REFRESH = "wl.cert_refresh"
+    WL_SENDER_DOMAIN_CHECK = "wl.sender_domain_check"
+    MOBILE_PUSH_RETRY = "mobile.push_retry"
+    MOBILE_TOKEN_GC = "mobile.token_gc"
+
     #: Every type this codebase knows. Not the registry: a type can be known
     #: (validated at enqueue) before a domain wires its execution handler.
     ALL = frozenset(
@@ -130,6 +144,16 @@ class JobType:
             CC2_DIALER_START,
             CC2_DIALER_TICK,
             CC2_ASSIST_TURN,
+            WFM_HISTORY_ROLLUP,
+            WFM_FORECAST_GENERATE,
+            WFM_FORECAST_SCORE,
+            WFM_ADHERENCE_SWEEP,
+            WFM_SCHEDULE_PUBLISH,
+            WL_DOMAIN_REVERIFY,
+            WL_CERT_REFRESH,
+            WL_SENDER_DOMAIN_CHECK,
+            MOBILE_PUSH_RETRY,
+            MOBILE_TOKEN_GC,
         }
     )
 

@@ -15,7 +15,7 @@ import pytest
 from sqlalchemy import select
 
 from app.db.models import AuditLog, User
-from app.db.platform_v2_models import TimeOffRequest
+from app.db.platform_v2_models import AdherenceException, TimeOffRequest
 from app.platform_v2.http import IDEMPOTENCY_HEADER
 from tests.conftest import auth_headers
 from tests.platform_v2.conftest import PlatScope, seed_history
@@ -101,6 +101,49 @@ async def test_a_forecast_can_be_created_listed_and_read(
     read = await client.get(f"{WFM}/forecasts/{forecast['id']}", headers=owner_headers)
     assert read.status_code == 200
     assert read.json()["curve"]
+
+
+async def test_scoring_a_forecast_returns_the_persisted_metrics_and_intervals(
+    client, db, plat_scope: PlatScope, owner_headers
+):
+    await seed_history(db, plat_scope, days=28)
+    start_date = datetime.now(tz=UTC).date() - timedelta(days=3)
+    created = await client.post(
+        f"{WFM}/forecasts",
+        headers=owner_headers,
+        json={"horizon_days": 2, "start_date": start_date.isoformat()},
+    )
+    assert created.status_code == 201, created.text
+
+    forecast_id = created.json()["id"]
+    scored = await client.post(f"{WFM}/forecasts/{forecast_id}/score", headers=owner_headers)
+    assert scored.status_code == 200, scored.text
+    body = scored.json()
+    assert body["forecast_id"] == forecast_id
+    assert body["sample_count"] > 0
+    assert isinstance(body["intervals"], list)
+    assert body["intervals"]
+
+
+async def test_adherence_exception_list_serialises_its_date_column(
+    client, db, plat_scope: PlatScope, owner_headers, wfm_agent
+):
+    row = AdherenceException(
+        tenant_id=plat_scope.tenant.id,
+        environment_id=plat_scope.environment.id,
+        user_id=wfm_agent.id,
+        day=datetime(2026, 11, 9, tzinfo=UTC).date(),
+        kind="late_start",
+        minutes=5,
+        detail={"scheduled_start": "09:00"},
+        status="open",
+    )
+    db.add(row)
+    await db.commit()
+
+    response = await client.get(f"{WFM}/adherence/exceptions", headers=owner_headers)
+    assert response.status_code == 200, response.text
+    assert response.json()["exceptions"][0]["day"] == "2026-11-09"
 
 
 async def test_a_forecast_without_enough_history_is_a_422_not_a_guess(

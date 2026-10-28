@@ -274,6 +274,15 @@ def test_a_requirement_vector_of_the_wrong_length_is_refused():
         LaborRules(min_split_gap_minutes=-5),
         LaborRules(max_shifts_per_day=0),
     ],
+    ids=[
+        "zero-weekly-hours",
+        "negative-rest-period",
+        "zero-consecutive-days",
+        "consecutive-days-over-limit",
+        "zero-shift-hours",
+        "negative-split-gap",
+        "zero-shifts-per-day",
+    ],
 )
 def test_impossible_labour_rules_are_rejected_before_the_solver_runs(rules):
     with pytest.raises(ValidationFailed):

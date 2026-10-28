@@ -5,7 +5,7 @@ import datetime as dt
 import uuid
 
 from sqlalchemy import JSON, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Uuid as UUID
 from sqlalchemy.orm import Mapped, mapped_column, synonym
 
 from app.db.models import Base

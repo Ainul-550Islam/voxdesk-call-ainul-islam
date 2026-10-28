@@ -221,3 +221,14 @@ def _extend_roles_with_compliance_v2() -> None:
 
 
 _extend_roles_with_compliance_v2()
+
+
+# BATCH07:platform_v2_permissions
+def _extend_roles_with_platform_v2() -> None:
+    """Union workforce, white-label, and mobile bundles into shared RBAC."""
+    from app.platform_v2.permissions import extend as extend_platform_v2
+
+    extend_platform_v2(ROLE_PERMISSIONS)
+
+
+_extend_roles_with_platform_v2()

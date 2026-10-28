@@ -4,7 +4,11 @@ Enforces strict separation between:
 1. PUBLIC WEBSITE (`PUBLIC`): marketing, catalog, docs, pricing, security, status, contact-sales
 2. AUTHENTICATION (`AUTH`): `/login`, `/signup`, `/auth/*`
 3. PROTECTED APP (`PROTECTED`): `/dashboard/*`, `/agents/*`, `/studio/*`, `/calls/*`, `/analytics/*`, `/settings/*`, `/billing/*`, and private `/api/*`
-4. PUBLIC WIDGET (`PUBLIC_WIDGET`): `/api/v1/public/widget/*`
+4. PUBLIC WIDGET (`PUBLIC_WIDGET`): `/api/v1/public/widget/*` and the reviewed
+   host/key-scoped `/api/whitelabel/public/widget/*` routes
+
+The edge's `/api/platform/tls/ask` route is classified as public HTTP but enforces
+its own shared ask token before making any certificate decision.
 
 Also enforces open-redirect prevention on `next` / `return_path` parameters and prevents
 public widget keys (`vdpk_*`) or widget session tokens (`vdws_*`) from authenticating
@@ -25,6 +29,9 @@ PUBLIC_EXACT_ROUTES: frozenset[str] = frozenset(
     {
         "/",
         "/home",
+        # Caddy's on-demand TLS ask is public at the HTTP boundary but remains
+        # protected by its dedicated shared ask-token check in the route.
+        "/api/platform/tls/ask",
         "/product",
         "/product/voice-agents",
         "/product/customer-service",
@@ -86,7 +93,10 @@ PUBLIC_PREFIX_ROUTES: tuple[str, ...] = (
 AUTH_ROUTES: frozenset[str] = frozenset({"/login", "/signup"})
 AUTH_PREFIX_ROUTES: tuple[str, ...] = ("/auth/",)
 
-PUBLIC_WIDGET_PREFIX_ROUTES: tuple[str, ...] = ("/api/v1/public/widget",)
+PUBLIC_WIDGET_PREFIX_ROUTES: tuple[str, ...] = (
+    "/api/v1/public/widget",
+    "/api/whitelabel/public",
+)
 
 PROTECTED_EXACT_ROUTES: frozenset[str] = frozenset(
     {
@@ -204,20 +214,31 @@ def validate_safe_next_path(
     return True, candidate
 
 
+def _matches_path_prefix(path: str, prefixes: tuple[str, ...]) -> bool:
+    """Match a route family only at a path-segment boundary."""
+    return any(
+        path == prefix.rstrip("/") or path.startswith(prefix.rstrip("/") + "/")
+        for prefix in prefixes
+    )
+
+
 def classify_path(path: str) -> PublicRouteCategory:
     """Classify a request path into PUBLIC, AUTH, PUBLIC_WIDGET, or PROTECTED."""
     clean = (path or "/").split("?", 1)[0].rstrip("/") or "/"
 
-    if clean.startswith(PUBLIC_WIDGET_PREFIX_ROUTES):
+    if _matches_path_prefix(clean, PUBLIC_WIDGET_PREFIX_ROUTES):
         return PublicWidgetRouteCategory
-    if clean in AUTH_ROUTES or clean.startswith(AUTH_PREFIX_ROUTES):
+    if clean in AUTH_ROUTES or _matches_path_prefix(clean, AUTH_PREFIX_ROUTES):
         return PublicRouteCategory.AUTH
-    if clean in PROTECTED_EXACT_ROUTES or clean.startswith(PROTECTED_PREFIX_ROUTES):
+    if clean in PROTECTED_EXACT_ROUTES or _matches_path_prefix(clean, PROTECTED_PREFIX_ROUTES):
         return PublicRouteCategory.PROTECTED
-    if clean in PUBLIC_EXACT_ROUTES or clean.startswith(PUBLIC_PREFIX_ROUTES):
+    if clean in PUBLIC_EXACT_ROUTES or _matches_path_prefix(clean, PUBLIC_PREFIX_ROUTES):
         return PublicRouteCategory.PUBLIC
     if clean.startswith("/api/"):
-        if clean.startswith(("/api/public/webhooks/", "/api/crm/webhooks/", "/api/calendar/webhooks/")):
+        if _matches_path_prefix(
+            clean,
+            ("/api/public/webhooks", "/api/crm/webhooks", "/api/calendar/webhooks"),
+        ):
             return PublicRouteCategory.PUBLIC
         return PublicRouteCategory.PROTECTED
     return PublicRouteCategory.PUBLIC
@@ -327,13 +348,14 @@ def reject_public_credential_on_private_route(
         token = authorization_header.strip()
 
     if token.startswith(("vdpk_", "vdws_")) or (
-        public_key_header and category == PublicRouteCategory.PROTECTED
+        public_key_header and category != PublicRouteCategory.PUBLIC_WIDGET
     ):
         raise AppError(
             status_code=403,
             code="public_credential_forbidden_on_private_api",
             message=(
                 "Public widget keys and widget session tokens are restricted to "
-                "/api/v1/public/widget/* and cannot access private or admin APIs."
+                "/api/v1/public/widget/* and /api/whitelabel/public/widget/*; "
+                "they cannot be presented on another route."
             ),
         )

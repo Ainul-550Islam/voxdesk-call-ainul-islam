@@ -257,6 +257,31 @@ def test_every_scheduler_setting_the_jobs_need_is_passed():
     assert "envFrom:" in template_text()
 
 
+def test_api_uses_the_configured_irsa_service_account_and_s3_asset_settings():
+    api_template = (ROOT / "infra" / "helm" / "voxdesk" / "templates" / "api.yaml").read_text(
+        encoding="utf-8"
+    )
+    service_account_template = (
+        ROOT / "infra" / "helm" / "voxdesk" / "templates" / "serviceaccount.yaml"
+    ).read_text(encoding="utf-8")
+    values = (ROOT / "infra" / "helm" / "voxdesk" / "values.yaml").read_text(
+        encoding="utf-8"
+    )
+    assert 'serviceAccountName: {{ include "voxdesk.serviceAccountName" . | quote }}' in api_template
+    assert 'include "voxdesk.serviceAccountName" .' in service_account_template
+    assert '"eks.amazonaws.com/role-arn"' in service_account_template or "toYaml . | nindent 4" in service_account_template
+    assert "automountServiceAccountToken: true" in service_account_template
+    for setting in (
+        "BRANDING_ASSET_DIR",
+        "BRANDING_ASSET_S3_BUCKET",
+        "BRANDING_ASSET_S3_REGION",
+        "BRANDING_ASSET_S3_KMS_KEY_ID",
+    ):
+        assert f"name: {setting}" in api_template
+    assert "name: voxdesk-platform" in values
+    assert 'brandingAssetBucket: ""' in values
+
+
 # --- rendered chart ------------------------------------------------------------
 
 

@@ -457,20 +457,25 @@ SENDER_CHECK_INTERVAL_SECONDS = 6 * 3600.0
 PUSH_RETRY_INTERVAL_SECONDS = 300.0
 TOKEN_GC_INTERVAL_SECONDS = 86_400.0
 
-#: Every cycle name, in the order the scheduler registers them. Read by
-#: ``tests/test_scheduler_wires_all_v2_jobs.py`` and by the Helm CronJobs, so a new
-#: pass cannot be added without a tick and a schedule.
-LOOP_NAMES = (
-    "wfm_rollup",
-    "wfm_forecast",
-    "wfm_forecast_score",
-    "wfm_adherence",
-    "wl_domain_reverify",
-    "wl_cert_refresh",
-    "wl_sender_domain",
-    "mobile_push_retry",
-    "mobile_token_gc",
-)
+#: A shared lease gives the long-running scheduler and one-shot CronJobs the
+#: same exclusion window. Keep it aligned with scripts/platform_jobs.py.
+CYCLE_LOCK_TTL_SECONDS = 3600
+
+#: Every cycle name and cadence, in registration order. The scheduler table,
+#: one-shot runner, Helm CronJobs, and wiring verifier all read this mapping so
+#: a maintenance pass cannot exist without a running path and a defined cadence.
+CYCLE_INTERVAL_SECONDS = {
+    "wfm_rollup": ROLLUP_INTERVAL_SECONDS,
+    "wfm_forecast": FORECAST_INTERVAL_SECONDS,
+    "wfm_forecast_score": SCORE_INTERVAL_SECONDS,
+    "wfm_adherence": ADHERENCE_INTERVAL_SECONDS,
+    "wl_domain_reverify": DOMAIN_REVERIFY_INTERVAL_SECONDS,
+    "wl_cert_refresh": CERT_REFRESH_INTERVAL_SECONDS,
+    "wl_sender_domain": SENDER_CHECK_INTERVAL_SECONDS,
+    "mobile_push_retry": PUSH_RETRY_INTERVAL_SECONDS,
+    "mobile_token_gc": TOKEN_GC_INTERVAL_SECONDS,
+}
+LOOP_NAMES = tuple(CYCLE_INTERVAL_SECONDS)
 
 
 async def _tenant_environments(session: Any) -> list[tuple[uuid.UUID, uuid.UUID]]:

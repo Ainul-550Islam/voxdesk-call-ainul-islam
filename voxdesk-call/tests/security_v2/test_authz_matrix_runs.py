@@ -33,6 +33,8 @@ def test_every_public_route_is_on_the_reviewed_allowlist(app):
 
     assert authz_matrix.unknown_public_routes(infos) == []
     assert len(authz_matrix.PUBLIC_ROUTES) >= 73
+    assert "/api/platform/tls/ask" in authz_matrix.PUBLIC_ROUTES
+    assert "/api/whitelabel/public/" in authz_matrix.PUBLIC_PREFIXES
     report = authz_matrix.run(app)
     allowlist = next(result for result in report.results if result.name == "authz.public_allowlist")
     assert allowlist.status == models.PASS, allowlist.detail

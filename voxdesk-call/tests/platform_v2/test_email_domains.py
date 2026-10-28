@@ -77,6 +77,7 @@ def test_a_correct_spf_record_passes():
         (["v=spf1 include:mail.voxdesk.test"], "-all or ~all"),
         (["v=spf1 a mx +all"], "+all"),
     ],
+    ids=["missing-record", "open-all-policy", "missing-terminator", "all-policy-with-mechanisms"],
 )
 def test_a_dangerous_or_incomplete_spf_record_fails(values, reason):
     parsed = email.parse_spf(values)

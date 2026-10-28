@@ -21,6 +21,7 @@ the same transaction as the change.
 from __future__ import annotations
 
 import json
+import logging
 import uuid
 from typing import Any
 
@@ -51,6 +52,8 @@ from app.platform_v2.whitelabel import email_domains as email_mod
 from app.platform_v2.whitelabel import templates as templates_mod
 from app.platform_v2.whitelabel import tls as tls_mod
 from app.platform_v2.whitelabel import widget as widget_mod
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/whitelabel", tags=["white-label"])
 public_router = APIRouter(prefix="/api/platform/tls", tags=["white-label-tls"])
@@ -508,7 +511,16 @@ async def upload_asset(
         },
     )
     await api.complete_claim(session, claim, resource_type="wl_brand_asset", resource_id=row.id)
-    await session.commit()
+    try:
+        await session.commit()
+    except Exception:
+        await session.rollback()
+        if created:
+            try:
+                await assets_mod.delete_storage_path(row.storage_path, tenant_id=ctx.tenant_id)
+            except Exception:
+                logger.exception("Failed to clean up uncommitted brand asset %s", row.id)
+        raise
     payload = assets_mod.describe(row)
     payload["deduplicated"] = not created
     payload["removed_from_svg"] = validated.removed
@@ -563,7 +575,7 @@ async def delete_asset(
     replay = api.replay_response(claim, resource_type="wl_brand_asset")
     if replay is not None:
         return replay
-    await assets_mod.delete(session, tenant_id=ctx.tenant_id, asset_id=asset_id)
+    storage_path = await assets_mod.delete(session, tenant_id=ctx.tenant_id, asset_id=asset_id)
     await api.audit(
         session,
         ctx,
@@ -574,6 +586,12 @@ async def delete_asset(
     )
     await api.complete_claim(session, claim, resource_type="wl_brand_asset", resource_id=asset_id)
     await session.commit()
+    try:
+        await assets_mod.delete_storage_path(storage_path, tenant_id=ctx.tenant_id)
+    except Exception:
+        # The database delete is already committed. Keep the response successful;
+        # the private orphan can be removed by storage lifecycle/operations.
+        logger.exception("Failed to remove storage for deleted brand asset %s", asset_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -828,9 +846,9 @@ async def tls_ask(
 ):
     """The on-demand certificate decision Caddy asks for.
 
-    Deliberately not decorated with ``endpoint_errors``: the edge understands a
-    status code and a small JSON body, and turning a validation failure into a 422
-    envelope would only make the log harder to read. Every refusal is 403.
+    The decision function returns only the compact allow/deny body expected by the
+    edge; its token check and every ordinary refusal produce status 403. The shared
+    endpoint wrapper only translates unexpected/domain exceptions, not deny results.
     """
     decision = await tls_mod.decide(session, domain=domain, provided_token=ask_token)
     return Response(

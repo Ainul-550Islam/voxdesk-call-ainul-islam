@@ -48,3 +48,15 @@ variable "assets_bucket_name" {
   description = "Globally unique bucket name for brand assets."
   type        = string
 }
+
+variable "kubernetes_namespace" {
+  description = "Namespace shared by the API Deployment and its IRSA service account."
+  type        = string
+  default     = "voxdesk"
+}
+
+variable "platform_service_account_name" {
+  description = "API service account trusted by the platform-v2 brand-asset IRSA role."
+  type        = string
+  default     = "voxdesk-platform"
+}

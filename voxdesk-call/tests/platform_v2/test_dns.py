@@ -49,6 +49,7 @@ class _Answer:
         ("  support.example.com  ", "support.example.com"),
         ("a-b.c-d.example.com", "a-b.c-d.example.com"),
     ],
+    ids=["case-fold", "trailing-dot", "trim-whitespace", "hyphenated-labels"],
 )
 def test_normalize_domain_canonicalises_the_accepted_forms(raw, expected):
     assert dns.normalize_domain(raw) == expected
@@ -75,6 +76,26 @@ def test_normalize_domain_canonicalises_the_accepted_forms(raw, expected):
         ("com", "public suffix"),
         ("co.uk", "public suffix"),
         ("a" * 64 + ".example.com", "label"),
+    ],
+    ids=[
+        "scheme",
+        "port",
+        "path",
+        "query",
+        "fragment",
+        "email-address",
+        "wildcard",
+        "single-label",
+        "empty",
+        "ipv4-address",
+        "ipv6-address",
+        "underscore",
+        "leading-hyphen",
+        "trailing-hyphen",
+        "empty-label",
+        "public-suffix-com",
+        "public-suffix-co-uk",
+        "label-overlength",
     ],
 )
 def test_normalize_domain_refuses_everything_that_is_not_a_hostname(raw, reason):
@@ -141,6 +162,7 @@ def test_expected_txt_value_is_the_bare_token():
         "voxdesk-domain-verification=TOKEN",
         "voxdesk=TOKEN",
     ],
+    ids=["bare-token", "verify-prefix", "domain-verification-prefix", "short-prefix"],
 )
 def test_txt_contains_accepts_the_bare_and_prefixed_forms(value):
     resolution = dns.Resolution(

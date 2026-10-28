@@ -55,6 +55,13 @@ def test_campaign_run_is_not_granted_to_agent_or_viewer():
     (UserRole.ADMIN, UserRole.ADMIN, False),     # no lateral escalation
     (UserRole.ADMIN, UserRole.OWNER, False),     # no upward escalation
     (UserRole.MANAGER, UserRole.AGENT, False),   # managers do not manage users
+], ids=[
+    "owner-assigns-admin",
+    "owner-cannot-clone-owner",
+    "admin-assigns-manager",
+    "admin-cannot-assign-admin",
+    "admin-cannot-assign-owner",
+    "manager-cannot-manage-users",
 ])
 def test_can_assign_role(actor, target, ok):
     assert rbac.can_assign_role(actor, target) is ok
@@ -65,6 +72,64 @@ def test_describe_roles_is_serializable_and_complete():
     assert {e["role"] for e in described} == {r.value for r in UserRole}
     for entry in described:
         assert isinstance(entry["permissions"], list) and entry["level"] > 0
+
+
+def test_platform_v2_bundles_extend_the_shared_role_policy():
+    agent = rbac.permissions_for(UserRole.AGENT)
+    manager = rbac.permissions_for(UserRole.MANAGER)
+    admin = rbac.permissions_for(UserRole.ADMIN)
+    viewer = rbac.permissions_for(UserRole.VIEWER)
+    owner = rbac.permissions_for(UserRole.OWNER)
+
+    assert {Permission.WFM_READ, Permission.MOBILE_READ, Permission.MOBILE_WRITE} <= agent
+    assert not {
+        Permission.WFM_WRITE,
+        Permission.WFM_SCHEDULE,
+        Permission.BRAND_READ,
+        Permission.DOMAIN_READ,
+        Permission.MOBILE_PUSH_SEND,
+    } & agent
+
+    assert {
+        Permission.WFM_READ,
+        Permission.WFM_WRITE,
+        Permission.WFM_SCHEDULE,
+        Permission.WFM_APPROVE,
+        Permission.BRAND_READ,
+        Permission.DOMAIN_READ,
+    } <= manager
+    assert not {
+        Permission.WFM_PUBLISH,
+        Permission.BRAND_WRITE,
+        Permission.DOMAIN_WRITE,
+        Permission.DOMAIN_VERIFY,
+        Permission.MOBILE_PUSH_SEND,
+    } & manager
+
+    assert manager <= admin
+    assert {
+        Permission.WFM_PUBLISH,
+        Permission.BRAND_WRITE,
+        Permission.DOMAIN_WRITE,
+        Permission.DOMAIN_VERIFY,
+        Permission.MOBILE_PUSH_SEND,
+    } <= admin
+    assert Permission.WFM_READ in viewer
+    assert not {Permission.WFM_WRITE, Permission.BRAND_READ, Permission.MOBILE_READ} & viewer
+    assert set(Permission) - {Permission.TENANT_CREATE, Permission.TENANT_DELETE} <= owner
+
+
+def test_platform_read_permissions_are_classified_for_suspended_memberships():
+    from app.auth.permissions import is_read_permission
+
+    for permission in (
+        Permission.WFM_READ,
+        Permission.BRAND_READ,
+        Permission.DOMAIN_READ,
+        Permission.MOBILE_READ,
+    ):
+        assert is_read_permission(permission)
+    assert not is_read_permission(Permission.MOBILE_WRITE)
 
 
 # ------------------------------------------------------ route enforcement ---

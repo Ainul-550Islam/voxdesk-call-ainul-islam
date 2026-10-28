@@ -34,6 +34,24 @@ ingress:
   tls: []
 secrets:
   existingSecret: voxdesk-runtime
+serviceAccount:
+  create: true
+  name: voxdesk-platform
+  annotations: {}
+platform:
+  enabled: true
+  jobs: []
+  brandingAssetDir: /var/lib/voxdesk/brand-assets
+  brandingAssetBucket: ""
+  brandingAssetRegion: ""
+  brandingAssetKmsKeyId: ""
+  brandAssetsPersistentVolumeClaim: ""
+# Coturn is optional; enabling it requires the secret and relay settings in your
+# deployment values file. Keep the chart's offline default fail-closed/off.
+coturn:
+  enabled: false
+contactCenterWorkers:
+  enabled: false
 config:
   appEnv: production
   databaseUrl: "postgresql+asyncpg://voxdesk:voxdesk@postgres:5432/voxdesk"

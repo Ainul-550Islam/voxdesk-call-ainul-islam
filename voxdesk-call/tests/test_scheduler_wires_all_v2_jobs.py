@@ -92,6 +92,30 @@ def test_the_tick_table_is_the_caller_of_the_integrations_cycle():
     assert inspect.iscoroutinefunction(int2_jobs.run_scheduled_integrations_v2_cycle)
 
 
+def test_platform_v2_tick_table_covers_every_cycle_and_shares_cli_locks(monkeypatch):
+    from app.platform_v2.jobs import (
+        CYCLE_INTERVAL_SECONDS,
+        CYCLE_LOCK_TTL_SECONDS,
+        CYCLES,
+        LOOP_NAMES,
+    )
+    from app.platform_v2.settings import get_plat2_settings
+
+    monkeypatch.setattr(get_plat2_settings(), "scheduler_enabled", True)
+    ticks = _scheduler().scheduled_v2_ticks()
+    platform_ticks = {tick.target: tick for tick in ticks if tick.name.startswith("platform_v2.")}
+
+    assert tuple(LOOP_NAMES) == tuple(CYCLE_INTERVAL_SECONDS)
+    assert set(CYCLES) == set(LOOP_NAMES)
+    assert set(platform_ticks) == set(LOOP_NAMES)
+    for cycle in LOOP_NAMES:
+        tick = platform_ticks[cycle]
+        assert tick.interval_seconds == CYCLE_INTERVAL_SECONDS[cycle]
+        assert tick.lock == f"platform_v2:{cycle}"
+        assert tick.lock_ttl_seconds == CYCLE_LOCK_TTL_SECONDS
+        assert inspect.iscoroutinefunction(CYCLES[cycle])
+
+
 def test_no_tick_is_registered_twice():
     ticks = _scheduler().scheduled_v2_ticks()
     names = [tick.name for tick in ticks]
@@ -170,19 +194,30 @@ def test_each_v2_tick_is_disabled_by_its_own_settings_flag(monkeypatch):
     from app.compliance_v2.settings import get_compliance_v2_settings
     from app.contact_center_v2.settings import get_cc2_settings
     from app.integrations_v2.settings import get_int2_settings
+    from app.platform_v2.settings import get_plat2_settings
 
     cc2 = get_cc2_settings()
     compliance = get_compliance_v2_settings()
     int2 = get_int2_settings()
+    plat2 = get_plat2_settings()
 
     monkeypatch.setattr(cc2, "maintenance_enabled", False, raising=False)
     monkeypatch.setattr(compliance, "scheduler_enabled", False, raising=False)
     monkeypatch.setattr(int2, "scheduler_enabled", False, raising=False)
+    monkeypatch.setattr(plat2, "scheduler_enabled", False, raising=False)
 
     assert _scheduler().scheduled_v2_ticks() == []
 
 
-@pytest.mark.parametrize("module_name", ["app.contact_center_v2.jobs", "app.compliance_v2.jobs"])
+@pytest.mark.parametrize(
+    "module_name",
+    [
+        "app.contact_center_v2.jobs",
+        "app.compliance_v2.jobs",
+        "app.platform_v2.jobs",
+    ],
+    ids=["contact-center-v2", "compliance-v2", "platform-v2"],
+)
 def test_the_v2_tick_modules_do_not_register_duplicate_job_handlers(module_name: str):
     """Two handlers for one job type means the wrong code runs, silently."""
     import importlib

@@ -31,7 +31,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, time as dtime, timedelta, timezone
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from sqlalchemy import and_, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.contact_center_v2_models import AgentStateInterval

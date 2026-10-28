@@ -27,11 +27,13 @@ import /etc/caddy/tenant-domains.caddy
 }
 ```
 
-Validated with `caddy validate` (Caddy 2.8.4, `--adapter caddyfile`): see the
-`Valid configuration` output recorded against
-`tests/platform_v2/test_caddy_tenant_domains.py`. The repository's root
-`Caddyfile` is the single-tenant compose stack and is deliberately **not**
-changed by Batch 07: enabling on-demand TLS in a stack that does not run the
+`make batch07-infra` validates a temporary complete Caddyfile that imports both
+fragments in their intended contexts (the global file inside `{}` and the tenant
+site file at top level). Validating either fragment alone is incorrect: Caddy's
+`on_demand_tls` options are global, while `tenant-domains.caddy` contains a site
+block. The same target records the real Caddy output in Batch 07 evidence. The
+repository's root `Caddyfile` is the single-tenant compose stack and is deliberately
+**not** changed by Batch 07: enabling on-demand TLS in a stack that does not run the
 domain-verification service would let anyone who points DNS at it request
 certificates.
 

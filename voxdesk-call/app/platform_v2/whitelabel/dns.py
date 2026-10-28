@@ -32,6 +32,7 @@ import secrets
 import string
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from typing import Any
 
 from app.platform_v2.errors import ValidationFailed
 
@@ -211,7 +212,7 @@ async def _query(
     record_type: str,
     *,
     timeout: float,
-    resolver: object | None = None,
+    resolver: Any | None = None,
     nameserver: str | None = None,
 ) -> Resolution:
     client = resolver if resolver is not None else _client(nameserver)
@@ -222,7 +223,7 @@ async def _query(
             error="dns resolver unavailable: dnspython is not installed",
         )
     try:
-        answer = await client.resolve(name, record_type, lifetime=timeout)  # type: ignore[attr-defined]
+        answer = await client.resolve(name, record_type, lifetime=timeout)
     except Exception as exc:  # noqa: BLE001 - every resolver error is a failed check
         # NXDOMAIN and "no answer" are the common cases and are not crashes; a
         # timeout is reported with its own text. All of them mean "not proven".
@@ -248,19 +249,19 @@ async def _query(
     )
 
 
-async def resolve_cname(domain: str, *, timeout: float = 5.0, resolver: object | None = None) -> Resolution:
+async def resolve_cname(domain: str, *, timeout: float = 5.0, resolver: Any | None = None) -> Resolution:
     return await _query(domain, "CNAME", timeout=timeout, resolver=resolver)
 
 
-async def resolve_txt(name: str, *, timeout: float = 5.0, resolver: object | None = None) -> Resolution:
+async def resolve_txt(name: str, *, timeout: float = 5.0, resolver: Any | None = None) -> Resolution:
     return await _query(name, "TXT", timeout=timeout, resolver=resolver)
 
 
-async def resolve_a(domain: str, *, timeout: float = 5.0, resolver: object | None = None) -> Resolution:
+async def resolve_a(domain: str, *, timeout: float = 5.0, resolver: Any | None = None) -> Resolution:
     return await _query(domain, "A", timeout=timeout, resolver=resolver)
 
 
-async def resolve_aaaa(domain: str, *, timeout: float = 5.0, resolver: object | None = None) -> Resolution:
+async def resolve_aaaa(domain: str, *, timeout: float = 5.0, resolver: Any | None = None) -> Resolution:
     return await _query(domain, "AAAA", timeout=timeout, resolver=resolver)
 
 

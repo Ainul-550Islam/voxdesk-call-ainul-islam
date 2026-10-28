@@ -4,30 +4,50 @@ import argparse
 from contextlib import redirect_stdout
 import io
 import json
+import os
 from pathlib import Path
-import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from scripts.pytest_collection_stats import measure_collected_pytest_nodes  # noqa: E402
+
+
+SOURCE_ROOTS = ('app', 'services', 'dashboard/src', 'dashboard-next', 'sdk')
+SOURCE_SUFFIXES = {'.py', '.ts', '.tsx', '.js', '.rs', '.go', '.cpp', '.h', '.hpp'}
+SOURCE_SKIP_PARTS = {'node_modules', 'target', 'build', 'dist', 'vendor', '__pycache__', '.next'}
+
+
+def _source_files() -> list[Path]:
+    """Find source files while pruning dependencies and generated build trees."""
+    source: list[Path] = []
+    for directory in SOURCE_ROOTS:
+        base = ROOT / directory
+        if not base.is_dir():
+            continue
+        for current, child_dirs, filenames in os.walk(base):
+            child_dirs[:] = sorted(name for name in child_dirs if name not in SOURCE_SKIP_PARTS)
+            for filename in filenames:
+                path = Path(current) / filename
+                if path.suffix in SOURCE_SUFFIXES:
+                    source.append(path)
+    return source
+
 
 def measure():
-    source = []
-    for directory in ('app', 'services', 'dashboard/src', 'dashboard-next', 'sdk'):
-        for path in (ROOT / directory).rglob('*'):
-            if path.is_file() and path.suffix in {'.py', '.ts', '.tsx', '.js', '.rs', '.go', '.cpp', '.h', '.hpp'} and not set(path.parts).intersection({'node_modules', 'target', 'build', 'dist', 'vendor', '__pycache__', '.next'}):
-                source.append(path)
-    collected = subprocess.run([sys.executable, '-m', 'pytest', '--collect-only', '-q'], cwd=ROOT, text=True, capture_output=True)
-    if collected.returncode:
-        raise RuntimeError('Test collection failed; no counts published.\n' + collected.stdout + collected.stderr)
-    nodes = [line for line in collected.stdout.splitlines() if line.startswith('tests/') and '::' in line]
-    if not nodes or len(nodes) != len(set(nodes)):
-        raise RuntimeError('No unique test population available')
+    source = _source_files()
+    collected_pytest_nodes = measure_collected_pytest_nodes(ROOT)
     with redirect_stdout(io.StringIO()):
         from app.main import app
-    return {'source_files': len(source), 'source_physical_lines': sum(len(p.read_text().splitlines()) for p in source), 'registered_routes': len(app.routes), 'collected_pytest_nodes': len(nodes), 'passed_tests': 'not measured by collection'}
+    return {
+        'source_files': len(source),
+        'source_physical_lines': sum(len(path.read_text(encoding='utf-8', errors='replace').splitlines()) for path in source),
+        'registered_routes': len(app.routes),
+        'collected_pytest_nodes': collected_pytest_nodes,
+        'passed_tests': 'not measured by collection',
+    }
 
 
 def main():

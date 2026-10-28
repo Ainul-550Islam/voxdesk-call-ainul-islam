@@ -22,6 +22,9 @@ import app.db.carrier_s2s_models  # noqa: F401
 import app.db.compliance_v2_models  # noqa: F401
 import app.db.contact_center_v2_models  # noqa: F401
 import app.db.integrations_v2_models  # noqa: F401
+# BATCH07:model_registration — platform-v2 migrations 0068 are part of the live
+# head; autogenerate must see the WFM, white-label, and mobile mapped tables.
+import app.db.platform_v2_models  # noqa: F401
 import app.db.enterprise_models  # noqa: F401
 import app.db.live_proof_models  # noqa: F401
 import app.db.retell_models  # noqa: F401

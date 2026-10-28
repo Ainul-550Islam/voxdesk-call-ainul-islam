@@ -200,6 +200,9 @@ from app.api.carrier_router import router as carrier_router
 from app.api.compliance_v2 import router as compliance_v2_router
 from app.api.contact_center_v2_router import router as contact_center_v2_router
 from app.api.integrations_v2_router import router as integrations_v2_router
+# Batch 07: one aggregate mount for the workforce, white-label, TLS-widget and
+# mobile surfaces. Each leaf router retains its own auth/permission boundary.
+from app.platform_v2.router import router as platform_v2_router
 # Batch 03 data-residency guard: refuse a request that names a region the
 # caller's tenant may not use, on the placement-bearing paths only.
 from app.compliance_v2.residency.middleware import add_residency_middleware
@@ -524,6 +527,7 @@ app.include_router(carrier_router)
 app.include_router(compliance_v2_router)
 app.include_router(contact_center_v2_router)
 app.include_router(integrations_v2_router)
+app.include_router(platform_v2_router)
 
 # Quarantine synthetic route generators before the application starts serving.
 # Their `/endpoint-N` handlers return fabricated identifiers/counts/timestamps;

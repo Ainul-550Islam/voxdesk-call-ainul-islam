@@ -1,10 +1,12 @@
 # AWS reference deployment (Batch 07, block A)
 
 This directory is a **reference**, not a production story we have run for a
-customer. Nothing here has been applied to a real account from this repository:
-the tests in `tests/platform_v2/test_terraform_layout.py` run `terraform fmt -check`
-and `terraform validate` (no credentials, no plan), and `terraform plan` is left to
-the pipeline that has credentials. No output in this batch claims an `apply`.
+customer. Nothing here has been applied to a real account from this repository.
+The hermetic test in `tests/platform_v2/test_terraform_layout.py` parses HCL and
+checks module/environment wiring without credentials, provider initialization,
+state, or a plan. `make batch07-infra` runs Terraform formatting and validation
+when Terraform is installed; a pipeline with credentials owns any real plan. No
+output in this batch claims an `apply`.
 
 ## Layout
 
@@ -17,6 +19,7 @@ infra/terraform/
 │   ├── redis/         ElastiCache Redis 7.1, AUTH token, at-rest + in-transit encryption
 │   ├── alb/           ALB + ACM + Route53 + WAFv2 (managed rules + per-IP rate limit)
 │   ├── assets/        S3 brand-asset bucket, SSE-KMS, versioning, tenant-prefixed policy
+│   ├── platform_v2_assets/ exact EKS OIDC service-account role for S3/KMS brand assets
 │   ├── observability/ SNS alarms + CloudWatch dashboard
 │   └── failover/      Route53 health checks and PRIMARY/SECONDARY records
 └── envs/
@@ -33,9 +36,14 @@ infra/terraform/
 * **`manage_master_user_password = true`.** No database password is ever written
   to a plan file, a CI variable or a `.tfvars`. RDS generates it and keeps it in
   Secrets Manager; the application reads it through IRSA.
-* **Brand assets never leave AWS.** The S3 gateway endpoint plus the
-  `s3:prefix` deny in `modules/assets` means a presigned URL cannot be used to
-  read another tenant's prefix.
+* **Brand assets are tenant-prefix scoped.** The bucket policy denies object
+  writes outside `tenants/*`; the API's IRSA role can read/write/delete only
+  `${bucket_arn}/tenants/*`, and its KMS use is restricted to S3 in the bucket
+  region. The bucket remains private and SSE-KMS encrypted.
+* **The API and Terraform agree on workload identity.** Each environment binds
+  the exact `namespace:service-account` subject from its EKS OIDC issuer and
+  exports a `platform_assets_helm_values` fragment for the Helm chart. Production
+  creates a separate role per regional cluster while both use the primary bucket.
 * **Failover DNS is failover-routed, not latency-routed.** The API hostname
   (`app.<domain>`) has one live record at a time, gated by a per-region health
   check on `/health`. A latency record would split writes across two Aurora

@@ -42,6 +42,7 @@ def test_default_theme_is_returned_as_a_copy():
         ("#1d4ed8", "#ffffff", 6.7),
         ("#777777", "#ffffff", 4.478),
     ],
+    ids=["black-on-white", "white-on-white", "primary-on-white", "gray-aa-boundary"],
 )
 def test_contrast_ratio_matches_wcag(first, second, expected):
     assert branding.contrast_ratio(first, second) == pytest.approx(expected, abs=0.01)

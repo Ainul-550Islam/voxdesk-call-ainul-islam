@@ -19,10 +19,9 @@ Five independent questions, answered from real source and a real boot:
    that made ``import app.main`` raise ``AttributeError: ASSIST_READ`` while
    every individual module compiled.
 4. **Does the scheduler run the v2 work?** The registered tick table in
-   ``scripts/scheduler.py`` must cover exactly the tick exports of
-   ``app/compliance_v2/jobs.py``, ``app/contact_center_v2/jobs.py`` and
-   ``app/integrations_v2/jobs.py`` — no misses, no duplicates — and every
-   registered tick must carry a lock key.
+   ``scripts/scheduler.py`` must cover the no-argument compliance/integrations
+   exports, the session-taking contact-center passes, and every platform-v2 cycle
+   — no misses, no duplicates — and every registered tick must carry a lock key.
 5. **Is every persisted v2 job type backed by exactly one registered handler?**
 
 Output is JSON on stdout so CI can attach it; the process exits 1 when any
@@ -55,6 +54,7 @@ SCHEDULER_JOB_MODULES = (
     "app.contact_center_v2.jobs",
     "app.compliance_v2.jobs",
     "app.integrations_v2.jobs",
+    "app.platform_v2.jobs",
 )
 
 
@@ -317,21 +317,27 @@ def check_scheduler() -> dict:
     unlocked = sorted(tick.name for tick in ticks if not tick.lock.strip())
 
     cc2_ticks = set(_cc2_expected())
-    wired_cc2 = {tick.target for tick in ticks} & cc2_ticks
+    wired_cc2 = {tick.target for tick in ticks if tick.name.startswith("cc2.")}
     compliance_ticks = _tick_exports("app.compliance_v2.jobs")
-    wired_compliance = {tick.target for tick in ticks} & compliance_ticks
+    wired_compliance = {tick.target for tick in ticks if tick.name.startswith("compliance.")}
     int2_ticks = _tick_exports("app.integrations_v2.jobs")
-    wired_int2 = {tick.target for tick in ticks} & int2_ticks
+    wired_int2 = {tick.target for tick in ticks if tick.name.startswith("int2.")}
+    from app.platform_v2.jobs import LOOP_NAMES as platform_v2_cycles
+
+    platform_ticks = set(platform_v2_cycles)
+    wired_platform = {tick.target for tick in ticks if tick.name.startswith("platform_v2.")}
 
     expected = {
         "app.contact_center_v2.jobs": cc2_ticks,
         "app.compliance_v2.jobs": compliance_ticks,
         "app.integrations_v2.jobs": int2_ticks,
+        "app.platform_v2.jobs": platform_ticks,
     }
     wired = {
         "app.contact_center_v2.jobs": wired_cc2,
         "app.compliance_v2.jobs": wired_compliance,
         "app.integrations_v2.jobs": wired_int2,
+        "app.platform_v2.jobs": wired_platform,
     }
     gaps = {
         module: {
@@ -344,7 +350,7 @@ def check_scheduler() -> dict:
         not duplicates
         and not duplicate_locks
         and not unlocked
-        and all(not gap["missing"] for gap in gaps.values())
+        and all(not gap["missing"] and not gap["unknown"] for gap in gaps.values())
     )
     return {
         "ok": ok,
@@ -360,22 +366,34 @@ def check_scheduler() -> dict:
 def check_job_handlers() -> dict:
     """Every persisted v2 job type has exactly one registered handler."""
     from app.jobs.registry import bootstrap
-    from app.jobs.types import handler_for
+    from app.jobs.types import JobType, handler_for
 
     with contextlib.redirect_stdout(io.StringIO()):
         registered = bootstrap()
     required = [
-        "cc2.dialer.start",
-        "cc2.dialer.tick",
-        "cc2.assist.turn",
-        "acd_callback",
+        JobType.CC2_DIALER_START,
+        JobType.CC2_DIALER_TICK,
+        JobType.CC2_ASSIST_TURN,
+        JobType.ACD_CALLBACK,
+        JobType.WFM_HISTORY_ROLLUP,
+        JobType.WFM_FORECAST_GENERATE,
+        JobType.WFM_FORECAST_SCORE,
+        JobType.WFM_ADHERENCE_SWEEP,
+        JobType.WFM_SCHEDULE_PUBLISH,
+        JobType.WL_DOMAIN_REVERIFY,
+        JobType.WL_CERT_REFRESH,
+        JobType.WL_SENDER_DOMAIN_CHECK,
+        JobType.MOBILE_PUSH_RETRY,
+        JobType.MOBILE_TOKEN_GC,
     ]
     missing = [job_type for job_type in required if handler_for(job_type) is None]
+    unknown = [job_type for job_type in required if job_type not in JobType.ALL]
     return {
-        "ok": not missing,
+        "ok": not missing and not unknown,
         "handlers": len(registered),
         "required": required,
         "missing": missing,
+        "unknown": unknown,
     }
 
 

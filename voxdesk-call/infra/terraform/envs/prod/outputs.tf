@@ -42,3 +42,68 @@ output "health_check_ids" {
     secondary = module.failover.secondary_health_check_id
   }
 }
+
+output "assets_bucket" {
+  description = "Primary-region encrypted brand-asset bucket."
+  value       = module.assets.bucket_name
+}
+
+output "primary_platform_assets_irsa" {
+  description = "Primary-region IRSA identity and shared brand-asset storage location."
+  value = {
+    namespace       = module.platform_v2_assets_primary.namespace
+    service_account = module.platform_v2_assets_primary.service_account_name
+    role_arn        = module.platform_v2_assets_primary.role_arn
+    bucket_name     = module.platform_v2_assets_primary.bucket_name
+    bucket_region   = module.platform_v2_assets_primary.bucket_region
+    kms_key_arn     = module.platform_v2_assets_primary.kms_key_arn
+  }
+}
+
+output "secondary_platform_assets_irsa" {
+  description = "Secondary-region IRSA identity; it uses the same primary-region asset bucket."
+  value = {
+    namespace       = module.platform_v2_assets_secondary.namespace
+    service_account = module.platform_v2_assets_secondary.service_account_name
+    role_arn        = module.platform_v2_assets_secondary.role_arn
+    bucket_name     = module.platform_v2_assets_secondary.bucket_name
+    bucket_region   = module.platform_v2_assets_secondary.bucket_region
+    kms_key_arn     = module.platform_v2_assets_secondary.kms_key_arn
+  }
+}
+
+output "primary_platform_assets_helm_values" {
+  description = "Helm values fragment for the primary EKS API deployment."
+  value = {
+    serviceAccount = {
+      create = true
+      name   = module.platform_v2_assets_primary.service_account_name
+      annotations = {
+        "eks.amazonaws.com/role-arn" = module.platform_v2_assets_primary.role_arn
+      }
+    }
+    platform = {
+      brandingAssetBucket   = module.platform_v2_assets_primary.bucket_name
+      brandingAssetRegion   = module.platform_v2_assets_primary.bucket_region
+      brandingAssetKmsKeyId = module.platform_v2_assets_primary.kms_key_arn
+    }
+  }
+}
+
+output "secondary_platform_assets_helm_values" {
+  description = "Helm values fragment for the secondary EKS API deployment."
+  value = {
+    serviceAccount = {
+      create = true
+      name   = module.platform_v2_assets_secondary.service_account_name
+      annotations = {
+        "eks.amazonaws.com/role-arn" = module.platform_v2_assets_secondary.role_arn
+      }
+    }
+    platform = {
+      brandingAssetBucket   = module.platform_v2_assets_secondary.bucket_name
+      brandingAssetRegion   = module.platform_v2_assets_secondary.bucket_region
+      brandingAssetKmsKeyId = module.platform_v2_assets_secondary.kms_key_arn
+    }
+  }
+}

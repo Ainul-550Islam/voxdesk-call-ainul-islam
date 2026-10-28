@@ -52,6 +52,17 @@ def test_the_target_names_the_model_it_is_buying():
         {"average_patience_seconds": 0},
         {"minimum_agents": -1},
     ],
+    ids=[
+        "zero-service-level",
+        "service-level-over-one",
+        "negative-answer-time",
+        "zero-occupancy",
+        "full-shrinkage",
+        "zero-handle-time",
+        "unknown-staffing-model",
+        "zero-patience",
+        "negative-minimum-agents",
+    ],
 )
 def test_impossible_targets_are_refused(overrides):
     with pytest.raises(ValidationFailed):

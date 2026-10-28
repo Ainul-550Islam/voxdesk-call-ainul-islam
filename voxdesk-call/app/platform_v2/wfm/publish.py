@@ -32,7 +32,7 @@ from app.db.platform_v2_models import (
     WfmShift,
 )
 from app.platform_v2.errors import Conflict, NotFound, ValidationFailed
-from app.platform_v2.wfm.scheduler import Assignment, SolveResult, validate_week_start
+from app.platform_v2.wfm.scheduler import SolveResult, validate_week_start
 
 
 def _now() -> datetime:

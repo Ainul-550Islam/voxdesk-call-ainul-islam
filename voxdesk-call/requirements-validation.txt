@@ -1,4 +1,4 @@
-# Optional full-validation tools; production dependencies retain their pins.
--r requirements.txt
+# Full hermetic validation toolchain; runtime pins remain in requirements.txt.
+-r requirements-test.txt
 mypy==1.19.1
 playwright==1.63.0

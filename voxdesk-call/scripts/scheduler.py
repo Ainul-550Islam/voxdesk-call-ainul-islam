@@ -294,10 +294,9 @@ async def durable_jobs_loop() -> None:
     reclaimed by whichever instance reaps next. Nothing about the schedule
     or the queue lives in this process's memory.
 
-    Only *registered* job types are claimed (``app.jobs.types`` registry —
-    today ``outbox.delivery``; domains adopt the platform by registering
-    handlers, not by being migrated here), so legacy receipt rows of
-    unadopted types are never dragged into execution.
+    Only *registered* job types are claimed (``app.jobs.types`` registry:
+    ``outbox.delivery``, contact-center v2, and Batch 07 WFM/white-label/mobile
+    handlers). Legacy rows of unadopted types are never dragged into execution.
     """
     from app.jobs.worker import JobWorker
     from app.outbox import dispatcher as _outbox_dispatcher  # noqa: F401 (registers handler)
@@ -351,13 +350,12 @@ async def outbox_dispatch_loop() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Batch 06: the v2 maintenance tick table.
+# Batch 07: the v2 maintenance tick table.
 #
-# Batch 03-05 shipped compliance/contact-center/integrations ``jobs.py`` modules
-# full of periodic passes and handler factories, and none of them was ever
-# called from the worker process. This table is the single place that turns a
-# pass into a *scheduled* pass: each entry names the target inside its jobs
-# module, owns a positive interval and a distinct lock key, and runs under
+# Compliance/contact-center/integrations and platform-v2 ``jobs.py`` modules
+# contain periodic passes that must be called from the worker process. This table
+# is the single place that turns a pass into a *scheduled* pass: each entry names
+# the target inside its jobs module, owns a positive interval and a distinct lock key, and runs under
 # ``app.core.tick_lock.tick_lock`` so two schedulers never execute the same pass
 # at the same time. The whole package honours one settings kill switch so a
 # drained node can be turned off without a deploy.
@@ -373,10 +371,11 @@ class ScheduledTick:
     interval_seconds: float
     lock: str
     run: Callable[[], Awaitable[Any]]
+    lock_ttl_seconds: int = 900
 
     async def execute(self) -> Any:
         """Run the body only when the lock is held; otherwise do nothing."""
-        async with tick_lock(self.lock) as acquired:
+        async with tick_lock(self.lock, ttl_seconds=self.lock_ttl_seconds) as acquired:
             if not acquired:
                 return None
             return await self.run()
@@ -460,11 +459,38 @@ def _int2_tick(cycle: str, interval: int) -> ScheduledTick:
     )
 
 
+def _platform_v2_tick(cycle: str, interval: float) -> ScheduledTick:
+    """Own a session for one Batch 07 WFM/white-label/mobile cycle."""
+    from app.platform_v2.jobs import CYCLE_LOCK_TTL_SECONDS, CYCLES
+
+    async def run() -> Any:
+        maker = get_sessionmaker()
+        async with maker() as session:
+            try:
+                result = await CYCLES[cycle](session)
+                await session.commit()
+                return result
+            except Exception:
+                await session.rollback()
+                raise
+
+    return ScheduledTick(
+        name=f"platform_v2.{cycle}",
+        target=cycle,
+        interval_seconds=float(interval),
+        lock=f"platform_v2:{cycle}",
+        run=run,
+        lock_ttl_seconds=CYCLE_LOCK_TTL_SECONDS,
+    )
+
+
 def scheduled_v2_ticks() -> list[ScheduledTick]:
     """Build the tick table, honouring each package's settings kill switch."""
     from app.compliance_v2.settings import get_compliance_v2_settings
     from app.contact_center_v2.settings import get_cc2_settings
     from app.integrations_v2.settings import get_int2_settings
+    from app.platform_v2.jobs import CYCLE_INTERVAL_SECONDS, LOOP_NAMES
+    from app.platform_v2.settings import get_plat2_settings
 
     ticks: list[ScheduledTick] = []
     if get_cc2_settings().maintenance_enabled:
@@ -476,6 +502,11 @@ def scheduled_v2_ticks() -> list[ScheduledTick]:
         )
     if get_int2_settings().scheduler_enabled:
         ticks.extend(_int2_tick(cycle, interval) for cycle, interval in INT2_TICKS)
+    if get_plat2_settings().scheduler_enabled:
+        ticks.extend(
+            _platform_v2_tick(cycle, CYCLE_INTERVAL_SECONDS[cycle])
+            for cycle in LOOP_NAMES
+        )
     return ticks
 
 

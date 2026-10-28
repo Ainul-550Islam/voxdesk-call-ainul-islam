@@ -55,6 +55,18 @@ variable "assets_bucket_name" {
   type        = string
 }
 
+variable "kubernetes_namespace" {
+  description = "Namespace shared by both regional API Deployments and their IRSA service accounts."
+  type        = string
+  default     = "voxdesk"
+}
+
+variable "platform_service_account_name" {
+  description = "API service account trusted by both regional platform-v2 asset roles."
+  type        = string
+  default     = "voxdesk-platform"
+}
+
 variable "latency_records_enabled" {
   description = "Publish latency records for api.<domain> in addition to the failover record."
   type        = bool

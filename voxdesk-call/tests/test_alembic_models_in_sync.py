@@ -1,15 +1,14 @@
 """The ORM metadata and the migration history must describe the same schema.
 
-Batch 02-05 added four model modules (carrier/S2S, compliance v2, contact-center
-v2, integrations v2) and never imported them from ``alembic/env.py``.
-Autogenerate compares the *registered* metadata against the live schema, so the
-next revision generated in such a checkout would have proposed dropping every
-one of those tables. These tests pin the properties that keep that from happening
-silently:
+Batches 02-07 added model modules (carrier/S2S, compliance v2, contact-center
+v2, integrations v2, and platform v2) and they must all be imported from
+``alembic/env.py``. Autogenerate compares the *registered* metadata against the
+live schema, so an unimported module would make the next revision propose dropping
+its tables. These tests pin the properties that keep that from happening silently:
 
 * one head and a linear history — no branch a deploy can ignore;
 * every module that declares a table is imported by ``alembic/env.py``;
-* every table the 0063-0067 migrations create resolves to a mapped class, and
+* every table the 0063-0068 migrations create resolves to a mapped class, and
   every table those model modules map is created by one of them.
 
 The autogenerate comparison always runs. With a PostgreSQL URL
@@ -37,6 +36,7 @@ V2_REVISIONS = (
     "0065_compliance_v2",
     "0066_contact_center_v2",
     "0067_integrations_v2",
+    "0068_platform_v2",
 )
 V2_MODEL_MODULES = frozenset(
     {
@@ -44,6 +44,7 @@ V2_MODEL_MODULES = frozenset(
         "app.db.compliance_v2_models",
         "app.db.contact_center_v2_models",
         "app.db.integrations_v2_models",
+        "app.db.platform_v2_models",
     }
 )
 
@@ -114,7 +115,7 @@ def _string_arg(call: ast.Call, index: int) -> str | None:
 
 
 def _migration_created_tables() -> frozenset[str]:
-    """Table names the 0063-0067 revisions create (both call shapes)."""
+    """Table names the 0063-0068 revisions create (both call shapes)."""
     tables: set[str] = set()
     for revision in V2_REVISIONS:
         path = ALEMBIC_DIR / "versions" / f"{revision}.py"
@@ -148,7 +149,8 @@ def _registered_tables() -> frozenset[str]:
 
 def test_there_is_exactly_one_head():
     heads = _script_directory().get_heads()
-    assert heads == ["0067_integrations_v2"], heads
+    # The platform-v2 revision is the current head after Batch 07.
+    assert heads == ["0068_platform_v2"], heads
 
 
 def test_the_history_is_a_single_linear_chain():
@@ -163,6 +165,7 @@ def test_the_history_is_a_single_linear_chain():
         "0065_compliance_v2": "0064_carrier_s2s",
         "0066_contact_center_v2": "0065_compliance_v2",
         "0067_integrations_v2": "0066_contact_center_v2",
+        "0068_platform_v2": "0067_integrations_v2",
     }
     for revision_id, parent in expected.items():
         assert script.get_revision(revision_id).down_revision == parent, revision_id

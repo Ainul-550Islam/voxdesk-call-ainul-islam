@@ -147,6 +147,32 @@
         "title": "AccountLinkOut",
         "type": "object"
       },
+      "AccrualIn": {
+        "properties": {
+          "hours": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 1000.0,
+            "title": "Hours",
+            "type": "number"
+          },
+          "kind": {
+            "default": "vacation",
+            "title": "Kind",
+            "type": "string"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "hours"
+        ],
+        "title": "AccrualIn",
+        "type": "object"
+      },
       "AcdPolicyBody": {
         "additionalProperties": false,
         "properties": {
@@ -3485,6 +3511,45 @@
         "title": "AuditPageOut",
         "type": "object"
       },
+      "AuthorizeIn": {
+        "properties": {
+          "code_challenge": {
+            "maxLength": 128,
+            "minLength": 43,
+            "title": "Code Challenge",
+            "type": "string"
+          },
+          "code_challenge_method": {
+            "default": "S256",
+            "title": "Code Challenge Method",
+            "type": "string"
+          },
+          "device_id": {
+            "maxLength": 128,
+            "minLength": 3,
+            "title": "Device Id",
+            "type": "string"
+          },
+          "platform": {
+            "description": "ios or android",
+            "title": "Platform",
+            "type": "string"
+          },
+          "redirect_uri": {
+            "default": "",
+            "maxLength": 400,
+            "title": "Redirect Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "device_id",
+          "platform",
+          "code_challenge"
+        ],
+        "title": "AuthorizeIn",
+        "type": "object"
+      },
       "AutomaticSamplingBody": {
         "additionalProperties": false,
         "properties": {
@@ -4783,6 +4848,19 @@
         "title": "BatchSuiteRunRequest",
         "type": "object"
       },
+      "BidIn": {
+        "properties": {
+          "preference": {
+            "default": 0,
+            "maximum": 20.0,
+            "minimum": 0.0,
+            "title": "Preference",
+            "type": "integer"
+          }
+        },
+        "title": "BidIn",
+        "type": "object"
+      },
       "BillingInterval": {
         "enum": [
           "month",
@@ -5249,6 +5327,25 @@
           "To"
         ],
         "title": "Body_twilio_sms_webhook_messaging_sms_webhook_post",
+        "type": "object"
+      },
+      "Body_upload_asset_api_whitelabel_assets_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file",
+          "kind"
+        ],
+        "title": "Body_upload_asset_api_whitelabel_assets_post",
         "type": "object"
       },
       "Body_upload_document_api_knowledge_documents_post": {
@@ -8727,6 +8824,33 @@
           }
         },
         "title": "ClaimBody",
+        "type": "object"
+      },
+      "ClaimDomainIn": {
+        "properties": {
+          "domain": {
+            "maxLength": 253,
+            "minLength": 3,
+            "title": "Domain",
+            "type": "string"
+          },
+          "environment_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Environment Id"
+          }
+        },
+        "required": [
+          "domain"
+        ],
+        "title": "ClaimDomainIn",
         "type": "object"
       },
       "ClockStart": {
@@ -12416,6 +12540,25 @@
         "title": "DeadLetterOut",
         "type": "object"
       },
+      "DecideIn": {
+        "properties": {
+          "approved": {
+            "title": "Approved",
+            "type": "boolean"
+          },
+          "note": {
+            "default": "",
+            "maxLength": 400,
+            "title": "Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "approved"
+        ],
+        "title": "DecideIn",
+        "type": "object"
+      },
       "DecisionIn": {
         "properties": {
           "decision": {
@@ -12917,6 +13060,18 @@
           }
         },
         "title": "DialerPolicyPatch",
+        "type": "object"
+      },
+      "DisableDomainIn": {
+        "properties": {
+          "reason": {
+            "default": "",
+            "maxLength": 500,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "title": "DisableDomainIn",
         "type": "object"
       },
       "DiscoverOut": {
@@ -15376,6 +15531,41 @@
         "title": "EvidenceRunOut",
         "type": "object"
       },
+      "ExchangeIn": {
+        "properties": {
+          "code": {
+            "maxLength": 200,
+            "minLength": 8,
+            "title": "Code",
+            "type": "string"
+          },
+          "code_verifier": {
+            "maxLength": 128,
+            "minLength": 43,
+            "title": "Code Verifier",
+            "type": "string"
+          },
+          "device_id": {
+            "maxLength": 128,
+            "minLength": 3,
+            "title": "Device Id",
+            "type": "string"
+          },
+          "redirect_uri": {
+            "default": "",
+            "maxLength": 400,
+            "title": "Redirect Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "code_verifier",
+          "device_id"
+        ],
+        "title": "ExchangeIn",
+        "type": "object"
+      },
       "ExecuteAgentToolRequest": {
         "additionalProperties": false,
         "properties": {
@@ -16235,88 +16425,6 @@
           }
         },
         "title": "FlowValidatePayload",
-        "type": "object"
-      },
-      "ForecastRequest": {
-        "additionalProperties": false,
-        "properties": {
-          "agent_version": {
-            "default": "1.0.0",
-            "maxLength": 100,
-            "minLength": 1,
-            "title": "Agent Version",
-            "type": "string"
-          },
-          "configuration": {
-            "title": "Configuration",
-            "type": "object"
-          },
-          "environment_id": {
-            "format": "uuid",
-            "title": "Environment Id",
-            "type": "string"
-          },
-          "horizon": {
-            "maximum": 365.0,
-            "minimum": 1.0,
-            "title": "Horizon",
-            "type": "integer"
-          },
-          "idempotency_key": {
-            "maxLength": 200,
-            "minLength": 8,
-            "title": "Idempotency Key",
-            "type": "string"
-          },
-          "method": {
-            "default": "linear",
-            "maxLength": 64,
-            "minLength": 1,
-            "title": "Method",
-            "type": "string"
-          },
-          "model_version_id": {
-            "format": "uuid",
-            "title": "Model Version Id",
-            "type": "string"
-          },
-          "risk_tier": {
-            "default": "high",
-            "maxLength": 24,
-            "minLength": 1,
-            "title": "Risk Tier",
-            "type": "string"
-          },
-          "series": {
-            "items": {
-              "type": "object"
-            },
-            "maxItems": 100000,
-            "minItems": 1,
-            "title": "Series",
-            "type": "array"
-          },
-          "series_reference": {
-            "anyOf": [
-              {
-                "maxLength": 500,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Series Reference"
-          }
-        },
-        "required": [
-          "environment_id",
-          "model_version_id",
-          "idempotency_key",
-          "series",
-          "horizon"
-        ],
-        "title": "ForecastRequest",
         "type": "object"
       },
       "FrameworkInput": {
@@ -17881,6 +17989,58 @@
           "user_message"
         ],
         "title": "LLMPlaygroundRunRequest",
+        "type": "object"
+      },
+      "LaborRuleIn": {
+        "properties": {
+          "is_active": {
+            "default": true,
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "max_consecutive_days": {
+            "default": 6,
+            "maximum": 14.0,
+            "minimum": 1.0,
+            "title": "Max Consecutive Days",
+            "type": "integer"
+          },
+          "max_hours_per_week": {
+            "default": 48.0,
+            "exclusiveMinimum": 0.0,
+            "maximum": 168.0,
+            "title": "Max Hours Per Week",
+            "type": "number"
+          },
+          "max_shift_hours": {
+            "default": 12.0,
+            "exclusiveMinimum": 0.0,
+            "maximum": 24.0,
+            "title": "Max Shift Hours",
+            "type": "number"
+          },
+          "min_rest_hours": {
+            "default": 10.0,
+            "maximum": 48.0,
+            "minimum": 0.0,
+            "title": "Min Rest Hours",
+            "type": "number"
+          },
+          "min_split_gap_minutes": {
+            "default": 0,
+            "maximum": 720.0,
+            "minimum": 0.0,
+            "title": "Min Split Gap Minutes",
+            "type": "integer"
+          },
+          "name": {
+            "default": "Default",
+            "maxLength": 120,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "title": "LaborRuleIn",
         "type": "object"
       },
       "LanguagePayload": {
@@ -25928,6 +26088,55 @@
         "title": "QueueSkillsBody",
         "type": "object"
       },
+      "QuietHoursIn": {
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "default": true,
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "end": {
+            "description": "HH:MM; an end before start means the window crosses midnight",
+            "title": "End",
+            "type": "string"
+          },
+          "start": {
+            "description": "HH:MM in the device's timezone",
+            "title": "Start",
+            "type": "string"
+          },
+          "timezone": {
+            "default": "UTC",
+            "maxLength": 64,
+            "title": "Timezone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start",
+          "end"
+        ],
+        "title": "QuietHoursIn",
+        "type": "object"
+      },
+      "QuietHoursUpdateIn": {
+        "additionalProperties": false,
+        "properties": {
+          "quiet_hours": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QuietHoursIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "QuietHoursUpdateIn",
+        "type": "object"
+      },
       "QuotaBody": {
         "properties": {
           "key": {
@@ -26475,22 +26684,65 @@
         "title": "RecoveryCodesOut",
         "type": "object"
       },
-      "RefreshIn": {
-        "description": "Optional: the refresh token normally travels in an HttpOnly cookie.",
+      "RegisterDeviceIn": {
+        "additionalProperties": false,
         "properties": {
-          "refresh_token": {
+          "app_version": {
+            "default": "",
+            "maxLength": 40,
+            "title": "App Version",
+            "type": "string"
+          },
+          "device_id": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Device Id",
+            "type": "string"
+          },
+          "os_version": {
+            "default": "",
+            "maxLength": 40,
+            "title": "Os Version",
+            "type": "string"
+          },
+          "platform": {
+            "description": "ios or android",
+            "title": "Platform",
+            "type": "string"
+          },
+          "push_enabled": {
+            "default": true,
+            "title": "Push Enabled",
+            "type": "boolean"
+          },
+          "quiet_hours": {
             "anyOf": [
               {
+                "$ref": "#/components/schemas/QuietHoursIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "token": {
+            "anyOf": [
+              {
+                "maxLength": 4096,
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Refresh Token"
+            "title": "Token"
           }
         },
-        "title": "RefreshIn",
+        "required": [
+          "platform",
+          "device_id"
+        ],
+        "title": "RegisterDeviceIn",
         "type": "object"
       },
       "RegressionFromCallRequest": {
@@ -28260,6 +28512,21 @@
         "title": "RevisionInput",
         "type": "object"
       },
+      "RevokeIn": {
+        "properties": {
+          "refresh_token": {
+            "maxLength": 400,
+            "minLength": 16,
+            "title": "Refresh Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "refresh_token"
+        ],
+        "title": "RevokeIn",
+        "type": "object"
+      },
       "RevokeOthersOut": {
         "properties": {
           "revoked": {
@@ -28581,6 +28848,53 @@
           "salt"
         ],
         "title": "RolloutIn",
+        "type": "object"
+      },
+      "RollupRequest": {
+        "properties": {
+          "days": {
+            "default": 7,
+            "maximum": 90.0,
+            "minimum": 1.0,
+            "title": "Days",
+            "type": "integer"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "interval_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interval Minutes"
+          },
+          "zone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zone"
+          }
+        },
+        "title": "RollupRequest",
         "type": "object"
       },
       "Rotation": {
@@ -29697,6 +30011,43 @@
         "title": "SampleBody",
         "type": "object"
       },
+      "ScheduleIn": {
+        "properties": {
+          "name": {
+            "default": "Weekly rota",
+            "maxLength": 160,
+            "title": "Name",
+            "type": "string"
+          },
+          "queue_key": {
+            "default": "",
+            "maxLength": 36,
+            "title": "Queue Key",
+            "type": "string"
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone"
+          },
+          "week_start": {
+            "format": "date",
+            "title": "Week Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "week_start"
+        ],
+        "title": "ScheduleIn",
+        "type": "object"
+      },
       "ScoreBody": {
         "properties": {
           "item_id": {
@@ -30111,6 +30462,33 @@
           "message"
         ],
         "title": "SendMessageRequest",
+        "type": "object"
+      },
+      "SenderDomainIn": {
+        "properties": {
+          "dkim_selector": {
+            "default": "",
+            "maxLength": 63,
+            "title": "Dkim Selector",
+            "type": "string"
+          },
+          "domain": {
+            "maxLength": 253,
+            "minLength": 3,
+            "title": "Domain",
+            "type": "string"
+          },
+          "from_name": {
+            "default": "",
+            "maxLength": 80,
+            "title": "From Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "domain"
+        ],
+        "title": "SenderDomainIn",
         "type": "object"
       },
       "SentimentBody": {
@@ -31752,6 +32130,52 @@
         "title": "SoftphoneRegisterBody",
         "type": "object"
       },
+      "SolveIn": {
+        "properties": {
+          "allow_shortfall": {
+            "default": false,
+            "title": "Allow Shortfall",
+            "type": "boolean"
+          },
+          "auto_record": {
+            "default": true,
+            "title": "Auto Record",
+            "type": "boolean"
+          },
+          "employee_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Employee Ids",
+            "type": "array"
+          },
+          "note": {
+            "default": "",
+            "maxLength": 400,
+            "title": "Note",
+            "type": "string"
+          },
+          "schedule_id": {
+            "format": "uuid",
+            "title": "Schedule Id",
+            "type": "string"
+          },
+          "template_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Template Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "schedule_id"
+        ],
+        "title": "SolveIn",
+        "type": "object"
+      },
       "SourceCreate": {
         "additionalProperties": false,
         "properties": {
@@ -32443,6 +32867,32 @@
         "title": "StepUpOut",
         "type": "object"
       },
+      "SwapOfferIn": {
+        "properties": {
+          "note": {
+            "default": "",
+            "maxLength": 400,
+            "title": "Note",
+            "type": "string"
+          },
+          "shift_id": {
+            "format": "uuid",
+            "title": "Shift Id",
+            "type": "string"
+          },
+          "target_user_id": {
+            "format": "uuid",
+            "title": "Target User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "shift_id",
+          "target_user_id"
+        ],
+        "title": "SwapOfferIn",
+        "type": "object"
+      },
       "SyncListOut": {
         "properties": {
           "syncs": {
@@ -33087,6 +33537,60 @@
         "title": "TelephonyProviderName",
         "type": "string"
       },
+      "TemplateIn": {
+        "properties": {
+          "is_active": {
+            "default": true,
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "length_minutes": {
+            "maximum": 1440.0,
+            "minimum": 15.0,
+            "title": "Length Minutes",
+            "type": "integer"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "paid_break_minutes": {
+            "default": 0,
+            "maximum": 600.0,
+            "minimum": 0.0,
+            "title": "Paid Break Minutes",
+            "type": "integer"
+          },
+          "required_skill_key": {
+            "default": "",
+            "maxLength": 64,
+            "title": "Required Skill Key",
+            "type": "string"
+          },
+          "start_minute": {
+            "maximum": 1439.0,
+            "minimum": 0.0,
+            "title": "Start Minute",
+            "type": "integer"
+          },
+          "unpaid_break_minutes": {
+            "default": 0,
+            "maximum": 600.0,
+            "minimum": 0.0,
+            "title": "Unpaid Break Minutes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "start_minute",
+          "length_minutes"
+        ],
+        "title": "TemplateIn",
+        "type": "object"
+      },
       "TemplateOut": {
         "additionalProperties": false,
         "properties": {
@@ -33127,6 +33631,16 @@
           "variables"
         ],
         "title": "TemplateOut",
+        "type": "object"
+      },
+      "TemplatePreviewIn": {
+        "properties": {
+          "variables": {
+            "title": "Variables",
+            "type": "object"
+          }
+        },
+        "title": "TemplatePreviewIn",
         "type": "object"
       },
       "TemplateWriteRequest": {
@@ -33760,6 +34274,36 @@
           }
         },
         "title": "TestPayload",
+        "type": "object"
+      },
+      "TestPushIn": {
+        "additionalProperties": false,
+        "properties": {
+          "body": {
+            "default": "If you can read this, push is working on this device.",
+            "maxLength": 200,
+            "title": "Body",
+            "type": "string"
+          },
+          "template": {
+            "default": "push_test",
+            "maxLength": 48,
+            "title": "Template",
+            "type": "string"
+          },
+          "title": {
+            "default": "VoxDesk test notification",
+            "maxLength": 120,
+            "title": "Title",
+            "type": "string"
+          },
+          "urgent": {
+            "default": false,
+            "title": "Urgent",
+            "type": "boolean"
+          }
+        },
+        "title": "TestPushIn",
         "type": "object"
       },
       "TestRequest": {
@@ -34510,6 +35054,43 @@
         "title": "TestTranscriptOut",
         "type": "object"
       },
+      "ThemeIn": {
+        "properties": {
+          "activate": {
+            "default": true,
+            "title": "Activate",
+            "type": "boolean"
+          },
+          "name": {
+            "default": "Default",
+            "maxLength": 60,
+            "title": "Name",
+            "type": "string"
+          },
+          "payload": {
+            "title": "Payload",
+            "type": "object"
+          }
+        },
+        "required": [
+          "payload"
+        ],
+        "title": "ThemeIn",
+        "type": "object"
+      },
+      "ThemeValidateIn": {
+        "properties": {
+          "payload": {
+            "title": "Payload",
+            "type": "object"
+          }
+        },
+        "required": [
+          "payload"
+        ],
+        "title": "ThemeValidateIn",
+        "type": "object"
+      },
       "ThreadCreateRequest": {
         "additionalProperties": false,
         "properties": {
@@ -34631,6 +35212,49 @@
         "title": "ThreadOut",
         "type": "object"
       },
+      "TimeOffIn": {
+        "properties": {
+          "ends_at": {
+            "format": "date-time",
+            "title": "Ends At",
+            "type": "string"
+          },
+          "kind": {
+            "default": "vacation",
+            "title": "Kind",
+            "type": "string"
+          },
+          "reason": {
+            "default": "",
+            "maxLength": 400,
+            "title": "Reason",
+            "type": "string"
+          },
+          "starts_at": {
+            "format": "date-time",
+            "title": "Starts At",
+            "type": "string"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          }
+        },
+        "required": [
+          "starts_at",
+          "ends_at"
+        ],
+        "title": "TimeOffIn",
+        "type": "object"
+      },
       "ToggleIn": {
         "properties": {
           "reason": {
@@ -34641,6 +35265,22 @@
           }
         },
         "title": "ToggleIn",
+        "type": "object"
+      },
+      "TokenIn": {
+        "additionalProperties": false,
+        "properties": {
+          "token": {
+            "maxLength": 4096,
+            "minLength": 8,
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token"
+        ],
+        "title": "TokenIn",
         "type": "object"
       },
       "TokenOut": {
@@ -37201,6 +37841,24 @@
         "title": "VerifyConfirmOut",
         "type": "object"
       },
+      "VerifyDomainIn": {
+        "properties": {
+          "token": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Token"
+          }
+        },
+        "title": "VerifyDomainIn",
+        "type": "object"
+      },
       "VerifyIn": {
         "properties": {
           "evidence": {
@@ -39293,6 +39951,24 @@
         "title": "PolicyOut",
         "type": "object"
       },
+      "app__api__auth_routes__RefreshIn": {
+        "description": "Optional: the refresh token normally travels in an HttpOnly cookie.",
+        "properties": {
+          "refresh_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refresh Token"
+          }
+        },
+        "title": "RefreshIn",
+        "type": "object"
+      },
       "app__api__batch_call_routes__RecipientOut": {
         "additionalProperties": false,
         "properties": {
@@ -39790,6 +40466,88 @@
           "phone"
         ],
         "title": "LeadIn",
+        "type": "object"
+      },
+      "app__api__forecast_routes__ForecastRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "agent_version": {
+            "default": "1.0.0",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Agent Version",
+            "type": "string"
+          },
+          "configuration": {
+            "title": "Configuration",
+            "type": "object"
+          },
+          "environment_id": {
+            "format": "uuid",
+            "title": "Environment Id",
+            "type": "string"
+          },
+          "horizon": {
+            "maximum": 365.0,
+            "minimum": 1.0,
+            "title": "Horizon",
+            "type": "integer"
+          },
+          "idempotency_key": {
+            "maxLength": 200,
+            "minLength": 8,
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "method": {
+            "default": "linear",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Method",
+            "type": "string"
+          },
+          "model_version_id": {
+            "format": "uuid",
+            "title": "Model Version Id",
+            "type": "string"
+          },
+          "risk_tier": {
+            "default": "high",
+            "maxLength": 24,
+            "minLength": 1,
+            "title": "Risk Tier",
+            "type": "string"
+          },
+          "series": {
+            "items": {
+              "type": "object"
+            },
+            "maxItems": 100000,
+            "minItems": 1,
+            "title": "Series",
+            "type": "array"
+          },
+          "series_reference": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Series Reference"
+          }
+        },
+        "required": [
+          "environment_id",
+          "model_version_id",
+          "idempotency_key",
+          "series",
+          "horizon"
+        ],
+        "title": "ForecastRequest",
         "type": "object"
       },
       "app__api__identity_routes__MFAStatusOut": {
@@ -41825,6 +42583,112 @@
           "published_at"
         ],
         "title": "PolicyOut",
+        "type": "object"
+      },
+      "app__platform_v2__mobile__router__RefreshIn": {
+        "properties": {
+          "device_id": {
+            "default": "",
+            "maxLength": 128,
+            "title": "Device Id",
+            "type": "string"
+          },
+          "refresh_token": {
+            "maxLength": 400,
+            "minLength": 16,
+            "title": "Refresh Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "refresh_token"
+        ],
+        "title": "RefreshIn",
+        "type": "object"
+      },
+      "app__platform_v2__wfm__router__ForecastRequest": {
+        "properties": {
+          "horizon_days": {
+            "default": 14,
+            "maximum": 365.0,
+            "minimum": 1.0,
+            "title": "Horizon Days",
+            "type": "integer"
+          },
+          "interval_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interval Minutes"
+          },
+          "overrides": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overrides"
+          },
+          "queue_key": {
+            "default": "",
+            "maxLength": 36,
+            "title": "Queue Key",
+            "type": "string"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "zone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zone"
+          }
+        },
+        "title": "ForecastRequest",
+        "type": "object"
+      },
+      "app__platform_v2__wfm__router__PublishIn": {
+        "properties": {
+          "min_coverage_ratio": {
+            "default": 0.0,
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Min Coverage Ratio",
+            "type": "number"
+          },
+          "version_id": {
+            "format": "uuid",
+            "title": "Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version_id"
+        ],
+        "title": "PublishIn",
         "type": "object"
       },
       "app__telephony__enums__TransferMode": {
@@ -67494,7 +68358,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ForecastRequest"
+                "$ref": "#/components/schemas/app__api__forecast_routes__ForecastRequest"
               }
             }
           },
@@ -74928,6 +75792,587 @@
         ]
       }
     },
+    "/api/mobile/deliveries": {
+      "get": {
+        "operationId": "list_deliveries_api_mobile_deliveries_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Deliveries",
+        "tags": [
+          "mobile"
+        ]
+      }
+    },
+    "/api/mobile/devices": {
+      "get": {
+        "operationId": "list_devices_api_mobile_devices_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Devices",
+        "tags": [
+          "mobile"
+        ]
+      },
+      "post": {
+        "description": "Register (or refresh) this device and, optionally, its push token.",
+        "operationId": "register_device_api_mobile_devices_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterDeviceIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Register Device",
+        "tags": [
+          "mobile"
+        ]
+      }
+    },
+    "/api/mobile/devices/{device_id}": {
+      "delete": {
+        "description": "Revoke a device: its tokens stop being used immediately.",
+        "operationId": "revoke_device_api_mobile_devices__device_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "device_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Device Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Revoke Device",
+        "tags": [
+          "mobile"
+        ]
+      }
+    },
+    "/api/mobile/devices/{device_id}/quiet-hours": {
+      "post": {
+        "operationId": "update_quiet_hours_api_mobile_devices__device_id__quiet_hours_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "device_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Device Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuietHoursUpdateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Quiet Hours",
+        "tags": [
+          "mobile"
+        ]
+      }
+    },
+    "/api/mobile/devices/{device_id}/token": {
+      "post": {
+        "description": "Attach a rotated push token; the previous one is deactivated.",
+        "operationId": "attach_token_api_mobile_devices__device_id__token_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "device_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Device Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Attach Token",
+        "tags": [
+          "mobile"
+        ]
+      }
+    },
+    "/api/mobile/oauth/authorize": {
+      "post": {
+        "description": "Issue a single-use PKCE code for the authenticated user.\n\nAuthenticated on purpose: the platform must know *who* is signing in, and the\ncode is then bound to that user and that device. A code is invalidated when the\nsame device asks for another one, so a retried authorize leaves nothing live.",
+        "operationId": "authorize_mobile_api_mobile_oauth_authorize_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthorizeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Authorize Mobile",
+        "tags": [
+          "mobile"
+        ]
+      }
+    },
+    "/api/mobile/oauth/refresh": {
+      "post": {
+        "description": "Rotate a refresh token. Reuse of a revoked token kills the whole family.",
+        "operationId": "refresh_mobile_token_api_mobile_oauth_refresh_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/app__platform_v2__mobile__router__RefreshIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Refresh Mobile Token",
+        "tags": [
+          "mobile"
+        ]
+      }
+    },
+    "/api/mobile/oauth/revoke": {
+      "post": {
+        "description": "Sign out: revoke every refresh token in this family.",
+        "operationId": "revoke_mobile_token_api_mobile_oauth_revoke_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevokeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Revoke Mobile Token",
+        "tags": [
+          "mobile"
+        ]
+      }
+    },
+    "/api/mobile/oauth/token": {
+      "post": {
+        "description": "Exchange a code plus its verifier for an access/refresh pair.",
+        "operationId": "exchange_mobile_code_api_mobile_oauth_token_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExchangeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Exchange Mobile Code",
+        "tags": [
+          "mobile"
+        ]
+      }
+    },
+    "/api/mobile/providers": {
+      "get": {
+        "description": "Which push providers this deployment has configured, without secrets.",
+        "operationId": "provider_status_api_mobile_providers_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Provider Status",
+        "tags": [
+          "mobile"
+        ]
+      }
+    },
+    "/api/mobile/push/test": {
+      "post": {
+        "description": "Send a test notification to the caller's own devices.\n\nDeliberately usable by the person themselves, and only to themselves: the\nfastest way to debug \"push is not working\" is from the phone that is not\nreceiving anything. ``urgent`` bypasses quiet hours, which is what makes the\ntest meaningful at 23:00.",
+        "operationId": "send_test_push_api_mobile_push_test_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestPushIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Send Test Push",
+        "tags": [
+          "mobile"
+        ]
+      }
+    },
+    "/api/mobile/sessions": {
+      "get": {
+        "description": "The caller's own live mobile sessions, so a user can see and end them.",
+        "operationId": "list_sessions_api_mobile_sessions_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Sessions",
+        "tags": [
+          "mobile"
+        ]
+      }
+    },
+    "/api/mobile/sessions/{family_id}": {
+      "delete": {
+        "description": "End one of the caller's own sessions by family id.",
+        "operationId": "revoke_session_api_mobile_sessions__family_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "family_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Family Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Revoke Session",
+        "tags": [
+          "mobile"
+        ]
+      }
+    },
     "/api/notifications": {
       "get": {
         "operationId": "list_notifications_api_notifications_get",
@@ -77866,6 +79311,113 @@
         "summary": "Refresh Trust Profile Route",
         "tags": [
           "number-trust"
+        ]
+      }
+    },
+    "/api/platform/tls/ask": {
+      "get": {
+        "description": "The on-demand certificate decision Caddy asks for.\n\nThe decision function returns only the compact allow/deny body expected by the\nedge; its token check and every ordinary refusal produce status 403. The shared\nendpoint wrapper only translates unexpected/domain exceptions, not deny results.",
+        "operationId": "tls_ask_api_platform_tls_ask_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "domain",
+            "required": true,
+            "schema": {
+              "maxLength": 253,
+              "minLength": 3,
+              "title": "Domain",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Voxdesk-Ask-Token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Voxdesk-Ask-Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Tls Ask",
+        "tags": [
+          "white-label-tls"
+        ]
+      }
+    },
+    "/api/platform/tls/status": {
+      "get": {
+        "description": "Certificate state for a domain the caller's tenant owns.",
+        "operationId": "tls_status_api_platform_tls_status_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "domain",
+            "required": true,
+            "schema": {
+              "maxLength": 253,
+              "minLength": 3,
+              "title": "Domain",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Tls Status",
+        "tags": [
+          "white-label-tls"
         ]
       }
     },
@@ -113540,6 +115092,3941 @@
         ]
       }
     },
+    "/api/wfm/accuracy": {
+      "get": {
+        "description": "Stored, previously computed accuracy for this queue \u2014 plus its trend.",
+        "operationId": "read_accuracy_api_wfm_accuracy_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "queue_key",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 36,
+              "title": "Queue Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "environment_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Read Accuracy",
+        "tags": [
+          "workforce-management"
+        ]
+      }
+    },
+    "/api/wfm/adherence": {
+      "get": {
+        "operationId": "read_adherence_api_wfm_adherence_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "day",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Day"
+            }
+          },
+          {
+            "in": "query",
+            "name": "user_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "User Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "environment_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Read Adherence",
+        "tags": [
+          "workforce-management"
+        ]
+      }
+    },
+    "/api/wfm/adherence/exceptions": {
+      "get": {
+        "operationId": "list_adherence_exceptions_api_wfm_adherence_exceptions_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "statuses",
+            "required": false,
+            "schema": {
+              "default": "open",
+              "maxLength": 120,
+              "title": "Statuses",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "user_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "User Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Adherence Exceptions",
+        "tags": [
+          "workforce-management"
+        ]
+      }
+    },
+    "/api/wfm/adherence/exceptions/{exception_id}/decide": {
+      "post": {
+        "operationId": "decide_adherence_exception_api_wfm_adherence_exceptions__exception_id__decide_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "exception_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Exception Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecideIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Decide Adherence Exception",
+        "tags": [
+          "workforce-management"
+        ]
+      }
+    },
+    "/api/wfm/adherence/sweep": {
+      "post": {
+        "operationId": "sweep_adherence_api_wfm_adherence_sweep_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "day",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Day"
+            }
+          },
+          {
+            "in": "query",
+            "name": "environment_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Sweep Adherence",
+        "tags": [
+          "workforce-management"
+        ]
+      }
+    },
+    "/api/wfm/forecasts": {
+      "get": {
+        "operationId": "list_forecasts_api_wfm_forecasts_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "queue_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 36,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Queue Key"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "in": "query",
+            "name": "environment_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Forecasts",
+        "tags": [
+          "workforce-management"
+        ]
+      },
+      "post": {
+        "description": "Generate a forecast from stored history. 422 when there is too little.",
+        "operationId": "create_forecast_api_wfm_forecasts_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "environment_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/app__platform_v2__wfm__router__ForecastRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Forecast",
+        "tags": [
+          "workforce-management"
+        ]
+      }
+    },
+    "/api/wfm/forecasts/{forecast_id}": {
+      "get": {
+        "operationId": "read_forecast_api_wfm_forecasts__forecast_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "forecast_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Forecast Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "environment_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Read Forecast",
+        "tags": [
+          "workforce-management"
+        ]
+      }
+    },
+    "/api/wfm/forecasts/{forecast_id}/score": {
+      "post": {
+        "description": "Score the elapsed part of a forecast against stored actuals.\n\nRefuses when nothing has elapsed: an accuracy number computed from the future\nis a fabrication, not a measurement.",
+        "operationId": "score_forecast_api_wfm_forecasts__forecast_id__score_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "forecast_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Forecast Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "environment_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Score Forecast",
+        "tags": [
+          "workforce-management"
+        ]
+      }
+    },
+    "/api/wfm/history": {
+      "get": {
+        "operationId": "read_history_api_wfm_history_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "queue_key",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 36,
+              "title": "Queue Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "start",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Offset"
+            }
+          },
+          {
+            "in": "query",
+            "name": "environment_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Read History",
+        "tags": [
+          "workforce-management"
+        ]
+      }
+    },
+    "/api/wfm/history/counts": {
+      "get": {
+        "operationId": "history_counts_api_wfm_history_counts_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "queue_key",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 36,
+              "title": "Queue Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "environment_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "History Counts",
+        "tags": [
+          "workforce-management"
+        ]
+      }
+    },
+    "/api/wfm/history/coverage": {
+      "get": {
+        "description": "Where agents were logged in, and in which states \u2014 the shrinkage ledger.",
+        "operationId": "history_coverage_api_wfm_history_coverage_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "start",
+            "required": true,
+            "schema": {
+              "format": "date-time",
+              "title": "Start",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end",
+            "required": true,
+            "schema": {
+              "format": "date-time",
+              "title": "End",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "environment_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "History Coverage",
+        "tags": [
+          "workforce-management"
+        ]
+      }
+    },
+    "/api/wfm/history/rebuild": {
+      "post": {
+        "description": "Recompute interval history from telephony rows (idempotent).",
+        "operationId": "rebuild_history_api_wfm_history_rebuild_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "environment_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RollupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Rebuild History",
+        "tags": [
+          "workforce-management"
+        ]
+      }
+    },
+    "/api/wfm/intraday": {
+      "get": {
+        "operationId": "read_intraday_api_wfm_intraday_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "queue_key",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 36,
+              "title": "Queue Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "as_of",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "As Of"
+            }
+          },
+          {
+            "in": "query",
+            "name": "environment_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Read Intraday",
+        "tags": [
+          "workforce-management"
+        ]
+      }
+    },
+    "/api/wfm/labor-rules": {
+      "get": {
+        "operationId": "list_labor_rules_api_wfm_labor_rules_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Labor Rules",
+        "tags": [
+          "workforce-management"
+        ]
+      },
+      "put": {
+        "description": "There is one active rule set per tenant; a new one supersedes the old.",
+        "operationId": "upsert_labor_rules_api_wfm_labor_rules_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LaborRuleIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Upsert Labor Rules",
+        "tags": [
+          "workforce-management"
+        ]
+      }
+    },
+    "/api/wfm/my-shifts": {
+      "get": {
+        "description": "The caller's own rota \u2014 the endpoint the mobile app reads.",
+        "operationId": "my_shifts_api_wfm_my_shifts_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "start",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "My Shifts",
+        "tags": [
+          "workforce-management"
+        ]
+      }
+    },
+    "/api/wfm/schedules": {
+      "get": {
+        "operationId": "list_schedules_api_wfm_schedules_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "in": "query",
+            "name": "environment_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Schedules",
+        "tags": [
+          "workforce-management"
+        ]
+      },
+      "post": {
+        "operationId": "create_schedule_api_wfm_schedules_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "environment_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Schedule",
+        "tags": [
+          "workforce-management"
+        ]
+      }
+    },
+    "/api/wfm/schedules/{schedule_id}": {
+      "get": {
+        "operationId": "read_schedule_api_wfm_schedules__schedule_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "schedule_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Schedule Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Read Schedule",
+        "tags": [
+          "workforce-management"
+        ]
+      }
+    },
+    "/api/wfm/schedules/{schedule_id}/archive": {
+      "post": {
+        "operationId": "archive_schedule_api_wfm_schedules__schedule_id__archive_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "schedule_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Schedule Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Archive Schedule",
+        "tags": [
+          "workforce-management"
+        ]
+      }
+    },
+    "/api/wfm/schedules/{schedule_id}/diff": {
+      "get": {
+        "operationId": "diff_schedule_versions_api_wfm_schedules__schedule_id__diff_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "schedule_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Schedule Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "before_version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Before Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "after_version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "After Version Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Diff Schedule Versions",
+        "tags": [
+          "workforce-management"
+        ]
+      }
+    },
+    "/api/wfm/schedules/{schedule_id}/publish": {
+      "post": {
+        "operationId": "publish_schedule_api_wfm_schedules__schedule_id__publish_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "schedule_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Schedule Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/app__platform_v2__wfm__router__PublishIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Publish Schedule",
+        "tags": [
+          "workforce-management"
+        ]
+      }
+    },
+    "/api/wfm/schedules/{schedule_id}/solve": {
+      "post": {
+        "description": "Build a rota for this week from the latest forecast and the labour rules.\n\nEmployees default to every active user with queue access in the tenant; the\ncaller can narrow the list. A solve that cannot satisfy the rules raises\n``schedule_infeasible`` with the arithmetic that explains it.",
+        "operationId": "solve_schedule_api_wfm_schedules__schedule_id__solve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "schedule_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Schedule Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "environment_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolveIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Solve Schedule",
+        "tags": [
+          "workforce-management"
+        ]
+      }
+    },
+    "/api/wfm/shifts/{shift_id}/award": {
+      "post": {
+        "operationId": "award_shift_api_wfm_shifts__shift_id__award_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "shift_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Shift Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Award Shift",
+        "tags": [
+          "workforce-management"
+        ]
+      }
+    },
+    "/api/wfm/shifts/{shift_id}/bids": {
+      "get": {
+        "operationId": "list_bids_api_wfm_shifts__shift_id__bids_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "shift_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Shift Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Bids",
+        "tags": [
+          "workforce-management"
+        ]
+      },
+      "post": {
+        "operationId": "place_bid_api_wfm_shifts__shift_id__bids_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "shift_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Shift Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "environment_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BidIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Place Bid",
+        "tags": [
+          "workforce-management"
+        ]
+      }
+    },
+    "/api/wfm/shifts/{shift_id}/open": {
+      "post": {
+        "operationId": "open_shift_api_wfm_shifts__shift_id__open_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "shift_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Shift Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Open Shift",
+        "tags": [
+          "workforce-management"
+        ]
+      }
+    },
+    "/api/wfm/staffing": {
+      "get": {
+        "description": "Agent requirement per interval for a stored forecast.",
+        "operationId": "read_staffing_api_wfm_staffing_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "forecast_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Forecast Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "service_level",
+            "required": false,
+            "schema": {
+              "default": 0.8,
+              "exclusiveMinimum": 0.0,
+              "maximum": 1.0,
+              "title": "Service Level",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "answer_seconds",
+            "required": false,
+            "schema": {
+              "default": 20.0,
+              "maximum": 600.0,
+              "minimum": 0.0,
+              "title": "Answer Seconds",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "max_occupancy",
+            "required": false,
+            "schema": {
+              "default": 0.85,
+              "exclusiveMinimum": 0.0,
+              "maximum": 1.0,
+              "title": "Max Occupancy",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "shrinkage",
+            "required": false,
+            "schema": {
+              "default": 0.0,
+              "exclusiveMaximum": 1.0,
+              "minimum": 0.0,
+              "title": "Shrinkage",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "average_handle_seconds",
+            "required": false,
+            "schema": {
+              "default": 240.0,
+              "exclusiveMinimum": 0.0,
+              "maximum": 14400.0,
+              "title": "Average Handle Seconds",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "band",
+            "required": false,
+            "schema": {
+              "default": "expected",
+              "pattern": "^(low|expected|high)$",
+              "title": "Band",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "environment_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Read Staffing",
+        "tags": [
+          "workforce-management"
+        ]
+      }
+    },
+    "/api/wfm/swaps": {
+      "get": {
+        "operationId": "list_swaps_api_wfm_swaps_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "statuses",
+            "required": false,
+            "schema": {
+              "default": "offered,accepted",
+              "maxLength": 120,
+              "title": "Statuses",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "all_users",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "All Users",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Swaps",
+        "tags": [
+          "workforce-management"
+        ]
+      },
+      "post": {
+        "operationId": "offer_swap_api_wfm_swaps_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "environment_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwapOfferIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Offer Swap",
+        "tags": [
+          "workforce-management"
+        ]
+      }
+    },
+    "/api/wfm/swaps/{swap_id}/accept": {
+      "post": {
+        "operationId": "accept_swap_api_wfm_swaps__swap_id__accept_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "swap_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Swap Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Accept Swap",
+        "tags": [
+          "workforce-management"
+        ]
+      }
+    },
+    "/api/wfm/swaps/{swap_id}/decide": {
+      "post": {
+        "operationId": "decide_swap_api_wfm_swaps__swap_id__decide_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "swap_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Swap Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecideIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Decide Swap",
+        "tags": [
+          "workforce-management"
+        ]
+      }
+    },
+    "/api/wfm/templates": {
+      "get": {
+        "operationId": "list_templates_api_wfm_templates_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Templates",
+        "tags": [
+          "workforce-management"
+        ]
+      },
+      "post": {
+        "operationId": "create_template_api_wfm_templates_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Template",
+        "tags": [
+          "workforce-management"
+        ]
+      }
+    },
+    "/api/wfm/templates/{template_id}": {
+      "delete": {
+        "description": "Deactivate rather than delete: published rotas reference this row.",
+        "operationId": "deactivate_template_api_wfm_templates__template_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "template_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Template Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Deactivate Template",
+        "tags": [
+          "workforce-management"
+        ]
+      }
+    },
+    "/api/wfm/time-off": {
+      "get": {
+        "operationId": "list_time_off_api_wfm_time_off_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "statuses",
+            "required": false,
+            "schema": {
+              "default": "requested",
+              "maxLength": 120,
+              "title": "Statuses",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "user_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "User Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Time Off",
+        "tags": [
+          "workforce-management"
+        ]
+      },
+      "post": {
+        "description": "Any employee may request their own leave; an approver may file for others.",
+        "operationId": "create_time_off_api_wfm_time_off_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "environment_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TimeOffIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Time Off",
+        "tags": [
+          "workforce-management"
+        ]
+      }
+    },
+    "/api/wfm/time-off/accruals": {
+      "post": {
+        "operationId": "accrue_time_off_api_wfm_time_off_accruals_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccrualIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Accrue Time Off",
+        "tags": [
+          "workforce-management"
+        ]
+      }
+    },
+    "/api/wfm/time-off/balances": {
+      "get": {
+        "operationId": "time_off_balances_api_wfm_time_off_balances_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "user_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Time Off Balances",
+        "tags": [
+          "workforce-management"
+        ]
+      }
+    },
+    "/api/wfm/time-off/{request_id}/cancel": {
+      "post": {
+        "operationId": "cancel_time_off_api_wfm_time_off__request_id__cancel_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Request Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Cancel Time Off",
+        "tags": [
+          "workforce-management"
+        ]
+      }
+    },
+    "/api/wfm/time-off/{request_id}/decide": {
+      "post": {
+        "operationId": "decide_time_off_api_wfm_time_off__request_id__decide_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Request Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecideIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Decide Time Off",
+        "tags": [
+          "workforce-management"
+        ]
+      }
+    },
+    "/api/whitelabel/assets": {
+      "get": {
+        "operationId": "list_assets_api_whitelabel_assets_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Assets",
+        "tags": [
+          "white-label"
+        ]
+      },
+      "post": {
+        "description": "Upload a logo or favicon. The bytes are validated and SVGs are sanitised.",
+        "operationId": "upload_asset_api_whitelabel_assets_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_asset_api_whitelabel_assets_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Upload Asset",
+        "tags": [
+          "white-label"
+        ]
+      }
+    },
+    "/api/whitelabel/assets/{asset_id}": {
+      "delete": {
+        "operationId": "delete_asset_api_whitelabel_assets__asset_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Asset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Asset",
+        "tags": [
+          "white-label"
+        ]
+      },
+      "get": {
+        "operationId": "read_asset_api_whitelabel_assets__asset_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Asset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Read Asset",
+        "tags": [
+          "white-label"
+        ]
+      }
+    },
+    "/api/whitelabel/assets/{asset_id}/content": {
+      "get": {
+        "description": "Serve the stored bytes with the sniffed content type and a tight CSP.",
+        "operationId": "read_asset_content_api_whitelabel_assets__asset_id__content_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Asset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Read Asset Content",
+        "tags": [
+          "white-label"
+        ]
+      }
+    },
+    "/api/whitelabel/domains": {
+      "get": {
+        "operationId": "list_domains_api_whitelabel_domains_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Domains",
+        "tags": [
+          "white-label"
+        ]
+      },
+      "post": {
+        "description": "Claim a hostname. The ownership token is returned **once**, in this response.",
+        "operationId": "claim_domain_api_whitelabel_domains_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClaimDomainIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Claim Domain",
+        "tags": [
+          "white-label"
+        ]
+      }
+    },
+    "/api/whitelabel/domains/{domain_id}": {
+      "delete": {
+        "operationId": "delete_domain_api_whitelabel_domains__domain_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "domain_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Domain Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Domain",
+        "tags": [
+          "white-label"
+        ]
+      },
+      "get": {
+        "operationId": "read_domain_api_whitelabel_domains__domain_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "domain_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Domain Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Read Domain",
+        "tags": [
+          "white-label"
+        ]
+      }
+    },
+    "/api/whitelabel/domains/{domain_id}/certificate": {
+      "get": {
+        "operationId": "read_certificate_api_whitelabel_domains__domain_id__certificate_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "domain_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Domain Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Read Certificate",
+        "tags": [
+          "white-label"
+        ]
+      }
+    },
+    "/api/whitelabel/domains/{domain_id}/checks": {
+      "get": {
+        "operationId": "read_domain_checks_api_whitelabel_domains__domain_id__checks_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "domain_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Domain Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Read Domain Checks",
+        "tags": [
+          "white-label"
+        ]
+      }
+    },
+    "/api/whitelabel/domains/{domain_id}/disable": {
+      "post": {
+        "operationId": "disable_domain_api_whitelabel_domains__domain_id__disable_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "domain_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Domain Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/DisableDomainIn"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Disable Domain",
+        "tags": [
+          "white-label"
+        ]
+      }
+    },
+    "/api/whitelabel/domains/{domain_id}/enable": {
+      "post": {
+        "operationId": "enable_domain_api_whitelabel_domains__domain_id__enable_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "domain_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Domain Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Enable Domain",
+        "tags": [
+          "white-label"
+        ]
+      }
+    },
+    "/api/whitelabel/domains/{domain_id}/refresh-certificate": {
+      "post": {
+        "operationId": "refresh_certificate_api_whitelabel_domains__domain_id__refresh_certificate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "domain_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Domain Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Refresh Certificate",
+        "tags": [
+          "white-label"
+        ]
+      }
+    },
+    "/api/whitelabel/domains/{domain_id}/verify": {
+      "post": {
+        "operationId": "verify_domain_api_whitelabel_domains__domain_id__verify_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "domain_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Domain Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/VerifyDomainIn"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Verify Domain",
+        "tags": [
+          "white-label"
+        ]
+      }
+    },
+    "/api/whitelabel/email-domains": {
+      "get": {
+        "operationId": "list_sender_domains_api_whitelabel_email_domains_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Sender Domains",
+        "tags": [
+          "white-label"
+        ]
+      },
+      "post": {
+        "operationId": "create_sender_domain_api_whitelabel_email_domains_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SenderDomainIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Sender Domain",
+        "tags": [
+          "white-label"
+        ]
+      }
+    },
+    "/api/whitelabel/email-domains/{sender_id}": {
+      "delete": {
+        "operationId": "delete_sender_domain_api_whitelabel_email_domains__sender_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sender_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Sender Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Sender Domain",
+        "tags": [
+          "white-label"
+        ]
+      }
+    },
+    "/api/whitelabel/email-domains/{sender_id}/records": {
+      "get": {
+        "operationId": "read_sender_records_api_whitelabel_email_domains__sender_id__records_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sender_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Sender Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Read Sender Records",
+        "tags": [
+          "white-label"
+        ]
+      }
+    },
+    "/api/whitelabel/email-domains/{sender_id}/verify": {
+      "post": {
+        "operationId": "verify_sender_domain_api_whitelabel_email_domains__sender_id__verify_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sender_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Sender Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Verify Sender Domain",
+        "tags": [
+          "white-label"
+        ]
+      }
+    },
+    "/api/whitelabel/public/widget/{public_key}/config": {
+      "get": {
+        "description": "Widget configuration for an authorised embedding origin.",
+        "operationId": "public_widget_config_api_whitelabel_public_widget__public_key__config_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "public_key",
+            "required": true,
+            "schema": {
+              "title": "Public Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Origin",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Origin"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Public Widget Config",
+        "tags": [
+          "white-label-widget"
+        ]
+      }
+    },
+    "/api/whitelabel/public/widget/{public_key}/loader.js": {
+      "get": {
+        "description": "The script a tenant's site loads.\n\nResolved from ``Host`` **and** the public key: the host decides the tenant, the\nkey is checked against that tenant so a key copied from one tenant's page\ncannot be used to pull another tenant's theme onto a domain that is not theirs.\nA host we do not serve is a 404 \u2014 never the default theme.",
+        "operationId": "public_widget_loader_api_whitelabel_public_widget__public_key__loader_js_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "public_key",
+            "required": true,
+            "schema": {
+              "title": "Public Key",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Public Widget Loader",
+        "tags": [
+          "white-label-widget"
+        ]
+      }
+    },
+    "/api/whitelabel/templates": {
+      "get": {
+        "operationId": "list_templates_api_whitelabel_templates_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Templates",
+        "tags": [
+          "white-label"
+        ]
+      }
+    },
+    "/api/whitelabel/templates/{name}/preview": {
+      "post": {
+        "description": "Render a branded email with the active theme, for the console's preview pane.",
+        "operationId": "preview_template_api_whitelabel_templates__name__preview_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "title": "Name",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplatePreviewIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Preview Template",
+        "tags": [
+          "white-label"
+        ]
+      }
+    },
+    "/api/whitelabel/theme": {
+      "get": {
+        "operationId": "read_theme_api_whitelabel_theme_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Read Theme",
+        "tags": [
+          "white-label"
+        ]
+      },
+      "post": {
+        "operationId": "publish_theme_api_whitelabel_theme_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ThemeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Publish Theme",
+        "tags": [
+          "white-label"
+        ]
+      }
+    },
+    "/api/whitelabel/theme/validate": {
+      "post": {
+        "description": "Dry-run validation, so the editor can show contrast failures before saving.\n\nThis endpoint *reports*; it never raises. A theme editor that has to parse a 422\nto colour a field red is one that will show the failure in the wrong place, so\nthe errors come back in the body keyed by the field they belong to.",
+        "operationId": "validate_theme_endpoint_api_whitelabel_theme_validate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ThemeValidateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Validate Theme Endpoint",
+        "tags": [
+          "white-label"
+        ]
+      }
+    },
+    "/api/whitelabel/theme/versions": {
+      "get": {
+        "operationId": "list_theme_versions_api_whitelabel_theme_versions_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Theme Versions",
+        "tags": [
+          "white-label"
+        ]
+      }
+    },
+    "/api/whitelabel/theme/versions/{version_id}/activate": {
+      "post": {
+        "operationId": "activate_theme_version_api_whitelabel_theme_versions__version_id__activate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Activate Theme Version",
+        "tags": [
+          "white-label"
+        ]
+      }
+    },
+    "/api/whitelabel/widget": {
+      "get": {
+        "operationId": "read_widget_admin_api_whitelabel_widget_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Read Widget Admin",
+        "tags": [
+          "white-label"
+        ]
+      }
+    },
     "/api/workflows": {
       "get": {
         "operationId": "list_workflows_api_workflows_get",
@@ -115026,7 +120513,7 @@
               "schema": {
                 "anyOf": [
                   {
-                    "$ref": "#/components/schemas/RefreshIn"
+                    "$ref": "#/components/schemas/app__api__auth_routes__RefreshIn"
                   },
                   {
                     "type": "null"
@@ -115246,7 +120733,7 @@
               "schema": {
                 "anyOf": [
                   {
-                    "$ref": "#/components/schemas/RefreshIn"
+                    "$ref": "#/components/schemas/app__api__auth_routes__RefreshIn"
                   },
                   {
                     "type": "null"

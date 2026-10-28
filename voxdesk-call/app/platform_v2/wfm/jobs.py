@@ -20,7 +20,6 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import Environment
 from app.db.platform_v2_models import (
     WfmForecast,
     WfmForecastAccuracy,
@@ -312,7 +311,12 @@ async def adherence_sweep(
         for interval in states:
             state_by_user.setdefault(interval.user_id, []).append(interval)
         for shift in shifts:
-            detail = adherence.evaluate_shift(shift, state_by_user.get(shift.user_id, []))
+            user_states = (
+                state_by_user.get(shift.user_id, [])
+                if shift.user_id is not None
+                else []
+            )
+            detail = adherence.evaluate_shift(shift, user_states)
             detected = adherence.detect_exceptions(shift, detail)
             rows = await adherence.persist_exceptions(
                 session,

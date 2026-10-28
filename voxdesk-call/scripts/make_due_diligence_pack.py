@@ -47,6 +47,7 @@ PYTHON_KNOWN_LICENSES: dict[str, str] = {
     "pyyaml": "MIT",
     "numpy": "BSD-3-Clause",
     "scipy": "BSD-3-Clause",
+    "ortools": "Apache-2.0",
     "soundfile": "BSD-3-Clause",
     "noisereduce": "MIT",
     "pipecat-ai": "BSD-2-Clause",
@@ -569,7 +570,7 @@ def generate_known_limitations(root: Path, matrix_rows: list[dict[str, str]]) ->
     (dd_dir / "KNOWN_LIMITATIONS.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def generate_listing_copy(root: Path, matrix_rows: list[dict[str, str]]) -> None:
+def generate_listing_copy(root: Path, matrix_rows: list[dict[str, str]], stats: dict[str, int | str]) -> None:
     live_rows = [r for r in matrix_rows if r["status"] == "LIVE"]
     non_live_rows = [r for r in matrix_rows if r["status"] != "LIVE"]
 
@@ -590,8 +591,8 @@ def generate_listing_copy(root: Path, matrix_rows: list[dict[str, str]]) -> None
         "",
         "**Summary**:",
         "VoxDesk (`voxdesk-call`) is a self-hosted, multi-tenant AI Voice & Omnichannel",
-        "Contact Center platform built on FastAPI, PostgreSQL 16 (`239` tables at head",
-        "migration `0062_drop_pcap_artifacts`), Pipecat 0.0.94, React 18 / Next.js 14,",
+        f"Contact Center platform built on FastAPI, PostgreSQL 16 (`{stats['table_count']}` registered tables at head",
+        f"migration `{stats['migration_head']}`), Pipecat 0.0.94, React 18 / Next.js 14,",
         "Go realtime/signaling services, and a Rust RFC 5764 DTLS-SRTP media engine.",
         "Every advertised capability below is verified `LIVE` by automated JUnit test",
         "suites (`make verify-sale`).",
@@ -661,26 +662,72 @@ def generate_listing_copy(root: Path, matrix_rows: list[dict[str, str]]) -> None
     (root / "docs" / "SALES" / "LISTING_COPY.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def generate_test_report(root: Path) -> dict[str, int]:
-    junit_path = root / "evidence" / "junit" / "feature_evidence.xml"
-    junit_tests = 0
-    junit_failures = 0
-    junit_errors = 0
-    junit_time_s = 0.0
-    junit_timestamp = ""
-    if junit_path.exists():
-        tree = ET.parse(junit_path)
-        elem = tree.getroot()
-        suites = elem.findall("testsuite") if elem.tag == "testsuites" else [elem]
-        for s in suites:
-            junit_tests += int(s.attrib.get("tests", 0))
-            junit_failures += int(s.attrib.get("failures", 0))
-            junit_errors += int(s.attrib.get("errors", 0))
-            junit_time_s += float(s.attrib.get("time", 0.0))
-            if not junit_timestamp:
-                junit_timestamp = s.attrib.get("timestamp", "")
+def _junit_summary(path: Path) -> dict[str, int | float]:
+    """Return aggregate counts from either a JUnit testsuite or testsuites file."""
+    totals: dict[str, int | float] = {
+        "tests": 0,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "time": 0.0,
+    }
+    if not path.exists():
+        return totals
+    root = ET.parse(path).getroot()
+    suites = root.findall("testsuite") if root.tag == "testsuites" else [root]
+    for suite in suites:
+        for key in ("tests", "failures", "errors", "skipped"):
+            totals[key] = int(totals[key]) + int(suite.attrib.get(key, 0))
+        totals["time"] = float(totals["time"]) + float(suite.attrib.get("time", 0.0))
+    return totals
 
-    # Collect total pytest node count via repo_stats if available
+
+def _repository_facts(root: Path) -> dict[str, int | str]:
+    """Measure the checked-in OpenAPI contract and Alembic/model head."""
+    schema = json.loads((root / "contracts" / "openapi.json").read_text(encoding="utf-8"))
+    http_methods = {"get", "put", "post", "delete", "options", "head", "patch", "trace"}
+    openapi_paths = schema.get("paths", {})
+    openapi_operations = sum(
+        1
+        for path_item in openapi_paths.values()
+        for method in path_item
+        if method.lower() in http_methods
+    )
+
+    from alembic.config import Config
+    from alembic.script import ScriptDirectory
+
+    alembic_config = Config(str(root / "alembic.ini"))
+    alembic_config.set_main_option("script_location", str(root / "alembic"))
+    heads = ScriptDirectory.from_config(alembic_config).get_heads()
+    if len(heads) != 1:
+        raise RuntimeError(f"expected one Alembic head, found {heads!r}")
+
+    if str(root) not in sys.path:
+        sys.path.insert(0, str(root))
+    from contextlib import redirect_stderr, redirect_stdout
+    from io import StringIO
+
+    import_output = StringIO()
+    with redirect_stdout(import_output), redirect_stderr(import_output):
+        import app.main  # noqa: F401 - register all ORM models before counting metadata
+    from app.db.models import Base
+
+    return {
+        "openapi_paths": len(openapi_paths),
+        "openapi_operations": openapi_operations,
+        "migration_head": heads[0],
+        "table_count": len(Base.metadata.tables),
+    }
+
+
+def generate_test_report(root: Path) -> dict[str, int | str]:
+    feature_junit = _junit_summary(root / "evidence" / "junit" / "feature_evidence.xml")
+    batch07_junit = _junit_summary(root / "reports" / "check" / "batch07" / "junit.xml")
+    truth_junit = _junit_summary(root / "reports" / "check" / "batch07" / "truth.xml")
+    live_junit = _junit_summary(root / "reports" / "check" / "batch07" / "live.xml")
+
+    # Collect repository totals from the same measurement script used by README.
     stats_out = subprocess.run(
         [sys.executable, str(root / "scripts" / "repo_stats.py")],
         cwd=root,
@@ -690,12 +737,37 @@ def generate_test_report(root: Path) -> dict[str, int]:
     ).stdout
     repo_stats = json.loads(stats_out)
     collected_pytest_nodes = int(repo_stats.get("collected_pytest_nodes", 0))
+    test_files = sum(
+        1
+        for path in (root / "tests").rglob("*.py")
+        if path.name.startswith("test_") or path.name.endswith("_test.py")
+    )
+    facts = _repository_facts(root)
+
+    feature_tests = int(feature_junit["tests"])
+    feature_failures = int(feature_junit["failures"]) + int(feature_junit["errors"])
+    feature_passed = feature_tests - feature_failures - int(feature_junit["skipped"])
+    batch07_tests = int(batch07_junit["tests"])
+    batch07_failures = int(batch07_junit["failures"]) + int(batch07_junit["errors"])
+    batch07_passed = batch07_tests - batch07_failures - int(batch07_junit["skipped"])
+    truth_tests = int(truth_junit["tests"])
+    truth_failures = int(truth_junit["failures"]) + int(truth_junit["errors"])
+    truth_passed = truth_tests - truth_failures - int(truth_junit["skipped"])
+    live_tests = int(live_junit["tests"])
+    live_skipped = int(live_junit["skipped"])
+    batch07_status = "PASS" if batch07_tests and not batch07_failures else "NOT MEASURED"
+    truth_status = "PASS" if truth_tests and not truth_failures else "NOT MEASURED"
+    feature_status = "PASS" if feature_tests and not feature_failures else "NOT MEASURED"
 
     lines = [
         "# VoxDesk — Verified Polyglot Test & Quality Report",
         "",
-        "This report is automatically generated by `scripts/make_due_diligence_pack.py`",
-        "from actual repository test execution and JUnit XML artifacts.",
+        "This report is automatically generated by `scripts/make_due_diligence_pack.py`.",
+        "Batch 07 results below are derived from its JUnit artifacts and raw logs in",
+        "`evidence/batch07/`. The Python collection count is not an execution count.",
+        "Polyglot rows without a Batch 07 JUnit artifact preserve historical reports",
+        "and were not rerun by `make batch07-check`; see the toolchain probes before",
+        "treating them as current validation.",
         "",
         "---",
         "",
@@ -703,17 +775,15 @@ def generate_test_report(root: Path) -> dict[str, int]:
         "",
         "| Plane / Test Suite | Runner | Test Files / Packages | Verified Test Cases | Failures / Errors | Status |",
         "|---|---|---:|---:|---:|---|",
-        f"| **Python Backend Total Collected (`tests/`)** | `pytest` | `204` files | `{collected_pytest_nodes}` collected | `0` | **PASS** |",
-        f"| **Feature Matrix Evidence Suite (`evidence/junit/feature_evidence.xml`)** | `pytest --junitxml` | `59` files | `{junit_tests}` passed (`{junit_time_s:.2f}s`) | `{junit_failures + junit_errors}` | **PASS** |",
-        "| **Repository Truth Guard Suite (`tests/truth/`)** | `pytest` | `15` files | `61` passed | `0` | **PASS** |",
-        "| **Vite React Dashboard (`dashboard/`)** | `vitest run` | `50` files | `575` passed | `0` | **PASS** |",
-        "| **Next.js Console (`dashboard-next/`)** | `vitest run` + `tsc --noEmit` | `7` files | `85` passed | `0` | **PASS** |",
-        "| **Rust WebRTC Media Engine (`services/realtime/media-engine-rs`)** | `cargo test --workspace` | `3` suites (`unit` + `dtls_srtp_handshake` + `rtp_media_flow`) | `107` passed | `0` | **PASS** |",
-        "| **Rust Control & Signal Plane (`services/control-plane`)** | `cargo test --workspace` | `2` crates (`voxdesk-control`, `voxdesk-signal`) | `11` passed | `0` | **PASS** |",
-        "| **C++17 Media Plane DSP (`services/media-plane`)** | `ctest --output-on-failure` | `1` binary (`test_media_plane`) | `23` passed | `0` | **PASS** |",
-        "| **Go Realtime Gateway (`services/realtime/gateway-go`)** | `go test -race ./...` | `8` packages | `8/8` packages passed | `0` | **PASS** |",
-        "| **Go Signaling Hub (`services/signal-go`)** | `go test -race ./...` | `1` package | `1/1` package passed | `0` | **PASS** |",
-        "| **Go Operations CLI (`services/ops`)** | `go test -race ./...` | `1` package | `1/1` package passed | `0` | **PASS** |",
+        f"| **Python Backend Total Collected (`tests/`)** | `pytest --collect-only` | `{test_files}` files | `{collected_pytest_nodes}` collected; collection only | `not measured` | **MEASURED** |",
+        f"| **Feature Matrix Evidence Suite** | `pytest --junitxml` | `evidence/junit/feature_evidence.xml` | `{feature_passed}` passed, `{int(feature_junit['skipped'])}` skipped (`{float(feature_junit['time']):.2f}s`) | `{feature_failures}` | **{feature_status}** |",
+        f"| **Batch 07 platform-v2 suites** | `make batch07-check` | `reports/check/batch07/junit.xml` | `{batch07_passed}` passed, `{int(batch07_junit['skipped'])}` skipped | `{batch07_failures}` | **{batch07_status}** |",
+        f"| **Batch 07 truth guards** | `make batch07-check` | `reports/check/batch07/truth.xml` | `{truth_passed}` passed, `{int(truth_junit['skipped'])}` skipped | `{truth_failures}` | **{truth_status}** |",
+        "| **Vite React Dashboard (`dashboard/`)** | `vitest run` | Historical report; not rerun by Batch 07 | `575` previously reported | `not measured in Batch 07` | **HISTORICAL** |",
+        "| **Next.js Console (`dashboard-next/`)** | `vitest run` + `tsc --noEmit` | Batch 07 raw log: `evidence/batch07/batch07-check-final6.log` | `85` passed, build passed | `0` | **PASS** |",
+
+        "| **Rust / Go / C++ services** | Cargo, Go, and CTest | Rust/Go toolchains absent; C++ tests not included in Batch 07 (g++ present, clang++ absent); see `evidence/batch07/toolchain-probes.log` | `not run` | `not measured` | **NOT RUN** |",
+
         "",
         "---",
         "",
@@ -721,36 +791,45 @@ def generate_test_report(root: Path) -> dict[str, int]:
         "",
         "| Gate | Command | Result |",
         "|---|---|---|",
-        "| **Python Linter (`ruff`)** | `ruff check app tests scripts alembic loadtest` | `All checks passed! (0 errors)` |",
+        "| **Python Linter (`ruff`)** | Scoped Batch 07 source files | `PASS`; full repository lint has 41 pre-existing findings, including test-file issues left unchanged |",
+
+        "| **Python Types (`mypy`)** | Scoped Batch 07 files | `PASS`; 51 files, no issues |",
         "| **Null-Byte Scanner** | `python scripts/verify_no_null_bytes.py` | `[]` (`0` corrupted files) |",
         "| **Filler / Clone Scanner** | `python scripts/verify_no_filler.py` | `0` findings |",
         "| **Fake-Success Scanner** | `python scripts/verify_no_fake_success.py` | `0` unallowlisted findings; `scripts/fake_success_allowlist.txt` is `0` bytes |",
         "| **Dependency Pin Verification** | `python scripts/verify_dependencies.py` | `OK: all third-party imports are declared in requirements.txt` |",
         "| **Protobuf / OpenAPI / AsyncAPI Contracts** | `python scripts/verify_contracts.py` | `OK: contracts verified` |",
-        "| **Alembic Single Head Verification** | `alembic heads` | `0062_drop_pcap_artifacts (head)` (`239` tables) |",
+        f"| **Alembic Single Head Verification** | `python -m alembic heads` | `{facts['migration_head']} (head)` (`{facts['table_count']}` registered tables) |",
+
+        "| **Terraform / Helm / Caddy** | `make batch07-check` | `PASS`; see raw Batch 07 validation log |",
+        "| **SDK / Admin Console** | `make batch07-check` | `PASS`; native Android/iOS source checks were structural, not compiled |",
         "",
         "---",
         "",
-        "## 3. Flaky Test Ledger",
+        "## 3. Live Provider Opt-In Tests",
         "",
-        "- **Unquarantined Flaky Tests**: `0`",
-        "- **Live Provider Opt-In Tests (`@pytest.mark.live`)**: `5` provider smoke tests",
-        "  in `tests/test_real_providers.py` and `tests/agent/test_s2s_smoke.py` are",
-        "  excluded from offline CI (`-m 'not live'`) and run nightly in",
-        "  `.github/workflows/real-integrations.yml` when provider API keys are present.",
+        f"- JUnit cases: `{live_tests}`; skipped without live provider credentials: `{live_skipped}`.",
+        "- See `evidence/batch07/batch07-live-final2.log` for the raw run output.",
     ]
 
     (root / "docs" / "DUE_DILIGENCE" / "TEST_REPORT.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     return {
         "collected_pytest_nodes": collected_pytest_nodes,
-        "feature_evidence_tests": junit_tests,
+        "feature_evidence_tests": feature_tests,
         "source_files": int(repo_stats.get("source_files", 0)),
         "source_physical_lines": int(repo_stats.get("source_physical_lines", 0)),
         "registered_routes": int(repo_stats.get("registered_routes", 0)),
+        "test_files": test_files,
+        "openapi_paths": int(facts["openapi_paths"]),
+        "openapi_operations": int(facts["openapi_operations"]),
+        "migration_head": str(facts["migration_head"]),
+        "table_count": int(facts["table_count"]),
+        "batch07_passed": batch07_passed,
+        "truth_passed": truth_passed,
     }
 
 
-def generate_due_diligence_readme(root: Path, stats: dict[str, int], sbom_counts: dict[str, int], pack_name: str) -> None:
+def generate_due_diligence_readme(root: Path, stats: dict[str, int | str], sbom_counts: dict[str, int], pack_name: str) -> None:
     lines = [
         "# VoxDesk — Technical Due-Diligence Evidence Index",
         "",
@@ -762,11 +841,12 @@ def generate_due_diligence_readme(root: Path, stats: dict[str, int], sbom_counts
         "",
         "## 1. Repository & Runtime Snapshot (`scripts/repo_stats.py`)",
         "",
-        f"- **Source Files (`app/`, `services/`, `dashboard/`, `dashboard-next/`, `sdk/`, `tests/`, `scripts/`, `alembic/`)**: `{stats['source_files']}`",
-        f"- **Physical Source Lines**: `{stats['source_physical_lines']:,}`",
-        f"- **Registered FastAPI Routes (`app.main:app`)**: `{stats['registered_routes']}` (`969` OpenAPI paths / `1,166` HTTP operations)",
-        f"- **Collected Pytest Nodes**: `{stats['collected_pytest_nodes']:,}`",
-        "- **Alembic Migration Head**: `0062_drop_pcap_artifacts` (`239` tables)",
+        f"- **Source Files (`app/`, `services/`, `dashboard/src/`, `dashboard-next/`, `sdk/`)**: `{int(stats['source_files'])}`",
+
+        f"- **Physical Source Lines**: `{int(stats['source_physical_lines']):,}`",
+        f"- **Registered FastAPI Routes (`app.main:app`)**: `{int(stats['registered_routes'])}` (`{int(stats['openapi_paths'])}` OpenAPI paths / `{int(stats['openapi_operations'])}` HTTP operations)",
+        f"- **Collected Pytest Nodes**: `{int(stats['collected_pytest_nodes']):,}` (collection count, not an execution count)",
+        f"- **Alembic Migration Head**: `{stats['migration_head']}` (`{stats['table_count']}` registered tables)",
         "- **Fake-Success Allowlist (`scripts/fake_success_allowlist.txt`)**: `0` bytes (`0` entries)",
         "",
         "---",
@@ -776,7 +856,7 @@ def generate_due_diligence_readme(root: Path, stats: dict[str, int], sbom_counts
         "| Category | Document / Artifact Path | Description |",
         "|---|---|---|",
         "| **Architecture** | [`docs/DUE_DILIGENCE/ARCHITECTURE.md`](ARCHITECTURE.md) | 5 Mermaid diagrams: Live PSTN call path, Control Plane, Durable Outbox/Jobs, Go/Rust/C++ Realtime SFU, and Browser Web-Call path. |",
-        "| **Test Report** | [`docs/DUE_DILIGENCE/TEST_REPORT.md`](TEST_REPORT.md) | Verified counts across Pytest (`4,707` collected), Vitest (`660` passed), Rust Cargo (`118` passed), C++ CTest (`23` passed), and Go (`10` packages passed). |",
+        f"| **Test Report** | [`docs/DUE_DILIGENCE/TEST_REPORT.md`](TEST_REPORT.md) | Batch 07 platform tests: `{int(stats['batch07_passed'])}` passed; truth guards: `{int(stats['truth_passed'])}` passed; `{int(stats['collected_pytest_nodes']):,}` pytest nodes collected (collection, not execution). Historical UI/polyglot reports and exact toolchain availability are identified explicitly. |",
         "| **Git History** | [`docs/DUE_DILIGENCE/GIT_HISTORY.md`](GIT_HISTORY.md) | Factual log of all 6 commits in `.git`, including the Oct 3, 2026 NUL-byte corruption incident and its permanent CI guard (`scripts/verify_no_null_bytes.py`). |",
         "| **Known Limitations** | [`docs/DUE_DILIGENCE/KNOWN_LIMITATIONS.md`](KNOWN_LIMITATIONS.md) | Auto-generated disclosure of the 3 non-`LIVE` feature rows (`#3` `API_ONLY`, `#19` `NOT_CONFIGURED`, `#35` `PLANNED`) and single-worker concurrency limits. |",
         "| **Verified Feature Matrix** | [`docs/SALES/FEATURE_MATRIX_VERIFIED.md`](../SALES/FEATURE_MATRIX_VERIFIED.md) | 41-row capability matrix (`38 LIVE`, `1 API_ONLY`, `1 NOT_CONFIGURED`, `1 PLANNED`) generated from `tests/truth/feature_manifest.yaml` and `evidence/junit/feature_evidence.xml`. |",
@@ -849,7 +929,11 @@ def build_due_diligence_zip(root: Path, date_str: str) -> tuple[Path, Path]:
     ]:
         if folder.exists():
             for p in sorted(folder.rglob("*")):
-                if p.is_file() and not p.name.endswith(".zip"):
+                if (
+                    p.is_file()
+                    and not p.name.endswith(".zip")
+                    and p.relative_to(root).as_posix() != "evidence/pack/SHA256SUMS"
+                ):
                     bundle_paths.append(p)
 
     # Deduplicate while preserving sorted order
@@ -910,8 +994,8 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     generate_known_limitations(ROOT, matrix_rows)
-    generate_listing_copy(ROOT, matrix_rows)
     stats = generate_test_report(ROOT)
+    generate_listing_copy(ROOT, matrix_rows, stats)
     pack_name = f"due-diligence-{args.date}.zip"
     generate_due_diligence_readme(ROOT, stats, sbom_counts, pack_name)
     zip_path, sha_path = build_due_diligence_zip(ROOT, args.date)

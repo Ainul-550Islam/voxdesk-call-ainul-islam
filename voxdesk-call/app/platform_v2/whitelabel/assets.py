@@ -28,13 +28,16 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import logging
 import os
 import re
 import uuid
+import xml.etree.ElementTree as _ET
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
+from urllib.parse import urlsplit
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -48,6 +51,7 @@ SVG = "image/svg+xml"
 PNG = "image/png"
 JPEG = "image/jpeg"
 WEBP = "image/webp"
+logger = logging.getLogger(__name__)
 
 #: What a tenant may upload, and the extension we store it under. The extension
 #: comes from this table, never from the uploaded filename.
@@ -92,8 +96,6 @@ SVG_ALLOWED_ATTRIBUTES = frozenset(
 #: `href` is allowed only on `<use>` and only for a same-document fragment.
 SVG_HREF_ATTRIBUTES = frozenset({"href", "xlink:href"})
 SVG_NS = "http://www.w3.org/2000/svg"
-
-import xml.etree.ElementTree as _ET
 
 # Registered once, at import: without it a re-serialised SVG comes back as
 # `<ns0:svg xmlns:ns0="...">`, which renders correctly but breaks the CSS
@@ -308,10 +310,104 @@ def asset_root() -> Path:
     return Path(get_plat2_settings().branding_asset_dir)
 
 
-def storage_path_for(tenant_id: uuid.UUID, content_type: str) -> Path:
-    """A path we build entirely ourselves: tenant id + random name + known suffix."""
+def _s3_location(storage_path: str | Path, *, tenant_id: uuid.UUID) -> tuple[str, str] | None:
+    """Parse a stored S3 URI and enforce its configured bucket/tenant prefix."""
+    raw = str(storage_path)
+    if not raw.startswith("s3://"):
+        return None
+    parsed = urlsplit(raw)
+    settings = get_plat2_settings()
+    bucket = parsed.netloc
+    key = parsed.path.lstrip("/")
+    expected_prefix = f"tenants/{tenant_id}/"
+    segments = PurePosixPath(key).parts
+    if (
+        parsed.scheme != "s3"
+        or not settings.branding_asset_s3_bucket
+        or bucket != settings.branding_asset_s3_bucket
+        or parsed.query
+        or parsed.fragment
+        or not key.startswith(expected_prefix)
+        or any(segment in {"", ".", ".."} for segment in segments)
+    ):
+        raise ValidationFailed("asset storage path is outside its configured tenant bucket")
+    return bucket, key
+
+
+def storage_path_for(tenant_id: uuid.UUID, content_type: str) -> Path | str:
+    """Build a tenant-scoped local path or S3 URI with a random known suffix."""
     extension = ALLOWED_TYPES[content_type]
-    return asset_root() / str(tenant_id) / f"{uuid.uuid4().hex}{extension}"
+    filename = f"{uuid.uuid4().hex}{extension}"
+    settings = get_plat2_settings()
+    if settings.branding_asset_s3_bucket:
+        return f"s3://{settings.branding_asset_s3_bucket}/tenants/{tenant_id}/{filename}"
+    return asset_root() / str(tenant_id) / filename
+
+
+def _s3_client():
+    import boto3
+
+    settings = get_plat2_settings()
+    if not settings.branding_asset_s3_bucket or not settings.branding_asset_s3_region:
+        raise ValidationFailed("S3 brand-asset storage is not configured")
+    return boto3.client("s3", region_name=settings.branding_asset_s3_region)
+
+
+def _write_s3_object(bucket: str, key: str, data: bytes, content_type: str) -> None:
+    settings = get_plat2_settings()
+    request: dict[str, Any] = {
+        "Bucket": bucket,
+        "Key": key,
+        "Body": data,
+        "ContentType": content_type,
+    }
+    if settings.branding_asset_s3_kms_key_id:
+        request["ServerSideEncryption"] = "aws:kms"
+        request["SSEKMSKeyId"] = settings.branding_asset_s3_kms_key_id
+    _s3_client().put_object(**request)
+
+
+def _read_s3_object(bucket: str, key: str) -> bytes:
+    try:
+        response = _s3_client().get_object(Bucket=bucket, Key=key)
+    except Exception as exc:
+        from botocore.exceptions import ClientError
+
+        if isinstance(exc, ClientError):
+            error_code = str(exc.response.get("Error", {}).get("Code", ""))
+            if error_code in {"NoSuchKey", "NoSuchBucket", "404"}:
+                raise NotFound("asset file is missing from storage") from exc
+        raise
+    maximum = get_plat2_settings().branding_max_asset_bytes
+    if int(response.get("ContentLength", 0)) > maximum:
+        raise ValidationFailed("stored asset exceeds the configured size limit")
+    body = response["Body"]
+    try:
+        data = body.read(maximum + 1)
+    finally:
+        body.close()
+    if len(data) > maximum:
+        raise ValidationFailed("stored asset exceeds the configured size limit")
+    return data
+
+
+def _delete_s3_object(bucket: str, key: str) -> None:
+    _s3_client().delete_object(Bucket=bucket, Key=key)
+
+
+async def _delete_storage_path(storage_path: str | Path, *, tenant_id: uuid.UUID) -> None:
+    location = _s3_location(storage_path, tenant_id=tenant_id)
+    if location is not None:
+        await asyncio.to_thread(_delete_s3_object, *location)
+        return
+    path = Path(storage_path).resolve()
+    root = asset_root().resolve()
+    if root not in path.parents and path.parent != root:
+        raise ValidationFailed("asset storage path is outside the asset directory")
+    try:
+        await asyncio.to_thread(path.unlink)
+    except FileNotFoundError:
+        pass
 
 
 async def _write_file(path: Path, data: bytes) -> None:
@@ -346,8 +442,18 @@ async def store(
     if found is not None:
         return found, False
 
-    path = storage_path_for(tenant_id, asset.content_type)
-    await _write_file(path, asset.data)
+    storage_path = storage_path_for(tenant_id, asset.content_type)
+    location = _s3_location(storage_path, tenant_id=tenant_id)
+    if location is None:
+        await _write_file(Path(storage_path), asset.data)
+    else:
+        await asyncio.to_thread(
+            _write_s3_object,
+            location[0],
+            location[1],
+            asset.data,
+            asset.content_type,
+        )
     row = BrandAsset(
         id=uuid.uuid4(),
         tenant_id=tenant_id,
@@ -356,7 +462,7 @@ async def store(
         content_type=asset.content_type,
         size_bytes=asset.size_bytes,
         sha256=asset.sha256,
-        storage_path=str(path),
+        storage_path=str(storage_path),
         sanitized=asset.sanitized,
         created_by_user_id=created_by_user_id,
     )
@@ -364,6 +470,7 @@ async def store(
     try:
         await session.flush()
     except IntegrityError:
+        await _delete_storage_path(storage_path, tenant_id=tenant_id)
         await session.rollback()
         retry = await session.execute(
             select(BrandAsset).where(BrandAsset.tenant_id == tenant_id, BrandAsset.sha256 == asset.sha256)
@@ -372,8 +479,16 @@ async def store(
         if found is None:
             raise
         return found, False
+    except Exception:
+        await _delete_storage_path(storage_path, tenant_id=tenant_id)
+        raise
     if commit:
-        await session.commit()
+        try:
+            await session.commit()
+        except Exception:
+            await _delete_storage_path(storage_path, tenant_id=tenant_id)
+            await session.rollback()
+            raise
     return row, True
 
 
@@ -395,26 +510,52 @@ async def list_for_tenant(session: AsyncSession, *, tenant_id: uuid.UUID, limit:
 
 
 async def read_bytes(asset: BrandAsset) -> bytes:
-    """Read the stored file, refusing a path that escaped the asset root."""
-    path = Path(asset.storage_path).resolve()
-    root = asset_root().resolve()
-    if root not in path.parents and path.parent != root:
-        raise ValidationFailed("asset storage path is outside the asset directory")
-    if not path.exists():
-        raise NotFound("asset file is missing from storage")
-    return await asyncio.to_thread(path.read_bytes)
+    """Read the stored file, enforcing its root/bucket and recorded digest."""
+    location = _s3_location(asset.storage_path, tenant_id=asset.tenant_id)
+    if location is not None:
+        data = await asyncio.to_thread(_read_s3_object, *location)
+    else:
+        path = Path(asset.storage_path).resolve()
+        root = asset_root().resolve()
+        if root not in path.parents and path.parent != root:
+            raise ValidationFailed("asset storage path is outside the asset directory")
+        if not path.exists():
+            raise NotFound("asset file is missing from storage")
+        data = await asyncio.to_thread(path.read_bytes)
+    if len(data) != asset.size_bytes or hashlib.sha256(data).hexdigest() != asset.sha256:
+        raise ValidationFailed("asset bytes do not match their recorded size and digest")
+    return data
 
 
-async def delete(session: AsyncSession, *, tenant_id: uuid.UUID, asset_id: uuid.UUID, commit: bool = False) -> None:
+async def delete_storage_path(storage_path: str | Path, *, tenant_id: uuid.UUID) -> None:
+    """Remove a previously stored asset after its database transaction commits."""
+    await _delete_storage_path(storage_path, tenant_id=tenant_id)
+
+
+async def delete(
+    session: AsyncSession,
+    *,
+    tenant_id: uuid.UUID,
+    asset_id: uuid.UUID,
+    commit: bool = False,
+) -> str:
+    """Stage asset deletion and return its storage path for post-commit cleanup.
+
+    With ``commit=True``, this function commits before deleting the object. Callers
+    that own a larger audit/idempotency transaction must clean up the returned path
+    only after their own commit succeeds.
+    """
     row = await get(session, tenant_id=tenant_id, asset_id=asset_id)
-    path = Path(row.storage_path)
+    storage_path = row.storage_path
     await session.delete(row)
     if commit:
-        await session.commit()
-    try:
-        await asyncio.to_thread(path.unlink)
-    except FileNotFoundError:
-        pass
+        try:
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
+        await _delete_storage_path(storage_path, tenant_id=tenant_id)
+    return storage_path
 
 
 def describe(row: BrandAsset) -> dict[str, Any]:
@@ -442,6 +583,7 @@ __all__ = [
     "SanitisedAsset",
     "asset_root",
     "delete",
+    "delete_storage_path",
     "describe",
     "get",
     "list_for_tenant",

@@ -73,7 +73,11 @@ def test_the_grid_is_contiguous():
     assert len(slots) == 2 * 48
 
 
-@pytest.mark.parametrize("minutes", [0, 10, 20, 60])
+@pytest.mark.parametrize(
+    "minutes",
+    [0, 10, 20, 60],
+    ids=["zero", "ten", "twenty", "sixty"],
+)
 def test_an_unsupported_interval_is_refused(minutes):
     with pytest.raises(ValidationFailed):
         history.interval_grid("UTC", DAY, DAY, minutes)

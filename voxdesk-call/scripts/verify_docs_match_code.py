@@ -30,8 +30,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
-import subprocess
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -39,6 +39,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+
+from scripts.pytest_collection_stats import measure_collected_pytest_nodes  # noqa: E402
 
 SOURCE_ROOTS = ("app", "services", "dashboard/src", "dashboard-next", "sdk")
 SOURCE_SUFFIXES = frozenset({".py", ".ts", ".tsx", ".js", ".rs", ".go", ".cpp", ".h", ".hpp"})
@@ -74,20 +76,29 @@ def _read(path: Path) -> str:
 
 
 def measure_sources(root: Path = ROOT) -> tuple[int, int]:
-    """Return ``(source_files, physical_lines)`` exactly as ``repo_stats.py`` counts."""
+    """Return ``(source_files, physical_lines)`` exactly as ``repo_stats.py`` counts.
+
+    Prune generated and dependency directories during traversal. Filtering only
+    after ``Path.rglob`` still walks every file in ``node_modules`` and ``.next``;
+    after a frontend build that makes a truth check needlessly scan millions of
+    generated entries.
+    """
     files = 0
     lines = 0
     for directory in SOURCE_ROOTS:
         base = root / directory
         if not base.is_dir():
             continue
-        for path in base.rglob("*"):
-            if not path.is_file() or path.suffix not in SOURCE_SUFFIXES:
-                continue
-            if SOURCE_SKIP_PARTS.intersection(path.relative_to(root).parts):
-                continue
-            files += 1
-            lines += len(_read(path).splitlines())
+        for current, child_dirs, filenames in os.walk(base):
+            child_dirs[:] = sorted(name for name in child_dirs if name not in SOURCE_SKIP_PARTS)
+            for filename in filenames:
+                path = Path(current) / filename
+                if path.suffix not in SOURCE_SUFFIXES:
+                    continue
+                if SOURCE_SKIP_PARTS.intersection(path.relative_to(root).parts):
+                    continue
+                files += 1
+                lines += len(_read(path).splitlines())
     return files, lines
 
 
@@ -115,24 +126,7 @@ def measure_migration_head(root: Path = ROOT) -> str:
 
 def measure_collected_tests(root: Path = ROOT, *, timeout: int = 900) -> int:
     """Collected pytest node count, from a real ``--collect-only`` run."""
-    result = subprocess.run(
-        [sys.executable, "-m", "pytest", "--collect-only", "-q", "-p", "no:cacheprovider"],
-        cwd=root,
-        text=True,
-        capture_output=True,
-        timeout=timeout,
-    )
-    if result.returncode != 0:
-        raise RuntimeError(
-            "pytest --collect-only failed; refusing to compare an unmeasured value\n"
-            + (result.stdout or "")[-2000:]
-            + (result.stderr or "")[-2000:]
-        )
-    nodes = [line for line in result.stdout.splitlines() if line.startswith("tests/") and "::" in line]
-    unique = set(nodes)
-    if not unique or len(unique) != len(nodes):
-        raise RuntimeError("pytest collection produced no unique node list")
-    return len(nodes)
+    return measure_collected_pytest_nodes(root, timeout=timeout)
 
 
 def readme_claims(root: Path = ROOT) -> tuple[dict[str, tuple[int, int]], list[Mismatch]]:
@@ -155,7 +149,10 @@ def readme_claims(root: Path = ROOT) -> tuple[dict[str, tuple[int, int]], list[M
     return claims, problems
 
 
-def compare_readme(root: Path = ROOT, *, measured: dict[str, int | str | None]) -> list[Mismatch]:
+MeasuredValue = int | str | None
+
+
+def compare_readme(root: Path = ROOT, *, measured: dict[str, MeasuredValue]) -> list[Mismatch]:
     claims, problems = readme_claims(root)
     expected_keys = {"source_files", "source_physical_lines", "registered_routes", "collected_pytest_nodes"}
     for key in sorted(expected_keys - set(claims)):
@@ -169,7 +166,7 @@ def compare_readme(root: Path = ROOT, *, measured: dict[str, int | str | None]) 
     return problems
 
 
-def compare_sales_docs(root: Path = ROOT, *, measured: dict[str, int | str | None]) -> list[Mismatch]:
+def compare_sales_docs(root: Path = ROOT, *, measured: dict[str, MeasuredValue]) -> list[Mismatch]:
     problems: list[Mismatch] = []
     sales = root / SALES_DIR
     if not sales.is_dir():
@@ -188,9 +185,9 @@ def compare_sales_docs(root: Path = ROOT, *, measured: dict[str, int | str | Non
     return problems
 
 
-def verify(root: Path = ROOT, *, skip_tests: bool = False) -> tuple[list[Mismatch], dict[str, object]]:
+def verify(root: Path = ROOT, *, skip_tests: bool = False) -> tuple[list[Mismatch], dict[str, MeasuredValue]]:
     source_files, source_lines = measure_sources(root)
-    measured: dict[str, object] = {
+    measured: dict[str, MeasuredValue] = {
         "source_files": source_files,
         "source_physical_lines": source_lines,
         "registered_routes": measure_routes(root),

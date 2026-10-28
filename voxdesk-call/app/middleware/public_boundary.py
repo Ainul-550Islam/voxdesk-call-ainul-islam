@@ -3,11 +3,12 @@
 Enforces:
 1. Public widget keys (`vdpk_*`) and widget session tokens (`vdws_*`) are rejected
    with HTTP 403 (`public_credential_forbidden_on_private_api`) if presented on ANY
-   private/admin/auth route outside `/api/v1/public/widget/*`.
+   private/admin/auth route outside the reviewed public widget endpoints.
 2. Explicit `X-VoxDesk-Boundary` classification header on every response (`public`,
    `auth`, `protected`, `public_widget`).
-3. Strict `Cache-Control: no-store, private` on protected, auth, and widget session
-   responses so private tenant data and widget tokens are never cached by proxies.
+3. Protected and auth responses are always private and non-cacheable. Public widget
+   handlers may set an explicit cache policy for their host/key-scoped public assets;
+   error responses without a policy default to private, non-cacheable.
 """
 
 from __future__ import annotations
@@ -60,11 +61,11 @@ def add_public_boundary_middleware(app: FastAPI) -> None:
         response = await call_next(request)
         response.headers["X-VoxDesk-Boundary"] = category.value
 
-        if category in {
-            PublicRouteCategory.PROTECTED,
-            PublicRouteCategory.AUTH,
-            PublicRouteCategory.PUBLIC_WIDGET,
-        }:
+        if category in {PublicRouteCategory.PROTECTED, PublicRouteCategory.AUTH}:
+            response.headers["Cache-Control"] = "no-store, private"
+        elif category == PublicRouteCategory.PUBLIC_WIDGET and not response.headers.get("Cache-Control"):
+            # Successful widget assets choose their own short public max-age. An
+            # error response has no explicit policy, so it defaults to no-store.
             response.headers["Cache-Control"] = "no-store, private"
 
         return response

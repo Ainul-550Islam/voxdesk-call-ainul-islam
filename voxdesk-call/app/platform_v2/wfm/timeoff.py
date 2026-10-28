@@ -23,10 +23,10 @@ in advance — while vacation is not. That asymmetry is deliberate and lives in
 from __future__ import annotations
 
 import uuid
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import datetime, time, timedelta, timezone
 from typing import Any
 
-from sqlalchemy import and_, or_, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.platform_v2_models import (
@@ -341,7 +341,6 @@ async def create_request(
             zone_name=zone_name,
         )
     )
-    row = TimeOffBalance
     balance = await balance_row(session, tenant_id=tenant_id, user_id=user_id, kind=kind)
     coverage: dict[str, Any] = {
         "hours": computed_hours,

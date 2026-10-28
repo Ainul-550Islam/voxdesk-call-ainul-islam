@@ -28,6 +28,18 @@ from app.platform_v2.http import IDEMPOTENCY_HEADER, page
         (errors.DomainTaken, 409, "domain_unavailable"),
         (errors.ProviderRejected, 502, "provider_rejected"),
     ],
+    ids=[
+        "validation-failed",
+        "permission-denied",
+        "not-found",
+        "conflict",
+        "insufficient-history",
+        "infeasible-schedule",
+        "solver-unavailable",
+        "domain-not-verified",
+        "domain-taken",
+        "provider-rejected",
+    ],
 )
 def test_every_domain_error_maps_to_one_status_and_one_code(exc_type, status_code, code):
     exc = exc_type("something was refused")
@@ -78,6 +90,7 @@ def test_idempotency_header_is_the_documented_spelling():
         (-5, 0, (1, 0)),
         (25, 0, (25, 0)),
     ],
+    ids=["defaults", "within-bounds", "lower-bound-clamp", "upper-bound-clamp", "negative-limit", "offset-preserved"],
 )
 def test_page_clamps_instead_of_trusting_the_query_string(limit, offset, expected):
     assert page(limit, offset) == expected

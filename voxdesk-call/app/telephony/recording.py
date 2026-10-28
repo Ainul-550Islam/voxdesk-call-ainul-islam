@@ -21,7 +21,7 @@ from sqlalchemy import (
     UniqueConstraint,
     select,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Uuid as UUID
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Mapped, mapped_column
 

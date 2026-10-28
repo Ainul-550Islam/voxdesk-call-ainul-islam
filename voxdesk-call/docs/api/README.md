@@ -5,9 +5,9 @@ Generated deterministically by `scripts/build_api_docs.sh` from `app.main:app.op
 ## Summary Metrics
 
 - **OpenAPI Version**: `3.1.0`
-- **Total Unique Paths**: `1164`
-- **Total HTTP Operations**: `1391`
-- **Total Tag Groups**: `149`
+- **Total Unique Paths**: `1238`
+- **Total HTTP Operations**: `1479`
+- **Total Tag Groups**: `154`
 - **Machine-Readable Schema**: [`openapi.json`](openapi.json) (mirrored at [`../../contracts/openapi.json`](../../contracts/openapi.json))
 - **Static HTML Reference (Redoc / Scalar + Offline Explorer)**: [`index.html`](index.html)
 
@@ -15,11 +15,11 @@ Generated deterministically by `scripts/build_api_docs.sh` from `app.main:app.op
 
 | HTTP Method | Operation Count |
 |---|---:|
-| `DELETE` | 61 |
-| `GET` | 597 |
+| `DELETE` | 67 |
+| `GET` | 638 |
 | `PATCH` | 58 |
-| `POST` | 649 |
-| `PUT` | 26 |
+| `POST` | 689 |
+| `PUT` | 27 |
 
 ## Tag Inventory
 
@@ -121,6 +121,7 @@ Generated deterministically by `scripts/build_api_docs.sh` from `app.main:app.op
 | `live-proof` | 6 | `GET /api/live-proof/readiness`, `GET /api/live-proof/runs`, `POST /api/live-proof/runs` (+3 more) |
 | `mcp` | 5 | `GET /api/mcp/servers`, `POST /api/mcp/servers`, `POST /api/mcp/servers/{server_id}/discover` (+2 more) |
 | `messaging-sms` | 4 | `POST /messaging/sms/send`, `POST /messaging/sms/status`, `POST /messaging/sms/twilio` (+1 more) |
+| `mobile` | 14 | `GET /api/mobile/deliveries`, `GET /api/mobile/devices`, `POST /api/mobile/devices` (+11 more) |
 | `model-registry` | 15 | `GET /api/governance/models`, `POST /api/governance/models`, `GET /api/governance/models/approved` (+12 more) |
 | `multichannel` | 10 | `GET /api/channels`, `POST /api/channels`, `POST /api/channels/send` (+7 more) |
 | `notifications` | 13 | `GET /api/notifications`, `POST /api/notifications`, `POST /api/notifications/preferences/check` (+10 more) |
@@ -172,5 +173,9 @@ Generated deterministically by `scripts/build_api_docs.sh` from `app.main:app.op
 | `web-call-transport` | 1 | `POST /telephony/web/offer` |
 | `web-calls-live` | 6 | `POST /api/public/web-calls`, `POST /api/web-calls`, `GET /api/web-calls/{call_id}` (+3 more) |
 | `webhooks-lifecycle` | 33 | `GET /api/webhooks`, `POST /api/webhooks`, `POST /api/webhooks/bulk/delete` (+30 more) |
+| `white-label` | 28 | `GET /api/whitelabel/assets`, `POST /api/whitelabel/assets`, `GET /api/whitelabel/assets/{asset_id}` (+25 more) |
+| `white-label-tls` | 2 | `GET /api/platform/tls/ask`, `GET /api/platform/tls/status` |
+| `white-label-widget` | 2 | `GET /api/whitelabel/public/widget/{public_key}/config`, `GET /api/whitelabel/public/widget/{public_key}/loader.js` |
 | `workflow-events` | 8 | `GET /api/workflows/calls/{call_id}/context`, `GET /api/workflows/calls/{call_id}/executions`, `POST /api/workflows/calls/{call_id}/outcome-writeback` (+5 more) |
 | `workflows` | 16 | `GET /api/workflows`, `POST /api/workflows`, `GET /api/workflows/{workflow_id}` (+13 more) |
+| `workforce-management` | 42 | `GET /api/wfm/accuracy`, `GET /api/wfm/adherence`, `GET /api/wfm/adherence/exceptions` (+39 more) |

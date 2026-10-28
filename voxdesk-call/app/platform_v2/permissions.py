@@ -18,7 +18,13 @@ Two deliberate boundaries:
 
 from __future__ import annotations
 
+from collections.abc import MutableMapping
+from typing import TYPE_CHECKING
+
 from app.auth.permissions import Permission
+
+if TYPE_CHECKING:
+    from app.db.models import UserRole
 
 #: Everything needed to see your own week and take part in it.
 WFM_SELF_SERVICE: frozenset[Permission] = frozenset(
@@ -63,7 +69,7 @@ BUNDLES_BY_ROLE_NAME: dict[str, frozenset[Permission]] = {
 }
 
 
-def extend(role_permissions: dict[object, frozenset[Permission]]) -> None:
+def extend(role_permissions: MutableMapping[UserRole, frozenset[Permission]]) -> None:
     """Union the bundles into an existing role table, in place.
 
     Called once from :mod:`app.auth.rbac`. ``OWNER`` is derived from the enum, so

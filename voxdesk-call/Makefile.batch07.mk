@@ -20,7 +20,7 @@ BATCH07_JUNIT_DIR ?= reports/check/batch07
 BATCH07_TESTS := tests/platform_v2
 BATCH07_INFRA := infra/terraform
 TF_ENVS := dev staging prod
-TF_MODULES := alb assets eks failover network observability rds redis
+TF_MODULES := alb assets eks failover network observability platform_v2_assets rds redis
 
 .PHONY: batch07-check batch07-wiring batch07-mount batch07-schema batch07-scheduler \
         batch07-tests batch07-live batch07-infra batch07-sdk batch07-console \
@@ -61,13 +61,13 @@ batch07-mount:
 # --- Schema --------------------------------------------------------------------
 # One head, and the models the app imports must be the tables 0068 creates.
 batch07-schema:
-	@test "$$(alembic heads | wc -l)" -eq 1 || { echo "expected exactly one alembic head" >&2; alembic heads >&2; exit 1; }
+	@test "$$($(PYTHON) -m alembic heads | wc -l)" -eq 1 || { echo "expected exactly one alembic head" >&2; $(PYTHON) -m alembic heads >&2; exit 1; }
 	$(PYTHON) -m pytest tests/test_alembic_models_in_sync.py tests/platform_v2/test_migration_0068.py -q
 
 # --- Scheduler -----------------------------------------------------------------
-# tests/test_scheduler_wires_all_v2_jobs.py asserts every JobType has a handler and
-# every LOOP_NAMES entry has a locked tick; the helm CronJobs are checked separately
-# in batch07-infra because a cycle with no CronJob is a silent no-op in production.
+# The scheduler and registry regressions assert every Batch 07 job type has a
+# handler and every platform cycle has a locked tick; Helm CronJobs are checked
+# separately in batch07-infra because an unscheduled pass is a production no-op.
 batch07-scheduler:
 	$(PYTHON) -m pytest tests/test_scheduler_wires_all_v2_jobs.py -q
 
@@ -76,14 +76,16 @@ batch07-tests: batch07-mount batch07-schema batch07-scheduler
 	@mkdir -p $(BATCH07_JUNIT_DIR)
 	$(PYTHON) -m pytest $(BATCH07_TESTS) -q -m "not live" \
 		--junitxml=$(BATCH07_JUNIT_DIR)/junit.xml
-	$(PYTHON) -m pytest tests/truth -q
+	$(PYTHON) -m pytest tests/truth -q --junitxml=$(BATCH07_JUNIT_DIR)/truth.xml
 
 # --- Opt-in live checks (never part of batch07-check) --------------------------
 # Both modules skip, naming the missing variable, so this target is safe to run
 # anywhere; it only proves something where credentials exist.
 batch07-live:
+	@mkdir -p $(BATCH07_JUNIT_DIR)
 	$(PYTHON) -m pytest $(BATCH07_TESTS)/test_live_custom_domain_tls.py \
-		$(BATCH07_TESTS)/test_live_push_delivery.py -q -m live
+		$(BATCH07_TESTS)/test_live_push_delivery.py -q -m live \
+		--junitxml=$(BATCH07_JUNIT_DIR)/live.xml
 
 # --- Infrastructure ------------------------------------------------------------
 # fmt -check and validate only: nothing here plans against state or applies.
@@ -98,8 +100,10 @@ batch07-infra:
 	helm lint infra/helm/voxdesk
 	@helm template voxdesk infra/helm/voxdesk | grep -q "kind: CronJob" || { echo "chart renders no CronJobs" >&2; exit 1; }
 	@command -v caddy >/dev/null || { echo "caddy not installed: skipping config check" >&2; exit 1; }
-	caddy validate --config infra/caddy/edge-global.caddy --adapter caddyfile
-	caddy validate --config infra/caddy/tenant-domains.caddy --adapter caddyfile
+	@tmp=$$(mktemp infra/caddy/.batch07-validate.XXXXXX.caddy); \
+		trap 'rm -f "$$tmp"' EXIT; \
+		printf '{\n  admin off\n  import edge-global.caddy\n}\n\nimport tenant-domains.caddy\n\nhttp://localhost {\n  reverse_proxy api:8000\n}\n' > "$$tmp"; \
+		caddy validate --config "$$tmp" --adapter caddyfile
 
 # --- SDKs ----------------------------------------------------------------------
 # react-native is a real build and a real test run. The native SDKs have no

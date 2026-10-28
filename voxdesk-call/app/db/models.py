@@ -38,7 +38,9 @@ from sqlalchemy import (
     select,
     text,
 )
-from sqlalchemy.dialects.postgresql import UUID
+# The generic UUID stays native on PostgreSQL and uses CHAR(32) on SQLite.
+# SQLite's NUMERIC-affinity `UUID` type can coerce rare hex IDs like `1e…` to inf.
+from sqlalchemy import Uuid as UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, synonym
 
 

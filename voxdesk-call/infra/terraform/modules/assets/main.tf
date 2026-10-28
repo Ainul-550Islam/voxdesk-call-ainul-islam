@@ -124,22 +124,17 @@ data "aws_iam_policy_document" "this" {
   }
 
   statement {
-    sid       = "DenyOutsideTenantPrefix"
-    effect    = "Deny"
-    actions   = ["s3:PutObject"]
-    resources = ["${aws_s3_bucket.this.arn}/*"]
+    sid     = "DenyOutsideTenantPrefix"
+    effect  = "Deny"
+    actions = ["s3:PutObject"]
+    # `s3:prefix` is a ListBucket condition key, not an object-write key. Use
+    # NotResource so object writes outside the tenant namespace are denied while
+    # the application role separately receives an identity policy for tenants/*.
+    not_resources = ["${aws_s3_bucket.this.arn}/tenants/*"]
 
     principals {
       type        = "*"
       identifiers = ["*"]
-    }
-
-    # Every object lives under tenants/<tenant-id>/... so a presigned URL cannot
-    # be walked outside its tenant prefix even if the signature leaks.
-    condition {
-      test     = "StringNotLike"
-      variable = "s3:prefix"
-      values   = ["tenants/*"]
     }
   }
 }

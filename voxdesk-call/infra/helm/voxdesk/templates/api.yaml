@@ -17,6 +17,7 @@ spec:
       labels:
         {{- include "voxdesk.labels" . | nindent 8 }}
     spec:
+      serviceAccountName: {{ include "voxdesk.serviceAccountName" . | quote }}
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds | default 60 }}
       {{- if and .Values.readinessGates .Values.readinessGates.enabled }}
       readinessGates:
@@ -47,6 +48,14 @@ spec:
               value: {{ .Values.drain.timeoutSeconds | default 45 | quote }}
             - name: SHUTDOWN_FLUSH_TIMEOUT_SECONDS
               value: {{ .Values.drain.flushTimeoutSeconds | default 10 | quote }}
+            - name: BRANDING_ASSET_DIR
+              value: {{ .Values.platform.brandingAssetDir | default "/var/lib/voxdesk/brand-assets" | quote }}
+            - name: BRANDING_ASSET_S3_BUCKET
+              value: {{ .Values.platform.brandingAssetBucket | default "" | quote }}
+            - name: BRANDING_ASSET_S3_REGION
+              value: {{ .Values.platform.brandingAssetRegion | default "" | quote }}
+            - name: BRANDING_ASSET_S3_KMS_KEY_ID
+              value: {{ .Values.platform.brandingAssetKmsKeyId | default "" | quote }}
           envFrom:
             - secretRef:
                 name: {{ required "secrets.existingSecret is required" .Values.secrets.existingSecret }}
@@ -74,6 +83,21 @@ spec:
             timeoutSeconds: 3
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          {{- if not .Values.platform.brandingAssetBucket }}
+          volumeMounts:
+            - name: branding-assets
+              mountPath: {{ .Values.platform.brandingAssetDir | default "/var/lib/voxdesk/brand-assets" | quote }}
+          {{- end }}
+      {{- if not .Values.platform.brandingAssetBucket }}
+      volumes:
+        - name: branding-assets
+          {{- if .Values.platform.brandingAssetPersistentVolumeClaim }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.platform.brandingAssetPersistentVolumeClaim | quote }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+      {{- end }}
 ---
 apiVersion: v1
 kind: Service

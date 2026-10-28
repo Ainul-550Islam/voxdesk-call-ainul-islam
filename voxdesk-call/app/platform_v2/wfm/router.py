@@ -514,13 +514,18 @@ async def score_forecast(
         detail={"wape": float(metric.wape), "samples": metric.sample_count},
     )
     await session.commit()
+    stored_accuracy = metric.per_interval
+    metrics = stored_accuracy.get("metrics")
+    intervals = stored_accuracy.get("intervals")
+    if not isinstance(metrics, dict) or not isinstance(intervals, list):
+        raise RuntimeError("stored forecast accuracy has an invalid payload")
     return {
         "forecast_id": str(row.id),
         "queue_key": row.queue_key,
         "evaluated_from": _dt(metric.evaluated_from),
         "evaluated_to": _dt(metric.evaluated_to),
-        **metric.as_dict(include_intervals=True)["metrics"],
-        "intervals": metric.as_dict(include_intervals=True)["per_interval"],
+        **metrics,
+        "intervals": intervals,
     }
 
 
@@ -1204,7 +1209,6 @@ async def list_time_off(
     size, _ = api.page(limit, 0)
     # An agent sees only their own requests unless they hold the approver role.
     from app.auth.rbac import has_permission
-    from app.db.models import UserRole
 
     scoped_user = user_id
     if not has_permission(ctx.user.role, Permission.WFM_APPROVE):
@@ -1755,7 +1759,7 @@ async def list_adherence_exceptions(
                 "id": str(row.id),
                 "user_id": str(row.user_id),
                 "shift_id": str(row.shift_id) if row.shift_id else None,
-                "day": row.day.date().isoformat(),
+                "day": row.day.isoformat(),
                 "kind": row.kind,
                 "minutes": float(row.minutes or 0),
                 "status": row.status,

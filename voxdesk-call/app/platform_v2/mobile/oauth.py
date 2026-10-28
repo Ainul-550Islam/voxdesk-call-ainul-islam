@@ -68,6 +68,12 @@ def _aware(value: datetime | None) -> datetime | None:
     return value if value.tzinfo is not None else value.replace(tzinfo=timezone.utc)
 
 
+def _is_expired(value: datetime | None) -> bool:
+    """Treat a missing expiry as expired instead of permitting an open grant."""
+    expires_at = _aware(value)
+    return expires_at is None or expires_at <= _now()
+
+
 def s256(verifier: str) -> str:
     """``BASE64URL(SHA256(ASCII(verifier)))`` without padding."""
     digest = hashlib.sha256(verifier.encode("ascii")).digest()
@@ -254,7 +260,7 @@ async def exchange(
     if row.consumed_at is not None:
         # A replayed code means one of the two parties is not what it claims.
         raise Conflict("authorization code has already been used")
-    if _aware(row.expires_at) <= _now():
+    if _is_expired(row.expires_at):
         raise Conflict("authorization code has expired")
     if row.device_id != cleaned_device:
         raise Conflict("authorization code was issued for another device")
@@ -333,7 +339,7 @@ async def refresh(
             "refresh token reuse detected; all sessions for this device family were revoked",
             detail={"family_id": str(row.family_id)},
         )
-    if _aware(row.expires_at) <= _now():
+    if _is_expired(row.expires_at):
         raise Conflict("refresh token has expired")
     if device_id and row.device_id and device_id.strip() != row.device_id:
         raise Conflict("refresh token was issued for another device")

@@ -129,7 +129,11 @@ async def test_unknown_hosts_are_refused(plat_scope: PlatScope, db):
     assert decision.reason == "unknown hostname"
 
 
-@pytest.mark.parametrize("status", ["pending_dns", "failed", "disabled"])
+@pytest.mark.parametrize(
+    "status",
+    ["pending_dns", "failed", "disabled"],
+    ids=["pending-dns", "failed", "disabled"],
+)
 async def test_any_status_other_than_active_is_refused(plat_scope: PlatScope, db, status):
     row, _token = await _claim(plat_scope, db)
     row.status = status

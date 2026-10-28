@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import date, datetime, timezone
+from typing import Any
 
 from sqlalchemy import (
     JSON,
@@ -36,10 +37,9 @@ from sqlalchemy import (
     Integer,
     Numeric,
     String,
-    Text,
     UniqueConstraint,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Uuid as UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.models import Base
@@ -175,7 +175,7 @@ class WfmForecastAccuracy(EnvironmentScoped, Base):
     bias: Mapped[float] = mapped_column(Numeric(10, 4), nullable=False)
     mae: Mapped[float] = mapped_column(Numeric(12, 4), nullable=False)
     sample_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    per_interval: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    per_interval: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False, default=dict)
     computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=_now)
 
 
@@ -703,7 +703,7 @@ class EmailSenderDomain(TenantScoped, Base):
     spf_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     dkim_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     dmarc_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    records: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    records: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
     last_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(

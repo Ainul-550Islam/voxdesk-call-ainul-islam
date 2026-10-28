@@ -305,7 +305,7 @@ async def verify(
 
     timeout = float(cfg.dns_check_timeout_seconds)
     row.last_checked_at = _now()
-    checks: list[dict[str, Any]] = []
+    checks: list[WlDomainCheck] = []
     resolvers: list[str] = []
 
     txt = await dns_mod.resolve_txt(row.ownership_record_name, timeout=timeout, resolver=resolver)
@@ -350,7 +350,9 @@ async def verify(
 
     address = await dns_mod.resolve_a(row.domain, timeout=timeout, resolver=resolver)
     edge_ips = _edge_ips(cfg)
-    address_passed = bool(address.values) and (not edge_ips or set(address.values) & set(edge_ips))
+    address_passed = bool(address.values) and (
+        not edge_ips or bool(set(address.values) & set(edge_ips))
+    )
     address_reason = ""
     if not address.values:
         address_reason = "no A record resolves for this hostname yet"

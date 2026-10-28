@@ -242,6 +242,46 @@ module "assets" {
   tags = local.common_tags
 }
 
+module "platform_v2_assets_primary" {
+  source = "../../modules/platform_v2_assets"
+
+  providers = {
+    aws = aws.primary
+  }
+
+  name                 = "${local.name}-p-platform-assets"
+  oidc_provider_arn    = module.primary_eks.oidc_provider_arn
+  oidc_issuer_url      = module.primary_eks.oidc_issuer_url
+  kubernetes_namespace = var.kubernetes_namespace
+  service_account_name = var.platform_service_account_name
+  bucket_name          = module.assets.bucket_name
+  bucket_arn           = module.assets.bucket_arn
+  bucket_region        = var.primary_region
+  kms_key_arn          = module.assets.kms_key_arn
+
+  tags = local.common_tags
+}
+
+module "platform_v2_assets_secondary" {
+  source = "../../modules/platform_v2_assets"
+
+  providers = {
+    aws = aws.secondary
+  }
+
+  name                 = "${local.name}-s-platform-assets"
+  oidc_provider_arn    = module.secondary_eks.oidc_provider_arn
+  oidc_issuer_url      = module.secondary_eks.oidc_issuer_url
+  kubernetes_namespace = var.kubernetes_namespace
+  service_account_name = var.platform_service_account_name
+  bucket_name          = module.assets.bucket_name
+  bucket_arn           = module.assets.bucket_arn
+  bucket_region        = var.primary_region
+  kms_key_arn          = module.assets.kms_key_arn
+
+  tags = local.common_tags
+}
+
 module "observability_primary" {
   source = "../../modules/observability"
 

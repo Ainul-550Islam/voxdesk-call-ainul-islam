@@ -134,6 +134,10 @@ PUBLIC_ROUTES: dict[str, str] = {
     "/api/organizations/{organization_id}/invitations/accept": "invite token is the credential",
     "/api/tenants/{tenant_id}/invitations/accept": "invite token is the credential",
     # ---- anonymous product surface ---------------------------------------
+    "/api/platform/tls/ask": "Caddy on-demand TLS decision; shared ask token checked in the handler",
+    "/api/mobile/oauth/token": "PKCE code exchange; one-time authorization code, device binding, and verifier checked in the handler",
+    "/api/mobile/oauth/refresh": "refresh-token rotation; the presented high-entropy token is the credential",
+    "/api/mobile/oauth/revoke": "token-family revocation; the presented high-entropy refresh token is the credential",
     "/api/public/web-calls": "anonymous web-call widget, widget token + rate limit",
     "/api/v1/analytics/dashboards/shared/{share_token}": "shareable dashboard link, share token is the credential",
     "/api/v1/agents/lifecycle/health": "agent runtime health, no tenant data",
@@ -179,6 +183,9 @@ SELF_SERVICE_ROUTES: dict[str, str] = {
 PUBLIC_PREFIXES: tuple[str, ...] = (
     "/health",
     "/api/v1/public/",
+    # Host- and public-key-scoped widget loader/config endpoints are public;
+    # their keys cannot be used on any other route boundary.
+    "/api/whitelabel/public/",
 )
 
 

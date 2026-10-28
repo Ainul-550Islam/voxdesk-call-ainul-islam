@@ -73,6 +73,12 @@ anthropic==0.49.0
 # pipecat 0.0.94's `deepgram` extra requires deepgram-sdk~=4.7.0.
 deepgram-sdk==4.7.0
 
+# ---- Workforce scheduling ----
+# WFM rota solving uses the CP-SAT backend (not a heuristic fallback). Pin the
+# supported wheel that shares Pipecat 0.0.94's protobuf 5.29 runtime; OR-Tools
+# 9.13+ requires protobuf 6.x and makes this lock unresolvable.
+ortools==9.12.4544
+
 # ---- Scheduler (outbound campaigns + reminders) ----
 # The scheduler is a set of asyncio loops in scripts/scheduler.py; no
 # third-party scheduler is used.

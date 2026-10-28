@@ -138,3 +138,5 @@ verify-sale:
 include Makefile.batch01.mk
 # Batch 06: wiring, mount and cross-language regression gates.
 include Makefile.batch06.mk
+# Batch 07: platform-v2, infrastructure, SDK and admin-console gates.
+include Makefile.batch07.mk
