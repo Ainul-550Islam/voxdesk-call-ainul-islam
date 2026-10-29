@@ -55,6 +55,115 @@ router = APIRouter(prefix="/telephony", tags=["telephony"])
 _verify_twilio = verify_twilio_request
 
 
+# --- TwiML builders -------------------------------------------------------
+#
+# Every TwiML document the live call path can be redirected to is built here so
+# there is exactly one place that knows the shape of each. Call control
+# (pause/resume/transfer-cancel) re-applies these documents with
+# ``calls(sid).update(twiml=...)`` rather than hand-writing XML at the call
+# site, which is how a stray quote in a hand-built string turns into a dropped
+# call.
+
+#: The queue a held caller is parked in. One queue per call SID so a resume can
+#: never pull another call out of hold by mistake.
+HOLD_QUEUE_PREFIX = "voxdesk-hold"
+DEFAULT_HOLD_MESSAGE = "Please hold. We will be right back with you."
+CALL_CONTROL_TWIML_KINDS = ("media_stream", "hold")
+
+
+def media_stream_url(call_sid: str, *, campaign_id: str = "", lead_id: str = "") -> str:
+    """The signed media-stream URL one live call runs on."""
+    url = f"{settings.ws_base_url}/telephony/ws" f"?token={create_stream_token(call_sid)}"
+    if campaign_id:
+        url += f"&campaign_id={campaign_id}"
+    if lead_id:
+        url += f"&lead_id={lead_id}"
+    return url
+
+
+def build_media_stream_twiml(
+    call_sid: str, *, campaign_id: str = "", lead_id: str = "", greeting_text: str = ""
+) -> str:
+    """TwiML that hands the call back to the AI media stream.
+
+    This is the document an answered call runs on, so it is also the document a
+    resume (or a transfer cancel) re-applies. Rebuilding it from the same
+    helper the call was answered with is what makes "resume" mean "the same
+    stream", not "some stream".
+    """
+    response = VoiceResponse()
+    if greeting_text:
+        response.say(greeting_text)
+    connect = Connect()
+    connect.stream(url=media_stream_url(call_sid, campaign_id=campaign_id, lead_id=lead_id))
+    response.append(connect)
+    return str(response)
+
+
+def build_hold_twiml(call_sid: str, *, message: str = DEFAULT_HOLD_MESSAGE) -> str:
+    """TwiML that parks a live caller on hold.
+
+    ``<Enqueue>`` is used rather than a long ``<Pause>`` because a pause runs
+    out and then ends the call: a caller whose hold expired would be hung up on
+    mid-sentence. A queue plays Twilio's hold treatment until something moves
+    the call elsewhere, and moving it elsewhere is exactly what resume does.
+    """
+    response = VoiceResponse()
+    response.say(message, voice="Polly.Joanna")
+    response.enqueue(name=f"{HOLD_QUEUE_PREFIX}-{call_sid}")
+    return str(response)
+
+
+def build_dtmf_twiml(digits: str) -> str:
+    """TwiML that plays one digit run on a live call.
+
+    Built with the SDK rather than an f-string so a digit run can never break
+    out of the ``digits`` attribute and inject a second TwiML verb.
+    """
+    response = VoiceResponse()
+    response.play("", digits=digits)
+    return str(response)
+
+
+def build_whisper_twiml(message: str) -> str:
+    """TwiML that speaks one briefing to a single leg and nothing else."""
+    response = VoiceResponse()
+    response.say(message, voice="Polly.Joanna")
+    return str(response)
+
+
+def build_call_control_twiml(
+    kind: str,
+    *,
+    call_sid: str,
+    stream_url: str = "",
+    campaign_id: str = "",
+    lead_id: str = "",
+    hold_message: str = DEFAULT_HOLD_MESSAGE,
+) -> str:
+    """Build one of the call-control TwiML documents by name.
+
+    ``stream_url`` lets a caller re-apply an already-minted stream URL instead
+    of minting a new token; an empty value mints a fresh signed URL.
+    """
+    normalized = (kind or "").strip().lower()
+    if normalized == "hold":
+        return build_hold_twiml(call_sid, message=hold_message)
+    if normalized == "media_stream":
+        if stream_url:
+            response = VoiceResponse()
+            connect = Connect()
+            connect.stream(url=stream_url)
+            response.append(connect)
+            return str(response)
+        return build_media_stream_twiml(
+            call_sid, campaign_id=campaign_id, lead_id=lead_id
+        )
+    raise ValueError(
+        f"unknown call-control TwiML kind {kind!r}; expected one of {CALL_CONTROL_TWIML_KINDS}"
+    )
+
+
 @router.post("/voice", response_class=PlainTextResponse)
 async def incoming_call(
     request: Request,
@@ -290,11 +399,7 @@ async def outbound_answer(
 
     connect = Connect()
     connect.stream(
-        url=(
-            f"{settings.ws_base_url}/telephony/ws"
-            f"?token={create_stream_token(CallSid)}"
-            f"&campaign_id={campaign_id}&lead_id={lead_id}"
-        )
+        url=media_stream_url(CallSid, campaign_id=campaign_id, lead_id=lead_id)
     )
     response.append(connect)
     log.info("outbound.answered", lead=lead_id, campaign=campaign_id)

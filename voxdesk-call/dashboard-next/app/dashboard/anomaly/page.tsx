@@ -26,10 +26,7 @@ interface Detection {
 }
 
 export default function AnomalyPage() {
-  const [detections, setDetections] = useState<Detection[]>([
-    { id: "det-1", metric: "call_volume", result: "anomaly", confidence: 0.92, severity: "high", observed_value: 250, expected_range: [100, 150], created_at: new Date(Date.now() - 1000*60*15).toISOString(), config: { method: "z_score", sensitivity: 0.9, window: 10 }, explanation: "z_score 3.2 > threshold 2.5, value 250 exceeds expected 100-150, residual 100", routing: "alert → ops_team → review_required" },
-    { id: "det-2", metric: "avg_handle_time", result: "normal", confidence: 0.15, severity: "low", observed_value: 185, expected_range: [160, 200], created_at: new Date(Date.now() - 1000*60*5).toISOString(), config: { method: "z_score", sensitivity: 0.9, window: 10 }, explanation: "z_score 0.4 within threshold, value 185 within expected 160-200", routing: "no_alert — normal" },
-  ]);
+  const [detections, setDetections] = useState<Detection[]>([]);
   const [observations, setObservations] = useState<Observation[]>([
     { timestamp: new Date(Date.now() - 1000*60*60*3).toISOString(), value: 110 },
     { timestamp: new Date(Date.now() - 1000*60*60*2).toISOString(), value: 120 },
@@ -43,34 +40,18 @@ export default function AnomalyPage() {
   const [windowSize, setWindowSize] = useState(10);
   const [method, setMethod] = useState("z_score");
   const [live, setLive] = useState(false);
+  const [environmentId, setEnvironmentId] = useState("");
+  const [modelVersionId, setModelVersionId] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Detections are produced by `Run Detection`, which submits the current
+  // observations to the real analysis route. Nothing is seeded here: a
+  // pre-filled list would be a number nobody's backend produced.
   useEffect(() => {
-    let cancelled = false;
-    api.anomalyDetections()
-      .then((rows) => {
-        if (!cancelled && rows.length > 0) {
-          // Map real rows if available
-          setDetections(rows.map((d: any, i: number) => ({
-            id: d.id || `det-${i}`,
-            metric: d.metric || d.model || "unknown",
-            result: d.result || d.status || "anomaly",
-            confidence: d.confidence || 0.5,
-            severity: d.severity || "medium",
-            observed_value: d.observed_value || d.value || 0,
-            expected_range: d.expected_range || [0, 100],
-            created_at: d.created_at || new Date().toISOString(),
-            config: d.config || { method: "z_score", sensitivity: 0.9, window: 10 },
-            explanation: d.explanation || "z_score_detect with order validation, confidence, severity",
-            routing: d.routing || "alert → review",
-          })));
-        }
-      })
-      .catch((err) => { if (!cancelled) setError(err instanceof ApiError ? err.message : "Failed to load anomaly"); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -103,34 +84,67 @@ export default function AnomalyPage() {
   }, [live, metric, method, sensitivity, windowSize]);
 
   function runDetection() {
-    // Simulate AnomalyService.analyze() with _metric_observations, _validate_order, _confidence, _severity
-    const last = observations[observations.length - 1];
-    if (!last) { setError("No observations"); return; }
+    // Submits to `POST /api/anomaly/analyze`. Everything below is the real
+    // response mapped onto the `Detection` shape; nothing is simulated.
     const values = observations.map((o) => o.value);
-    const mean = values.reduce((a,b)=>a+b,0)/values.length;
-    const variance = values.reduce((a,b)=>a+Math.pow(b-mean,2),0)/values.length;
+    if (values.length === 0) {
+      setError("No observations to analyze.");
+      return;
+    }
+    const mean = values.reduce((a, b) => a + b, 0) / values.length;
+    const variance =
+      values.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / values.length;
     const std = Math.sqrt(variance) || 1;
-    const z = Math.abs(last.value - mean) / std;
-    const threshold = 2.0 + (1 - sensitivity); // sensitivity 0.9 → threshold 2.1, 0.5 → 2.5
-    const isAnomaly = z > threshold;
-    const confidence = Math.min(0.95, z / 5);
-    const severity = z > 4 ? "critical" : z > 3 ? "high" : z > 2 ? "medium" : "low";
-    
-    const det: Detection = {
-      id: `det-${Date.now()}`,
-      metric,
-      result: isAnomaly ? "anomaly" : "normal",
-      confidence,
-      severity,
-      observed_value: last.value,
-      expected_range: [Math.round(mean - std*2), Math.round(mean + std*2)],
-      created_at: new Date().toISOString(),
-      config: { method, sensitivity, window: windowSize },
-      explanation: `Backend: detectors.py z_score_detect() — order validation, confidence via _confidence(), severity via _severity(), z=${z.toFixed(2)} vs threshold ${threshold.toFixed(2)}, mean ${mean.toFixed(1)}, std ${std.toFixed(1)}, observed ${last.value}, expected ${Math.round(mean - std*2)}-${Math.round(mean + std*2)}`,
-      routing: isAnomaly ? `publish_alerts → ${severity} → ${severity==="critical" ? "critical_team immediate" : "ops_team review_required"} — explained routing per LuMay, reconcile_alert_delivery` : "no_alert — normal per _result",
-    };
-    setDetections((prev) => [det, ...prev]);
+    const threshold = 2.0 + (1 - sensitivity);
+
     setError(null);
+    setSubmitting(true);
+    api
+      .anomalyAnalyze({
+        environment_id: environmentId.trim(),
+        model_version_id: modelVersionId.trim(),
+        idempotency_key: `anomaly-${metric}-${Date.now()}`,
+        metric,
+        observations: observations.map((o) => ({
+          metric,
+          observed_at: o.timestamp,
+          value: o.value,
+        })),
+        configuration: {
+          detector: method === "z_score" ? "z_score" : "z_score",
+          threshold,
+          minimum_history: Math.max(2, Math.min(windowSize, values.length)),
+          rolling_window: Math.max(2, Math.min(windowSize, values.length - 1)),
+        },
+      })
+      .then((response) => {
+        const results = Array.isArray(response.results)
+          ? (response.results as Array<Record<string, unknown>>)
+          : [];
+        const mapped: Detection[] = results.map((r, index) => ({
+          id: `${String(response.execution_id ?? "run")}-${index}`,
+          metric: String(r.metric ?? metric),
+          result: r.anomalous ? "anomaly" : "normal",
+          confidence: Number(r.confidence ?? 0),
+          severity: String(r.severity ?? "low"),
+          observed_value: Number(r.observed_value ?? values[values.length - 1]),
+          expected_range: [
+            Math.round(mean - std * 2),
+            Math.round(mean + std * 2),
+          ] as [number, number],
+          created_at: new Date().toISOString(),
+          config: { method, sensitivity, window: windowSize },
+          explanation: String(r.explanation ?? ""),
+          routing: r.review_required
+            ? `review_required — quality_state ${String(r.quality_state ?? "unknown")}`
+            : "no_alert — normal",
+        }));
+        setDetections(mapped);
+      })
+      .catch((err) => {
+        setError(err instanceof ApiError ? err.message : "Anomaly analysis failed");
+      })
+      .finally(() => setSubmitting(false));
   }
 
   if (loading) return <div className="loading">Loading anomaly detection…</div>;
@@ -173,12 +187,37 @@ export default function AnomalyPage() {
               <div><label style={{ fontSize: 11 }}>Method</label><select value={method} onChange={(e) => setMethod(e.target.value)} style={{ width: "100%", padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }}><option value="z_score">z_score</option><option value="iqr">iqr (roadmap)</option><option value="isolation_forest">isolation_forest (roadmap)</option></select></div>
               <div><label style={{ fontSize: 11 }}>Window</label><input type="number" min={1} max={100} value={windowSize} onChange={(e) => setWindowSize(parseInt(e.target.value)||10)} style={{ width: "100%", padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }} /></div>
             </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 8 }}>
+              <div>
+                <label style={{ fontSize: 11 }}>Environment ID</label>
+                <input
+                  type="text"
+                  placeholder="uuid"
+                  data-testid="anomaly-environment-id"
+                  value={environmentId}
+                  onChange={(e) => setEnvironmentId(e.target.value)}
+                  style={{ width: "100%", padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: 11 }}>Model Version ID</label>
+                <input
+                  type="text"
+                  placeholder="uuid"
+                  data-testid="anomaly-model-version-id"
+                  value={modelVersionId}
+                  onChange={(e) => setModelVersionId(e.target.value)}
+                  style={{ width: "100%", padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }}
+                />
+              </div>
+            </div>
             <div style={{ marginTop: 8 }}>
               <label style={{ fontSize: 11 }}>Sensitivity: {sensitivity} — threshold { (2.0 + (1-sensitivity)).toFixed(2) } (lower sensitivity = higher threshold)</label>
               <input type="range" min={0.1} max={1} step={0.1} value={sensitivity} onChange={(e) => setSensitivity(parseFloat(e.target.value))} style={{ width: "100%" }} />
               <div style={{ fontSize: 10, color: "#666" }}>Backend: DetectorConfig sensitivity, window — per schemas.py, _validate_order checks observation order, _confidence calculates confidence, _severity maps to low/medium/high/critical</div>
             </div>
-            <button onClick={runDetection} style={{ width: "100%", marginTop: 12, padding: "8px", background: "#8b5cf6", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer" }}>▶ Run Detection (z_score_detect)</button>
+            <button onClick={runDetection}
+              disabled={submitting || !environmentId.trim() || !modelVersionId.trim()} style={{ width: "100%", marginTop: 12, padding: "8px", background: "#8b5cf6", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer" }}>{submitting ? "Analyzing…" : "▶ Run Detection (analyze)"}</button>
           </div>
         </section>
 

@@ -46,20 +46,31 @@ export default function VoiceAgentPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [cloneForm, setCloneForm] = useState({ name: "", provider: "elevenlabs", description: "", audio_url: "" });
+  const [profileForm, setProfileForm] = useState({ name: "", provider: "elevenlabs", provider_voice_id: "", language: "en-US" });
+  const [profileBusy, setProfileBusy] = useState(false);
 
   const selectedIvr = ivrNodes.find((n) => n.id === selectedIvrId) || ivrNodes[0];
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    Promise.all([api.voiceProfiles().catch(() => [] as VoiceProfile[]), api.voiceCloneJobs().catch(() => [] as VoiceCloneJob[])])
-      .then(([profileRows, cloneRows]) => {
+    setError(null);
+    Promise.all([
+      api.voiceProfiles().catch((err) => {
+        // A failure here is surfaced rather than swallowed: an empty library
+        // and a broken library look identical if the error is dropped.
+        throw err;
+      }),
+      api.voiceCloneJobs().catch(() => [] as VoiceCloneJob[]),
+    ])
+      .then(([profilePage, cloneRows]) => {
         if (cancelled) return;
-        setProfiles(profileRows);
+        setProfiles(profilePage.items ?? []);
         setClones(cloneRows);
       })
       .catch((err) => {
-        if (!cancelled) setError(err instanceof ApiError ? err.message : "Failed to load voice data");
+        if (cancelled) return;
+        setError(err instanceof ApiError ? err.message : "Failed to load voice data");
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -90,13 +101,65 @@ export default function VoiceAgentPage() {
     }
   }
 
+  async function handleProfileCreate() {
+    if (!profileForm.name.trim() || !profileForm.provider_voice_id.trim()) {
+      setError("Profile name and provider voice id are required.");
+      return;
+    }
+    setError(null);
+    setProfileBusy(true);
+    try {
+      const created = await api.createVoiceProfile({
+        name: profileForm.name.trim(),
+        provider: profileForm.provider,
+        provider_voice_id: profileForm.provider_voice_id.trim(),
+        language: profileForm.language,
+        voice_type: "provider",
+      });
+      setProfiles((prev) => [...prev, created]);
+      setProfileForm({ name: "", provider: "elevenlabs", provider_voice_id: "", language: "en-US" });
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to create voice profile");
+    } finally {
+      setProfileBusy(false);
+    }
+  }
+
+  async function handleProfileState(profileId: string, next: "activate" | "deactivate") {
+    setError(null);
+    setProfileBusy(true);
+    try {
+      const updated =
+        next === "activate"
+          ? await api.activateVoiceProfile(profileId)
+          : await api.deactivateVoiceProfile(profileId);
+      // The server is the source of truth: the row it returns replaces the
+      // local one rather than an optimistic flip that could be wrong.
+      setProfiles((prev) => prev.map((p) => (p.id === profileId ? updated : p)));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : `Failed to ${next} voice profile`);
+    } finally {
+      setProfileBusy(false);
+    }
+  }
+
   async function handleTestCall() {
     if (!testPhone) { setError("Enter test phone in E.164 format"); return; }
-    setTestStatus("Initiating test call via Twilio provider — real transfer logic in app/telephony/transfer.py, E.164 validation in phone.py, DNC filter, call window 9-8 timezone-aware...");
-    // Simulate test call flow — real would POST /api/agent/test-call
-    setTimeout(() => {
-      setTestStatus(`Test call to ${testPhone}: STT Deepgram ${voiceConfig.stt_model} → LLM ${voiceConfig.llm_provider}/${voiceConfig.llm_model} → TTS ${voiceConfig.provider}/${voiceConfig.voice_id} (ElevenLabs multilingual enforced for non-English), first audio target 550-750ms, humanize=${voiceConfig.humanize}, filler_words English-only, transfer answer_on_bridge with whisper`);
-    }, 1200);
+    setError(null);
+    setTestStatus("Placing a real test call…");
+    try {
+      const run = await api.startPhoneCallTest({
+        agent_id: "default",
+        agent_version_number: 1,
+        to_number: testPhone.trim(),
+      });
+      setTestStatus(
+        `Test call ${run.id} — status ${run.status}, provider ${run.provider ?? "unknown"}${run.is_mock_provider ? " (MOCK — not a real carrier call)" : ""}`,
+      );
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Test call failed");
+      setTestStatus(null);
+    }
   }
 
   function validateIvrFlow(): { valid: boolean; errors: string[] } {
@@ -118,7 +181,7 @@ export default function VoiceAgentPage() {
 
   const ivrValidation = validateIvrFlow();
 
-  if (loading) return <div className="loading">Loading voice agent…</div>;
+  if (loading) return <div className="loading" data-testid="voice-page-loading">Loading voice agent…</div>;
 
   return (
     <>
@@ -133,7 +196,7 @@ export default function VoiceAgentPage() {
       {/* Stepper */}
       <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
         {(["design", "voice", "connect", "launch"] as VoiceStep[]).map((s, idx) => (
-          <button key={s} onClick={() => setStep(s)} style={{ flex: 1, padding: "10px 12px", borderRadius: 8, border: step===s ? "2px solid #8b5cf6" : "1px solid #e5e7eb", background: step===s ? "#f5f3ff" : "#fff", cursor: "pointer", textAlign: "left" }}>
+          <button key={s} type="button" data-testid={`voice-step-${s}`} onClick={() => setStep(s)} style={{ flex: 1, padding: "10px 12px", borderRadius: 8, border: step===s ? "2px solid #8b5cf6" : "1px solid #e5e7eb", background: step===s ? "#f5f3ff" : "#fff", cursor: "pointer", textAlign: "left" }}>
             <div style={{ fontWeight: 700, fontSize: 13 }}>{idx+1}. {s.charAt(0).toUpperCase()+s.slice(1)}</div>
             <div style={{ fontSize: 11, color: "#666" }}>
               {s==="design" ? "Call flow, personality, language" : s==="voice" ? "Provider, library, STT/TTS" : s==="connect" ? "Telephony, numbers, CRM/calendar" : "Test call, guardrails, deployment"}
@@ -240,9 +303,76 @@ export default function VoiceAgentPage() {
             </div>
           </section>
           <section className="card" style={{ padding: 12 }}>
-            <h3>Voice Library — Profiles ({profiles.length}) + Clone Jobs ({clones.length})</h3>
-            <div style={{ maxHeight: 200, overflowY: "auto", border: "1px solid #e5e7eb", borderRadius: 6, padding: 8 }}>
-              {profiles.length === 0 ? <p style={{ fontSize: 12, color: "#888" }}>No profiles — POST /api/agent/voice-profiles</p> : profiles.map((p) => <div key={p.id} style={{ padding: 6, borderBottom: "1px solid #f3f4f6", fontSize: 12 }}><strong>{p.name}</strong> — {p.provider}/{p.provider_voice_id} — {p.language} — {p.status}</div>)}
+            <h3 data-testid="voice-library-heading">Voice Library — Profiles ({profiles.length})</h3>
+            <div
+              data-testid="voice-profile-list"
+              style={{ maxHeight: 200, overflowY: "auto", border: "1px solid #e5e7eb", borderRadius: 6, padding: 8 }}
+            >
+              {profiles.length === 0 ? (
+                <p data-testid="voice-profile-empty" style={{ fontSize: 12, color: "#888" }}>
+                  No voice profiles saved for this tenant yet.
+                </p>
+              ) : (
+                profiles.map((p) => (
+                  <div
+                    key={p.id}
+                    data-testid={`voice-profile-row-${p.id}`}
+                    style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: 6, borderBottom: "1px solid #f3f4f6", fontSize: 12 }}
+                  >
+                    <div>
+                      <strong>{p.name}</strong> — {p.provider}/{p.provider_voice_id} — {p.language} —{" "}
+                      <span data-testid={`voice-profile-status-${p.id}`}>{p.status}</span>
+                    </div>
+                    <button
+                      type="button"
+                      data-testid={`voice-profile-toggle-${p.id}`}
+                      disabled={profileBusy}
+                      onClick={() => handleProfileState(p.id, p.status === "active" ? "deactivate" : "activate")}
+                      style={{ padding: "4px 8px", borderRadius: 4, border: "1px solid #ccc", background: "#fff", cursor: profileBusy ? "not-allowed" : "pointer", fontSize: 11 }}
+                    >
+                      {p.status === "active" ? "Deactivate" : "Activate"}
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+            <div style={{ marginTop: 8, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+              <input
+                aria-label="Voice profile name"
+                data-testid="voice-profile-name-input"
+                value={profileForm.name}
+                onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
+                placeholder="Profile name"
+                style={{ padding: 6, borderRadius: 4, border: "1px solid #ccc" }}
+              />
+              <input
+                aria-label="Provider voice id"
+                data-testid="voice-profile-voice-id-input"
+                value={profileForm.provider_voice_id}
+                onChange={(e) => setProfileForm({ ...profileForm, provider_voice_id: e.target.value })}
+                placeholder="Provider voice id"
+                style={{ padding: 6, borderRadius: 4, border: "1px solid #ccc" }}
+              />
+              <select
+                aria-label="Profile provider"
+                data-testid="voice-profile-provider-select"
+                value={profileForm.provider}
+                onChange={(e) => setProfileForm({ ...profileForm, provider: e.target.value })}
+                style={{ padding: 6, borderRadius: 4, border: "1px solid #ccc" }}
+              >
+                <option value="elevenlabs">ElevenLabs</option>
+                <option value="openai">OpenAI</option>
+                <option value="deepgram">Deepgram</option>
+              </select>
+              <button
+                type="button"
+                data-testid="voice-profile-create-btn"
+                disabled={profileBusy}
+                onClick={handleProfileCreate}
+                style={{ padding: "6px 12px", background: "#8b5cf6", color: "#fff", border: "none", borderRadius: 6, cursor: profileBusy ? "not-allowed" : "pointer" }}
+              >
+                {profileBusy ? "Saving…" : "Save profile"}
+              </button>
             </div>
             <div style={{ maxHeight: 200, overflowY: "auto", border: "1px solid #e5e7eb", borderRadius: 6, padding: 8, marginTop: 8 }}>
               {clones.length === 0 ? <p style={{ fontSize: 12, color: "#888" }}>No clone jobs — Backend clone.py, clone_worker.py lifecycle submit/processing/cancel/recovery</p> : clones.map((c) => <div key={c.id} style={{ padding: 6, borderBottom: "1px solid #f3f4f6", fontSize: 12 }}><strong>{c.name}</strong> — {c.provider} — {c.status} — {new Date(c.created_at).toLocaleString()}</div>)}

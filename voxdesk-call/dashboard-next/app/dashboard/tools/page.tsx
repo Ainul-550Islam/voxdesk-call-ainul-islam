@@ -4,29 +4,25 @@ import { useCallback, useEffect, useState } from "react";
 import { ApiError, request } from "@/lib/api";
 import { getToken } from "@/lib/auth";
 
+/** Mirrors `app/api_tools/routes.py`: the HTTP tool registry is global to the
+ *  tenant, not attached to one agent, and an auth binding is an opaque
+ *  `secret://` reference rather than a raw key. */
 interface AgentToolRecord {
   id: string;
-  agent_id: string;
   name: string;
-  description: string;
-  schema: Record<string, unknown>;
-  auth_binding: {
-    auth_type?: string;
-    secret_ref?: string;
-    header_name?: string;
-  };
-  is_enabled: boolean;
-  created_at: string | null;
+  method: string;
+  url_template: string;
+  enabled: boolean;
+  description?: string;
+  auth_ref?: string | null;
 }
 
 interface TestInvokeResponse {
-  tool_id: string;
-  name: string;
-  valid: boolean;
-  status?: string;
-  http_status?: number;
-  response_preview?: unknown;
-  validation_errors?: string[];
+  ok: boolean;
+  status_code: number;
+  data: unknown;
+  attempts: number;
+  duration_ms: number;
 }
 
 export default function ToolsRegistryPage() {
@@ -38,7 +34,6 @@ export default function ToolsRegistryPage() {
   );
 
   // HTTP Tool Editor state
-  const [agentId, setAgentId] = useState("agent-default");
   const [toolName, setToolName] = useState("");
   const [toolDesc, setToolDesc] = useState("");
   const [endpointUrl, setEndpointUrl] = useState(
@@ -47,7 +42,6 @@ export default function ToolsRegistryPage() {
   const [httpMethod, setHttpMethod] = useState("POST");
   const [authType, setAuthType] = useState("bearer");
   const [secretRef, setSecretRef] = useState("vault://secrets/crm_api_token");
-  const [headerName, setHeaderName] = useState("Authorization");
   const [schemaJson, setSchemaJson] = useState(
     JSON.stringify(
       {
@@ -70,8 +64,8 @@ export default function ToolsRegistryPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await request<{ tools: AgentToolRecord[] }>("/api/agent-tools");
-      setTools(res.tools);
+      const res = await request<AgentToolRecord[]>("/api/api-tools");
+      setTools(Array.isArray(res) ? res : []);
     } catch (err) {
       setError(
         err instanceof ApiError ? err.message : "Failed to load tool registry",
@@ -104,23 +98,24 @@ export default function ToolsRegistryPage() {
       return;
     }
     try {
-      const created = await request<AgentToolRecord>("/api/agent-tools", {
+      // `auth_ref` must be an opaque `secret://` reference: the backend rejects
+      // anything else, because a raw key posted here would end up in the API
+      // log and in the tool row.
+      const authRef =
+        authType === "none" ? null : `secret://${authType}/${secretRef.trim()}`;
+      const created = await request<AgentToolRecord>("/api/api-tools", {
         method: "POST",
         body: JSON.stringify({
-          agent_id: agentId.trim() || "agent-default",
           name: toolName.trim(),
           description: toolDesc.trim(),
-          schema: {
-            ...parsedSchema,
-            endpoint_url: endpointUrl.trim(),
-            http_method: httpMethod,
-          },
-          auth_binding: {
-            auth_type: authType,
-            secret_ref: authType === "none" ? undefined : secretRef.trim(),
-            header_name: headerName.trim() || "Authorization",
-          },
-          is_enabled: true,
+          method: httpMethod,
+          url_template: endpointUrl.trim(),
+          parameter_schema: parsedSchema,
+          body_schema: {},
+          result_schema: {},
+          auth_ref: authRef,
+          timeout_seconds: 10,
+          retry_max_attempts: 3,
         }),
       });
       setToolName("");
@@ -145,7 +140,7 @@ export default function ToolsRegistryPage() {
     }
     try {
       const res = await request<TestInvokeResponse>(
-        `/api/agent-tools/${encodeURIComponent(toolId)}/test-invoke`,
+        `/api/api-tools/${encodeURIComponent(toolId)}/execute`,
         {
           method: "POST",
           body: JSON.stringify({ arguments: parsedArgs }),
@@ -159,25 +154,13 @@ export default function ToolsRegistryPage() {
     }
   }
 
-  async function handleDeleteTool(toolId: string) {
-    setError(null);
-    try {
-      await request(`/api/agent-tools/${encodeURIComponent(toolId)}`, {
-        method: "DELETE",
-      });
-      setTools((prev) => prev.filter((t) => t.id !== toolId));
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to delete tool");
-    }
-  }
-
   return (
     <div data-testid="tools-registry-page">
       <header className="page-head">
         <div>
-          <h1>HTTP Tool Registry &amp; Agent Attachment</h1>
+          <h1>HTTP Tool Registry</h1>
           <p className="muted">
-            Define JSON-schema HTTP tools, bind headers via secret references (never raw keys), attach per-agent, and test-invoke.
+            Define JSON-schema HTTP tools, bind auth through opaque secret references (never raw keys), and test-invoke them.
           </p>
         </div>
       </header>
@@ -198,15 +181,6 @@ export default function ToolsRegistryPage() {
               gap: "0.75rem",
             }}
           >
-            <label>
-              Attached Agent ID
-              <input
-                type="text"
-                data-testid="tool-agent-id-input"
-                value={agentId}
-                onChange={(e) => setAgentId(e.target.value)}
-              />
-            </label>
             <label>
               Tool Name (snake_case)
               <input
@@ -268,14 +242,6 @@ export default function ToolsRegistryPage() {
                 onChange={(e) => setSecretRef(e.target.value)}
               />
             </label>
-            <label>
-              Header Name
-              <input
-                type="text"
-                value={headerName}
-                onChange={(e) => setHeaderName(e.target.value)}
-              />
-            </label>
           </div>
 
           <label>
@@ -324,8 +290,10 @@ export default function ToolsRegistryPage() {
         {invokeResult ? (
           <div style={{ marginTop: "0.75rem" }} data-testid="test-invoke-result">
             <strong>
-              Validation:{" "}
-              {invokeResult.valid ? "Valid Schema ✓" : "Invalid Schema ✗"}
+              Result:{" "}
+              {invokeResult.ok
+                ? `HTTP ${invokeResult.status_code} ✓`
+                : `Failed after ${invokeResult.attempts} attempt(s) ✗`}
             </strong>
             <pre>{JSON.stringify(invokeResult, null, 2)}</pre>
           </div>
@@ -343,8 +311,8 @@ export default function ToolsRegistryPage() {
             <thead>
               <tr>
                 <th>Name</th>
-                <th>Agent</th>
-                <th>Auth Secret Binding</th>
+                <th>Method</th>
+                <th>URL Template</th>
                 <th>Enabled</th>
                 <th>Actions</th>
               </tr>
@@ -356,14 +324,13 @@ export default function ToolsRegistryPage() {
                     <strong>{t.name}</strong>
                     <div className="muted">{t.description}</div>
                   </td>
-                  <td>{t.agent_id}</td>
                   <td>
-                    <code>
-                      {t.auth_binding?.auth_type ?? "none"}:{" "}
-                      {t.auth_binding?.secret_ref ?? "—"}
-                    </code>
+                    <code>{t.method}</code>
                   </td>
-                  <td>{t.is_enabled ? "Yes" : "No"}</td>
+                  <td>
+                    <code>{t.url_template}</code>
+                  </td>
+                  <td>{t.enabled ? "Yes" : "No"}</td>
                   <td>
                     <div style={{ display: "flex", gap: "0.35rem" }}>
                       <button
@@ -373,13 +340,6 @@ export default function ToolsRegistryPage() {
                         onClick={() => handleTestInvoke(t.id)}
                       >
                         Test-Invoke
-                      </button>
-                      <button
-                        type="button"
-                        className="btn"
-                        onClick={() => handleDeleteTool(t.id)}
-                      >
-                        Delete
                       </button>
                     </div>
                   </td>

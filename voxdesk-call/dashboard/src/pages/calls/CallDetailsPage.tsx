@@ -9,12 +9,24 @@ import type { TestRun } from '../../api/types/test-run';
 import { EvaluationScorecard } from '../../components/testing/EvaluationScorecard';
 import { TestRunStatus } from '../../components/testing/TestRunStatus';
 import { TranscriptEvidence } from '../../components/testing/TranscriptEvidence';
+import { CallControlBar } from '../../components/calls/CallControlBar';
 
 export interface CallDetailsPageProps {
   runId?: string;
+  /**
+   * A live carrier call to show operator controls for. Test runs and live
+   * calls are different objects: a run is an evaluation artifact, a call is
+   * the thing the carrier still owns. The control bar is only rendered when a
+   * call is actually here.
+   */
+  liveCall?: {
+    id: string;
+    status: string;
+    transferState?: string | null;
+  } | null;
 }
 
-export function CallDetailsPage({ runId }: CallDetailsPageProps) {
+export function CallDetailsPage({ runId, liveCall = null }: CallDetailsPageProps) {
   const [run, setRun] = useState<TestRun | null>(null);
   const [loading, setLoading] = useState<boolean>(Boolean(runId));
   const [error, setError] = useState<string | null>(null);
@@ -65,6 +77,14 @@ export function CallDetailsPage({ runId }: CallDetailsPageProps) {
 
         {loading && <div style={{ color: '#94A3B8' }}>Loading run details...</div>}
         {error && <div style={{ color: '#F87171' }}>{error}</div>}
+
+        {liveCall ? (
+          <CallControlBar
+            callId={liveCall.id}
+            status={liveCall.status}
+            transferState={liveCall.transferState ?? null}
+          />
+        ) : null}
 
         {run && (
           <>

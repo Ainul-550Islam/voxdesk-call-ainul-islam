@@ -3,6 +3,11 @@ import { defineConfig } from "vitest/config";
 import path from "path";
 
 export default defineConfig({
+  // Route pages rely on Next's automatic JSX runtime and never import React;
+  // vitest needs the same transform to render them.
+  esbuild: {
+    jsx: "automatic",
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./"),
@@ -10,6 +15,15 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
-    include: ["lib/**/*.test.ts", "lib/**/*.test.tsx", "tests/**/*.test.tsx", "tests/**/*.test.ts", "components/**/*.test.tsx"],
+    include: [
+      "lib/**/*.test.ts",
+      "lib/**/*.test.tsx",
+      "tests/**/*.test.tsx",
+      "tests/**/*.test.ts",
+      "components/**/*.test.tsx",
+      // Route-level suites live beside the page they cover.
+      "app/**/__tests__/**/*.test.tsx",
+      "app/**/__tests__/**/*.test.ts",
+    ],
   },
 });

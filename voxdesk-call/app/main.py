@@ -60,6 +60,7 @@ from app.api.risk_admin_routes import router as risk_admin_router
 from app.api.specialized_agent_routes import router as specialized_agent_router
 from app.api.legal_routes import router as legal_router
 from app.api.translation_routes import router as translation_router
+from app.api.translation_routes import alias_router as translation_alias_router
 from app.api.anomaly_routes import router as anomaly_router
 from app.review.routes import router as review_router
 from app.api.insight_routes import router as insight_router
@@ -187,6 +188,7 @@ from app.api.v1.telephony_routes import router as telephony_runtime_v1_router
 from app.api.v1.telephony_webhook_routes import router as telephony_webhook_v1_router
 from app.middleware.public_boundary import add_public_boundary_middleware
 from app.api.voice_catalog_routes import router as voice_catalog_router
+from app.api.voice_profile_routes import router as voice_profile_router
 from app.telephony.telnyx_handler import router as telnyx_voice_router
 from app.api.live_proof_routes import router as live_proof_router
 from app.middleware.security_middleware import add_security_middleware
@@ -399,6 +401,7 @@ app.include_router(risk_admin_router)
 app.include_router(specialized_agent_router)
 app.include_router(legal_router)
 app.include_router(translation_router)
+app.include_router(translation_alias_router)
 app.include_router(anomaly_router)
 app.include_router(review_router)
 app.include_router(insight_router)
@@ -512,6 +515,7 @@ app.include_router(audit_v1_router)
 app.include_router(enterprise_security_v1_router)
 app.include_router(parity_v1_router)
 app.include_router(voice_catalog_router)
+app.include_router(voice_profile_router)
 app.include_router(telnyx_voice_router)
 app.include_router(live_proof_router)
 app.include_router(analytics_dashboard_router)

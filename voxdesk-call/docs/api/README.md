@@ -5,9 +5,9 @@ Generated deterministically by `scripts/build_api_docs.sh` from `app.main:app.op
 ## Summary Metrics
 
 - **OpenAPI Version**: `3.1.0`
-- **Total Unique Paths**: `1238`
-- **Total HTTP Operations**: `1479`
-- **Total Tag Groups**: `154`
+- **Total Unique Paths**: `1241`
+- **Total HTTP Operations**: `1485`
+- **Total Tag Groups**: `155`
 - **Machine-Readable Schema**: [`openapi.json`](openapi.json) (mirrored at [`../../contracts/openapi.json`](../../contracts/openapi.json))
 - **Static HTML Reference (Redoc / Scalar + Offline Explorer)**: [`index.html`](index.html)
 
@@ -15,10 +15,10 @@ Generated deterministically by `scripts/build_api_docs.sh` from `app.main:app.op
 
 | HTTP Method | Operation Count |
 |---|---:|
-| `DELETE` | 67 |
-| `GET` | 638 |
+| `DELETE` | 68 |
+| `GET` | 642 |
 | `PATCH` | 58 |
-| `POST` | 689 |
+| `POST` | 690 |
 | `PUT` | 27 |
 
 ## Tag Inventory
@@ -166,9 +166,10 @@ Generated deterministically by `scripts/build_api_docs.sh` from `app.main:app.op
 | `testing-simulation` | 20 | `GET /api/v1/testing/cases`, `POST /api/v1/testing/cases`, `GET /api/v1/testing/cases/{case_id}` (+17 more) |
 | `testing-web-calls` | 3 | `POST /api/v1/testing/web-calls/sessions`, `GET /api/v1/testing/web-calls/sessions/{run_id}`, `POST /api/v1/testing/web-calls/sessions/{run_id}/events` |
 | `tool-registry` | 8 | `GET /api/agents/{agent_id}/tools`, `POST /api/agents/{agent_id}/tools`, `GET /api/agents/{agent_id}/tools/{tool_id}` (+5 more) |
-| `transfer-control` | 26 | `GET /api/calls/transfers/analytics/summary`, `POST /api/calls/transfers/bulk`, `DELETE /api/calls/transfers/cache` (+23 more) |
-| `translation-agent` | 2 | `POST /api/translation/jobs`, `GET /api/translation/jobs/{execution_id}` |
+| `transfer-control` | 24 | `GET /api/calls/transfers/analytics/summary`, `POST /api/calls/transfers/bulk`, `DELETE /api/calls/transfers/cache` (+21 more) |
+| `translation-agent` | 4 | `GET /api/translation/jobs`, `POST /api/translation/jobs`, `GET /api/translation/jobs/{execution_id}` (+1 more) |
 | `voice-catalog` | 3 | `GET /api/voices/catalog`, `POST /api/voices/clone`, `GET /api/voices/providers` |
+| `voice-profiles` | 6 | `GET /api/agent/voice-profiles`, `POST /api/agent/voice-profiles`, `GET /api/agent/voice-profiles/{profile_id}` (+3 more) |
 | `vonage-voice` | 3 | `GET /telephony/vonage/answer`, `POST /telephony/vonage/answer`, `POST /telephony/vonage/events` |
 | `web-call-transport` | 1 | `POST /telephony/web/offer` |
 | `web-calls-live` | 6 | `POST /api/public/web-calls`, `POST /api/web-calls`, `GET /api/web-calls/{call_id}` (+3 more) |

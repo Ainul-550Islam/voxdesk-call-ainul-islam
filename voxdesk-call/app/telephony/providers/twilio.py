@@ -7,6 +7,8 @@ the normalized boundary used by number, recording and provider selection.
 
 from __future__ import annotations
 
+from typing import Any
+
 from app.core.config import settings
 from app.telephony.capabilities import CapabilitySet
 from app.telephony.phone import normalize
@@ -28,6 +30,27 @@ from app.telephony.providers.base import (
     normalize_generic_webhook_payload,
 )
 from app.telephony.providers.webhook_verifier import verify as verify_provider_webhook
+
+
+def _build_call_control_twiml(kind: str, *, call_sid: str, stream_url: str = "") -> str:
+    """Import the TwiML builder lazily: ``twilio_handler`` owns the live call
+    path and importing it at module scope would drag the whole telephony stack
+    into every provider-selection import."""
+    from app.telephony.twilio_handler import build_call_control_twiml
+
+    return build_call_control_twiml(kind, call_sid=call_sid, stream_url=stream_url)
+
+
+def _build_dtmf_twiml(digits: str) -> str:
+    from app.telephony.twilio_handler import build_dtmf_twiml
+
+    return build_dtmf_twiml(digits)
+
+
+def _build_whisper_twiml(message: str) -> str:
+    from app.telephony.twilio_handler import build_whisper_twiml
+
+    return build_whisper_twiml(message)
 
 
 class TwilioAdapter(TelephonyAdapter):
@@ -53,7 +76,15 @@ class TwilioAdapter(TelephonyAdapter):
         return HealthResult(self.name, True, "credentials_present", probed=False)
 
     def capabilities(self) -> CapabilitySet:
-        """Confirmed by this deployment's configuration, not by a live account probe."""
+        """Confirmed by this deployment's configuration, not by a live account probe.
+
+        ``supports_hold`` and ``supports_cancel_transfer`` are true only when a
+        live voice credential set is present, because both operations are
+        TwiML rewrites on an in-progress call and neither can be attempted
+        without one. They stay false for an unconfigured deployment so a
+        dashboard greys the controls out instead of offering an action that
+        would fail.
+        """
         voice = self.configured()
         return CapabilitySet(
             voice=voice,
@@ -62,6 +93,8 @@ class TwilioAdapter(TelephonyAdapter):
             whatsapp=bool((settings.twilio_whatsapp_number or "").strip()),
             recording=voice,
             transcription=False,
+            supports_hold=voice,
+            supports_cancel_transfer=voice,
             source="configuration" if voice else "unconfirmed",
         )
 
@@ -184,6 +217,111 @@ class TwilioAdapter(TelephonyAdapter):
             to_number=normalized_dest,
             from_number=caller_id or "",
         )
+
+    # -- live call control ------------------------------------------------
+
+    async def send_dtmf(self, external_id: str, digits: str) -> dict[str, Any]:
+        """Play one digit run on a live call through a real TwiML update.
+
+        The base class answers ``{"status": "sent"}`` without contacting the
+        carrier. That would let a dashboard report digits that were never
+        played, so Twilio overrides it with the same
+        ``calls(sid).update(twiml=...)`` call the single-DTMF route already
+        uses. The return value is only built after the carrier accepted the
+        redirect.
+        """
+        if not external_id or not str(external_id).strip():
+            raise ProviderValidationError("Call id is required", provider=self.name)
+        normalized = (digits or "").strip()
+        if not normalized:
+            raise ProviderValidationError("Digits are required", provider=self.name)
+        twiml = _build_dtmf_twiml(normalized)
+        await self._redirect_twiml(external_id, twiml, confirmed_status="in_progress")
+        return {
+            "provider": self.name,
+            "external_id": external_id,
+            "digits": normalized,
+            "status": "sent",
+            "confirmed_by_provider": True,
+        }
+
+    async def hold_call(self, external_id: str) -> CallResult:
+        """Redirect the live call to hold TwiML built by ``twilio_handler``."""
+        return await self._redirect_twiml(
+            external_id,
+            _build_call_control_twiml("hold", call_sid=external_id),
+            confirmed_status="held",
+        )
+
+    async def resume_call(self, external_id: str, resume_url: str = "") -> CallResult:
+        """Return a held call to the media-stream TwiML it was running on."""
+        return await self._redirect_twiml(
+            external_id,
+            _build_call_control_twiml(
+                "media_stream", call_sid=external_id, stream_url=resume_url
+            ),
+            confirmed_status="in_progress",
+        )
+
+    async def cancel_transfer(self, external_id: str) -> CallResult:
+        """Bring the caller back from an in-flight transfer leg to the AI stream."""
+        return await self._redirect_twiml(
+            external_id,
+            _build_call_control_twiml("media_stream", call_sid=external_id),
+            confirmed_status="in_progress",
+        )
+
+    async def send_whisper_to_leg(self, external_id: str, message: str) -> CallResult:
+        """Speak a briefing to the human leg of a warm transfer.
+
+        Twilio addresses a leg by its own call SID, so the customer on the
+        parent leg never hears it. The text arrives already sanitized by
+        ``_safe_whisper_reason``; this only turns it into spoken TwiML.
+        """
+        if not external_id or not str(external_id).strip():
+            raise ProviderValidationError("Leg call id is required", provider=self.name)
+        if not (message or "").strip():
+            raise ProviderValidationError("Whisper message is required", provider=self.name)
+        return await self._redirect_twiml(
+            external_id,
+            _build_whisper_twiml(message),
+            confirmed_status="in_progress",
+        )
+
+    async def _redirect_twiml(
+        self, external_id: str, twiml: str, *, confirmed_status: str
+    ) -> CallResult:
+        """Apply one TwiML rewrite to a live call and confirm it was accepted."""
+        if not external_id or not str(external_id).strip():
+            raise ProviderValidationError("Call id is required", provider=self.name)
+
+        from app.telephony.provider import (
+            FakeTelephonyProvider,
+            TwilioProvider,
+            get_provider,
+        )
+
+        provider = get_provider()
+        # The in-process fake is a test double, not an unconfigured deployment:
+        # it must not be gated on real credentials.
+        if not isinstance(provider, FakeTelephonyProvider) and isinstance(
+            provider, TwilioProvider
+        ):
+            self.require_configured()
+
+        result = await provider.redirect_call(external_id, twiml)
+        if not result.ok:
+            if result.error_code == "20404":
+                raise ProviderNotFoundError("Call is not in progress", provider=self.name)
+            if result.error_code == "sdk_missing":
+                raise ProviderUnavailableError(
+                    "Twilio SDK is not installed", provider=self.name
+                )
+            raise ProviderStateError(
+                result.error_message or "Twilio refused the call-control redirect",
+                provider=self.name,
+            )
+        return CallResult(self.name, external_id, confirmed_status)
 
     async def search_numbers(self, *, country: str, limit: int = 10) -> list[NumberResult]:
         self.require_configured()

@@ -32,6 +32,11 @@ export const AgentPlayground: React.FC = () => {
   );
   const [customerNameVar, setCustomerNameVar] = useState('Amina Rahman');
   const [preferredTimeVar, setPreferredTimeVar] = useState('tomorrow at 10:00 AM');
+  // Sandbox mode is OFF by default and cannot be turned on by accident: in
+  // sandbox mode a run may be answered by a mock provider, which is fine for
+  // trying out a prompt and worthless as evidence. Previously this was
+  // hard-coded to `true`, so every run silently permitted a mock answer.
+  const [sandboxMode, setSandboxMode] = useState(false);
   const [inlineRuleType, setInlineRuleType] =
     useState<EvaluationRuleType>('contains');
   const [inlineRuleValue, setInlineRuleValue] = useState('APT-2026');
@@ -82,7 +87,7 @@ export const AgentPlayground: React.FC = () => {
         user_message: userMessage.trim(),
         dynamic_variables: dynVars,
         evaluation_rules: inlineRules,
-        allow_mock_fallback: true,
+        allow_mock_fallback: sandboxMode,
       });
     } else {
       const turns = multiTurnScript
@@ -97,7 +102,7 @@ export const AgentPlayground: React.FC = () => {
         input_messages: turns,
         dynamic_variables: dynVars,
         evaluation_rules: inlineRules,
-        allow_mock_fallback: true,
+        allow_mock_fallback: sandboxMode,
       });
     }
   };
@@ -115,6 +120,60 @@ export const AgentPlayground: React.FC = () => {
         gap: 20,
       }}
     >
+      <div
+        data-testid="sandbox-mode-bar"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          padding: '10px 14px',
+          borderRadius: 10,
+          border: `1px solid ${sandboxMode ? '#F59E0B' : '#1E2D45'}`,
+          background: sandboxMode ? '#2A1F06' : '#0F1623',
+        }}
+      >
+        <label
+          htmlFor="sandbox-mode-toggle"
+          style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13 }}
+        >
+          <input
+            id="sandbox-mode-toggle"
+            type="checkbox"
+            role="switch"
+            aria-checked={sandboxMode}
+            data-testid="sandbox-mode-toggle"
+            checked={sandboxMode}
+            onChange={(e) => setSandboxMode(e.target.checked)}
+            style={{ width: 18, height: 18, cursor: 'pointer' }}
+          />
+          <span>
+            <strong>Sandbox (mock) mode</strong>
+            <span style={{ display: 'block', color: '#94A3B8', fontSize: 12 }}>
+              Allow a mock provider to answer when no real provider is
+              configured. Results are not call evidence.
+            </span>
+          </span>
+        </label>
+        {sandboxMode ? (
+          <span
+            data-testid="sandbox-mode-badge"
+            role="status"
+            style={{
+              flexShrink: 0,
+              padding: '6px 10px',
+              borderRadius: 999,
+              background: '#F59E0B',
+              color: '#1F1300',
+              fontSize: 12,
+              fontWeight: 700,
+              letterSpacing: 0.4,
+            }}
+          >
+            SANDBOX — not a real call
+          </span>
+        ) : null}
+      </div>
       <div
         style={{
           display: 'flex',

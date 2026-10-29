@@ -55,7 +55,10 @@ from app.resilience.idempotency import (
     complete_request,
     fail_request,
 )
+from app.schemas.call_control import DtmfBatchRequest
 from app.telephony import dialer_limits, dnc, phone as phone_util
+from app.telephony.call_control_service import CallControlService
+from app.telephony.provider_errors import ProviderConfigurationError
 from app.core.logging import log
 from app.core.rate_limit import allow_identity_action
 
@@ -79,6 +82,9 @@ DTMF_REGEX = re.compile(r"^[0-9#*wW]+$")
 OUTBOUND_RATE_LIMIT_PER_MINUTE = 60
 WEB_CALL_RATE_LIMIT_PER_MINUTE = 30
 DTMF_RATE_LIMIT_PER_MINUTE = 20
+#: Pause/resume are operator actions on a live call, not a dialler loop, so
+#: the ceiling is far below the outbound-placement limit.
+CALL_CONTROL_RATE_LIMIT_PER_MINUTE = 30
 
 class CallAction(str, PyEnum):
     PAUSE = "pause"
@@ -1414,31 +1420,122 @@ async def revoke_web_call(
 # Call Control API — pause/resume/end/reopen + analytics
 # ---------------------------------------------------------------------------
 
-@router.post("/{call_id}/pause", status_code=501)
+@router.post("/{call_id}/pause")
 async def pause_call(
     call_id: uuid.UUID,
     payload: CallControlRequest,
     ctx: TenantContext = Depends(require_permission(Permission.CALL_WRITE)),
+    session: AsyncSession = Depends(get_session),
 ):
-    """Pause requires a provider capability not implemented by this legacy route."""
-    del call_id, payload, ctx
-    raise HTTPException(
-        status_code=501,
-        detail={"code": "call_pause_not_implemented", "message": "The configured legacy call adapter does not support a verified pause operation."},
-    )
+    """Park a live call on hold through the configured telephony provider.
 
-@router.post("/{call_id}/resume", status_code=501)
+    The caller is not told the call is paused until the carrier has accepted
+    the redirect; a dashboard that shows "paused" while the AI is still
+    listening is worse than a refusal. Each attempt carries its own durable
+    receipt, so a retried request replays the stored answer instead of
+    parking the caller twice.
+    """
+    await _check_rate_limit(
+        ctx.tenant_id, f"pause:{call_id}", CALL_CONTROL_RATE_LIMIT_PER_MINUTE
+    )
+    call = await _get_call(
+        session, ctx, call_id, permission=Permission.CALL_WRITE, for_write=True
+    )
+    service = CallControlService(session, ctx)
+    try:
+        result = await service.pause_call(
+            call.id,
+            environment_id=call.environment_id,
+            reason=payload.reason,
+            idempotency_key=payload.idempotency_key,
+        )
+    except ProviderConfigurationError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "telephony_provider_not_configured",
+                "message": str(exc) or "The configured telephony provider is not usable.",
+            },
+        ) from exc
+    await _record_call_audit(
+        session,
+        ctx,
+        environment_id=call.environment_id,
+        event_type="call.paused",
+        result="success",
+        call_id=call.id,
+        detail={
+            "reason": payload.reason or "",
+            "provider": result.provider,
+            "provider_status": result.provider_status,
+            "idempotency_key": result.idempotency_key,
+            "replayed": result.replayed,
+        },
+    )
+    await session.commit()
+    _audit(
+        "call.paused",
+        tenant_id=str(ctx.tenant_id),
+        call_id=str(call.id),
+        provider=result.provider,
+        replayed=result.replayed,
+    )
+    return result.model_dump(mode="json")
+
+@router.post("/{call_id}/resume")
 async def resume_call(
     call_id: uuid.UUID,
     payload: CallControlRequest,
     ctx: TenantContext = Depends(require_permission(Permission.CALL_WRITE)),
+    session: AsyncSession = Depends(get_session),
 ):
-    """Resume requires a provider capability not implemented by this legacy route."""
-    del call_id, payload, ctx
-    raise HTTPException(
-        status_code=501,
-        detail={"code": "call_resume_not_implemented", "message": "The configured legacy call adapter does not support a verified resume operation."},
+    """Return a held call to the AI media stream it was running on."""
+    await _check_rate_limit(
+        ctx.tenant_id, f"resume:{call_id}", CALL_CONTROL_RATE_LIMIT_PER_MINUTE
     )
+    call = await _get_call(
+        session, ctx, call_id, permission=Permission.CALL_WRITE, for_write=True
+    )
+    service = CallControlService(session, ctx)
+    try:
+        result = await service.resume_call(
+            call.id,
+            environment_id=call.environment_id,
+            reason=payload.reason,
+            idempotency_key=payload.idempotency_key,
+        )
+    except ProviderConfigurationError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "telephony_provider_not_configured",
+                "message": str(exc) or "The configured telephony provider is not usable.",
+            },
+        ) from exc
+    await _record_call_audit(
+        session,
+        ctx,
+        environment_id=call.environment_id,
+        event_type="call.resumed",
+        result="success",
+        call_id=call.id,
+        detail={
+            "reason": payload.reason or "",
+            "provider": result.provider,
+            "provider_status": result.provider_status,
+            "idempotency_key": result.idempotency_key,
+            "replayed": result.replayed,
+        },
+    )
+    await session.commit()
+    _audit(
+        "call.resumed",
+        tenant_id=str(ctx.tenant_id),
+        call_id=str(call.id),
+        provider=result.provider,
+        replayed=result.replayed,
+    )
+    return result.model_dump(mode="json")
 
 @router.post("/{call_id}/end")
 async def end_call(
@@ -1515,17 +1612,31 @@ async def end_call(
         "ended_at": call.ended_at.isoformat(),
     }
 
-@router.post("/{call_id}/reopen", status_code=501)
+@router.post("/{call_id}/reopen")
 async def reopen_call(
     call_id: uuid.UUID,
     payload: CallControlRequest,
     ctx: TenantContext = Depends(require_permission(Permission.CALL_WRITE)),
+    session: AsyncSession = Depends(get_session),
 ):
-    """A completed provider call cannot be reopened as a live carrier call."""
-    del call_id, payload, ctx
+    """Refuse to reopen a finished call.
+
+    This is a permanent business rule, not an unimplemented feature, so it is
+    a 409 rather than a 501: a carrier call is a real resource that ended, and
+    no amount of waiting will make this endpoint able to bring it back. The
+    call is still loaded first so an id belonging to another tenant, or to no
+    call at all, answers 404 instead of leaking that a rule exists.
+    """
+    del payload
+    call = await _get_call(
+        session, ctx, call_id, permission=Permission.CALL_WRITE, for_write=True
+    )
     raise HTTPException(
-        status_code=501,
-        detail={"code": "call_reopen_not_implemented", "message": "A completed provider call cannot be reopened; start a new call with a fresh idempotency key."},
+        status_code=409,
+        detail={
+            "code": "call_reopen_not_allowed",
+            "message": f"A {call.status.value} call cannot be reopened; start a new call with a fresh idempotency key.",
+        },
     )
 
 @router.get("/{call_id}/analytics", response_model=CallAnalyticsOut)
@@ -1649,21 +1760,60 @@ async def send_dtmf(
         "at": _now_iso(),
     }
 
-@router.post("/{call_id}/dtmf/batch", status_code=501)
+@router.post("/{call_id}/dtmf/batch")
 async def send_dtmf_batch(
     call_id: uuid.UUID,
-    digits_list: List[str],
+    payload: DtmfBatchRequest,
     ctx: TenantContext = Depends(require_permission(Permission.CALL_WRITE)),
+    session: AsyncSession = Depends(get_session),
 ):
-    """Batch DTMF is disabled until every item has a durable receipt."""
-    del call_id, digits_list, ctx
-    raise HTTPException(
-        status_code=501,
+    """Send up to 25 digit runs, each with its own durable receipt.
+
+    Every item is attempted independently and its outcome is reported on its
+    own, so one rejected run never hides the runs that did reach the carrier
+    and the caller never has to resend the whole batch to finish the rest.
+    """
+    await _check_rate_limit(ctx.tenant_id, f"dtmf_batch:{call_id}", DTMF_RATE_LIMIT_PER_MINUTE)
+    call = await _get_call(
+        session, ctx, call_id, permission=Permission.CALL_WRITE, for_write=True
+    )
+    service = CallControlService(session, ctx)
+    try:
+        result = await service.send_dtmf_batch(
+            call.id, environment_id=call.environment_id, items=payload.items
+        )
+    except ProviderConfigurationError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "telephony_provider_not_configured",
+                "message": str(exc) or "The configured telephony provider is not usable.",
+            },
+        ) from exc
+    await _record_call_audit(
+        session,
+        ctx,
+        environment_id=call.environment_id,
+        event_type="call.dtmf_batch",
+        result="success" if result.rejected == 0 else "failure",
+        call_id=call.id,
         detail={
-            "code": "dtmf_batch_not_implemented",
-            "message": "Use the single DTMF endpoint with a unique Idempotency-Key for each provider side effect.",
+            "provider": result.provider,
+            "items": len(result.items),
+            "sent": result.sent,
+            "replayed": result.replayed,
+            "rejected": result.rejected,
         },
     )
+    await session.commit()
+    _audit(
+        "call.dtmf_batch",
+        tenant_id=str(ctx.tenant_id),
+        call_id=str(call.id),
+        sent=result.sent,
+        rejected=result.rejected,
+    )
+    return result.model_dump(mode="json")
 
 # ---------------------------------------------------------------------------
 # Additional compliance & health endpoints

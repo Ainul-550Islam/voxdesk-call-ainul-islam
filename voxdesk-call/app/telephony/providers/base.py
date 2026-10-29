@@ -16,6 +16,7 @@ from dataclasses import dataclass, field
 from datetime import datetime as datetime
 from typing import Any, Mapping, Protocol, runtime_checkable
 
+from app.providers.errors import ProviderCapabilityError
 from app.telephony.capabilities import CapabilitySet
 from app.telephony.enums import (
     CallDirection,
@@ -386,6 +387,51 @@ class TelephonyAdapter(ABC):
 
     async def hangup_call(self, external_id: str) -> CallResult:
         return await self.hangup(external_id)
+
+    # ── Live call control (pause / resume / transfer cancel) ──────────────
+
+    async def hold_call(self, external_id: str) -> CallResult:
+        """Redirect a live call to hold TwiML, leaving the caller parked.
+
+        The default answers ``UNSUPPORTED_CAPABILITY``. A carrier that has not
+        shipped a verified hold for this deployment must not be reported as
+        paused: a caller who is still talking to the AI while the dashboard
+        says "paused" is worse than an honest refusal.
+        """
+        del external_id
+        raise ProviderCapabilityError(
+            f"UNSUPPORTED_CAPABILITY: provider '{self.name}' has no verified hold operation",
+            provider=self.name,
+        )
+
+    async def resume_call(self, external_id: str, resume_url: str = "") -> CallResult:
+        """Return a held call to the AI media stream it was running on."""
+        del external_id, resume_url
+        raise ProviderCapabilityError(
+            f"UNSUPPORTED_CAPABILITY: provider '{self.name}' has no verified resume operation",
+            provider=self.name,
+        )
+
+    async def cancel_transfer(self, external_id: str) -> CallResult:
+        """Pull a live call back from an in-flight transfer leg to the AI."""
+        del external_id
+        raise ProviderCapabilityError(
+            f"UNSUPPORTED_CAPABILITY: provider '{self.name}' has no verified transfer-cancel operation",
+            provider=self.name,
+        )
+
+    async def send_whisper_to_leg(self, external_id: str, message: str) -> CallResult:
+        """Speak a briefing to a single leg of a live call.
+
+        Only a provider that can address one leg independently can do this. A
+        carrier that would have to speak to both parties — which would play the
+        briefing to the customer — must refuse instead.
+        """
+        del external_id, message
+        raise ProviderCapabilityError(
+            f"UNSUPPORTED_CAPABILITY: provider '{self.name}' has no verified single-leg whisper operation",
+            provider=self.name,
+        )
 
     async def place_in_conference_hold(
         self,

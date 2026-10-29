@@ -5534,6 +5534,86 @@
         "title": "BulkOutboundRequest",
         "type": "object"
       },
+      "BulkTransferItem": {
+        "additionalProperties": false,
+        "properties": {
+          "call_id": {
+            "maxLength": 64,
+            "minLength": 32,
+            "title": "Call Id",
+            "type": "string"
+          },
+          "destination": {
+            "maxLength": 64,
+            "minLength": 8,
+            "title": "Destination",
+            "type": "string"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 8,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "required": [
+          "call_id",
+          "destination"
+        ],
+        "title": "BulkTransferItem",
+        "type": "object"
+      },
+      "BulkTransferRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 8,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BulkTransferItem"
+            },
+            "maxItems": 25,
+            "minItems": 1,
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "BulkTransferRequest",
+        "type": "object"
+      },
       "BundleVerificationOut": {
         "properties": {
           "chain_ok": {
@@ -13877,6 +13957,56 @@
           }
         },
         "title": "DryRunToolRequest",
+        "type": "object"
+      },
+      "DtmfBatchRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DtmfItem"
+            },
+            "maxItems": 25,
+            "minItems": 1,
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "DtmfBatchRequest",
+        "type": "object"
+      },
+      "DtmfItem": {
+        "additionalProperties": false,
+        "description": "One digit run, with its own idempotency key.\n\nThe key is per item and not per batch on purpose: each run is a separate\ncarrier side effect, so each one needs its own replay record. A batch-level\nkey would make \"retry the two that failed\" impossible without re-sending\nthe three that succeeded.",
+        "properties": {
+          "digits": {
+            "maxLength": 32,
+            "minLength": 1,
+            "pattern": "^[0-9#*wW]+$",
+            "title": "Digits",
+            "type": "string"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 8,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          }
+        },
+        "required": [
+          "digits"
+        ],
+        "title": "DtmfItem",
         "type": "object"
       },
       "DtmfRequest": {
@@ -22399,6 +22529,29 @@
             "title": "Id",
             "type": "string"
           },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          },
+          "replayed": {
+            "default": false,
+            "title": "Replayed",
+            "type": "boolean"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/OutcomeWritebackResult"
+            },
+            "title": "Results",
+            "type": "array"
+          },
           "status": {
             "title": "Status",
             "type": "string"
@@ -22460,6 +22613,91 @@
           "target"
         ],
         "title": "OutcomeWritebackRequest",
+        "type": "object"
+      },
+      "OutcomeWritebackResult": {
+        "additionalProperties": false,
+        "description": "What one integration target did with one call outcome.",
+        "properties": {
+          "at": {
+            "title": "At",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "external_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Id"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "replayed": {
+            "default": false,
+            "title": "Replayed",
+            "type": "boolean"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "target": {
+            "title": "Target",
+            "type": "string"
+          },
+          "writeback_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Writeback Id"
+          }
+        },
+        "required": [
+          "target",
+          "status",
+          "at"
+        ],
+        "title": "OutcomeWritebackResult",
         "type": "object"
       },
       "OverviewOut": {
@@ -35759,6 +35997,19 @@
       "TransferCancelRequest": {
         "additionalProperties": false,
         "properties": {
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 8,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          },
           "reason": {
             "anyOf": [
               {
@@ -36031,6 +36282,36 @@
         ],
         "title": "TransferState",
         "type": "string"
+      },
+      "TransferWhisperRequest": {
+        "additionalProperties": false,
+        "description": "Text spoken to the human agent leg only, never to the caller.\n\n``MAX_WHISPER_LENGTH`` is the same bound ``transfer_control_routes``\nenforces on ``TransferRequest.whisper``, so a whisper cannot smuggle in\nmore than a <Say> should ever carry.",
+        "properties": {
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 8,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          },
+          "message": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "title": "TransferWhisperRequest",
+        "type": "object"
       },
       "TransitionBody": {
         "properties": {
@@ -38106,6 +38387,83 @@
           }
         },
         "title": "VoicePayload",
+        "type": "object"
+      },
+      "VoiceProfileCreateRequest": {
+        "additionalProperties": false,
+        "description": "A new voice profile for this tenant.\n\n``metadata`` and ``capabilities`` are stored as JSON and are validated for\nsize by the service layer, which rejects forbidden or oversized fields\nrather than truncating them \u2014 a silently truncated voice configuration is\na call that sounds wrong for a reason nobody can find later.",
+        "properties": {
+          "capabilities": {
+            "title": "Capabilities",
+            "type": "object"
+          },
+          "language": {
+            "default": "en-US",
+            "maxLength": 32,
+            "minLength": 2,
+            "title": "Language",
+            "type": "string"
+          },
+          "locale": {
+            "default": "",
+            "maxLength": 32,
+            "title": "Locale",
+            "type": "string"
+          },
+          "metadata": {
+            "title": "Metadata",
+            "type": "object"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "provider": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Provider",
+            "type": "string"
+          },
+          "provider_voice_id": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Provider Voice Id",
+            "type": "string"
+          },
+          "voice_type": {
+            "default": "provider",
+            "maxLength": 32,
+            "title": "Voice Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "provider",
+          "provider_voice_id"
+        ],
+        "title": "VoiceProfileCreateRequest",
+        "type": "object"
+      },
+      "VoiceProfileStateRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "title": "VoiceProfileStateRequest",
         "type": "object"
       },
       "VoiceSettings": {
@@ -43921,6 +44279,375 @@
         "summary": "Transition Agent Transfer",
         "tags": [
           "retell-parity"
+        ]
+      }
+    },
+    "/api/agent/voice-profiles": {
+      "get": {
+        "description": "List this tenant's voice profiles, newest-named first.",
+        "operationId": "list_voice_profiles_api_agent_voice_profiles_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "provider",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Provider"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 32,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "voice_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 32,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Voice Type"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response List Voice Profiles Api Agent Voice Profiles Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Voice Profiles",
+        "tags": [
+          "voice-profiles"
+        ]
+      },
+      "post": {
+        "description": "Create a voice profile for this tenant.",
+        "operationId": "create_voice_profile_api_agent_voice_profiles_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoiceProfileCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Create Voice Profile Api Agent Voice Profiles Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Voice Profile",
+        "tags": [
+          "voice-profiles"
+        ]
+      }
+    },
+    "/api/agent/voice-profiles/{profile_id}": {
+      "delete": {
+        "description": "Delete a voice profile.\n\nThe audit event is staged *before* the delete so the row's own id can be\nreferenced, then the profile is removed and both are committed together.",
+        "operationId": "delete_voice_profile_api_agent_voice_profiles__profile_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Profile Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Delete Voice Profile Api Agent Voice Profiles  Profile Id  Delete",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Voice Profile",
+        "tags": [
+          "voice-profiles"
+        ]
+      },
+      "get": {
+        "description": "Fetch one voice profile owned by this tenant.",
+        "operationId": "get_voice_profile_api_agent_voice_profiles__profile_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Profile Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Voice Profile Api Agent Voice Profiles  Profile Id  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Voice Profile",
+        "tags": [
+          "voice-profiles"
+        ]
+      }
+    },
+    "/api/agent/voice-profiles/{profile_id}/activate": {
+      "post": {
+        "description": "Make a profile usable again after deactivation.",
+        "operationId": "activate_voice_profile_api_agent_voice_profiles__profile_id__activate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Profile Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/VoiceProfileStateRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Activate Voice Profile Api Agent Voice Profiles  Profile Id  Activate Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Activate Voice Profile",
+        "tags": [
+          "voice-profiles"
+        ]
+      }
+    },
+    "/api/agent/voice-profiles/{profile_id}/deactivate": {
+      "post": {
+        "description": "Stop a profile from being selectable. It is kept, not destroyed.",
+        "operationId": "deactivate_voice_profile_api_agent_voice_profiles__profile_id__deactivate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Profile Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/VoiceProfileStateRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Deactivate Voice Profile Api Agent Voice Profiles  Profile Id  Deactivate Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Deactivate Voice Profile",
+        "tags": [
+          "voice-profiles"
         ]
       }
     },
@@ -53018,35 +53745,23 @@
     },
     "/api/calls/transfers/bulk": {
       "post": {
-        "description": "Fail closed until each call can get an independent durable receipt.",
+        "description": "Transfer up to 25 calls, each with an independent durable receipt.\n\nThe whole point of per-item receipts is that a batch cannot be atomic\nagainst a carrier: once call 3 has been dialled it cannot be un-dialled.\nSo one call failing reports on its own row and the rest still go through,\nand the response lists every call's outcome. Retrying the same batch is\nthen safe, because items that already transferred replay their stored\nresult instead of dialling again.",
         "operationId": "bulk_transfer_api_calls_transfers_bulk_post",
         "parameters": [
           {
-            "in": "query",
-            "name": "destination",
-            "required": true,
-            "schema": {
-              "maxLength": 64,
-              "minLength": 8,
-              "title": "Destination",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "reason",
+            "in": "header",
+            "name": "Idempotency-Key",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "maxLength": 500,
                   "type": "string"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "title": "Reason"
+              "title": "Idempotency-Key"
             }
           }
         ],
@@ -53054,18 +53769,21 @@
           "content": {
             "application/json": {
               "schema": {
-                "items": {
-                  "format": "uuid",
-                  "type": "string"
-                },
-                "title": "Call Ids",
-                "type": "array"
+                "$ref": "#/components/schemas/BulkTransferRequest"
               }
             }
           },
           "required": true
         },
         "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -53075,14 +53793,6 @@
               }
             },
             "description": "Validation Error"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful Response"
           }
         },
         "security": [
@@ -53779,7 +54489,7 @@
     },
     "/api/calls/{call_id}/dtmf/batch": {
       "post": {
-        "description": "Batch DTMF is disabled until every item has a durable receipt.",
+        "description": "Send up to 25 digit runs, each with its own durable receipt.\n\nEvery item is attempted independently and its outcome is reported on its\nown, so one rejected run never hides the runs that did reach the carrier\nand the caller never has to resend the whole batch to finish the rest.",
         "operationId": "send_dtmf_batch_api_calls__call_id__dtmf_batch_post",
         "parameters": [
           {
@@ -53797,17 +54507,21 @@
           "content": {
             "application/json": {
               "schema": {
-                "items": {
-                  "type": "string"
-                },
-                "title": "Digits List",
-                "type": "array"
+                "$ref": "#/components/schemas/DtmfBatchRequest"
               }
             }
           },
           "required": true
         },
         "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -53817,14 +54531,6 @@
               }
             },
             "description": "Validation Error"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful Response"
           }
         },
         "security": [
@@ -54542,7 +55248,7 @@
     },
     "/api/calls/{call_id}/pause": {
       "post": {
-        "description": "Pause requires a provider capability not implemented by this legacy route.",
+        "description": "Park a live call on hold through the configured telephony provider.\n\nThe caller is not told the call is paused until the carrier has accepted\nthe redirect; a dashboard that shows \"paused\" while the AI is still\nlistening is worse than a refusal. Each attempt carries its own durable\nreceipt, so a retried request replays the stored answer instead of\nparking the caller twice.",
         "operationId": "pause_call_api_calls__call_id__pause_post",
         "parameters": [
           {
@@ -54567,6 +55273,14 @@
           "required": true
         },
         "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -54576,14 +55290,6 @@
               }
             },
             "description": "Validation Error"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful Response"
           }
         },
         "security": [
@@ -54599,7 +55305,7 @@
     },
     "/api/calls/{call_id}/reopen": {
       "post": {
-        "description": "A completed provider call cannot be reopened as a live carrier call.",
+        "description": "Refuse to reopen a finished call.\n\nThis is a permanent business rule, not an unimplemented feature, so it is\na 409 rather than a 501: a carrier call is a real resource that ended, and\nno amount of waiting will make this endpoint able to bring it back. The\ncall is still loaded first so an id belonging to another tenant, or to no\ncall at all, answers 404 instead of leaking that a rule exists.",
         "operationId": "reopen_call_api_calls__call_id__reopen_post",
         "parameters": [
           {
@@ -54624,6 +55330,14 @@
           "required": true
         },
         "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -54633,14 +55347,6 @@
               }
             },
             "description": "Validation Error"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful Response"
           }
         },
         "security": [
@@ -54725,7 +55431,7 @@
     },
     "/api/calls/{call_id}/resume": {
       "post": {
-        "description": "Resume requires a provider capability not implemented by this legacy route.",
+        "description": "Return a held call to the AI media stream it was running on.",
         "operationId": "resume_call_api_calls__call_id__resume_post",
         "parameters": [
           {
@@ -54750,6 +55456,14 @@
           "required": true
         },
         "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -54759,14 +55473,6 @@
               }
             },
             "description": "Validation Error"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful Response"
           }
         },
         "security": [
@@ -55578,7 +56284,7 @@
     },
     "/api/calls/{call_id}/transfer/cancel": {
       "post": {
-        "description": "Do not report cancellation until the provider supports/acknowledges it.",
+        "description": "Pull a live call back from an in-flight transfer leg.\n\nThe cancel is reported only after the carrier accepts the redirect, and\nthe transfer is then recorded as failed \u2014 because it did not complete. A\nprovider without a verified cancel answers 501\n``UNSUPPORTED_CAPABILITY`` rather than a fabricated success, which would\nleave the dashboard showing a cancelled transfer while the human leg is\nstill ringing.",
         "operationId": "cancel_transfer_api_calls__call_id__transfer_cancel_post",
         "parameters": [
           {
@@ -55589,6 +56295,22 @@
               "format": "uuid",
               "title": "Call Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
             }
           }
         ],
@@ -55603,6 +56325,14 @@
           "required": true
         },
         "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -55612,14 +56342,6 @@
               }
             },
             "description": "Validation Error"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful Response"
           }
         },
         "security": [
@@ -55628,53 +56350,6 @@
           }
         ],
         "summary": "Cancel Transfer",
-        "tags": [
-          "transfer-control"
-        ]
-      }
-    },
-    "/api/calls/{call_id}/transfer/complete": {
-      "post": {
-        "description": "Only a verified provider callback may report transfer completion.",
-        "operationId": "complete_transfer_api_calls__call_id__transfer_complete_post",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "call_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Call Id",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful Response"
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "summary": "Complete Transfer",
         "tags": [
           "transfer-control"
         ]
@@ -55855,64 +56530,6 @@
           }
         ],
         "summary": "Get Transfer Summary",
-        "tags": [
-          "transfer-control"
-        ]
-      }
-    },
-    "/api/calls/{call_id}/transfer/fail": {
-      "post": {
-        "description": "Only a verified provider callback may report transfer failure.",
-        "operationId": "fail_transfer_api_calls__call_id__transfer_fail_post",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "call_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Call Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "reason",
-            "required": true,
-            "schema": {
-              "maxLength": 500,
-              "minLength": 1,
-              "title": "Reason",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful Response"
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "summary": "Fail Transfer",
         "tags": [
           "transfer-control"
         ]
@@ -56149,7 +56766,7 @@
     },
     "/api/calls/{call_id}/transfer/whisper": {
       "post": {
-        "description": "Do not report whisper delivery without a provider-confirmed operation.",
+        "description": "Speak a briefing to the human leg of an in-flight warm transfer.\n\nThe text is sanitized before it is spoken, so a reason that happens to\ncontain a credential assignment is not read aloud to a human on a phone\ncall. The returned ``message`` is the sanitized text, not the raw input:\nwhat was said is what gets stored.",
         "operationId": "send_whisper_api_calls__call_id__transfer_whisper_post",
         "parameters": [
           {
@@ -56163,18 +56780,41 @@
             }
           },
           {
-            "in": "query",
-            "name": "whisper",
-            "required": true,
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
             "schema": {
-              "maxLength": 500,
-              "minLength": 1,
-              "title": "Whisper",
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransferWhisperRequest"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -56184,14 +56824,6 @@
               }
             },
             "description": "Validation Error"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful Response"
           }
         },
         "security": [
@@ -101445,6 +102077,128 @@
       }
     },
     "/api/translation/jobs": {
+      "get": {
+        "description": "List translation jobs in this environment, newest first.\n\n``status`` matches either the translation projection's own status or the\ngoverning execution status, because the two advance at different points:\nthe execution says ``review_required`` while the projection still says\n``completed``. Matching only one of them would hide jobs the dashboard\nneeds to show.",
+        "operationId": "list_translation_jobs_api_translation_jobs_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "environment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Environment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 32,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "source_language",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 32,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Source Language"
+            }
+          },
+          {
+            "in": "query",
+            "name": "target_language",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 32,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Target Language"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response List Translation Jobs Api Translation Jobs Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Translation Jobs",
+        "tags": [
+          "translation-agent"
+        ]
+      },
       "post": {
         "operationId": "create_translation_job_api_translation_jobs_post",
         "requestBody": {
@@ -101545,6 +102299,74 @@
           }
         ],
         "summary": "Get Translation Job",
+        "tags": [
+          "translation-agent"
+        ]
+      }
+    },
+    "/api/translation/jobs/{execution_id}/export": {
+      "get": {
+        "description": "Export one translation job as ``json``, ``srt`` or ``txt``.\n\nThe export is built from the persisted result only. Nothing here calls the\nmodel, so an approved job always exports the text that was approved.",
+        "operationId": "export_translation_job_api_translation_jobs__execution_id__export_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "execution_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Execution Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "environment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Environment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "maxLength": 8,
+              "title": "Format",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Export Translation Job",
         "tags": [
           "translation-agent"
         ]
@@ -119225,7 +120047,7 @@
     },
     "/api/workflows/calls/{call_id}/outcome-writeback": {
       "post": {
-        "description": "POST /api/workflows/calls/{id}/outcome-writeback \u2014 Post-call result \u2192 CRM/helpdesk/task/calendar.\nIdempotent via idempotency_key if provided.",
+        "description": "POST /api/workflows/calls/{id}/outcome-writeback \u2014 Post-call result to CRM/helpdesk/task/calendar/webhook.\n\nIdempotent through a durable receipt keyed on ``idempotency_key`` (or the\n``Idempotency-Key`` header). A replay returns the stored outcome and never\ncontacts the integration again: a second write would either duplicate the\nrecord or be rejected by the vendor's own dedupe, and the caller could not\ntell which had happened.\n\nEvery target is attempted independently and reported on its own row, so a\ntenant holding two CRM connections sees exactly which one recorded the call.",
         "operationId": "outcome_writeback_api_workflows_calls__call_id__outcome_writeback_post",
         "parameters": [
           {
@@ -119236,6 +120058,24 @@
               "format": "uuid",
               "title": "Call Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 128,
+                  "minLength": 8,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
             }
           }
         ],

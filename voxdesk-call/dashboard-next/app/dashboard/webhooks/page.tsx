@@ -14,16 +14,22 @@ interface WebhookSubscriptionRecord {
   created_at: string | null;
 }
 
+/** Mirrors the `WebhookDelivery` projection in
+ *  `app/api/webhook_lifecycle_routes.py::_delivery`. The response body is not
+ *  part of the list payload — it is only returned by the single-delivery route,
+ *  so the table shows the error category instead of pretending to have it. */
 interface WebhookDeliveryRecord {
   id: string;
-  subscription_id: string;
-  event_type: string;
+  endpoint_id: string;
+  subscription_id?: string;
+  event_id: string | null;
   status: string;
-  attempt_count: number;
+  attempts: number;
+  attempt_limit: number;
   http_status: number | null;
-  response_body: string | null;
-  last_error: string | null;
-  latency_ms?: number | null;
+  latency_ms: number | null;
+  last_error_category: string | null;
+  is_dlq: boolean;
   created_at: string | null;
   delivered_at: string | null;
 }
@@ -61,16 +67,26 @@ export default function WebhooksPage() {
     setLoading(true);
     setError(null);
     try {
-      const [subsRes, delivRes, dlqRes] = await Promise.all([
-        request<{ subscriptions: WebhookSubscriptionRecord[] }>("/api/webhooks"),
+      const subsRes = await request<{
+        subscriptions: WebhookSubscriptionRecord[];
+      }>("/api/webhooks");
+      const subs = subsRes.subscriptions ?? [];
+      setSubscriptions(subs);
+      // Deliveries are tenant-wide, but the dead-letter queue is served per
+      // endpoint: there is no global DLQ listing, so one endpoint is chosen to
+      // scope it. `deliveries/recent` is the tenant-wide feed.
+      const [delivRes, dlqRes] = await Promise.all([
         request<{ deliveries: WebhookDeliveryRecord[] }>(
-          "/api/webhooks/deliveries",
+          "/api/webhooks/deliveries/recent",
         ),
-        request<{ dead_letters: WebhookDeliveryRecord[] }>("/api/webhooks/dlq"),
+        subs[0]
+          ? request<{ deliveries: WebhookDeliveryRecord[] }>(
+              `/api/webhooks/${encodeURIComponent(subs[0].id)}/dlq`,
+            )
+          : Promise.resolve({ deliveries: [] as WebhookDeliveryRecord[] }),
       ]);
-      setSubscriptions(subsRes.subscriptions);
-      setDeliveries(delivRes.deliveries);
-      setDlq(dlqRes.dead_letters);
+      setDeliveries(delivRes.deliveries ?? []);
+      setDlq(dlqRes.deliveries ?? []);
     } catch (err) {
       setError(
         err instanceof ApiError ? err.message : "Failed to load webhooks",
@@ -163,8 +179,13 @@ export default function WebhooksPage() {
     setError(null);
     setNotice(null);
     try {
+      const delivery = deliveries.find((d) => d.id === deliveryId);
+      if (!delivery) {
+        setError("Delivery not found; reload the page and try again.");
+        return;
+      }
       await request(
-        `/api/webhooks/deliveries/${encodeURIComponent(deliveryId)}/retry`,
+        `/api/webhooks/${encodeURIComponent(delivery.subscription_id ?? "")}/deliveries/${encodeURIComponent(deliveryId)}/retry`,
         { method: "POST" },
       );
       setNotice(`Delivery ${deliveryId} queued for retry.`);
@@ -174,15 +195,17 @@ export default function WebhooksPage() {
     }
   }
 
-  async function handleRedriveDlq(deliveryId: string) {
+  async function handleRedriveDlq(endpointId: string) {
     setError(null);
     setNotice(null);
     try {
-      await request(
-        `/api/webhooks/dlq/${encodeURIComponent(deliveryId)}/redrive`,
+      const res = await request<{ queued: number; remaining: number }>(
+        `/api/webhooks/${encodeURIComponent(endpointId)}/dlq/replay-all`,
         { method: "POST" },
       );
-      setNotice(`Dead-letter delivery ${deliveryId} redriven.`);
+      setNotice(
+        `Queued ${res.queued} dead-letter delivery(ies) for replay; ${res.remaining} remaining.`,
+      );
       await loadAll();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "DLQ redrive failed");
@@ -195,7 +218,7 @@ export default function WebhooksPage() {
         <div>
           <h1>Webhook Subscriptions, Deliveries &amp; DLQ</h1>
           <p className="muted">
-            Manage HMAC-signed webhook endpoints, inspect delivery status/latency/response, trigger test sends, rotate secrets, and redrive DLQ items.
+            Manage HMAC-signed webhook endpoints, inspect delivery status/latency/response, trigger test sends, rotate secrets, and replay the dead-letter queue. The DLQ is served per endpoint, so it is scoped to the first subscription and the button replays that endpoint's queue.
           </p>
         </div>
       </header>
@@ -357,7 +380,7 @@ export default function WebhooksPage() {
               {deliveries.map((d) => (
                 <tr key={d.id}>
                   <td>
-                    <code>{d.event_type}</code>
+                    <code>{d.event_id ?? "—"}</code>
                   </td>
                   <td>
                     <span className={`badge ${d.status}`}>{d.status}</span>
@@ -366,8 +389,8 @@ export default function WebhooksPage() {
                     {d.http_status ?? "—"}
                     {d.latency_ms != null ? ` (${d.latency_ms}ms)` : ""}
                   </td>
-                  <td>{d.attempt_count}</td>
-                  <td>{d.response_body ?? d.last_error ?? "—"}</td>
+                  <td>{d.attempts}/{d.attempt_limit}</td>
+                  <td>{d.last_error_category ?? "—"}</td>
                   <td>
                     <button
                       type="button"
@@ -403,16 +426,16 @@ export default function WebhooksPage() {
               {dlq.map((item) => (
                 <tr key={item.id}>
                   <td>
-                    <code>{item.event_type}</code>
+                    <code>{item.event_id ?? "—"}</code>
                   </td>
-                  <td>{item.attempt_count}</td>
-                  <td>{item.last_error ?? "exhausted retries"}</td>
+                  <td>{item.attempts}/{item.attempt_limit}</td>
+                  <td>{item.last_error_category ?? "exhausted retries"}</td>
                   <td>
                     <button
                       type="button"
                       className="btn primary"
-                      data-testid={`redrive-dlq-btn-${item.id}`}
-                      onClick={() => handleRedriveDlq(item.id)}
+                      data-testid={`redrive-dlq-btn-${item.endpoint_id}`}
+                      onClick={() => handleRedriveDlq(item.endpoint_id)}
                     >
                       Redrive
                     </button>

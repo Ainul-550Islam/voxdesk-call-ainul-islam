@@ -1,6 +1,7 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './app/app'
+import { Providers } from './app/providers'
 import './styles/globals.css'
 import './styles/components.css'
 import './styles/effects.css'
@@ -27,4 +28,8 @@ import './styles/contact.css'
 import './styles/docs.css'
 import './styles/trust.css'
 
-createRoot(document.getElementById('root')).render(<App />)
+createRoot(document.getElementById('root')).render(
+  <Providers>
+    <App />
+  </Providers>
+)

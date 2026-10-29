@@ -41,7 +41,14 @@ from app.resilience.idempotency import (
     complete_request,
     fail_request,
 )
+from app.schemas.call_control import (
+    BulkTransferRequest,
+    TransferCancelRequest,
+    TransferWhisperRequest,
+)
 from app.telephony import phone as phone_util
+from app.telephony.call_control_service import CallControlService
+from app.telephony.provider_errors import ProviderConfigurationError
 from app.core.logging import log
 from app.core.rate_limit import allow_identity_action
 from app.audit.redaction import configured_secret_values, redact_text
@@ -60,6 +67,11 @@ MAX_WHISPER_LENGTH = 500
 MAX_IDEMPOTENCY_KEY_LENGTH = 128
 MIN_IDEMPOTENCY_KEY_LENGTH = 8
 TRANSFER_TIMEOUT_SECONDS = 30
+#: Per-minute ceilings for the control actions. They are lower than the
+#: transfer-initiation limit because each one writes to a live carrier call.
+TRANSFER_CANCEL_RATE_LIMIT_PER_MINUTE = 20
+WHISPER_RATE_LIMIT_PER_MINUTE = 20
+BULK_TRANSFER_RATE_LIMIT_PER_MINUTE = 5
 DEFAULT_TRANSFER_REASON = "operator_requested"
 ALLOWED_TRANSFER_REASONS = {
     "operator_requested", "customer_requested", "escalation", "supervisor_requested",
@@ -140,8 +152,7 @@ class TransferHistoryOut(_Strict):
     limit: int
     offset: int
 
-class TransferCancelRequest(_Strict):
-    reason: Optional[str] = Field(default=None, max_length=500)
+
 
 class TransferAnalyticsOut(_Strict):
     call_id: str
@@ -725,18 +736,61 @@ async def get_transfer(
         duration_seconds=_transfer_duration(call),
     )
 
-@router.post("/{call_id}/transfer/cancel", status_code=501)
+@router.post("/{call_id}/transfer/cancel")
 async def cancel_transfer(
     call_id: uuid.UUID,
     payload: TransferCancelRequest,
     ctx: TenantContext = Depends(require_permission(Permission.CALL_WRITE)),
+    session: AsyncSession = Depends(get_session),
+    idempotency_key: Optional[str] = Header(default=None, alias="Idempotency-Key"),
 ):
-    """Do not report cancellation until the provider supports/acknowledges it."""
-    del call_id, payload, ctx
-    raise HTTPException(
-        status_code=501,
-        detail={"code": "transfer_cancel_not_implemented", "message": "The configured transfer adapter has no verified cancel operation."},
+    """Pull a live call back from an in-flight transfer leg.
+
+    The cancel is reported only after the carrier accepts the redirect, and
+    the transfer is then recorded as failed — because it did not complete. A
+    provider without a verified cancel answers 501
+    ``UNSUPPORTED_CAPABILITY`` rather than a fabricated success, which would
+    leave the dashboard showing a cancelled transfer while the human leg is
+    still ringing.
+    """
+    await _check_rate(ctx.tenant_id, f"cancel:{call_id}", TRANSFER_CANCEL_RATE_LIMIT_PER_MINUTE)
+    call = await _get_call(
+        session, ctx, call_id, permission=Permission.CALL_WRITE, for_write=True
     )
+    service = CallControlService(session, ctx)
+    try:
+        result = await service.cancel_transfer(
+            call.id,
+            environment_id=call.environment_id,
+            reason=payload.reason,
+            idempotency_key=payload.idempotency_key or idempotency_key,
+        )
+    except ProviderConfigurationError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "telephony_provider_not_configured",
+                "message": str(exc) or "The configured telephony provider is not usable.",
+            },
+        ) from exc
+    await _record_transfer_audit(
+        session,
+        ctx,
+        environment_id=call.environment_id,
+        event_type="transfer.cancelled",
+        result="success",
+        call_id=call.id,
+        detail={
+            "reason": payload.reason or "",
+            "provider": result.provider,
+            "provider_status": result.provider_status,
+            "transfer_state": result.transfer_state,
+            "idempotency_key": result.idempotency_key,
+            "replayed": result.replayed,
+        },
+    )
+    await session.commit()
+    return result.model_dump(mode="json")
 
 @router.post("/{call_id}/transfer/retry", response_model=TransferOut)
 async def retry_transfer(
@@ -950,18 +1004,59 @@ async def get_transfer_analytics(
 # Additional endpoints — whisper, bridge status
 # ---------------------------------------------------------------------------
 
-@router.post("/{call_id}/transfer/whisper", status_code=501)
+@router.post("/{call_id}/transfer/whisper")
 async def send_whisper(
     call_id: uuid.UUID,
-    whisper: str = Query(..., min_length=1, max_length=MAX_WHISPER_LENGTH),
+    payload: TransferWhisperRequest,
     ctx: TenantContext = Depends(require_permission(Permission.CALL_WRITE)),
+    session: AsyncSession = Depends(get_session),
+    idempotency_key: Optional[str] = Header(default=None, alias="Idempotency-Key"),
 ):
-    """Do not report whisper delivery without a provider-confirmed operation."""
-    del call_id, whisper, ctx
-    raise HTTPException(
-        status_code=501,
-        detail={"code": "transfer_whisper_not_implemented", "message": "The active provider adapter does not support a verified whisper operation."},
+    """Speak a briefing to the human leg of an in-flight warm transfer.
+
+    The text is sanitized before it is spoken, so a reason that happens to
+    contain a credential assignment is not read aloud to a human on a phone
+    call. The returned ``message`` is the sanitized text, not the raw input:
+    what was said is what gets stored.
+    """
+    await _check_rate(ctx.tenant_id, f"whisper:{call_id}", WHISPER_RATE_LIMIT_PER_MINUTE)
+    call = await _get_call(
+        session, ctx, call_id, permission=Permission.CALL_WRITE, for_write=True
     )
+    service = CallControlService(session, ctx)
+    try:
+        result = await service.whisper_to_agent(
+            call.id,
+            environment_id=call.environment_id,
+            message=payload.message,
+            idempotency_key=payload.idempotency_key or idempotency_key,
+        )
+    except ProviderConfigurationError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "telephony_provider_not_configured",
+                "message": str(exc) or "The configured telephony provider is not usable.",
+            },
+        ) from exc
+    await _record_transfer_audit(
+        session,
+        ctx,
+        environment_id=call.environment_id,
+        event_type="transfer.whisper_delivered",
+        result="success",
+        call_id=call.id,
+        detail={
+            "provider": result.provider,
+            "idempotency_key": result.idempotency_key,
+            "replayed": result.replayed,
+            # Length, not content: the briefing may legitimately repeat a
+            # customer detail, and the audit trail does not need a second copy.
+            "message_length": len(result.message),
+        },
+    )
+    await session.commit()
+    return result.model_dump(mode="json")
 
 @router.get("/{call_id}/transfer/bridge", response_model=dict)
 async def get_bridge_status(
@@ -1074,19 +1169,63 @@ async def transfer_templates(
         "at": _now_iso(),
     }
 
-@router.post("/transfers/bulk", status_code=501)
+@router.post("/transfers/bulk")
 async def bulk_transfer(
-    call_ids: List[uuid.UUID],
-    destination: str = Query(..., min_length=8, max_length=MAX_DESTINATION_LENGTH),
-    reason: Optional[str] = Query(default=None, max_length=MAX_REASON_LENGTH),
+    payload: BulkTransferRequest,
     ctx: TenantContext = Depends(require_permission(Permission.CALL_WRITE)),
+    session: AsyncSession = Depends(get_session),
+    idempotency_key: Optional[str] = Header(default=None, alias="Idempotency-Key"),
 ):
-    """Fail closed until each call can get an independent durable receipt."""
-    del call_ids, destination, reason, ctx
-    raise HTTPException(
-        status_code=501,
-        detail={"code": "bulk_transfer_not_implemented", "message": "Bulk transfer is disabled because this route cannot yet provide per-call provider confirmation and durable idempotency."},
+    """Transfer up to 25 calls, each with an independent durable receipt.
+
+    The whole point of per-item receipts is that a batch cannot be atomic
+    against a carrier: once call 3 has been dialled it cannot be un-dialled.
+    So one call failing reports on its own row and the rest still go through,
+    and the response lists every call's outcome. Retrying the same batch is
+    then safe, because items that already transferred replay their stored
+    result instead of dialling again.
+    """
+    await _check_rate(ctx.tenant_id, "bulk", BULK_TRANSFER_RATE_LIMIT_PER_MINUTE)
+    scope = await _scope_for_transfer(
+        session, ctx, permission=Permission.CALL_WRITE, for_write=True
     )
+    service = CallControlService(session, ctx)
+    try:
+        result = await service.bulk_transfer(
+            environment_id=scope.id,
+            items=payload.items,
+            batch_key=payload.idempotency_key or idempotency_key,
+        )
+    except ProviderConfigurationError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "telephony_provider_not_configured",
+                "message": str(exc) or "The configured telephony provider is not usable.",
+            },
+        ) from exc
+    for item in result.items:
+        if item.status in {"failed", "rejected"}:
+            continue
+        try:
+            await _record_transfer_audit(
+                session,
+                ctx,
+                environment_id=scope.id,
+                event_type="transfer.bulk_requested",
+                result="success",
+                call_id=uuid.UUID(item.call_id),
+                detail={
+                    "batch_id": result.batch_id,
+                    "provider": result.provider,
+                    "transfer_state": item.transfer_state,
+                    "replayed": item.replayed,
+                },
+            )
+        except ValueError:
+            continue
+    await session.commit()
+    return result.model_dump(mode="json")
 
 @router.get("/transfers/health", response_model=dict)
 async def transfer_health(
@@ -1141,30 +1280,74 @@ async def transfer_config(
         "at": _now_iso(),
     }
 
-@router.post("/{call_id}/transfer/complete", status_code=501)
+# A transfer outcome is a fact about the carrier, not an opinion the dashboard
+# holds. Only the authenticated provider callback may record one, so these two
+# endpoints answer 403 — the caller is authenticated and is simply not allowed
+# to say this. They are excluded from the published schema so the documented
+# surface describes only operations a client can legitimately perform.
+#
+# They remain mounted, and still resolve the call inside the tenant and
+# environment scope, so an unauthorised probe learns nothing: the response is
+# the same whether the call exists or not.
+
+
+@router.post("/{call_id}/transfer/complete", include_in_schema=False)
 async def complete_transfer(
     call_id: uuid.UUID,
     ctx: TenantContext = Depends(require_permission(Permission.CALL_WRITE)),
+    session: AsyncSession = Depends(get_session),
 ):
-    """Only a verified provider callback may report transfer completion."""
-    del call_id, ctx
+    """Refuse a client-authored transfer completion."""
+    call = await _get_call(
+        session, ctx, call_id, permission=Permission.CALL_WRITE, for_write=True
+    )
+    await _record_transfer_audit(
+        session,
+        ctx,
+        environment_id=call.environment_id,
+        event_type="transfer.client_completion_rejected",
+        result="denied",
+        call_id=call.id,
+        detail={"transfer_state": call.transfer_state.value},
+    )
+    await session.commit()
     raise HTTPException(
-        status_code=501,
-        detail={"code": "client_transfer_completion_disabled", "message": "Transfer completion is accepted only from the authenticated provider callback path."},
+        status_code=403,
+        detail={
+            "code": "client_transfer_completion_forbidden",
+            "message": "Transfer completion is recorded only from the authenticated provider callback path.",
+        },
     )
 
 
-@router.post("/{call_id}/transfer/fail", status_code=501)
+@router.post("/{call_id}/transfer/fail", include_in_schema=False)
 async def fail_transfer(
     call_id: uuid.UUID,
     reason: str = Query(..., min_length=1, max_length=MAX_REASON_LENGTH),
     ctx: TenantContext = Depends(require_permission(Permission.CALL_WRITE)),
+    session: AsyncSession = Depends(get_session),
 ):
-    """Only a verified provider callback may report transfer failure."""
-    del call_id, reason, ctx
+    """Refuse a client-authored transfer failure."""
+    del reason
+    call = await _get_call(
+        session, ctx, call_id, permission=Permission.CALL_WRITE, for_write=True
+    )
+    await _record_transfer_audit(
+        session,
+        ctx,
+        environment_id=call.environment_id,
+        event_type="transfer.client_failure_rejected",
+        result="denied",
+        call_id=call.id,
+        detail={"transfer_state": call.transfer_state.value},
+    )
+    await session.commit()
     raise HTTPException(
-        status_code=501,
-        detail={"code": "client_transfer_failure_disabled", "message": "Transfer failure is accepted only from the authenticated provider callback path."},
+        status_code=403,
+        detail={
+            "code": "client_transfer_failure_forbidden",
+            "message": "Transfer failure is recorded only from the authenticated provider callback path.",
+        },
     )
 
 @router.get("/transfers/analytics/summary", response_model=dict)

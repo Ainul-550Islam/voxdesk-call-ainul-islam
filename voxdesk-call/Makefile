@@ -1,4 +1,4 @@
-.PHONY: help up down logs migrate seed test lint deps-check contracts-check api-docs sbom due-diligence-pack verify-truth verify-sale check-backend check-frontend check-docker check-other check-all test-backend-fast test-backend-full test-migrations dev worker clean
+.PHONY: help up down logs migrate seed test lint deps-check contracts-check api-docs sbom due-diligence-pack verify-truth verify-fe-be verify-sale check-backend check-frontend check-docker check-other check-all test-backend-fast test-backend-full test-migrations dev worker clean
 
 FEATURE_EVIDENCE_TESTS := $(shell python3 -c "import yaml; d=yaml.safe_load(open('tests/truth/feature_manifest.yaml')); print(' '.join(sorted({t.split('::')[0] for f in d['features'] for t in f.get('evidence_tests', [])})))")
 
@@ -13,6 +13,7 @@ help:
 	@echo "make api-docs           - build static OpenAPI reference in docs/api/"
 	@echo "make due-diligence-pack - generate SBOMs, third-party licenses, and dist/due-diligence-<date>.zip"
 	@echo "make verify-truth       - run repository truth guards and tests/truth suite"
+	@echo "make verify-fe-be       - check every dashboard API call against the live FastAPI routes"
 	@echo "make verify-sale        - full Gate G9 release gate (lint + typecheck + backend/frontend/go/cargo/c++ tests + truth + contracts + SBOM + matrix + due-diligence pack)"
 	@echo "make check-backend      - run full backend check & test pipeline (scripts/check_backend.sh)"
 	@echo "make check-frontend     - run full frontend check & test pipeline (scripts/check_frontend.sh)"
@@ -74,7 +75,10 @@ worker:
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 
-verify-truth:
+verify-fe-be:
+	python3 scripts/verify_frontend_backend_paths.py
+
+verify-truth: verify-fe-be
 	python3 scripts/strip_generated_tails.py --check dashboard/src dashboard-next
 	python3 scripts/verify_no_filler.py
 	python3 scripts/verify_no_fake_success.py

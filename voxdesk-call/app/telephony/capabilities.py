@@ -11,6 +11,13 @@ from dataclasses import dataclass
 
 KNOWN = frozenset({"voice", "sms", "mms", "whatsapp", "recording", "transcription"})
 
+#: Live call-control capabilities. They are separate from the media/transport
+#: flags above because a carrier can stream audio without offering a verified
+#: way to park a caller on hold, and "the vendor sells it" is not the same as
+#: "this deployment confirmed it". Both default to False: unconfirmed is False,
+#: never True.
+CONTROL_KNOWN = frozenset({"supports_hold", "supports_cancel_transfer"})
+
 
 @dataclass(frozen=True)
 class CapabilitySet:
@@ -20,12 +27,23 @@ class CapabilitySet:
     whatsapp: bool = False
     recording: bool = False
     transcription: bool = False
+    #: Provider-confirmed ability to redirect a live call to hold TwiML and
+    #: back again (pause/resume).
+    supports_hold: bool = False
+    #: Provider-confirmed ability to pull a live call back from an in-flight
+    #: transfer leg and return it to the AI media stream.
+    supports_cancel_transfer: bool = False
     country: str = ""
     region: str = ""
     source: str = "unconfirmed"
 
     def allows(self, name: str) -> bool:
         if name not in KNOWN:
+            return False
+        return bool(getattr(self, name))
+
+    def allows_control(self, name: str) -> bool:
+        if name not in CONTROL_KNOWN:
             return False
         return bool(getattr(self, name))
 
@@ -37,6 +55,8 @@ class CapabilitySet:
             "whatsapp": self.whatsapp,
             "recording": self.recording,
             "transcription": self.transcription,
+            "supports_hold": self.supports_hold,
+            "supports_cancel_transfer": self.supports_cancel_transfer,
             "country": self.country,
             "region": self.region,
             "source": self.source,
@@ -62,6 +82,10 @@ def from_provider_features(
         whatsapp="whatsapp" in names,
         recording="recording" in names,
         transcription="transcription" in names,
+        # A carrier inventory payload never confirms call-control capabilities;
+        # only the deployment's own adapter may set them.
+        supports_hold=False,
+        supports_cancel_transfer=False,
         country=country[:8],
         region=region[:32],
         source=source if features else "unconfirmed",
@@ -77,6 +101,8 @@ def from_mapping(raw: dict | None, *, source: str) -> CapabilitySet:
         whatsapp=bool(data.get("whatsapp")),
         recording=bool(data.get("recording")),
         transcription=bool(data.get("transcription")),
+        supports_hold=bool(data.get("supports_hold")),
+        supports_cancel_transfer=bool(data.get("supports_cancel_transfer")),
         country=str(data.get("country") or "")[:8],
         region=str(data.get("region") or "")[:32],
         source=source,

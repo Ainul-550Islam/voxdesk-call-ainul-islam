@@ -225,6 +225,45 @@ export async function request<T>(
   return (await perform<T>(path, init, options)).body;
 }
 
+/**
+ * The body of a successful request as text.
+ *
+ * Translation exports answer with SRT or plain text rather than JSON, so they
+ * cannot go through `request`, which parses every body as JSON.
+ */
+export async function requestText(
+  path: string,
+  init: RequestInit = {},
+): Promise<string> {
+  const token = getToken();
+  const headers = new Headers(init.headers);
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  const res = await fetch(`${BASE_URL}${path}`, {
+    ...init,
+    headers,
+    credentials: "include",
+  });
+  if (res.status === 401) {
+    const refreshed = await tryRefresh();
+    if (refreshed) return requestText(path, init);
+    clearToken();
+    if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+      window.location.assign("/login");
+    }
+    throw new ApiError(401, "session expired");
+  }
+  if (!res.ok) {
+    let failure: ErrorShape = { message: `HTTP ${res.status}`, code: "", reason: "" };
+    try {
+      failure = errorFromBody(await res.json());
+    } catch {
+      // Non-JSON error body; keep the status-based message.
+    }
+    throw new ApiError(res.status, failure.message, failure.code, failure.reason);
+  }
+  return res.text();
+}
+
 // ---- Specialized Agent Types (P0-02) ----
 export interface SpecializedAgentDefinition {
   id: string;
@@ -350,15 +389,102 @@ export interface EvidenceRecord {
 }
 
 // ---- Voice Types (P0-04) ----
+/** One tenant-owned voice profile. Mirrors `public_profile()` in
+ *  `app/voice/voice_profile_service.py`. */
 export interface VoiceProfile {
   id: string;
-  tenant_id: string;
   name: string;
   provider: string;
   provider_voice_id: string;
   language: string;
+  locale: string;
+  voice_type: string;
   status: string;
-  created_at: string;
+  capabilities: Record<string, unknown>;
+  metadata: Record<string, unknown>;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+/** Result of `POST /api/v1/testing/phone-calls/run`. */
+export interface PhoneCallTestRun {
+  id: string;
+  status: string;
+  provider: string | null;
+  is_mock_provider: boolean;
+}
+
+export type TranslationExportFormat = "json" | "srt" | "txt";
+
+/** One segment as returned by the `json` export of a job. */
+export interface TranslationExportSegment {
+  segment_id: string;
+  source_text: string;
+  translated_text: string;
+  source_fingerprint: string | null;
+  target_fingerprint: string | null;
+  quality_flags: string[];
+  review_required: boolean;
+  status: string;
+}
+
+/** Parsed body of `GET /api/translation/jobs/{id}/export?format=json`. */
+export interface TranslationExportDocument {
+  execution_id: string;
+  id: string;
+  format: "json";
+  status: string;
+  source_language: string | null;
+  target_language: string | null;
+  glossary_version: string | null;
+  quality_status: string | null;
+  review_required: boolean;
+  review_state: string | null;
+  provider: string | null;
+  model: string | null;
+  methodology: string | null;
+  segment_count: number;
+  segments: TranslationExportSegment[];
+  exported_at: string | null;
+}
+
+export interface TranslationJobRow {
+  execution_id: string;
+  id: string;
+  status: string;
+  execution_status: string | null;
+  source_language: string;
+  target_language: string;
+  glossary_version: string;
+  segment_count: number;
+  total_segments: number;
+  completed_segments: number;
+  failed_segments: number;
+  quality_status: string;
+  review_required: boolean;
+  review_state: string;
+  attempt_count: number;
+  created_at: string | null;
+  completed_at: string | null;
+  updated_at: string | null;
+}
+
+export interface TranslationJobListResponse {
+  items: TranslationJobRow[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface VoiceProfileCreateInput {
+  name: string;
+  provider: string;
+  provider_voice_id: string;
+  language?: string;
+  locale?: string;
+  voice_type?: "provider" | "cloned" | "system";
+  capabilities?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface VoiceCloneJob {
@@ -651,8 +777,56 @@ export const api = {
   },
 
   // ---- voice (P0-04) - Voice Product Workspace ----
-  voiceProfiles(): Promise<VoiceProfile[]> {
-    return request<VoiceProfile[]>("/api/agents/voices");
+  /** `GET /api/agent/voice-profiles` — this tenant's stored voice profiles. */
+  voiceProfiles(params?: {
+    provider?: string;
+    status?: string;
+    voice_type?: string;
+  }): Promise<{ items: VoiceProfile[]; total: number }> {
+    const qs = new URLSearchParams();
+    if (params?.provider) qs.set("provider", params.provider);
+    if (params?.status) qs.set("status", params.status);
+    if (params?.voice_type) qs.set("voice_type", params.voice_type);
+    const q = qs.toString();
+    return request<{ items: VoiceProfile[]; total: number }>(
+      `/api/agent/voice-profiles${q ? `?${q}` : ""}`,
+    );
+  },
+
+  voiceProfile(profileId: string): Promise<VoiceProfile> {
+    return request<VoiceProfile>(
+      `/api/agent/voice-profiles/${encodeURIComponent(profileId)}`,
+    );
+  },
+
+  createVoiceProfile(payload: VoiceProfileCreateInput): Promise<VoiceProfile> {
+    return request<VoiceProfile>("/api/agent/voice-profiles", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  activateVoiceProfile(profileId: string): Promise<VoiceProfile> {
+    return request<VoiceProfile>(
+      `/api/agent/voice-profiles/${encodeURIComponent(profileId)}/activate`,
+      { method: "POST", body: JSON.stringify({}) },
+    );
+  },
+
+  deactivateVoiceProfile(profileId: string): Promise<VoiceProfile> {
+    return request<VoiceProfile>(
+      `/api/agent/voice-profiles/${encodeURIComponent(profileId)}/deactivate`,
+      { method: "POST", body: JSON.stringify({}) },
+    );
+  },
+
+  removeVoiceProfile(
+    profileId: string,
+  ): Promise<{ deleted: boolean; id: string }> {
+    return request<{ deleted: boolean; id: string }>(
+      `/api/agent/voice-profiles/${encodeURIComponent(profileId)}`,
+      { method: "DELETE" },
+    );
   },
 
   voiceCloneJobs(): Promise<VoiceCloneJob[]> {
@@ -700,22 +874,124 @@ export const api = {
     return request<Array<Record<string, unknown>>>("/api/roi/kpis");
   },
 
-  // ---- translation (P1-05; retired in PART 0) ----
-  translationJobs(): Promise<Array<Record<string, unknown>>> {
-    return Promise.reject(
-      new ApiError(501, "Translation routes were retired in PART 0."),
+  /** Places a real version-pinned test call. `require_live_carrier` is sent as
+   *  `false` so the caller sees the mock flag the backend returns rather than
+   *  assuming a carrier was used. */
+  startPhoneCallTest(payload: {
+    agent_id: string;
+    agent_version_number: number;
+    to_number: string;
+    from_number?: string;
+    require_live_carrier?: boolean;
+  }): Promise<PhoneCallTestRun> {
+    return request<PhoneCallTestRun>("/api/v1/testing/phone-calls/run", {
+      method: "POST",
+      body: JSON.stringify({
+        require_live_carrier: false,
+        dynamic_variables: {},
+        scripted_user_turns: [],
+        evaluation_rules: [],
+        ...payload,
+      }),
+    });
+  },
+
+  // ---- translation (P1-05) ----
+  /** Jobs are environment-scoped, so an environment id is required: the list
+   *  route has no tenant-wide form and guessing one would be wrong. */
+  translationJobs(params: {
+    environment_id: string;
+    status?: string;
+    source_language?: string;
+    target_language?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<TranslationJobListResponse> {
+    const qs = new URLSearchParams({ environment_id: params.environment_id });
+    if (params.status) qs.set("status", params.status);
+    if (params.source_language) qs.set("source_language", params.source_language);
+    if (params.target_language) qs.set("target_language", params.target_language);
+    if (params.limit !== undefined) qs.set("limit", String(params.limit));
+    if (params.offset !== undefined) qs.set("offset", String(params.offset));
+    return request<TranslationJobListResponse>(
+      `/api/translation/jobs?${qs.toString()}`,
     );
   },
 
-  translationGlossaries(): Promise<Array<Record<string, unknown>>> {
-    return Promise.reject(
-      new ApiError(501, "Translation routes were retired in PART 0."),
+  /** Same export route, parsed into the typed document for in-app review. */
+  async translationExportDocument(
+    executionId: string,
+    environmentId: string,
+  ): Promise<TranslationExportDocument> {
+    const text = await this.exportTranslationJob(
+      executionId,
+      environmentId,
+      "json",
+    );
+    return JSON.parse(text) as TranslationExportDocument;
+  },
+
+  translationJob(
+    executionId: string,
+    environmentId: string,
+  ): Promise<Record<string, unknown>> {
+    const qs = new URLSearchParams({ environment_id: environmentId });
+    return request<Record<string, unknown>>(
+      `/api/translation/jobs/${encodeURIComponent(executionId)}?${qs.toString()}`,
+    );
+  },
+
+  /** Exports return a document, not JSON, so the raw text is handed back.
+   *  `format=json` parses cleanly into `TranslationExportDocument`. */
+  async exportTranslationJob(
+    executionId: string,
+    environmentId: string,
+    format: TranslationExportFormat,
+  ): Promise<string> {
+    const qs = new URLSearchParams({
+      environment_id: environmentId,
+      format,
+    });
+    return requestText(
+      `/api/translation/jobs/${encodeURIComponent(executionId)}/export?${qs.toString()}`,
     );
   },
 
   // ---- anomaly (P1) ----
-  anomalyDetections(): Promise<Array<Record<string, unknown>>> {
-    return request<Array<Record<string, unknown>>>("/api/anomaly/detections");
+  /** Run a detector over observations. `POST /api/anomaly/analyze` is the only
+   *  analysis route the backend serves; there is no "list detections" feed. */
+  anomalyAnalyze(body: {
+    environment_id: string;
+    model_version_id: string;
+    idempotency_key: string;
+    observations: Array<{ metric: string; observed_at: string; value: number }>;
+    configuration: {
+      detector?: "z_score" | "median_mad" | "rolling_baseline" | "sudden_change";
+      threshold?: number;
+      minimum_history?: number;
+      rolling_window?: number;
+      sudden_change_threshold?: number;
+      severity_high_multiplier?: number;
+      severity_critical_multiplier?: number;
+    };
+    risk_tier?: string;
+    agent_version?: string;
+    metric?: string;
+  }): Promise<Record<string, unknown>> {
+    return request<Record<string, unknown>>("/api/anomaly/analyze", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  },
+
+  /** Fetch one persisted analysis. */
+  anomalyExecution(
+    executionId: string,
+    environmentId: string,
+  ): Promise<Record<string, unknown>> {
+    return request<Record<string, unknown>>(
+      `/api/anomaly/${encodeURIComponent(executionId)}?environment_id=${encodeURIComponent(environmentId)}`,
+    );
   },
 
   // ---- connectors (P1-01) ----
