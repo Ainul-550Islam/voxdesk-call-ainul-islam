@@ -72,11 +72,21 @@ batch07-scheduler:
 	$(PYTHON) -m pytest tests/test_scheduler_wires_all_v2_jobs.py -q
 
 # --- The batch's own suites ----------------------------------------------------
+# The suites run for their results, not for the exit code alone: a marker that
+# deselects everything still exits 0, and an empty JUnit file then reads as
+# "0 passed" forever. So each JUnit document is required to contain at least one
+# <testcase>, and the count is printed so a shrinking suite is visible.
 batch07-tests: batch07-mount batch07-schema batch07-scheduler
 	@mkdir -p $(BATCH07_JUNIT_DIR)
 	$(PYTHON) -m pytest $(BATCH07_TESTS) -q -m "not live" \
 		--junitxml=$(BATCH07_JUNIT_DIR)/junit.xml
 	$(PYTHON) -m pytest tests/truth -q --junitxml=$(BATCH07_JUNIT_DIR)/truth.xml
+	@for f in $(BATCH07_JUNIT_DIR)/junit.xml $(BATCH07_JUNIT_DIR)/truth.xml; do \
+		test -s "$$f" || { echo "$$f is missing or empty" >&2; exit 1; }; \
+		n=$$(grep -c "<testcase" "$$f"); \
+		echo "$$f: $$n testcase(s)"; \
+		test "$$n" -gt 0 || { echo "$$f recorded no test cases" >&2; exit 1; }; \
+	done
 
 # --- Opt-in live checks (never part of batch07-check) --------------------------
 # Both modules skip, naming the missing variable, so this target is safe to run

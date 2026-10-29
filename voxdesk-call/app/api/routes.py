@@ -1022,7 +1022,7 @@ async def set_ivr(
 
 
 @router.post("/ivr/validate")
-async def validate_ivr(payload: IvrIn, 
+async def validate_ivr(payload: IvrIn,
     ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)),
 ):
     """Live validation for the dashboard editor."""
@@ -1037,7 +1037,7 @@ class MessageCheckIn(BaseModel):
 
 
 @router.post("/compliance/check-message")
-async def check_message(payload: MessageCheckIn, 
+async def check_message(payload: MessageCheckIn,
     ctx: TenantContext = Depends(require_permission(Permission.COMPLIANCE_READ)),
 ):
     """Run before any bulk SMS. Also shows the segment count / billing impact."""
@@ -1052,7 +1052,7 @@ async def check_message(payload: MessageCheckIn,
 
 
 @router.get("/compliance/a2p-checklist")
-async def a2p_checklist(business: str = "Your Business", 
+async def a2p_checklist(business: str = "Your Business",
     ctx: TenantContext = Depends(require_permission(Permission.COMPLIANCE_READ)),
 ):
     return {

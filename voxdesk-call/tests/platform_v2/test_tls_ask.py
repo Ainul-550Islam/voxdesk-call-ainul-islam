@@ -11,7 +11,7 @@ import datetime as dt
 
 import pytest
 
-from app.platform_v2.whitelabel import dns, domains, tls
+from app.platform_v2.whitelabel import domains, tls
 from tests.platform_v2.conftest import PlatScope
 
 

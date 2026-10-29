@@ -2,12 +2,26 @@
 """Deterministic chunked pytest runner with per-chunk isolation, bisection, and JUnit XML roll-up.
 
 Usage:
-    python scripts/pytest_chunks.py \\
-      --chunk-size 25 \\
-      --per-chunk-timeout 180 \\
-      --marker "not real_provider and not live" \\
-      --junit-dir reports/check/chunks \\
+    python scripts/pytest_chunks.py \
+      --chunk-size 25 \
+      --per-chunk-timeout 180 \
+      --marker "not real_provider and not live" \
+      --junit-dir reports/check/chunks \
       --summary reports/check/pytest_summary.json
+
+Full-population accounting (what CI uses to prove no test is silently lost):
+
+    python scripts/pytest_chunks.py \
+      --chunk-size 40 \
+      --junit-out reports/check/junit/full.xml \
+      --results-out reports/check/full_results.json
+
+Every collected node id is enumerated up front with ``pytest --collect-only`` and
+chunked by node id (not by file), so a chunk's contents never depend on the
+filesystem walk order. After the run, each collected node must appear in exactly
+one JUnit ``<testcase>``. A node that neither ran, nor failed, nor was skipped
+is *unaccounted for* and the command exits non-zero: an unrun test is never
+allowed to disappear behind a green summary.
 """
 
 from __future__ import annotations
@@ -17,14 +31,26 @@ import importlib.util
 import json
 import os
 import re
+import socket
 import subprocess
 import sys
 import time
-import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from scripts.junit_xml import iter_suites  # noqa: E402
+
+#: Node-id shapes emitted by ``pytest --collect-only -q``. A node id always
+#: carries the ``::`` separator; plain ``-q`` summary lines never do.
+_NODE_LINE = re.compile(r"^(?P<node>[^\s]+::[^\s]+)\s*$")
+
+#: Exit code used when the run itself went fine but the population does not
+#: balance. Distinct from 1 (test failures) so CI can tell them apart.
+EXIT_UNACCOUNTED = 3
 
 
 def discover_test_files(tests_dir: Path) -> list[str]:
@@ -48,6 +74,76 @@ def _parse_deselected(stdout: str) -> int:
     return int(match.group(1)) if match else 0
 
 
+def _base_env() -> dict[str, str]:
+    """The child interpreter environment, with the CI database wired when open."""
+    env = dict(os.environ)
+    env["TZ"] = "UTC"
+    if "DATABASE_URL" not in env:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.settimeout(0.2)
+            if sock.connect_ex(("127.0.0.1", 5432)) == 0:
+                env["DATABASE_URL"] = (
+                    "postgresql+asyncpg://voxdesk:voxdesk-ci@localhost:5432/voxdesk_ci"
+                )
+    return env
+
+
+def collect_nodes(
+    *,
+    tests_dir: Path,
+    marker: str,
+    env: dict[str, str],
+    timeout: int = 900,
+) -> list[str]:
+    """Enumerate every node pytest would run, by id, in a stable order.
+
+    Collection is run twice and compared. An unstable collection (a test whose
+    id depends on dict ordering or the clock) cannot be reconciled against a
+    results file, so it is refused here rather than silently mis-counted later.
+    """
+    seen: list[list[str]] = []
+    for _ in range(2):
+        cmd = [sys.executable, "-m", "pytest", "--collect-only", "-q", str(tests_dir)]
+        if marker.strip():
+            cmd.extend(["-m", marker])
+        proc = subprocess.run(
+            cmd,
+            cwd=ROOT,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+        nodes: list[str] = []
+        for line in (proc.stdout or "").splitlines():
+            match = _NODE_LINE.match(line.strip())
+            if match:
+                nodes.append(match.group("node"))
+        if not nodes:
+            raise RuntimeError(
+                "pytest collected zero nodes; refusing to record an empty population "
+                f"(exit={proc.returncode})\n{(proc.stdout or proc.stderr)[-800:]}"
+            )
+        seen.append(nodes)
+    if seen[0] != seen[1]:
+        first = set(seen[0])
+        second = set(seen[1])
+        raise RuntimeError(
+            "unstable collection: node ids differ between two collection passes "
+            f"(only-in-first={sorted(first - second)[:5]} "
+            f"only-in-second={sorted(second - first)[:5]})"
+        )
+    return seen[0]
+
+
+def chunk_nodes(nodes: list[str], chunk_size: int) -> list[list[str]]:
+    """Split node ids into deterministic, contiguous chunks."""
+    if chunk_size < 1:
+        raise ValueError("chunk_size must be >= 1")
+    ordered = sorted(nodes)
+    return [ordered[i : i + chunk_size] for i in range(0, len(ordered), chunk_size)]
+
+
 def parse_junit_xml(xml_path: Path) -> dict[str, Any]:
     result: dict[str, Any] = {
         "tests": 0,
@@ -64,10 +160,7 @@ def parse_junit_xml(xml_path: Path) -> dict[str, Any]:
     if not xml_path.is_file():
         return result
 
-    tree = ET.parse(xml_path)
-    root = tree.getroot()
-    suites = [root] if root.tag == "testsuite" else list(root.findall(".//testsuite"))
-
+    suites = iter_suites(xml_path)
     for suite in suites:
         for case in suite.findall("testcase"):
             classname = case.attrib.get("classname", "")
@@ -244,7 +337,28 @@ def run_chunks(
     junit_dir: Path,
     summary_path: Path,
     resume: bool = False,
+    junit_out: Path | None = None,
+    results_out: Path | None = None,
 ) -> dict[str, Any]:
+    """Run the suite file-by-file in chunks and write the roll-up summary.
+
+    When ``junit_out`` or ``results_out`` is given, the runner switches to
+    node-level chunking: the population is collected first, every node is
+    scheduled, and the run fails when any node has no recorded outcome.
+    """
+    if junit_out is not None or results_out is not None:
+        return _run_node_chunks(
+            tests_dir=tests_dir,
+            chunk_size=chunk_size,
+            per_chunk_timeout=per_chunk_timeout,
+            per_test_timeout=per_test_timeout,
+            marker=marker,
+            junit_dir=junit_dir,
+            summary_path=summary_path,
+            junit_out=junit_out,
+            results_out=results_out,
+        )
+
     all_files = discover_test_files(tests_dir)
     chunks = [
         all_files[i : i + chunk_size] for i in range(0, len(all_files), chunk_size)
@@ -253,17 +367,7 @@ def run_chunks(
     summary_path.parent.mkdir(parents=True, exist_ok=True)
 
     use_timeout_plugin = has_pytest_timeout()
-    env = dict(os.environ)
-    env["TZ"] = "UTC"
-    if "DATABASE_URL" not in env:
-        import socket
-
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            sock.settimeout(0.2)
-            if sock.connect_ex(("127.0.0.1", 5432)) == 0:
-                env["DATABASE_URL"] = (
-                    "postgresql+asyncpg://voxdesk:voxdesk-ci@localhost:5432/voxdesk_ci"
-                )
+    env = _base_env()
 
     chunk_results: list[dict[str, Any]] = []
     all_testcases: list[dict[str, Any]] = []
@@ -590,6 +694,319 @@ def run_chunks(
     return summary
 
 
+def _run_node_chunks(
+    *,
+    tests_dir: Path,
+    chunk_size: int,
+    per_chunk_timeout: int,
+    per_test_timeout: int,
+    marker: str,
+    junit_dir: Path,
+    summary_path: Path,
+    junit_out: Path | None,
+    results_out: Path | None,
+) -> dict[str, Any]:
+    """Collect every node id, run them in node-id chunks, account for each one."""
+    junit_dir.mkdir(parents=True, exist_ok=True)
+    summary_path.parent.mkdir(parents=True, exist_ok=True)
+    env = _base_env()
+    use_timeout_plugin = has_pytest_timeout()
+
+    nodes = collect_nodes(tests_dir=tests_dir, marker=marker, env=env)
+    chunks = chunk_nodes(nodes, chunk_size)
+    print(
+        f"collected {len(nodes)} node(s); {len(chunks)} chunk(s) of {chunk_size}",
+        flush=True,
+    )
+
+    chunk_results: list[dict[str, Any]] = []
+    per_node: dict[str, dict[str, Any]] = {}
+    all_failures: list[dict[str, Any]] = []
+    timeouts: list[dict[str, Any]] = []
+    crashes: list[dict[str, Any]] = []
+    suite_start = time.perf_counter()
+
+    for idx, chunk in enumerate(chunks, start=1):
+        xml_path = junit_dir / f"nodes_{idx:04d}.xml"
+        if xml_path.exists():
+            xml_path.unlink()
+        cmd = _build_pytest_cmd(
+            list(chunk),
+            marker=marker,
+            xml_path=xml_path,
+            per_test_timeout=per_test_timeout,
+            use_timeout_plugin=use_timeout_plugin,
+        )
+        t0 = time.perf_counter()
+        try:
+            proc = subprocess.run(
+                cmd, cwd=ROOT, env=env, capture_output=True, text=True,
+                timeout=per_chunk_timeout,
+            )
+            elapsed = round(time.perf_counter() - t0, 2)
+            if proc.returncode < 0 or (
+                proc.returncode not in (0, 1, 5) and not xml_path.is_file()
+            ):
+                crashes.append(
+                    {
+                        "chunk_index": idx,
+                        "status": "CRASH",
+                        "exit_code": proc.returncode,
+                        "duration_seconds": elapsed,
+                        "stderr_tail": (proc.stderr or proc.stdout or "")[-500:],
+                    }
+                )
+                chunk_results.append(
+                    {
+                        "chunk_index": idx,
+                        "xml_path": str(xml_path.relative_to(ROOT)),
+                        "node_count": len(chunk),
+                        "exit_code": proc.returncode,
+                        "status": "CRASH",
+                        "duration_seconds": elapsed,
+                    }
+                )
+                print(f"[chunk {idx:04d}/{len(chunks):04d}] CRASH rc={proc.returncode}", flush=True)
+                continue
+            parsed = parse_junit_xml(xml_path)
+            for case in parsed["testcases"]:
+                per_node.setdefault(case["nodeid"], case)
+            all_failures.extend(parsed["failures"])
+            chunk_results.append(
+                {
+                    "chunk_index": idx,
+                    "xml_path": str(xml_path.relative_to(ROOT)),
+                    "node_count": len(chunk),
+                    "exit_code": proc.returncode,
+                    "status": "OK" if parsed["failed"] == 0 and parsed["errors"] == 0 else "FAILED",
+                    "duration_seconds": elapsed,
+                    "passed": parsed["passed"],
+                    "failed": parsed["failed"],
+                    "errors": parsed["errors"],
+                    "skipped": parsed["skipped"],
+                }
+            )
+            print(
+                f"[chunk {idx:04d}/{len(chunks):04d}] "
+                f"passed={parsed['passed']} failed={parsed['failed']} "
+                f"errors={parsed['errors']} skipped={parsed['skipped']} in {elapsed:.1f}s",
+                flush=True,
+            )
+        except subprocess.TimeoutExpired:
+            elapsed = round(time.perf_counter() - t0, 2)
+            timeouts.append(
+                {
+                    "chunk_index": idx,
+                    "status": "TIMEOUT",
+                    "exit_code": None,
+                    "duration_seconds": elapsed,
+                }
+            )
+            chunk_results.append(
+                {
+                    "chunk_index": idx,
+                    "xml_path": str(xml_path.relative_to(ROOT)),
+                    "node_count": len(chunk),
+                    "exit_code": None,
+                    "status": "TIMEOUT",
+                    "duration_seconds": elapsed,
+                }
+            )
+            print(f"[chunk {idx:04d}/{len(chunks):04d}] TIMEOUT after {elapsed:.1f}s", flush=True)
+
+    suite_duration = round(time.perf_counter() - suite_start, 2)
+
+    # --- population accounting -------------------------------------------------
+    recorded: dict[str, str] = {}
+    for node in nodes:
+        case = per_node.get(node)
+        recorded[node] = case["status"] if case is not None else "not_run"
+    unaccounted = sorted(node for node, status in recorded.items() if status == "not_run")
+    counts = {
+        status: sum(1 for value in recorded.values() if value == status)
+        for status in (
+            "passed", "failed", "error", "skipped", "xfailed", "xpassed", "not_run",
+        )
+    }
+
+    results: dict[str, Any] = {
+        "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "marker": marker,
+        "chunk_size": chunk_size,
+        "duration_seconds": suite_duration,
+        "population": len(nodes),
+        "collected": len(nodes),
+        "recorded": len(nodes) - len(unaccounted),
+        "counts": counts,
+        "unaccounted_nodes": unaccounted,
+        "timeouts": timeouts,
+        "crashes": crashes,
+        "chunks": chunk_results,
+        "failures": all_failures,
+        "nodes": [
+            {
+                "nodeid": node,
+                "status": recorded[node],
+                "duration_seconds": (per_node.get(node) or {}).get("time_seconds", 0.0),
+            }
+            for node in nodes
+        ],
+    }
+
+    if junit_out is not None:
+        junit_out.parent.mkdir(parents=True, exist_ok=True)
+        junit_out.write_text(
+            _render_merged_junit(nodes, recorded, per_node, suite_duration),
+            encoding="utf-8",
+        )
+        results["junit_path"] = str(junit_out.relative_to(ROOT))
+    if results_out is not None:
+        results_out.parent.mkdir(parents=True, exist_ok=True)
+        results_out.write_text(json.dumps(results, indent=2) + "\n", encoding="utf-8")
+        results["results_path"] = str(results_out.relative_to(ROOT))
+
+    summary: dict[str, Any] = {
+        "marker": marker,
+        "chunk_size": chunk_size,
+        "per_chunk_timeout": per_chunk_timeout,
+        "per_test_timeout": per_test_timeout,
+        "pytest_timeout_plugin_active": use_timeout_plugin,
+        "total_test_files": len({node.split("::")[0] for node in nodes}),
+        "total_chunks": len(chunks),
+        "duration_seconds": suite_duration,
+        "counts": {
+            "total_executed": len(nodes) - len(unaccounted),
+            "passed": counts["passed"],
+            "failed": counts["failed"],
+            "errors": counts["error"],
+            "skipped": counts["skipped"],
+            "xfailed": counts["xfailed"],
+            "xpassed": counts["xpassed"],
+            "deselected": 0,
+            "timeouts": len(timeouts),
+            "crashes": len(crashes),
+            "not_run": counts["not_run"],
+        },
+        "population": len(nodes),
+        "unaccounted_nodes": unaccounted,
+        "slowest_tests": sorted(
+            (per_node[n] for n in nodes if n in per_node),
+            key=lambda tc: tc["time_seconds"],
+            reverse=True,
+        )[:20],
+        "per_file": _per_file_rollup(nodes, recorded, per_node),
+        "failures": all_failures,
+        "timeouts": timeouts,
+        "crashes": crashes,
+        "chunks": chunk_results,
+    }
+    summary_path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    return summary
+
+
+def _per_file_rollup(
+    nodes: list[str],
+    recorded: dict[str, str],
+    per_node: dict[str, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    per_file_map: dict[str, dict[str, Any]] = {}
+    for node in nodes:
+        key = node.split("::")[0]
+        entry = per_file_map.setdefault(
+            key,
+            {
+                "file": key,
+                "tests": 0,
+                "passed": 0,
+                "failed": 0,
+                "errors": 0,
+                "skipped": 0,
+                "not_run": 0,
+                "duration_seconds": 0.0,
+            },
+        )
+        entry["tests"] += 1
+        status = recorded[node]
+        if status == "passed":
+            entry["passed"] += 1
+        elif status == "failed":
+            entry["failed"] += 1
+        elif status == "error":
+            entry["errors"] += 1
+        elif status == "not_run":
+            entry["not_run"] += 1
+        else:
+            entry["skipped"] += 1
+        entry["duration_seconds"] = round(
+            entry["duration_seconds"] + float((per_node.get(node) or {}).get("time_seconds") or 0.0), 4
+        )
+    return sorted(per_file_map.values(), key=lambda x: x["file"])
+
+
+def _render_merged_junit(
+    nodes: list[str],
+    recorded: dict[str, str],
+    per_node: dict[str, dict[str, Any]],
+    duration: float,
+) -> str:
+    """One JUnit document covering the whole collected population.
+
+    Nodes with no outcome are emitted as ``<testcase><error/></testcase>`` so a
+    JUnit viewer shows them as failures instead of dropping them silently.
+    """
+    counts = {
+        status: sum(1 for value in recorded.values() if value == status)
+        for status in ("passed", "failed", "error", "skipped", "xfailed", "xpassed", "not_run")
+    }
+    lines: list[str] = [
+        '<?xml version="1.0" encoding="utf-8"?>',
+        f'<testsuites name="voxdesk-full-population" time="{duration:.3f}">',
+        (
+            '<testsuite name="pytest" errors="{error}" failures="{failed}" '
+            'skipped="{skipped}" tests="{total}" time="{duration:.3f}">'
+        ).format(
+            error=counts["error"] + counts["not_run"],
+            failed=counts["failed"],
+            skipped=counts["skipped"] + counts["xfailed"] + counts["xpassed"],
+            total=len(nodes),
+            duration=duration,
+        ),
+    ]
+    for node in nodes:
+        case = per_node.get(node)
+        file_part, _, name_part = node.partition("::")
+        classname = (case or {}).get("classname") or file_part.replace("/", ".").removesuffix(".py")
+        name = (case or {}).get("name") or name_part
+        time_val = float((case or {}).get("time_seconds") or 0.0)
+        status = recorded[node]
+        lines.append(
+            f'<testcase classname="{_esc(classname)}" name="{_esc(name)}" '
+            f'file="{_esc(file_part)}" time="{time_val:.4f}"'
+        )
+        if status in {"passed"}:
+            lines.append("/>")
+        elif status == "failed":
+            lines.append('><failure message="failed"/></testcase>')
+        elif status == "error":
+            lines.append('><error message="error"/></testcase>')
+        elif status == "not_run":
+            lines.append('><error message="NOT_RUN: no outcome recorded"/></testcase>')
+        else:
+            lines.append(f'><skipped type="pytest.skip" message="{_esc(status)}"/></testcase>')
+    lines.append("</testsuite>")
+    lines.append("</testsuites>")
+    return "\n".join(lines) + "\n"
+
+
+def _esc(value: str) -> str:
+    return (
+        value.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--tests-dir", type=Path, default=ROOT / "tests")
@@ -602,9 +1019,21 @@ def main(argv: list[str] | None = None) -> int:
         "--summary", type=Path, default=ROOT / "reports/check/pytest_summary.json"
     )
     parser.add_argument(
+        "--junit-out",
+        type=Path,
+        default=None,
+        help="Write one merged JUnit XML covering every collected node.",
+    )
+    parser.add_argument(
+        "--results-out",
+        type=Path,
+        default=None,
+        help="Write the machine-generated results JSON (one entry per collected node).",
+    )
+    parser.add_argument(
         "--resume",
         action="store_true",
-        help="Reuse existing chunk_XX.xml files if already present.",
+        help="Reuse existing chunk_XX.xml files if already present (file mode only).",
     )
     args = parser.parse_args(argv)
 
@@ -617,7 +1046,34 @@ def main(argv: list[str] | None = None) -> int:
         junit_dir=args.junit_dir.resolve(),
         summary_path=args.summary.resolve(),
         resume=args.resume,
+        junit_out=args.junit_out.resolve() if args.junit_out else None,
+        results_out=args.results_out.resolve() if args.results_out else None,
     )
+
+    if args.results_out is not None:
+        counts = summary["counts"]
+        unaccounted = summary.get("unaccounted_nodes") or []
+        print(
+            f"POPULATION: collected={summary['population']} "
+            f"passed={counts['passed']} failed={counts['failed']} "
+            f"errors={counts['errors']} skipped={counts['skipped']} "
+            f"xfailed={counts['xfailed']} xpassed={counts['xpassed']} "
+            f"not_run={counts['not_run']} duration={summary['duration_seconds']}s",
+            flush=True,
+        )
+        if unaccounted:
+            print(
+                f"UNACCOUNTED: {len(unaccounted)} collected node(s) have no recorded outcome",
+                flush=True,
+            )
+            for node in unaccounted[:20]:
+                print(f"  {node}", flush=True)
+        if counts["failed"] or counts["errors"] or counts["timeouts"] or counts["crashes"]:
+            return 1
+        if unaccounted:
+            return EXIT_UNACCOUNTED
+        return 0
+
     counts = summary["counts"]
     print(
         f"SUMMARY: passed={counts['passed']} failed={counts['failed']} "

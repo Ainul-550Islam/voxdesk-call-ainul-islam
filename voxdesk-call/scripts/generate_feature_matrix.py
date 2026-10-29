@@ -3,21 +3,25 @@ from __future__ import annotations
 import argparse
 from datetime import datetime, timezone
 from pathlib import Path
-import xml.etree.ElementTree as ET
+import sys
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from scripts.junit_xml import iter_cases, iter_suites  # noqa: E402
+
 STATUSES = {'LIVE', 'API_ONLY', 'PLANNED', 'NOT_CONFIGURED'}
 
 
 def junit_results(path, root=ROOT):
     if path is None:
         return {}
-    tree = ET.parse(path)
-    if any(int(s.get('errors', '0')) for s in tree.iter('testsuite')):
+    if any(int(suite.get('errors', '0')) for suite in iter_suites(path)):
         return {}
     results = {}
-    for case in tree.iter('testcase'):
+    for case in iter_cases(path):
         classname = case.get('classname', '').split('.')
         node = None
         for i in range(len(classname), 0, -1):
@@ -40,7 +44,7 @@ def junit_execution_date(path):
     if path is None:
         return None
     dates = []
-    for suite in ET.parse(path).iter('testsuite'):
+    for suite in iter_suites(path):
         if not suite.findall('testcase'):
             continue
         stamp = suite.get('timestamp')

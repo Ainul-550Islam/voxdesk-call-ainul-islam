@@ -1,4 +1,5 @@
-.PHONY: help up down logs migrate seed test lint deps-check contracts-check api-docs sbom due-diligence-pack verify-truth verify-fe-be verify-sale check-backend check-frontend check-docker check-other check-all test-backend-fast test-backend-full test-migrations dev worker clean
+.PHONY: help up down logs migrate seed test lint deps-check contracts-check api-docs sbom due-diligence-pack verify-truth verify-fe-be verify-sale check-backend check-frontend check-docker check-other check-all test-backend-fast test-backend-full test-migrations dev worker clean \
+        staging-proof live-evidence polyglot-evidence security-evidence verify-deploy-assets verify-artifacts
 
 FEATURE_EVIDENCE_TESTS := $(shell python3 -c "import yaml; d=yaml.safe_load(open('tests/truth/feature_manifest.yaml')); print(' '.join(sorted({t.split('::')[0] for f in d['features'] for t in f.get('evidence_tests', [])})))")
 
@@ -14,6 +15,12 @@ help:
 	@echo "make due-diligence-pack - generate SBOMs, third-party licenses, and dist/due-diligence-<date>.zip"
 	@echo "make verify-truth       - run repository truth guards and tests/truth suite"
 	@echo "make verify-fe-be       - check every dashboard API call against the live FastAPI routes"
+	@echo "make staging-proof      - real deploy proof: compose up, migrate, smoke, backup->restore drill, drain, down"
+	@echo "make live-evidence      - opt-in cost-guarded live provider/carrier/S2S/KMS/SIP evidence -> evidence/live/"
+	@echo "make polyglot-evidence  - parse Go/Rust/C++ CI artifacts -> reports/POLYGLOT_EVIDENCE_SUMMARY.json"
+	@echo "make security-evidence  - collect scanner outputs -> reports/SECURITY_EVIDENCE_SUMMARY.json"
+	@echo "make verify-deploy-assets - validate Helm/Terraform/Caddy/compose deploy assets (never applies)"
+	@echo "make verify-artifacts   - fail if a tracked *.log, *.zip or >1MB file is outside the allowlist"
 	@echo "make verify-sale        - full Gate G9 release gate (lint + typecheck + backend/frontend/go/cargo/c++ tests + truth + contracts + SBOM + matrix + due-diligence pack)"
 	@echo "make check-backend      - run full backend check & test pipeline (scripts/check_backend.sh)"
 	@echo "make check-frontend     - run full frontend check & test pipeline (scripts/check_frontend.sh)"
@@ -77,6 +84,47 @@ clean:
 
 verify-fe-be:
 	python3 scripts/verify_frontend_backend_paths.py
+
+# --- Evidence producers ------------------------------------------------------
+# Each of these runs a real thing and writes a real file. None of them prints a
+# success line for a run that did not happen: a missing tool is BLOCKED or a
+# hard failure, never a silently-empty result.
+
+# Deploy proof: bring the check stack up, migrate, smoke every surface, drill
+# the backup -> restore path, prove the API drains on SIGTERM, tear it down.
+# Writes evidence/staging/$(DATE)/staging_proof.json + raw logs.
+staging-proof:
+	python3 scripts/staging_certify.py --proof $(if $(EVIDENCE_DIR),--evidence-dir $(EVIDENCE_DIR),) $(if $(SKIP_TEARDOWN),--skip-teardown,)
+
+# Opt-in live provider/carrier/S2S/KMS/SIP evidence. Skips with a named reason
+# when the credentials for a check are absent; never fakes a pass.
+live-evidence:
+	@mkdir -p evidence/live
+	python3 scripts/live_evidence_run.py --all --evidence-dir evidence/live
+
+# Parse the Go/Rust/C++ artifacts produced in CI into one summary.
+polyglot-evidence:
+	@mkdir -p reports
+	python3 scripts/polyglot_evidence.py --artifacts-dir artifacts/polyglot --output reports/POLYGLOT_EVIDENCE_SUMMARY.json
+
+# Collect Trivy/Semgrep/gitleaks/npm-audit/hadolint/checkov outputs.
+security-evidence:
+	@mkdir -p reports
+	python3 scripts/security_evidence.py --input-dir artifacts/security --output reports/SECURITY_EVIDENCE_SUMMARY.json
+
+# Helm lint/template/kubeconform, terraform fmt/validate/tflint, caddy validate,
+# compose config: validate the buyer-facing deploy assets, never apply them.
+verify-deploy-assets:
+	bash scripts/verify_deploy_assets.sh
+
+# No tracked log, zip, or oversized blob outside the explicit allowlist.
+verify-artifacts:
+	python3 scripts/verify_no_tracked_artifacts.py
+
+# verify-hygiene is declared in Makefile.batch01.mk (recipe lives there). This
+# rule adds a prerequisite only, so artifact hygiene is part of the same gate
+# without duplicating or overriding the recipe.
+verify-hygiene: verify-artifacts
 
 verify-truth: verify-fe-be
 	python3 scripts/strip_generated_tails.py --check dashboard/src dashboard-next

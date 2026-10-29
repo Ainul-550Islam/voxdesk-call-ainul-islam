@@ -17,10 +17,13 @@ import re
 import shutil
 import subprocess
 import sys
-import xml.etree.ElementTree as ET
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from scripts.junit_xml import iter_suites  # noqa: E402
 
 PYTHON_KNOWN_LICENSES: dict[str, str] = {
     "fastapi": "MIT",
@@ -479,7 +482,11 @@ def _parse_verified_matrix(root: Path) -> list[dict[str, str]]:
     return rows
 
 
-def generate_known_limitations(root: Path, matrix_rows: list[dict[str, str]]) -> None:
+def generate_known_limitations(
+    root: Path,
+    matrix_rows: list[dict[str, str]],
+    evidence: dict[str, dict] | None = None,
+) -> None:
     non_live = [r for r in matrix_rows if r["status"] != "LIVE"]
     dd_dir = root / "docs" / "DUE_DILIGENCE"
     dd_dir.mkdir(parents=True, exist_ok=True)
@@ -566,6 +573,9 @@ def generate_known_limitations(root: Path, matrix_rows: list[dict[str, str]]) ->
             "   `.github/workflows/real-integrations.yml`.",
         ]
     )
+
+    if evidence:
+        lines.extend(render_evidence_freshness(evidence))
 
     (dd_dir / "KNOWN_LIMITATIONS.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
@@ -662,6 +672,161 @@ def generate_listing_copy(root: Path, matrix_rows: list[dict[str, str]], stats: 
     (root / "docs" / "SALES" / "LISTING_COPY.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
+#: Evidence the pack is not allowed to omit. ``optional`` items (live-provider
+#: proofs) are reported when present and labelled MISSING when they are not;
+#: everything else must exist and must be recent. A summary is *evidence of a
+#: run*, so a three-month-old one is a claim about a codebase that no longer
+#: exists.
+EVIDENCE_REQUIREMENTS: tuple[tuple[str, str, bool], ...] = (
+    ("test", "reports/TEST_EVIDENCE_SUMMARY.json", False),
+    ("polyglot", "reports/POLYGLOT_EVIDENCE_SUMMARY.json", False),
+    ("security", "reports/SECURITY_EVIDENCE_SUMMARY.json", False),
+    ("deploy-assets", "reports/deploy_asset_validation.json", False),
+    ("staging", "evidence/staging", False),
+    ("live", "evidence/live", True),
+)
+
+EVIDENCE_MAX_AGE_DAYS = 14
+
+
+def _evidence_generated_at(path: Path) -> str | None:
+    """Read a timestamp out of a generated JSON file without guessing a schema."""
+    try:
+        doc = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    if isinstance(doc, dict):
+        for key in ("generated_at", "timestamp", "generated_at_utc", "finished_at"):
+            value = doc.get(key)
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+    return None
+
+
+def _age_days(stamp: str | None) -> float | None:
+    if not stamp:
+        return None
+    try:
+        moment = datetime.fromisoformat(stamp.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=timezone.utc)
+    return (datetime.now(timezone.utc) - moment).total_seconds() / 86400.0
+
+
+def _newest_json(directory: Path) -> Path | None:
+    candidates = sorted(directory.rglob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+    return candidates[0] if candidates else None
+
+
+def collect_evidence(root: Path, *, max_age_days: int = EVIDENCE_MAX_AGE_DAYS) -> dict[str, dict]:
+    """Locate each required evidence artifact and grade it present/stale/missing.
+
+    Never invents one. A directory-based requirement (staging, live) resolves to
+    the newest JSON inside it, so an evidence directory holding only yesterday's
+    run is not mistaken for a full set.
+    """
+    report: dict[str, dict] = {}
+    for key, rel, optional in EVIDENCE_REQUIREMENTS:
+        target = root / rel
+        chosen: Path | None = None
+        if target.is_file():
+            chosen = target
+        elif target.is_dir():
+            chosen = _newest_json(target)
+
+        if chosen is None:
+            report[key] = {
+                "key": key,
+                "path": rel,
+                "optional": optional,
+                "status": "MISSING",
+                "artifact": None,
+                "age_days": None,
+                "generated_at": None,
+                "summary": {},
+            }
+            continue
+
+        stamp = _evidence_generated_at(chosen)
+        age = _age_days(stamp)
+        stale = age is not None and age > max_age_days
+        summary: dict = {}
+        try:
+            doc = json.loads(chosen.read_text(encoding="utf-8"))
+            if isinstance(doc, dict):
+                for field in ("overall", "status", "total", "counts", "checks_run", "failed"):
+                    if field in doc:
+                        summary[field] = doc[field]
+        except (OSError, json.JSONDecodeError):
+            summary = {"parse_error": True}
+        report[key] = {
+            "key": key,
+            "path": rel,
+            "optional": optional,
+            "status": "STALE" if stale else "PRESENT",
+            "artifact": str(chosen.relative_to(root)),
+            "age_days": round(age, 2) if age is not None else None,
+            "generated_at": stamp,
+            "summary": summary,
+        }
+    return report
+
+
+def evidence_problems(evidence: dict[str, dict]) -> list[str]:
+    """Every required item that is absent or too old to describe this checkout."""
+    problems: list[str] = []
+    for key, row in evidence.items():
+        if row["optional"]:
+            continue
+        if row["status"] == "MISSING":
+            problems.append(f"{key}: {row['path']} is MISSING")
+        elif row["status"] == "STALE":
+            problems.append(
+                f"{key}: {row['artifact']} is STALE "
+                f"({row['age_days']} days old, limit {EVIDENCE_MAX_AGE_DAYS})"
+            )
+    return problems
+
+
+def render_evidence_freshness(evidence: dict[str, dict]) -> list[str]:
+    """The MISSING/STALE table that goes into KNOWN_LIMITATIONS.md."""
+    lines = [
+        "",
+        "---",
+        "",
+        "## Evidence freshness at pack time",
+        "",
+        "Generated by `scripts/make_due_diligence_pack.py`. `MISSING` means the",
+        "artifact was never produced; `STALE` means it is older than "
+        f"{EVIDENCE_MAX_AGE_DAYS} days and therefore describes a different",
+        "checkout. Neither is presented as a pass.",
+        "",
+        "| Evidence | Required | Artifact | Status | Age (days) | Generated (UTC) |",
+        "|---|---|---|---|---|---|",
+    ]
+    for row in evidence.values():
+        lines.append(
+            f"| `{row['key']}` | {'yes' if not row['optional'] else 'no (opt-in)'} | "
+            f"`{row['artifact'] or row['path']}` | **{row['status']}** | "
+            f"{row['age_days'] if row['age_days'] is not None else '—'} | "
+            f"{row['generated_at'] or '—'} |"
+        )
+    lines.extend(
+        [
+            "",
+            "Regenerate with: `python scripts/pytest_chunks.py` then",
+            "`python scripts/reconcile_validation_results.py --ci` (test),",
+            "`make polyglot-evidence`, `make security-evidence`,",
+            "`bash scripts/verify_deploy_assets.sh --json reports/deploy_asset_validation.json`,",
+            "`make staging-proof`, and `python scripts/live_evidence_run.py --group …`.",
+            "",
+        ]
+    )
+    return lines
+
+
 def _junit_summary(path: Path) -> dict[str, int | float]:
     """Return aggregate counts from either a JUnit testsuite or testsuites file."""
     totals: dict[str, int | float] = {
@@ -673,9 +838,7 @@ def _junit_summary(path: Path) -> dict[str, int | float]:
     }
     if not path.exists():
         return totals
-    root = ET.parse(path).getroot()
-    suites = root.findall("testsuite") if root.tag == "testsuites" else [root]
-    for suite in suites:
+    for suite in iter_suites(path):
         for key in ("tests", "failures", "errors", "skipped"):
             totals[key] = int(totals[key]) + int(suite.attrib.get(key, 0))
         totals["time"] = float(totals["time"]) + float(suite.attrib.get("time", 0.0))
@@ -829,7 +992,13 @@ def generate_test_report(root: Path) -> dict[str, int | str]:
     }
 
 
-def generate_due_diligence_readme(root: Path, stats: dict[str, int | str], sbom_counts: dict[str, int], pack_name: str) -> None:
+def generate_due_diligence_readme(
+    root: Path,
+    stats: dict[str, int | str],
+    sbom_counts: dict[str, int],
+    pack_name: str,
+    evidence: dict[str, dict] | None = None,
+) -> None:
     lines = [
         "# VoxDesk — Technical Due-Diligence Evidence Index",
         "",
@@ -883,13 +1052,33 @@ def generate_due_diligence_readme(root: Path, stats: dict[str, int | str], sbom_
         "",
         "---",
         "",
-        "## 3. One-Command Verification (`make verify-sale`)",
+        "## 3. Generated evidence in this pack",
+        "",
+        "| Evidence | Status | Artifact | Generated (UTC) |",
+        "|---|---|---|---|",
+    ]
+    for row in (evidence or {}).values():
+        lines.append(
+            f"| `{row['key']}` | **{row['status']}** | `{row['artifact'] or row['path']}` | "
+            f"{row['generated_at'] or '—'} |"
+        )
+    lines.extend(
+        [
+            "",
+            "A status other than `PRESENT` is stated, not hidden: see",
+            "[`KNOWN_LIMITATIONS.md`](KNOWN_LIMITATIONS.md) for the same table with",
+            "regeneration commands.",
+            "",
+            "---",
+            "",
+            "## 4. One-Command Verification (`make verify-sale`)",
         "",
         "```bash",
         "make verify-sale",
         "ls -lh dist/due-diligence-*.zip dist/SHA256SUMS",
         "```",
-    ]
+        ]
+    )
     (root / "docs" / "DUE_DILIGENCE" / "README.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
@@ -914,6 +1103,10 @@ def build_due_diligence_zip(root: Path, date_str: str) -> tuple[Path, Path]:
         root / "docs" / "DR_RUNBOOK.md",
         root / "docs" / "LATENCY_BENCHMARK.md",
         root / "docs" / "DEMO" / "SCRIPT.md",
+        root / "docs" / "BUYER_DEPLOY_GUIDE.md",
+        root / "docs" / "SECURITY_POSTURE.md",
+        root / "docs" / "DOCKER_BUILD_PROOF.md",
+        root / "docs" / "LIVE_EVIDENCE.md",
     ]
     for fp in fixed_files:
         if fp.exists():
@@ -985,7 +1178,54 @@ def main(argv: list[str] | None = None) -> int:
         default=datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         help="Date stamp for dist/due-diligence-<date>.zip (default: today UTC)",
     )
+    parser.add_argument(
+        "--allow-missing",
+        action="store_true",
+        help="build the pack even when required evidence is missing or stale "
+        "(the omissions are still written into KNOWN_LIMITATIONS.md)",
+    )
+    parser.add_argument(
+        "--max-evidence-age-days",
+        type=int,
+        default=EVIDENCE_MAX_AGE_DAYS,
+        help=f"treat generated evidence older than this as stale (default {EVIDENCE_MAX_AGE_DAYS})",
+    )
+    parser.add_argument(
+        "--check-evidence",
+        action="store_true",
+        help="grade the evidence and exit without building the pack",
+    )
     args = parser.parse_args(argv)
+
+    evidence = collect_evidence(ROOT, max_age_days=args.max_evidence_age_days)
+    problems = evidence_problems(evidence)
+    if args.check_evidence:
+        print(
+            json.dumps(
+                {
+                    "evidence": list(evidence.values()),
+                    "problems": problems,
+                    "ok": not problems,
+                },
+                indent=2,
+            )
+        )
+        return 0 if not problems else 2
+
+    if problems and not args.allow_missing:
+        print(
+            "REFUSING to build the due-diligence pack: "
+            f"{len(problems)} required evidence item(s) are missing or stale.",
+            file=sys.stderr,
+        )
+        for problem in problems:
+            print(f"  - {problem}", file=sys.stderr)
+        print(
+            "\nGenerate them (see docs/BUYER_DEPLOY_GUIDE.md §8) or pass "
+            "--allow-missing to build anyway with the gaps disclosed.",
+            file=sys.stderr,
+        )
+        return 2
 
     sbom_counts = generate_sboms_and_licenses(ROOT)
     matrix_rows = _parse_verified_matrix(ROOT)
@@ -993,11 +1233,11 @@ def main(argv: list[str] | None = None) -> int:
         print("ERROR: docs/SALES/FEATURE_MATRIX_VERIFIED.md contains 0 rows", file=sys.stderr)
         return 1
 
-    generate_known_limitations(ROOT, matrix_rows)
+    generate_known_limitations(ROOT, matrix_rows, evidence)
     stats = generate_test_report(ROOT)
     generate_listing_copy(ROOT, matrix_rows, stats)
     pack_name = f"due-diligence-{args.date}.zip"
-    generate_due_diligence_readme(ROOT, stats, sbom_counts, pack_name)
+    generate_due_diligence_readme(ROOT, stats, sbom_counts, pack_name, evidence)
     zip_path, sha_path = build_due_diligence_zip(ROOT, args.date)
 
     print(
@@ -1011,6 +1251,16 @@ def main(argv: list[str] | None = None) -> int:
                 "sbom_components": sbom_counts,
                 "live_features": sum(1 for r in matrix_rows if r["status"] == "LIVE"),
                 "total_features": len(matrix_rows),
+                "evidence": [
+                    {
+                        "key": row["key"],
+                        "status": row["status"],
+                        "artifact": row["artifact"],
+                        "generated_at": row["generated_at"],
+                    }
+                    for row in evidence.values()
+                ],
+                "evidence_problems": problems,
             },
             indent=2,
         )

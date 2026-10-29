@@ -3,6 +3,12 @@ name: ci
 # The default gate for every push and pull request. Real external-provider
 # tests are DELIBERATELY excluded (see real-integrations.yml) — nothing in
 # this file may touch the network beyond dependency installation.
+#
+# `backend` is the fast feedback loop. `full-population` is the one that
+# answers "did every collected test actually run?": it enumerates the whole
+# population by node id, executes it in chunks, and fails when a collected node
+# has no recorded outcome. Its two large artifacts are uploaded, never
+# committed — the small digest summary is what lands in git.
 on:
   push:
     branches: [main]
@@ -62,6 +68,100 @@ jobs:
         run: python -m pytest -q -m "not real_provider"
         env:
           DATABASE_URL: postgresql+asyncpg://voxdesk:voxdesk-ci@localhost:5432/voxdesk_ci
+
+  # Ruff as its own job: the lint gate must be visible next to the tests, not
+  # buried in the first step of a job that takes ten minutes to get there.
+  ruff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install ruff
+        run: pip install -r requirements-validation.txt
+
+      - name: ruff check (must be zero findings)
+        run: ruff check app scripts tests --output-format=github
+
+  # Every collected test, accounted for. This job exists because a test that is
+  # collected but never executed is invisible to a "N passed" line, and a suite
+  # that quietly stops collecting half its files still says "green".
+  full-population:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: voxdesk
+          POSTGRES_PASSWORD: voxdesk-ci
+          POSTGRES_DB: voxdesk_ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U voxdesk"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements-test.txt
+
+      - name: Apply migrations
+        run: alembic upgrade head
+        env:
+          DATABASE_URL: postgresql+asyncpg://voxdesk:voxdesk-ci@localhost:5432/voxdesk_ci
+
+      - name: Install redis-server
+        run: sudo apt-get update && sudo apt-get install -y redis-server
+
+      # Node-level chunking: the population is enumerated with --collect-only
+      # first, so a chunk never depends on filesystem walk order and no test can
+      # be dropped by a chunking accident.
+      - name: Run the full collected population
+        env:
+          DATABASE_URL: postgresql+asyncpg://voxdesk:voxdesk-ci@localhost:5432/voxdesk_ci
+        run: |
+          python scripts/pytest_chunks.py \
+            --chunk-size 40 \
+            --per-chunk-timeout 900 \
+            --per-test-timeout 240 \
+            --marker "not real_provider and not live" \
+            --junit-dir reports/check/chunks \
+            --summary reports/check/pytest_summary.json \
+            --junit-out reports/check/junit/full.xml \
+            --results-out reports/check/full_results.json
+
+      # Fails when collected != recorded, and writes the small committed
+      # digest summary. The two artifacts stay out of git.
+      - name: Reconcile the population against its results
+        if: always()
+        run: |
+          python scripts/reconcile_validation_results.py \
+            --results reports/check/full_results.json \
+            --junit reports/check/junit/full.xml \
+            --summary reports/TEST_EVIDENCE_SUMMARY.json
+
+      - name: Upload test evidence artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-population-evidence
+          path: |
+            reports/check/junit/full.xml
+            reports/check/full_results.json
+            reports/check/pytest_summary.json
+            reports/TEST_EVIDENCE_SUMMARY.json
+          retention-days: 90
+          if-no-files-found: error
 
   gateway:
     runs-on: ubuntu-latest

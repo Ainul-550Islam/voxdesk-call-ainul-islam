@@ -10,9 +10,7 @@ from __future__ import annotations
 
 import json
 import uuid
-from datetime import UTC, datetime, timedelta
 
-import pytest
 
 from app.platform_v2.whitelabel import dns as dns_mod
 from app.platform_v2.whitelabel import domains as domains_mod

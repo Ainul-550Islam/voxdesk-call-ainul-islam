@@ -14,7 +14,7 @@ right the first time:
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, date, datetime, time, timedelta
+from datetime import date, datetime, time, timedelta
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -314,7 +314,9 @@ async def test_an_unknown_kind_is_refused(db: AsyncSession, plat_scope: PlatScop
         )
 
 
-async def test_an_inverted_window_is_refused(db: AsyncSession, plat_scope: PlatScope):
+async def test_create_request_refuses_an_inverted_window(
+    db: AsyncSession, plat_scope: PlatScope
+):
     person = await agent(db, plat_scope, "invert")
     with pytest.raises(ValidationFailed):
         await timeoff.create_request(

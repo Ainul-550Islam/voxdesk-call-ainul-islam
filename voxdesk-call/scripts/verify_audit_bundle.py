@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import urllib.parse
 import urllib.request
 from pathlib import Path
 from typing import Sequence
@@ -27,6 +28,12 @@ from typing import Sequence
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
+
+#: The public key is published over TLS and nowhere else. ``urllib`` will also
+#: happily open ``file://`` and ``ftp://``, so the scheme is checked before the
+#: URL is handed to it: a verifier that can be pointed at the local filesystem
+#: is a verifier whose answer depends on who is holding the keyboard.
+ALLOWED_KEY_URL_SCHEMES = ("https",)
 
 
 def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
@@ -43,11 +50,21 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+def _load_key_url(url: str) -> str:
+    """Fetch a published public key over https, and no other scheme."""
+    scheme = urllib.parse.urlsplit(url).scheme.lower()
+    if scheme not in ALLOWED_KEY_URL_SCHEMES:
+        raise ValueError(
+            f"--public-key-url must be {' or '.join(ALLOWED_KEY_URL_SCHEMES)}://, got {scheme or 'none'}://"
+        )
+    with urllib.request.urlopen(url, timeout=15) as response:  # nosec B310 - scheme allow-listed above
+        return response.read().decode("utf-8")
+
+
 def _load_key(args: argparse.Namespace) -> str:
     if args.public_key:
         return Path(args.public_key).read_text(encoding="utf-8")
-    with urllib.request.urlopen(args.public_key_url, timeout=15) as response:  # noqa: S310
-        return response.read().decode("utf-8")
+    return _load_key_url(args.public_key_url)
 
 
 def main(argv: Sequence[str] | None = None) -> int:

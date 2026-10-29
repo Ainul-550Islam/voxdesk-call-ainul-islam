@@ -10,7 +10,7 @@ login path to drift apart:
 ``policy``          whether *this* user, in *this* tenant, must present a factor
 ``exceptions``      the typed errors the routes translate to HTTP
 
-The real code lives in :mod:`app.auth.identity.mfa` (flow), 
+The real code lives in :mod:`app.auth.identity.mfa` (flow),
 :mod:`app.auth.identity.totp` (arithmetic) and
 :mod:`app.auth.identity.policies` (policy), because the login path and the MFA
 routes must never disagree about whether a factor is required.

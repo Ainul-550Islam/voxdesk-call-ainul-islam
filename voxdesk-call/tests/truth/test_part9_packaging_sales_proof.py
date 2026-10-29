@@ -102,7 +102,16 @@ def test_due_diligence_zip_and_sha256sums_verify() -> None:
         import subprocess
         import sys
 
-        subprocess.run([sys.executable, str(ROOT / "scripts" / "make_due_diligence_pack.py")], cwd=ROOT, check=True)
+        # --allow-missing: this test proves the pack is well formed and its
+        # SHA256SUMS verify, not that every evidence artifact is present. The
+        # evidence gate is exercised on its own by
+        # tests/truth/test_due_diligence_pack_evidence_gate.py, and a refusal
+        # here would be testing the wrong thing badly.
+        subprocess.run(
+            [sys.executable, str(ROOT / "scripts" / "make_due_diligence_pack.py"), "--allow-missing"],
+            cwd=ROOT,
+            check=True,
+        )
         zips = sorted(dist_dir.glob("due-diligence-*.zip"))
 
     assert len(zips) >= 1

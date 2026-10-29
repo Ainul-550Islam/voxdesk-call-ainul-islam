@@ -60,6 +60,18 @@ config:
 resources:
   requests: {cpu: 500m, memory: 512Mi}
   limits: {cpu: "2", memory: 2Gi}
+# Container-level hardening. The pod-level block below only stops a root
+# container from being scheduled; this is what stops a compromised process from
+# escalating or writing to its own image. `/tmp` is an emptyDir because a
+# read-only root still needs a scratch directory.
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  capabilities:
+    drop: ["ALL"]
 probes:
   readiness: /health/ready
   liveness: /health

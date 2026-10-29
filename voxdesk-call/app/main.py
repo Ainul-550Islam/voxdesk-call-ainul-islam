@@ -683,13 +683,13 @@ def _mount_dashboard_if_built(app: FastAPI, dist_dir: str | None = None) -> None
             os.path.join(os.path.dirname(__file__), "..", "dashboard", "dist")
         )
     index_file = os.path.join(dist_dir, "index.html")
-    
+
     # Detect shadow frontend presence for observability (not serving it)
     shadow_next_dir = os.path.abspath(
         os.path.join(os.path.dirname(__file__), "..", "dashboard-next", ".next")
     )
     shadow_next_exists = os.path.isdir(shadow_next_dir)
-    
+
     if not os.path.isfile(index_file):
         log.info(
             "dashboard.not_built",

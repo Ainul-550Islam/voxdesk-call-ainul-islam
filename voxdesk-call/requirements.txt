@@ -152,7 +152,10 @@ cryptography==50.0.1
 # PDF is an untrusted-upload parser with 41 advisories fixed between 6.0.0 and
 # 6.13.0; the extractor only uses the stable PdfReader/pages/extract_text API,
 # verified by the full backend suite (including the PDF extraction tests).
-pypdf==6.20.0
+# STEP 02-B: 6.20.0 -> 6.21.2. pip-audit reported nine advisories against the
+# untrusted-PDF parser (infinite loops and arbitrary code execution on a
+# crafted file); every one is fixed at or before 6.21.2.
+pypdf==6.21.2
 
 # `app/knowledge/storage/s3.py` imports `boto3` lazily and only when the S3
 # storage backend is selected, so the omission is invisible at boot -- but S3

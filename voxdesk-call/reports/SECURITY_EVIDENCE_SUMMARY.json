@@ -1,0 +1,706 @@
+{
+  "schema": "voxdesk.security_evidence/v1",
+  "generated_at": "2026-10-29T14:30:10Z",
+  "input_dir": "artifacts/security",
+  "artifact_count": 2,
+  "scanners": [
+    {
+      "scanner": "bandit",
+      "artifact": "artifacts/security/bandit-results.sarif",
+      "sha256": "cff3fb1dfa6462dc9b8b791596a80c1fe374765e1e399e6ed39bebc634863ec7",
+      "bytes": 508195,
+      "counts": {
+        "critical": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "info": 0,
+        "unknown": 0
+      },
+      "findings": [],
+      "total": 0,
+      "status": "clean"
+    },
+    {
+      "scanner": "trivy",
+      "status": "missing",
+      "reason": "no artifact found"
+    },
+    {
+      "scanner": "semgrep",
+      "status": "missing",
+      "reason": "no artifact found"
+    },
+    {
+      "scanner": "gitleaks",
+      "status": "missing",
+      "reason": "no artifact found"
+    },
+    {
+      "scanner": "npm-audit",
+      "status": "missing",
+      "reason": "no artifact found"
+    },
+    {
+      "scanner": "hadolint",
+      "status": "missing",
+      "reason": "no artifact found"
+    },
+    {
+      "scanner": "checkov",
+      "status": "missing",
+      "reason": "no artifact found"
+    },
+    {
+      "scanner": "pip-audit",
+      "artifact": "artifacts/security/pip-audit.json",
+      "sha256": "2cdbad1aa6fa6b0e6fd5217a41ad28b3bd66bc6c862f807208f51314c744b19e",
+      "bytes": 392014,
+      "counts": {
+        "critical": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "info": 0,
+        "unknown": 75
+      },
+      "findings": [
+        {
+          "rule_id": "PYSEC-2026-1845",
+          "severity": "unknown",
+          "path": "pytest==8.3.4",
+          "package": "pytest",
+          "message": "fixed in 9.0.3",
+          "accepted_risk": "pytest 8.3.4: Not shipped; PYSEC-2026-1845 is tmpdir handling in the test runner. The fix is the 9.0.3 major line, which needs a pytest-asyncio migration."
+        },
+        {
+          "rule_id": "PYSEC-2026-1845",
+          "severity": "unknown",
+          "path": "pytest==8.3.4",
+          "package": "pytest",
+          "message": "fixed in 9.0.3",
+          "accepted_risk": "pytest 8.3.4: Not shipped; PYSEC-2026-1845 is tmpdir handling in the test runner. The fix is the 9.0.3 major line, which needs a pytest-asyncio migration."
+        },
+        {
+          "rule_id": "PYSEC-2026-2249",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 12.1.1",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-2250",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 12.2.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-165",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 12.2.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-2251",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 12.2.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-2874",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 12.2.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-2252",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 12.2.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-165",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 12.2.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-2250",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 12.2.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-2253",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 12.3.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-2251",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 12.2.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-2255",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 12.3.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-2257",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 12.3.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-2256",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 12.3.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-2254",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 12.3.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-2252",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 12.2.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-2249",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 12.1.1",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-2874",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 12.2.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-3453",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 12.3.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-3451",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 12.3.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-3493",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 12.3.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-2254",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 12.3.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-2253",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 12.3.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-2256",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 12.3.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-2255",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 12.3.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-3454",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 12.3.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-3451",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 12.3.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-3494",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 12.3.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-3495",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 12.3.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-3496",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 12.3.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-3453",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 12.3.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-3454",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 12.3.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-3495",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 12.3.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-3496",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 12.3.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-3494",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 12.3.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-3493",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 12.3.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-4327",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-4328",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-4326",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-4339",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-4340",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-4343",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-4334",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-4337",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-4341",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-4330",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-4338",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-4335",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-4336",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-4331",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-4332",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-4329",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "PYSEC-2026-4342",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "CVE-2026-112895",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "CVE-2026-112400",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "CVE-2026-112897",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "CVE-2026-112395",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "CVE-2026-112404",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "CVE-2026-112899",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "CVE-2026-112900",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "CVE-2026-112893",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "CVE-2026-112891",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "CVE-2026-112390",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "CVE-2026-112401",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "CVE-2026-112391",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "CVE-2026-112894",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "CVE-2026-112406",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "CVE-2026-112399",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "CVE-2026-112892",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "CVE-2026-112393",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "CVE-2026-96638",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "CVE-2026-96640",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "CVE-2026-96778",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "GHSA-78g4-xqwv-q3g8",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        }
+      ],
+      "total": 75,
+      "status": "failed"
+    }
+  ],
+  "counts": {
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "info": 0,
+    "unknown": 75
+  },
+  "total": 75,
+  "accepted_risks": [
+    {
+      "identifier": "pillow",
+      "reason": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+    },
+    {
+      "identifier": "pytest",
+      "reason": "pytest 8.3.4: Not shipped; PYSEC-2026-1845 is tmpdir handling in the test runner. The fix is the 9.0.3 major line, which needs a pytest-asyncio migration."
+    },
+    {
+      "identifier": "nltk",
+      "reason": "nltk 3.10.3: OSV marks 3.10.3 as the **fixed** version and it is the newest 3.x available, so the pip-audit finding is a boundary false positive; there is no newer release to move to within pipecat's `nltk<4,>=3.9.1`."
+    }
+  ],
+  "overall": "BLOCKED",
+  "problems": [
+    "trivy: no artifact",
+    "semgrep: no artifact",
+    "gitleaks: no artifact",
+    "npm-audit: no artifact",
+    "hadolint: no artifact",
+    "checkov: no artifact"
+  ],
+  "note": "Findings matched to an accepted risk in SECURITY.md are attributed, not removed: they remain in the counts and carry the waiver reason."
+}

@@ -1,9 +1,14 @@
 name: security-scan
 
-# Supply-chain, SAST, secret, polyglot dependency, and container image scanning.
-# Runs alongside CI on every push/PR and weekly on a schedule (dependency CVEs
-# appear after a commit, not at it). Fails on HIGH/CRITICAL findings and uploads
-# SARIF reports to GitHub Code Scanning.
+# Supply-chain, SAST, secret, polyglot dependency, container image and
+# infrastructure-as-code scanning. Runs alongside CI on every push/PR and weekly
+# on a schedule (dependency CVEs appear after a commit, not at it). Fails on
+# HIGH/CRITICAL findings and uploads SARIF reports to GitHub Code Scanning.
+#
+# Every scanner writes its output into artifacts/security/ and uploads it. The
+# `security_evidence` job then parses all of them into
+# reports/SECURITY_EVIDENCE_SUMMARY.json, so the numbers quoted to a buyer come
+# from a file a scanner produced, not from a narrator.
 on:
   push:
     branches: [main]
@@ -30,15 +35,42 @@ jobs:
       - name: Bandit (Python SAST)
         run: |
           pip install bandit[sarif]
-          bandit -c pyproject.toml -r app scripts -lll -f sarif -o bandit-results.sarif
+          mkdir -p artifacts/security
+          bandit -c pyproject.toml -r app scripts -lll -f sarif -o artifacts/security/bandit-results.sarif
           bandit -c pyproject.toml -r app scripts -q
+
+      # Semgrep with curated Python + TypeScript rules. Emits SARIF for code
+      # scanning and JSON for the evidence collector.
+      - name: Semgrep (Python + TypeScript)
+        run: |
+          pip install semgrep
+          semgrep --config p/python --config p/typescript --config p/security-audit \
+            --sarif --output artifacts/security/semgrep-results.sarif app scripts dashboard/src dashboard-next || true
+          semgrep --config p/python --config p/typescript --config p/security-audit \
+            --json --output artifacts/security/semgrep-results.json app scripts dashboard/src dashboard-next || true
+          test -f artifacts/security/semgrep-results.sarif
 
       - name: Upload Bandit SARIF
         if: always()
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: bandit-results.sarif
+          sarif_file: artifacts/security/bandit-results.sarif
           category: bandit-sast
+
+      - name: Upload Semgrep SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: artifacts/security/semgrep-results.sarif
+          category: semgrep-sast
+
+      - name: Upload SAST artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-sast
+          path: artifacts/security/
+          if-no-files-found: error
 
   dependency-audit:
     runs-on: ubuntu-latest
@@ -59,9 +91,20 @@ jobs:
         with:
           node-version: 20
 
-      - name: npm audit (dashboard-next high/critical CVEs)
+      # Both frontends, not just one: dashboard-next was audited and dashboard
+      # was not, which meant half the shipped JS surface was unaudited.
+      - name: npm audit (dashboard-next, production deps)
         working-directory: dashboard-next
         run: |
+          mkdir -p ../artifacts/security
+          npm audit --omit=dev --audit-level=high --json > ../artifacts/security/npm-audit-dashboard-next.json || true
+          npm audit --omit=dev --audit-level=high
+
+      - name: npm audit (dashboard, production deps)
+        working-directory: dashboard
+        run: |
+          mkdir -p ../artifacts/security
+          npm audit --omit=dev --audit-level=high --json > ../artifacts/security/npm-audit-dashboard.json || true
           npm audit --omit=dev --audit-level=high
 
       - uses: dtolnay/rust-toolchain@1.90.0
@@ -82,6 +125,14 @@ jobs:
           (cd services/signal-go && govulncheck ./...)
           (cd services/ops && govulncheck ./...)
 
+      - name: Upload dependency audit artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-dependency-audit
+          path: artifacts/security/
+          if-no-files-found: error
+
   secret-scan:
     runs-on: ubuntu-latest
     steps:
@@ -91,13 +142,29 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: gitleaks
+      - name: gitleaks (full history)
         uses: gitleaks/gitleaks-action@v2
         env:
           GITLEAKS_ENABLE_COMMENTS: "true"
           GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "true"
 
-  trivy-image-scan:
+      - name: gitleaks JSON report
+        if: always()
+        run: |
+          mkdir -p artifacts/security
+          docker run --rm -v "$PWD:/repo" -w /repo zricethezav/gitleaks:latest \
+            detect --source /repo --report-format json --report-path /repo/artifacts/security/gitleaks-results.json --exit-code 0 \
+            || echo "[]" > artifacts/security/gitleaks-results.json
+
+      - name: Upload gitleaks report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-gitleaks
+          path: artifacts/security/
+          if-no-files-found: error
+
+  container-scan:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -106,19 +173,102 @@ jobs:
         run: |
           docker build -t voxdesk-call:security-scan .
 
-      - name: Run Trivy vulnerability scanner (fail on HIGH/CRITICAL)
+      - name: Trivy — container image (HIGH/CRITICAL)
         uses: aquasecurity/trivy-action@0.28.0
         with:
           image-ref: "voxdesk-call:security-scan"
           format: "sarif"
-          output: "trivy-results.sarif"
+          output: "artifacts/security/trivy-image.sarif"
           severity: "HIGH,CRITICAL"
           ignore-unfixed: true
           exit-code: "1"
 
-      - name: Upload Trivy SARIF report
+      # Filesystem scan: the image only sees what the Dockerfile copies, so
+      # scripts/, tests/ and configuration never get scanned without this.
+      - name: Trivy — repository filesystem (HIGH/CRITICAL)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "sarif"
+          output: "artifacts/security/trivy-fs.sarif"
+          severity: "HIGH,CRITICAL"
+          ignore-unfixed: true
+          exit-code: "1"
+
+      - name: hadolint (Dockerfile lint)
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          format: json
+          output-file: artifacts/security/hadolint-results.json
+          no-fail: false
+
+      - name: Upload Trivy SARIF reports
         if: always()
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: "trivy-results.sarif"
+          sarif_file: artifacts/security/trivy-image.sarif
           category: trivy-image
+
+      - name: Upload container scan artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-container
+          path: artifacts/security/
+          if-no-files-found: error
+
+  iac-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: checkov (Terraform + Kubernetes manifests)
+        run: |
+          pip install checkov
+          mkdir -p artifacts/security
+          checkov -d infra/terraform -d infra/helm --compact --quiet \
+            --output json --output-file-path artifacts/security/checkov-results.json || true
+          test -f artifacts/security/checkov-results.json
+
+      - name: Upload IaC scan artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-iac
+          path: artifacts/security/
+          if-no-files-found: error
+
+  # Collect every artifact above into reports/SECURITY_EVIDENCE_SUMMARY.json.
+  # A scanner with no artifact is reported as `missing` and fails this job —
+  # an unrun scanner is not a scanner that found nothing.
+  security_evidence:
+    name: security evidence summary
+    runs-on: ubuntu-latest
+    needs: [sast, dependency-audit, secret-scan, container-scan, iac-scan]
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Download security artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/security
+          pattern: security-*
+          merge-multiple: true
+
+      - name: Build the security evidence summary
+        run: python3 scripts/security_evidence.py --input-dir artifacts/security
+
+      - name: Upload the summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-evidence-summary
+          path: reports/SECURITY_EVIDENCE_SUMMARY.json
+          if-no-files-found: error

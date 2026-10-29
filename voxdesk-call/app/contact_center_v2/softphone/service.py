@@ -773,7 +773,7 @@ async def prepare_acd_call(
     )
     await session.commit()
     try:
-        await run_provider(adapter.bridge_to, 
+        await run_provider(adapter.bridge_to,
             external_id=canonical.call_sid,
             destination="",
             conference_name=call.conference_name,

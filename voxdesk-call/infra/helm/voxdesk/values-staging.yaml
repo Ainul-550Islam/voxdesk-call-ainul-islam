@@ -1,0 +1,100 @@
+# =============================================================================
+# VoxDesk — staging Helm values
+#
+# Deployed with:
+#   helm upgrade --install voxdesk-staging infra/helm/voxdesk \
+#     -f infra/helm/voxdesk/values.yaml -f infra/helm/voxdesk/values-staging.yaml \
+#     --set image.tag=<candidate-sha>
+#
+# Staging mirrors production's *shape*, not its scale: the same probes, the same
+# drain timings, the same read-only root filesystem and the same Secret-driven
+# credentials, so a deployment that survives staging survives production. It
+# differs only where buying the same capacity twice would be waste — one replica
+# floor instead of three, smaller requests.
+#
+# Validated (never applied) by scripts/verify_deploy_assets.sh together with
+# values-prod.yaml: both files must pass helm lint, helm template and
+# kubeconform, which is what stops "it only renders in staging".
+# =============================================================================
+
+image:
+  repository: "ghcr.io/voxdesk/voxdesk-call"
+  # Staging tracks the candidate commit, still as an immutable tag: a rollback
+  # has to name exactly what was running.
+  tag: "1.0.0"
+  pullPolicy: Always
+
+replicaCount: 1
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 4
+  targetCPUUtilizationPercentage: 70
+  targetConcurrentCallsPerPod: "25"
+  scaleDownStabilizationWindowSeconds: 60
+
+podDisruptionBudget:
+  enabled: true
+  # One replica is the staging floor, so minAvailable must be 1: any higher and
+  # a node drain would deadlock the only pod.
+  minAvailable: 1
+
+terminationGracePeriodSeconds: 60
+drain:
+  timeoutSeconds: 45
+  flushTimeoutSeconds: 10
+  preStopSleepSeconds: 5
+
+config:
+  appEnv: staging
+  databaseUrl: "postgresql+asyncpg://voxdesk:voxdesk@postgres:5432/voxdesk_staging"
+  redisUrl: "redis://redis:6379/1"
+  trustedHosts: "api.staging.example.com"
+
+secrets:
+  existingSecret: voxdesk-runtime-staging
+
+service:
+  type: ClusterIP
+  port: 8000
+
+ingress:
+  enabled: true
+  className: "nginx"
+  host: "api.staging.example.com"
+  tls:
+    - secretName: voxdesk-staging-api-tls
+      hosts:
+        - "api.staging.example.com"
+
+resources:
+  requests: {cpu: 250m, memory: 256Mi}
+  limits: {cpu: "1", memory: 1Gi}
+
+# Identical to production on purpose: a hardening setting that only exists in
+# prod is a setting nobody has tested.
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  capabilities:
+    drop: ["ALL"]
+
+probes:
+  readiness: /health/ready
+  liveness: /health
+  dependencies: /health/dependencies
+
+platform:
+  enabled: true
+  brandingAssetBucket: "voxdesk-brand-assets-staging"
+  brandingAssetRegion: "us-east-1"
+  brandingAssetKmsKeyId: ""
+
+scheduler:
+  enabled: true
+  resources:
+    requests: {cpu: 100m, memory: 128Mi}
+    limits: {cpu: "500m", memory: 512Mi}

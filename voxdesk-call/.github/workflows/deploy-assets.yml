@@ -1,0 +1,145 @@
+name: deploy-assets
+
+# Validate — never apply — everything a buyer would run to deploy this system:
+# the Helm chart against BOTH its environment value files, the Terraform modules
+# and environments, the Caddy edge configuration, and the production/staging
+# compose files.
+#
+# `scripts/verify_deploy_assets.sh` is read-only by construction (`helm lint`,
+# `helm template`, `kubeconform`, `terraform fmt -check` / `validate`, `tflint`,
+# `caddy validate`, `docker compose config`). Nothing here plans, applies, pushes
+# an image or reaches a cluster, so this workflow needs no cloud credentials.
+#
+# A missing tool fails the job with its install hint rather than being skipped:
+# a validation that did not run is not a validation that passed.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 4 * * 2"   # Tuesdays 04:00 UTC
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-assets-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: helm, terraform, caddy and compose validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.16.2
+
+      - name: Install kubeconform
+        run: |
+          set -euo pipefail
+          curl -sSLo /tmp/kubeconform.tar.gz \
+            https://github.com/yannh/kubeconform/releases/download/v0.6.6/kubeconform-linux-amd64.tar.gz
+          sudo tar -C /usr/local/bin -xzf /tmp/kubeconform.tar.gz kubeconform
+          kubeconform -v
+
+      - name: Install terraform and tflint
+        run: |
+          set -euo pipefail
+          curl -sSLo /tmp/tf.zip https://releases.hashicorp.com/terraform/1.9.8/terraform_1.9.8_linux_amd64.zip
+          sudo unzip -o -q /tmp/tf.zip -d /usr/local/bin
+          terraform version
+          curl -sSL https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh \
+            | bash -s -- -b /usr/local/bin v0.52.0
+          tflint --version
+
+      - name: Install caddy
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq debian-keyring debian-archive-keyring apt-transport-https curl
+          curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' \
+            | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+          curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' \
+            | sudo tee /etc/apt/sources.list.d/caddy-stable.list
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq caddy
+          caddy version
+
+      - name: Install Python dependencies
+        run: pip install -r requirements-test.txt
+
+      - name: Validate the deploy assets (read-only)
+        run: bash scripts/verify_deploy_assets.sh --json reports/deploy_asset_validation.json
+
+      - name: Upload the validation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-asset-validation
+          path: reports/deploy_asset_validation.json
+          if-no-files-found: error
+
+  # The static half runs without any toolchain at all, so a values-file
+  # regression is caught even if a tool download above is rate-limited.
+  static-assertions:
+    name: deploy asset static assertions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install Python dependencies
+        run: pip install -r requirements-test.txt
+
+      - name: Static deploy asset assertions
+        run: python -m pytest tests/deployment/test_deploy_assets_static.py -q
+
+  checkov:
+    name: checkov (Terraform + Kubernetes)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run checkov
+        run: |
+          pip install checkov
+          mkdir -p artifacts/security
+          checkov -d infra/terraform -d infra/helm --compact --quiet \
+            --output json --output-file-path artifacts/security/checkov-results.json || true
+          test -f artifacts/security/checkov-results.json
+          # Fail on any HIGH/CRITICAL IaC finding; lower severities are reported.
+          python3 - <<'PY'
+          import json, sys
+          doc = json.load(open("artifacts/security/checkov-results.json"))
+          summary = doc.get("summary", {})
+          high = int(summary.get("HIGH", 0)) + int(summary.get("CRITICAL", 0))
+          print(json.dumps(summary, indent=2))
+          sys.exit(1 if high else 0)
+          PY
+
+      - name: Upload checkov report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-iac
+          path: artifacts/security/
+          if-no-files-found: error

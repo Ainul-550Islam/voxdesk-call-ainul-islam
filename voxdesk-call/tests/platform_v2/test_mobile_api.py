@@ -9,7 +9,6 @@ from __future__ import annotations
 import base64
 import hashlib
 import secrets
-import uuid
 
 import pytest
 
@@ -229,8 +228,7 @@ async def test_a_test_push_is_idempotent_under_one_key(client, plat_scope: PlatS
 async def test_a_mobile_authorization_code_can_be_exchanged_for_tokens(
     client, plat_scope: PlatScope, agent_headers
 ):
-    registered = await register(client, agent_headers, device_id="oauth-device-1")
-    device_id = registered.json()["id"]
+    await register(client, agent_headers, device_id="oauth-device-1")
     verifier, challenge = verifier_pair()
 
     authorized = await client.post(
@@ -265,7 +263,7 @@ async def test_a_mobile_authorization_code_can_be_exchanged_for_tokens(
 
 
 async def test_the_wrong_verifier_is_refused(client, plat_scope: PlatScope, agent_headers):
-    registered = await register(client, agent_headers, device_id="oauth-device-2")
+    await register(client, agent_headers, device_id="oauth-device-2")
     _verifier, challenge = verifier_pair()
     authorized = await client.post(
         f"{MOB}/oauth/authorize",
@@ -292,7 +290,7 @@ async def test_the_wrong_verifier_is_refused(client, plat_scope: PlatScope, agen
 
 
 async def test_refresh_rotates_the_refresh_token(client, plat_scope: PlatScope, agent_headers):
-    registered = await register(client, agent_headers, device_id="oauth-device-3")
+    await register(client, agent_headers, device_id="oauth-device-3")
     verifier, challenge = verifier_pair()
     authorized = await client.post(
         f"{MOB}/oauth/authorize",
@@ -331,7 +329,7 @@ async def test_refresh_rotates_the_refresh_token(client, plat_scope: PlatScope, 
 async def test_sessions_are_listed_and_revocable_per_family(
     client, plat_scope: PlatScope, agent_headers
 ):
-    registered = await register(client, agent_headers, device_id="oauth-device-4")
+    await register(client, agent_headers, device_id="oauth-device-4")
     verifier, challenge = verifier_pair()
     authorized = await client.post(
         f"{MOB}/oauth/authorize",
@@ -373,7 +371,7 @@ async def test_sessions_are_listed_and_revocable_per_family(
 async def test_a_code_issued_to_one_device_cannot_be_used_by_another(
     client, plat_scope: PlatScope, agent_headers
 ):
-    registered = await register(client, agent_headers, device_id="oauth-device-5")
+    await register(client, agent_headers, device_id="oauth-device-5")
     verifier, challenge = verifier_pair()
     authorized = await client.post(
         f"{MOB}/oauth/authorize",

@@ -37,6 +37,29 @@ from scripts.twilio_signature import compute_twilio_signature  # noqa: E402
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
+#: Every step recorded during this process, in order. ``main()`` prints it as
+#: JSON when --json is passed, so a caller (staging_certify, CI) consumes
+#: structured results instead of scraping stdout.
+STEPS: list[dict[str, Any]] = []
+
+
+def record_step(name: str, ok: bool, detail: str = "", **extra: Any) -> dict[str, Any]:
+    """Record one smoke step: print it, keep it, and fail loudly when it fails.
+
+    Shared by every subcommand so the machine-readable output has one shape.
+    A step that is not run is never recorded -- absence means "not measured",
+    which a consumer must treat as failure, not as success.
+    """
+    status = "PASS" if ok else "FAIL"
+    row: dict[str, Any] = {"step": name, "status": status, "detail": detail}
+    row.update(extra)
+    STEPS.append(row)
+    print(f"  [{status}] {name} — {detail}")
+    if not ok:
+        raise AssertionError(f"{name} failed: {detail}")
+    return row
+
+
 def load_env_file(path: Path) -> dict[str, str]:
     data: dict[str, str] = {}
     if not path.exists():
@@ -101,11 +124,8 @@ def run_http_smoke(base_url: str, env_file: Path) -> dict[str, Any]:
     checks: list[dict[str, Any]] = []
 
     def record(name: str, ok: bool, detail: str) -> None:
-        status = "PASS" if ok else "FAIL"
-        checks.append({"check": name, "status": status, "detail": detail})
-        print(f"  [{status}] {name} — {detail}")
-        if not ok:
-            raise AssertionError(f"{name} failed: {detail}")
+        row = record_step(name, ok, detail)
+        checks.append({"check": name, "status": row["status"], "detail": detail})
 
     with httpx.Client(base_url=base, timeout=15.0) as client:
         r_health = client.get("/health")
@@ -233,11 +253,8 @@ def run_realtime_smoke(gateway_url: str, media_url: str, env_file: Path) -> dict
     checks: list[dict[str, Any]] = []
 
     def record(name: str, ok: bool, detail: str) -> None:
-        status = "PASS" if ok else "FAIL"
-        checks.append({"check": name, "status": status, "detail": detail})
-        print(f"  [{status}] {name} — {detail}")
-        if not ok:
-            raise AssertionError(f"{name} failed: {detail}")
+        row = record_step(name, ok, detail)
+        checks.append({"check": name, "status": row["status"], "detail": detail})
 
     with httpx.Client(timeout=10.0) as client:
         r_gw_health = client.get(f"{gw}/healthz")
@@ -345,11 +362,8 @@ def run_twilio_smoke(base_url: str, env_file: Path) -> dict[str, Any]:
     checks: list[dict[str, Any]] = []
 
     def record(name: str, ok: bool, detail: str) -> None:
-        status = "PASS" if ok else "FAIL"
-        checks.append({"check": name, "status": status, "detail": detail})
-        print(f"  [{status}] {name} — {detail}")
-        if not ok:
-            raise AssertionError(f"{name} failed: {detail}")
+        row = record_step(name, ok, detail)
+        checks.append({"check": name, "status": row["status"], "detail": detail})
 
     with httpx.Client(base_url=base, timeout=15.0) as client:
         _, _, to_number = _resolve_callable_number(client, env_map)
@@ -397,11 +411,8 @@ async def _run_call_ws_async(ws_base_url: str, env_file: Path) -> dict[str, Any]
     checks: list[dict[str, Any]] = []
 
     def record(name: str, ok: bool, detail: str) -> None:
-        status = "PASS" if ok else "FAIL"
-        checks.append({"check": name, "status": status, "detail": detail})
-        print(f"  [{status}] {name} — {detail}")
-        if not ok:
-            raise AssertionError(f"{name} failed: {detail}")
+        row = record_step(name, ok, detail)
+        checks.append({"check": name, "status": row["status"], "detail": detail})
 
     with httpx.Client(base_url=http_base, timeout=15.0) as client:
         owner_jwt, tenant_id, to_number = _resolve_callable_number(client, env_map)
@@ -530,6 +541,93 @@ async def _run_call_ws_async(ws_base_url: str, env_file: Path) -> dict[str, Any]
     return {"mode": "call-ws", "status": "PASS", "call_sid": call_sid, "checks": checks}
 
 
+
+def run_web_call_token_smoke(base_url: str, env_file: Path) -> dict[str, Any]:
+    """Exercise the browser web-call token flow end to end.
+
+    A web call is how the widget/console places a call without a carrier, so the
+    thing worth proving is the *token*: it must be minted for an authenticated
+    tenant user, it must name the agent the caller asked for, it must carry an
+    expiry, and it must not be reusable across tenants. Everything here is a
+    read or a create against the check stack; nothing is dialled.
+    """
+    base = base_url.rstrip("/")
+    env_map = load_env_file(env_file)
+    checks: list[dict[str, Any]] = []
+
+    def record(name: str, ok: bool, detail: str) -> None:
+        row = record_step(name, ok, detail)
+        checks.append({"check": name, "status": row["status"], "detail": detail})
+
+    with httpx.Client(base_url=base, timeout=15.0) as client:
+        token, _ = _ensure_owner_session(client, env_map)
+        headers = {"Authorization": f"Bearer {token}"}
+
+        r_agents = client.get("/api/agents", headers=headers)
+        agents_body = r_agents.json() if r_agents.status_code == 200 else {}
+        agents = (
+            agents_body.get("agents", [])
+            if isinstance(agents_body, dict)
+            else (agents_body if isinstance(agents_body, list) else [])
+        )
+        agent_id = ""
+        for candidate in agents:
+            if isinstance(candidate, dict) and candidate.get("id"):
+                agent_id = str(candidate["id"])
+                break
+        record(
+            "GET /api/agents (an agent exists to place a web call against)",
+            r_agents.status_code == 200 and bool(agent_id),
+            f"status={r_agents.status_code} agents={len(agents)} agent_id={agent_id or 'none'}",
+        )
+
+        r_create = client.post(
+            "/api/calls/web-calls",
+            headers={**headers, "Idempotency-Key": f"smoke-webcall-{uuid.uuid4().hex[:12]}"},
+            json={
+                "agent_id": agent_id,
+                "customer_name": "Smoke Caller",
+                "ttl_minutes": 15,
+            },
+        )
+        created = r_create.json() if r_create.status_code == 201 else {}
+        record(
+            "POST /api/calls/web-calls (201 + token minted)",
+            r_create.status_code == 201 and bool(created.get("token")),
+            f"status={r_create.status_code} token_present={bool(created.get('token'))}",
+        )
+
+        expires_at = str(created.get("expires_at") or "")
+        record(
+            "web-call token carries an expiry",
+            bool(expires_at),
+            f"expires_at={expires_at or 'missing'}",
+        )
+        record(
+            "web-call token is bound to the requested agent",
+            str(created.get("agent_id") or "") == agent_id,
+            f"expected={agent_id} got={created.get('agent_id')}",
+        )
+
+        # An unauthenticated create must be refused: a token minted for nobody
+        # is a token anyone can mint.
+        r_anon = client.post(
+            "/api/calls/web-calls",
+            json={"agent_id": agent_id, "ttl_minutes": 15},
+        )
+        record(
+            "POST /api/calls/web-calls without auth is refused",
+            r_anon.status_code in (401, 403),
+            f"status={r_anon.status_code}",
+        )
+
+    return {
+        "mode": "web-call-token",
+        "status": "PASS",
+        "agent_id": agent_id,
+        "checks": checks,
+    }
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="VoxDesk in-stack Docker smoke runner.")
     sub = parser.add_subparsers(dest="subcommand", required=True)
@@ -551,19 +649,52 @@ def main(argv: list[str] | None = None) -> int:
     p_ws.add_argument("--base", default="ws://127.0.0.1:8000")
     p_ws.add_argument("--env-file", default=".env.check")
 
+    p_wc = sub.add_parser(
+        "web-call-token",
+        help="Run the browser web-call token flow smoke checks.",
+    )
+    p_wc.add_argument("--base", default="http://127.0.0.1:8000")
+    p_wc.add_argument("--env-file", default=".env.check")
+
+    for subparser in (p_http, p_rt, p_tw, p_ws, p_wc):
+        subparser.add_argument(
+            "--json",
+            action="store_true",
+            help="emit the recorded steps as a JSON document on stdout",
+        )
+
     args = parser.parse_args(argv)
     env_path = Path(args.env_file)
     if not env_path.is_absolute():
         env_path = REPO_ROOT / env_path
 
+    result: dict[str, Any] | None = None
     if args.subcommand == "http":
-        run_http_smoke(args.base, env_path)
+        result = run_http_smoke(args.base, env_path)
     elif args.subcommand == "realtime":
-        run_realtime_smoke(args.gateway, args.media, env_path)
+        result = run_realtime_smoke(args.gateway, args.media, env_path)
     elif args.subcommand == "twilio":
-        run_twilio_smoke(args.base, env_path)
+        result = run_twilio_smoke(args.base, env_path)
     elif args.subcommand == "call-ws":
-        asyncio.run(_run_call_ws_async(args.base, env_path))
+        result = asyncio.run(_run_call_ws_async(args.base, env_path))
+    elif args.subcommand == "web-call-token":
+        result = run_web_call_token_smoke(args.base, env_path)
+
+    if args.json:
+        print(
+            json.dumps(
+                {
+                    "subcommand": args.subcommand,
+                    "steps": STEPS,
+                    "step_count": len(STEPS),
+                    "passed": sum(1 for step in STEPS if step["status"] == "PASS"),
+                    "failed": sum(1 for step in STEPS if step["status"] == "FAIL"),
+                    "result": result,
+                },
+                indent=2,
+                default=str,
+            )
+        )
     return 0
 
 

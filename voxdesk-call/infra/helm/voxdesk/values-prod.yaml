@@ -1,0 +1,107 @@
+# =============================================================================
+# VoxDesk — production Helm values
+#
+# Deployed with:
+#   helm upgrade --install voxdesk infra/helm/voxdesk \
+#     -f infra/helm/voxdesk/values.yaml -f infra/helm/voxdesk/values-prod.yaml \
+#     --set image.tag=<immutable-sha-tag>
+#
+# Validated (never applied) by scripts/verify_deploy_assets.sh:
+#   helm lint / helm template / kubeconform
+#
+# Nothing in this file is a secret. Runtime credentials come from
+# `secrets.existingSecret` (a Secret the operator creates out of band); the
+# chart never renders a credential value, and .gitignore keeps every *.env and
+# *.pem out of the repository.
+# =============================================================================
+
+image:
+  repository: "ghcr.io/voxdesk/voxdesk-call"
+  # An immutable, content-addressed tag. `:latest` would make a rollback a
+  # guess about what was running before, so it is not used here and
+  # tests/deployment/test_deploy_assets_static.py fails if it ever appears.
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+
+# The HPA owns the replica count when autoscaling is on; replicaCount is the
+# floor used only when it is off.
+replicaCount: 3
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 20
+  targetCPUUtilizationPercentage: 70
+  targetConcurrentCallsPerPod: "25"
+  scaleDownStabilizationWindowSeconds: 300
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+
+# Termination grace must exceed drain.timeoutSeconds + flushTimeoutSeconds or
+# Kubernetes SIGKILLs the pod mid-drain and in-flight calls are lost.
+terminationGracePeriodSeconds: 60
+drain:
+  timeoutSeconds: 45
+  flushTimeoutSeconds: 10
+  preStopSleepSeconds: 5
+
+config:
+  appEnv: production
+  # Injected from the Secret, not from this file. Placeholders here would be
+  # rendered into the Deployment and could shadow the real value.
+  databaseUrl: "postgresql+asyncpg://voxdesk:voxdesk@postgres:5432/voxdesk"
+  redisUrl: "redis://redis:6379/0"
+  # TRUSTED_HOSTS must name the public API hostnames in production; the
+  # application refuses to boot with a wildcard (app/core/config.py).
+  trustedHosts: "api.example.com"
+
+secrets:
+  existingSecret: voxdesk-runtime
+
+service:
+  type: ClusterIP
+  port: 8000
+
+ingress:
+  enabled: true
+  className: "nginx"
+  host: "api.example.com"
+  tls:
+    - secretName: voxdesk-api-tls
+      hosts:
+        - "api.example.com"
+
+resources:
+  requests: {cpu: 500m, memory: 512Mi}
+  limits: {cpu: "2", memory: 2Gi}
+
+# Container hardening (see values.yaml for the defaults this overrides).
+# Production runs with a read-only root filesystem; /tmp is an emptyDir.
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  capabilities:
+    drop: ["ALL"]
+
+probes:
+  readiness: /health/ready
+  liveness: /health
+  dependencies: /health/dependencies
+
+platform:
+  enabled: true
+  # Production stores branding assets in S3 rather than on a pod filesystem, so
+  # the Deployment carries no writable asset volume.
+  brandingAssetBucket: "voxdesk-brand-assets-prod"
+  brandingAssetRegion: "us-east-1"
+  brandingAssetKmsKeyId: ""
+
+scheduler:
+  enabled: true
+  resources:
+    requests: {cpu: 200m, memory: 256Mi}
+    limits: {cpu: "1", memory: 1Gi}

@@ -16,7 +16,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.asymmetric.utils import encode_dss_signature
 
-from app.platform_v2.errors import ProviderRejected, ValidationFailed
+from app.platform_v2.errors import ValidationFailed
 from app.platform_v2.mobile import apns
 
 

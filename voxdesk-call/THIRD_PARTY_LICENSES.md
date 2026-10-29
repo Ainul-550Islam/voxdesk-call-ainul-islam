@@ -5,7 +5,7 @@ from the repository dependency manifests (`requirements.txt`, `package.json`,
 `go.mod`, `Cargo.lock`) and `assets/ambient/*.wav`.
 
 - **Python Backend Components**: 52 (`sbom/python-backend.cdx.json`)
-- **Node.js / TypeScript Components**: 24 (`sbom/node-dashboard.cdx.json`)
+- **Node.js / TypeScript Components**: 25 (`sbom/node-dashboard.cdx.json`)
 - **Go Module Components**: 24 (`sbom/go-services.cdx.json`)
 - **Rust Crate Components**: 159 (`sbom/rust-services.cdx.json`)
 - **Bundled Ambient Audio Beds**: 5 (`assets/ambient/*.wav`)
@@ -75,7 +75,7 @@ and resonator synthesis (`numpy`). No third-party copyrighted recordings are bun
 | `psutil` | `7.2.2` | BSD-3-Clause | `requirements.txt` |
 | `pydantic` | `2.10.6` | MIT | `requirements.txt` |
 | `pydantic-settings` | `2.7.0` | MIT | `requirements.txt` |
-| `pypdf` | `6.20.0` | BSD-3-Clause | `requirements.txt` |
+| `pypdf` | `6.21.2` | BSD-3-Clause | `requirements.txt` |
 | `pytest` | `8.3.4` | MIT | `requirements.txt` |
 | `pytest-asyncio` | `0.25.0` | Apache 2.0 | `requirements.txt` |
 | `python-docx` | `1.2.0` | MIT | `requirements.txt` |
@@ -101,6 +101,7 @@ and resonator synthesis (`numpy`). No third-party copyrighted recordings are bun
 |---|---|---|---|
 | `@babel/parser` | `7.29.8` | MIT / Apache-2.0 | `dashboard/package.json` |
 | `@playwright/test` | `1.64.0` | MIT / Apache-2.0 | `dashboard/package.json` |
+| `@tanstack/react-query` | `5.62.11` | MIT / Apache-2.0 | `dashboard/package.json` |
 | `@testing-library/jest-dom` | `6.9.1` | MIT / Apache-2.0 | `dashboard/package.json` |
 | `@testing-library/react` | `16.3.3` | MIT / Apache-2.0 | `dashboard/package.json` |
 | `@testing-library/user-event` | `14.6.7` | MIT / Apache-2.0 | `dashboard/package.json` |

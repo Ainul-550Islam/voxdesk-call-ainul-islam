@@ -75,3 +75,25 @@ reports/check/chunks/*.xml
 reports/check/junit/
 !reports/check/.gitkeep
 !reports/check/*.md
+
+# >>> voxdesk:repo-cleanup >>>
+# Managed by scripts/repo_cleanup.sh -- keep the markers intact.
+# Run output from local runs and CI.
+*.log
+logs/
+# Previous delivery archives; the current one is produced on demand.
+*.zip
+# Generated evidence: regenerate it, do not commit it. The small *_SUMMARY.json
+# files are the committed record of a CI run and are deliberately re-included.
+reports/**
+!reports/**/*.md
+!reports/*_SUMMARY.json
+!reports/deploy_asset_validation.json
+!reports/.gitkeep
+evidence/
+coverage.xml
+htmlcov/
+.pytest_cache/
+# The 8.5 MB pytest dump has been superseded by reports/TEST_EVIDENCE_SUMMARY.json.
+FINAL_TEST_RESULTS.json
+# <<< voxdesk:repo-cleanup <<<

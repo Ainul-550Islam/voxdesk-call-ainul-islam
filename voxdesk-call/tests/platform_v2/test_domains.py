@@ -268,10 +268,8 @@ async def test_an_unverified_host_is_not_routable_even_when_it_resolves_in_dns(p
     row, token = await domains.claim(
         db, tenant_id=plat_scope.tenant.id, domain="support.acme.test", commit=True
     )
-    resolver = FakeResolver(
-        {(row.ownership_record_name, "TXT"): [token], (row.domain, "CNAME"): [row.cname_target]}
-    )
-    # Ownership passes but the CNAME is missing, so the row stays failed.
+    # Ownership passes but the CNAME is missing, so the row stays failed. The
+    # resolver handed in resolves the TXT record only.
     outcome = await domains.verify(
         db,
         tenant_id=plat_scope.tenant.id,

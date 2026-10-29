@@ -103,7 +103,7 @@ def test_loader_script_escapes_quotes_and_ampersands():
     assert json.loads(decoded)["product_name"] == 'Acme & "Sons"'
     # The raw literal is still valid JSON: escaping `<`, `>` and `&` changes nothing
     # about the value, it only stops the sequence ending the surrounding <script>.
-    assert json.loads(script[start:end])["product_name"] == 'Acme & "Sons"' 
+    assert json.loads(script[start:end])["product_name"] == 'Acme & "Sons"'
 
 
 def test_embed_origin_must_be_present_and_authorised():
