@@ -13,10 +13,10 @@ treating them as current validation.
 
 | Plane / Test Suite | Runner | Test Files / Packages | Verified Test Cases | Failures / Errors | Status |
 |---|---|---:|---:|---:|---|
-| **Python Backend Total Collected (`tests/`)** | `pytest --collect-only` | `583` files | `6416` collected; collection only | `not measured` | **MEASURED** |
+| **Python Backend Total Collected (`tests/`)** | `pytest --collect-only` | `583` files | `6417` collected; collection only | `not measured` | **MEASURED** |
 | **Feature Matrix Evidence Suite** | `pytest --junitxml` | `evidence/junit/feature_evidence.xml` | `467` passed, `7` skipped (`246.79s`) | `0` | **PASS** |
-| **Batch 07 platform-v2 suites** | `make batch07-check` | `reports/check/batch07/junit.xml` | `744` passed, `0` skipped | `0` | **PASS** |
-| **Batch 07 truth guards** | `make batch07-check` | `reports/check/batch07/truth.xml` | `96` passed, `0` skipped | `0` | **PASS** |
+| **Batch 07 platform-v2 suites** | `make batch07-check` | `reports/check/batch07/junit.xml` | `0` passed, `0` skipped | `0` | **NOT MEASURED** |
+| **Batch 07 truth guards** | `make batch07-check` | `reports/check/batch07/truth.xml` | `0` passed, `0` skipped | `0` | **NOT MEASURED** |
 | **Vite React Dashboard (`dashboard/`)** | `vitest run` | Historical report; not rerun by Batch 07 | `575` previously reported | `not measured in Batch 07` | **HISTORICAL** |
 | **Next.js Console (`dashboard-next/`)** | `vitest run` + `tsc --noEmit` | Batch 07 raw log: `evidence/batch07/batch07-check-final6.log` | `85` passed, build passed | `0` | **PASS** |
 | **Rust / Go / C++ services** | Cargo, Go, and CTest | Rust/Go toolchains absent; C++ tests not included in Batch 07 (g++ present, clang++ absent); see `evidence/batch07/toolchain-probes.log` | `not run` | `not measured` | **NOT RUN** |
@@ -42,5 +42,5 @@ treating them as current validation.
 
 ## 3. Live Provider Opt-In Tests
 
-- JUnit cases: `10`; skipped without live provider credentials: `10`.
+- JUnit cases: `0`; skipped without live provider credentials: `0`.
 - See `evidence/batch07/batch07-live-final2.log` for the raw run output.

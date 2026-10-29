@@ -17,6 +17,8 @@ source = ["app"]
 branch = true
 
 [tool.coverage.report]
+# Floor = measured branch coverage of app/ (65.86%) rounded down. Raise it when coverage rises.
+fail_under = 65
 exclude_lines = [
     "pragma: no cover",
     "if TYPE_CHECKING:",

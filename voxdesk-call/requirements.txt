@@ -93,6 +93,23 @@ alembic==1.14.0
 # these instead of relying on incidental transitive availability.
 jsonschema==4.26.0
 lxml==6.1.1
+# Imported directly by app/platform_v2/whitelabel/dns.py (custom-domain DNS
+# verification). Already present transitively via email-validator; pinned here
+# so the direct import is declared. Verified: `pip check` clean on this pin set.
+dnspython==2.9.0
+# Imported directly by app/platform_v2/mobile/apns.py: APNs requires HTTP/2 and
+# httpx selects it only when `h2` is importable. Pinned to the 4.x line that
+# httpx 0.28.1 supports.
+h2==4.4.1
+# Imported lazily by app/compliance_v2/kms/azure_keyvault.py (Azure Key Vault
+# envelope-encryption provider). Only loaded when the Azure KMS provider is
+# selected; declared so the source-import check and clean installs agree.
+# Imported directly by app/platform_v2/whitelabel/assets.py (XML parsing with
+# DTDs refused). Already present transitively via nltk; pinned so the import is
+# declared.
+defusedxml==0.7.1
+azure-identity==1.27.0
+azure-keyvault-keys==4.11.3
 # Optional runtime adapters are version-pinned so configured Kubernetes/container
 # deployments can instantiate the supported clients reproducibly. Adapters report
 # unavailable if credentials/endpoints are not configured; package presence alone
@@ -142,6 +159,10 @@ pypdf==6.20.0
 # is an advertised storage backend (`KNOWLEDGE_STORAGE_BACKEND=s3`), so a
 # clean install with that setting would fail on the first document write.
 boto3==1.35.90
+# Imported directly by app/compliance_v2/siem/sink_s3_jsonl.py and
+# app/platform_v2/whitelabel/assets.py. Pinned to the release boto3 1.35.90
+# requires (botocore>=1.35.90,<1.36.0), so the direct import is declared.
+botocore==1.35.99
 
 # `app/knowledge/extractors/docx.py` imports `docx` lazily and degrades to an
 # ExtractionError("DOCX support is not installed"), so like pypdf the omission

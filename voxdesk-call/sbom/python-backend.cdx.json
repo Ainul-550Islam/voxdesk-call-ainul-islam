@@ -4,7 +4,7 @@
   "serialNumber": "urn:uuid:00000000-0000-4000-8000-571a4a9af517",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-10-28T05:29:29Z",
+    "timestamp": "2026-10-28T15:10:17Z",
     "tools": [
       {
         "vendor": "VoxDesk",
@@ -307,6 +307,71 @@
     },
     {
       "type": "library",
+      "name": "dnspython",
+      "version": "2.9.0",
+      "purl": "pkg:pypi/dnspython@2.9.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "ISC"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "h2",
+      "version": "4.4.1",
+      "purl": "pkg:pypi/h2@4.4.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "defusedxml",
+      "version": "0.7.1",
+      "purl": "pkg:pypi/defusedxml@0.7.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "PSFL"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "azure-identity",
+      "version": "1.27.0",
+      "purl": "pkg:pypi/azure-identity@1.27.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "azure-keyvault-keys",
+      "version": "4.11.3",
+      "purl": "pkg:pypi/azure-keyvault-keys@4.11.3",
+      "licenses": [
+        {
+          "license": {
+            "name": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
       "name": "kubernetes",
       "version": "32.0.1",
       "purl": "pkg:pypi/kubernetes@32.0.1",
@@ -401,6 +466,19 @@
       "name": "boto3",
       "version": "1.35.90",
       "purl": "pkg:pypi/boto3@1.35.90",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache License 2.0"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "botocore",
+      "version": "1.35.99",
+      "purl": "pkg:pypi/botocore@1.35.99",
       "licenses": [
         {
           "license": {
