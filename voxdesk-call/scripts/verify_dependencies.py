@@ -66,6 +66,10 @@ DIST_IMPORT_OVERRIDES: dict[str, str] = {
     "google-auth-oauthlib": "google_auth_oauthlib",
     "pipecat-ai": "pipecat",
     "pynacl": "nacl",
+    "dnspython": "dns",
+    "azure-identity": "azure.identity",
+    "azure-keyvault-keys": "azure.keyvault.keys",
+    "python-hcl2": "hcl2",
 }
 
 # Top-level modules imported by the project that are provided transitively by a
@@ -74,9 +78,12 @@ DIST_IMPORT_OVERRIDES: dict[str, str] = {
 TRANSITIVE_ALLOWLIST: frozenset[str] = frozenset({
     "pydantic_core",   # pinned transitive dependency of pydantic
     "google",          # google-auth namespace (dep of google-api-python-client)
+    "azure",           # azure namespace (azure-identity, azure-keyvault-keys)
+    "dns",             # top-level import name of dnspython
     "audioop",         # stdlib in Python <=3.12; provided by audioop-lts on Python 3.13
     "fakeredis",       # validation/test dependency in requirements-validation.txt
     "respx",           # validation/test dependency in requirements-validation.txt
+    "hcl2",            # test dependency python-hcl2 in requirements-test.txt
 })
 
 # The project's own top-level packages — never treated as third-party.
@@ -86,6 +93,8 @@ LOCAL_PACKAGES: frozenset[str] = frozenset({
     "scripts",
     "loadtest",
     "sdk",
+    "security_harness",
+    "check_summary",
     "strip_padding_markers",
     "verify_retired_references",
 })

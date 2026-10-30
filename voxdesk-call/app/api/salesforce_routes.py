@@ -203,11 +203,37 @@ def _now_iso() -> str:
     return _now().isoformat()
 
 
-def _not_implemented(message: str = "Salesforce runtime operation is not configured.") -> HTTPException:
+def _validation_error(
+    message: str = "Invalid Salesforce request payload.",
+) -> HTTPException:
     return HTTPException(
-        status_code=501,
+        status_code=422,
         detail={
-            "code": "SALESFORCE_RUNTIME_NOT_IMPLEMENTED",
+            "code": "VALIDATION_ERROR",
+            "message": message,
+        },
+    )
+
+
+def _not_configured(
+    message: str = "Salesforce integration is not configured for this tenant.",
+) -> HTTPException:
+    return HTTPException(
+        status_code=409,
+        detail={
+            "code": "NOT_CONFIGURED",
+            "message": message,
+        },
+    )
+
+
+def _upstream_error(
+    message: str = "Upstream Salesforce API rejected or failed the operation.",
+) -> HTTPException:
+    return HTTPException(
+        status_code=502,
+        detail={
+            "code": "UPSTREAM_PROVIDER_ERROR",
             "message": message,
         },
     )
@@ -216,7 +242,7 @@ def _not_implemented(message: str = "Salesforce runtime operation is not configu
 def _require_key_ring() -> crypto.KeyRing:
     key_ring = crypto.key_ring_from_settings()
     if key_ring is None:
-        raise _not_implemented(
+        raise _not_configured(
             "CRM credential encryption (CRM_ENCRYPTION_KEYS) is not configured."
         )
     return key_ring
@@ -375,10 +401,13 @@ async def _build_provider(
     conn = await _get_connection(session, tenant_id)
     if conn is None:
         if require_configured:
-            raise _not_implemented("Salesforce connection is not configured for this tenant.")
-        raise HTTPException(status_code=404, detail="salesforce connection not found")
+            raise _not_configured("Salesforce connection is not configured for this tenant.")
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "NOT_FOUND", "message": "salesforce connection not found"},
+        )
     if not conn.is_active:
-        raise HTTPException(status_code=422, detail="salesforce connection is inactive")
+        raise _not_configured("Salesforce connection is inactive for this tenant.")
 
     key_ring = _require_key_ring()
     credentials: dict[str, Any] = {}
@@ -453,7 +482,7 @@ async def connect_salesforce(
 ):
     """POST /api/integrations/salesforce/connect — Connect Salesforce with AES-GCM encrypted tokens."""
     if payload is None:
-        raise _not_implemented("Salesforce connect payload is required.")
+        raise _validation_error("Salesforce connect payload is required.")
     await enforce_tenant_rate_limit(ctx.tenant_id, "salesforce_connect", 20)
 
     if isinstance(x_idempotency_key, str) and x_idempotency_key.strip():
@@ -524,12 +553,12 @@ async def oauth_authorize(
 ):
     """POST /api/integrations/salesforce/oauth/authorize — Initiate OAuth2 + PKCE flow."""
     if payload is None:
-        raise _not_implemented("Salesforce OAuth authorize payload is required.")
+        raise _validation_error("Salesforce OAuth authorize payload is required.")
     await enforce_tenant_rate_limit(ctx.tenant_id, "salesforce_oauth_authorize", 30)
 
     client_id = payload.client_id or getattr(settings, "salesforce_client_id", "")
     if not client_id:
-        raise _not_implemented("Salesforce OAuth client_id is not configured.")
+        raise _not_configured("Salesforce OAuth client_id is not configured.")
 
     state_token = payload.state or secrets.token_urlsafe(24)
     verifier, challenge = generate_pkce_pair()
@@ -545,7 +574,7 @@ async def oauth_authorize(
             login_url=payload.login_url,
         )
     except CrmConfigurationError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from None
+        raise _validation_error(str(exc)) from None
 
     await session.execute(
         delete(SalesforceOAuthState).where(
@@ -589,7 +618,7 @@ async def oauth_callback(
 ):
     """POST /api/integrations/salesforce/oauth/callback — Exchange OAuth2 code + PKCE verifier."""
     if payload is None:
-        raise _not_implemented("Salesforce OAuth callback payload is required.")
+        raise _validation_error("Salesforce OAuth callback payload is required.")
     await enforce_tenant_rate_limit(ctx.tenant_id, "salesforce_oauth_callback", 30)
 
     state_row = (
@@ -616,7 +645,7 @@ async def oauth_callback(
         settings, "salesforce_client_secret", ""
     )
     if not client_id or not client_secret:
-        raise _not_implemented(
+        raise _not_configured(
             "Salesforce OAuth client_id and client_secret are not configured."
         )
 
@@ -640,7 +669,7 @@ async def oauth_callback(
             login_url=login_url,
         )
     except CrmError as exc:
-        raise HTTPException(status_code=502, detail=exc.safe_message) from None
+        raise _upstream_error(exc.safe_message) from None
 
     resolved_instance = validate_salesforce_instance_url(
         str(token_data.get("instance_url") or payload.instance_url or login_url)
@@ -784,9 +813,9 @@ async def refresh_token(
     try:
         token_data = await provider.refresh_access_token()
     except CrmConfigurationError as exc:
-        raise _not_implemented(str(exc)) from None
+        raise _not_configured(str(exc)) from None
     except CrmError as exc:
-        raise HTTPException(status_code=502, detail=exc.safe_message) from None
+        raise _upstream_error(exc.safe_message) from None
 
     updated_creds = dict(provider.context.credentials)
     updated_creds["access_token"] = str(token_data["access_token"])
@@ -879,7 +908,7 @@ async def _list_entity_route(
     session: AsyncSession,
 ) -> SalesforceEntityListOut:
     await enforce_tenant_rate_limit(ctx.tenant_id, f"salesforce_{entity_type}", 30)
-    conn, provider = await _build_provider(session, ctx.tenant_id, require_configured=False)
+    conn, provider = await _build_provider(session, ctx.tenant_id, require_configured=True)
     clean_search = search if isinstance(search, str) else None
     try:
         records = await provider.query_entities(
@@ -898,7 +927,7 @@ async def _list_entity_route(
     except HierarchyError as exc:
         raise to_http(exc) from None
     except CrmError as exc:
-        raise HTTPException(status_code=502, detail=exc.safe_message) from None
+        raise _upstream_error(exc.safe_message) from None
 
 
 @router.get("/contacts", response_model=SalesforceEntityListOut)
@@ -975,16 +1004,19 @@ async def get_entity(
     session: AsyncSession = Depends(get_session),
 ):
     if entity_type not in ALLOWED_ENTITY_TYPES:
-        raise HTTPException(status_code=422, detail=f"invalid entity type {entity_type}")
+        raise _validation_error(f"invalid entity type {entity_type}")
     await enforce_tenant_rate_limit(ctx.tenant_id, f"salesforce_get_{entity_type}", 60)
-    _, provider = await _build_provider(session, ctx.tenant_id, require_configured=False)
+    _, provider = await _build_provider(session, ctx.tenant_id, require_configured=True)
     try:
         raw = await provider.get_sobject(entity_type, entity_id)
         return _build_salesforce_entity(entity_type, raw)
     except CrmNotFound:
-        raise HTTPException(status_code=404, detail=f"{entity_type} {entity_id} not found") from None
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "NOT_FOUND", "message": f"{entity_type} {entity_id} not found"},
+        ) from None
     except CrmError as exc:
-        raise HTTPException(status_code=502, detail=exc.safe_message) from None
+        raise _upstream_error(exc.safe_message) from None
 
 
 # ---------------------------------------------------------------------------
@@ -1001,7 +1033,7 @@ async def salesforce_writeback(
 ):
     """POST /api/integrations/salesforce/writeback — Real write-back to Salesforce."""
     if payload is None:
-        raise _not_implemented("Salesforce writeback payload is required.")
+        raise _validation_error("Salesforce writeback payload is required.")
     await enforce_tenant_rate_limit(ctx.tenant_id, "salesforce_writeback", 60)
 
     idem_key = payload.idempotency_key or (
@@ -1035,8 +1067,10 @@ async def salesforce_writeback(
             fields=payload.fields,
             entity_id=payload.entity_id,
         )
+    except CrmConfigurationError as exc:
+        raise _validation_error(str(exc)) from None
     except CrmError as exc:
-        raise HTTPException(status_code=502, detail=exc.safe_message) from None
+        raise _upstream_error(exc.safe_message) from None
 
     call_id_val = payload.call_id or uuid.UUID(int=0)
     log_row = CrmWritebackLog(
@@ -1139,7 +1173,10 @@ async def sync_salesforce(
 ):
     """POST /api/integrations/salesforce/sync — Fetch and verify entities across types."""
     if payload is None:
-        raise _not_implemented("Salesforce sync payload is required.")
+        raise _validation_error("Salesforce sync payload is required.")
+    for etype in payload.entity_types:
+        if etype not in ALLOWED_ENTITY_TYPES:
+            raise _validation_error(f"invalid entity type {etype!r}")
     await enforce_tenant_rate_limit(ctx.tenant_id, "salesforce_sync", 10)
     conn, provider = await _build_provider(session, ctx.tenant_id, require_configured=True)
     started_at = _now_iso()
@@ -1149,7 +1186,7 @@ async def sync_salesforce(
             rows = await provider.query_entities(etype, limit=payload.limit_per_type)
             total_fetched += len(rows)
     except CrmError as exc:
-        raise HTTPException(status_code=502, detail=exc.safe_message) from None
+        raise _upstream_error(exc.safe_message) from None
 
     conn.last_sync_at = _now()
     sync_id = uuid.uuid4()
@@ -1264,7 +1301,7 @@ async def api_limits(
     try:
         limits = await provider.get_limits()
     except CrmError as exc:
-        raise HTTPException(status_code=502, detail=exc.safe_message) from None
+        raise _upstream_error(exc.safe_message) from None
     return {"limits": limits, "checked_at": _now_iso()}
 
 
@@ -1280,7 +1317,7 @@ async def describe_objects(
     try:
         meta = await provider.describe_sobject(target)
     except CrmError as exc:
-        raise HTTPException(status_code=502, detail=exc.safe_message) from None
+        raise _upstream_error(exc.safe_message) from None
     return {"sobject": target, "describe": meta, "checked_at": _now_iso()}
 
 
@@ -1292,9 +1329,9 @@ async def bulk_writeback(
 ):
     """POST /api/integrations/salesforce/bulk/writeback — Bulk writeback up to 50 items."""
     if payloads is None:
-        raise _not_implemented("Salesforce bulk writeback payloads are required.")
+        raise _validation_error("Salesforce bulk writeback payloads are required.")
     if len(payloads) > 50:
-        raise HTTPException(status_code=422, detail="bulk writeback maximum is 50 items")
+        raise _validation_error("bulk writeback maximum is 50 items")
 
     results = []
     for item in payloads:

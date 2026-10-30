@@ -214,6 +214,16 @@ secret, and E2E mode off. Those checks are enforced by
 | `make verify-truth` | every number quoted in the docs equals the code |
 | `make verify-hygiene` | no generated artifact is tracked by git |
 
+## Frontends
+
+* `dashboard/` (Vite + React 18) is the **canonical production operator console**
+  built into `Dockerfile` and served by FastAPI/Caddy in `docker-compose.prod.yml`
+  and `infra/helm/voxdesk`.
+* `dashboard-next/` (Next.js 14 App Router) is an **experimental, opt-in shadow
+  console** (`dashboard-next/README.md`) validated in CI (`npm test`,
+  `tsc --noEmit`, `next build`) and not deployed by default in production compose
+  or Helm manifests.
+
 ## Deployment
 
 * Single host: `docker compose -f docker-compose.prod.yml up --build`

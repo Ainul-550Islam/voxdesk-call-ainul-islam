@@ -209,8 +209,8 @@ def test_migration_chain_is_linear_with_no_gaps():
     assert ids, "no migrations found"
     # Exactly one head: the revision nobody points down_revision at.
     heads = [r for r in ids if r not in {d for d in ids.values() if d}]
-    # Objective reason: 0068_platform_v2 is the current sole head.
-    assert heads == ["0068_platform_v2"]
+    # corrected: 0069_voice_demo_sessions is now the current sole head.
+    assert heads == ["0069_voice_demo_sessions"]
     # Exactly one base (down_revision None), and a single linear walk.
     bases = [r for r, d in ids.items() if d is None]
     assert bases == ["0001_baseline"]

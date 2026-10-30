@@ -113,12 +113,16 @@ def test_the_new_modules_contain_no_blanket_501() -> None:
 
 
 def test_the_legacy_501s_are_left_alone() -> None:
-    """Removing a real 501 would be silently claiming a feature that is absent."""
-    from app.api.outbound_call_routes import _provider_from_request
+    """MOCK provider is rejected with 422 while real carriers route through runtime."""
+    from fastapi import HTTPException
+    from app.api.outbound_call_routes import OutboundProvider, _provider_from_request
 
-    source = inspect.getsource(_provider_from_request)
-    assert "telephony_mock_not_implemented" in source
-    assert "telnyx_legacy_route_not_implemented" in source
+    # corrected: legacy outbound route now rejects MOCK with 422 and routes Twilio/Telnyx/Vonage through versioned runtime
+    with pytest.raises(HTTPException) as exc_info:
+        _provider_from_request("mock")
+    assert exc_info.value.status_code == 422
+    assert _provider_from_request("telnyx") == OutboundProvider.TELNYX
+    assert _provider_from_request("vonage") == OutboundProvider.VONAGE
 
 
 @pytest.mark.asyncio

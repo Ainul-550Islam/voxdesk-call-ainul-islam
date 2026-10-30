@@ -21,7 +21,7 @@ flowchart TB
         SIP[SIP gateway / Go]
     end
     subgraph App["FastAPI application"]
-        API["REST API (1511 routes)"]
+        API["REST API (1524 routes)"]
         WS["Web call / media WebSocket"]
         Wh[Webhook signature verification]
     end
@@ -70,10 +70,10 @@ exclude generated/vendor/build trees; collected tests are not passed tests.
 
 ```json
 {
-  "source_files": 2068,
-  "source_physical_lines": 418861,
-  "registered_routes": 1511,
-  "collected_pytest_nodes": 6704,
+  "source_files": 2082,
+  "source_physical_lines": 424487,
+  "registered_routes": 1524,
+  "collected_pytest_nodes": 6738,
   "passed_tests": "not measured by collection"
 }
 ```
@@ -121,6 +121,16 @@ secret, and E2E mode off. Those checks are enforced by
 | `bash scripts/verify_deploy_assets.sh` | validates Helm, Terraform and Caddy for real |
 | `make verify-truth` | every number quoted in the docs equals the code |
 | `make verify-hygiene` | no generated artifact is tracked by git |
+
+## Frontends
+
+* `dashboard/` (Vite + React 18) is the **canonical production operator console**
+  built into `Dockerfile` and served by FastAPI/Caddy in `docker-compose.prod.yml`
+  and `infra/helm/voxdesk`.
+* `dashboard-next/` (Next.js 14 App Router) is an **experimental, opt-in shadow
+  console** (`dashboard-next/README.md`) validated in CI (`npm test`,
+  `tsc --noEmit`, `next build`) and not deployed by default in production compose
+  or Helm manifests.
 
 ## Deployment
 

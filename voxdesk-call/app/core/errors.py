@@ -215,11 +215,11 @@ async def _http_exception_handler(request: Request, exc: StarletteHTTPException)
     rid = request_id_from(request)
     status = exc.status_code
 
-    if status == 501:
-        # Explicitly unimplemented operations carry a stable, non-secret
-        # machine-readable reason so clients can distinguish an unavailable
-        # integration from a server failure. This is not a successful stub.
-        log.warning("http_exception_not_implemented", status=status, request_id=rid, detail=exc.detail)
+    if status == 501 or (status in (502, 503, 504) and isinstance(exc.detail, dict)):
+        # Explicitly unimplemented or structured upstream/capability refusals carry a
+        # stable, non-secret machine-readable reason so clients can distinguish an
+        # unavailable integration/transport from a server failure.
+        log.warning("http_exception_structured_5xx", status=status, request_id=rid, detail=exc.detail)
         return JSONResponse(
             status_code=status,
             content={"detail": exc.detail},

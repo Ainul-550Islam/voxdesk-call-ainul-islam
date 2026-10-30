@@ -13,8 +13,8 @@ treating them as current validation.
 
 | Plane / Test Suite | Runner | Test Files / Packages | Verified Test Cases | Failures / Errors | Status |
 |---|---|---:|---:|---:|---|
-| **Python Backend Total Collected (`tests/`)** | `pytest --collect-only` | `583` files | `6417` collected; collection only | `not measured` | **MEASURED** |
-| **Feature Matrix Evidence Suite** | `pytest --junitxml` | `evidence/junit/feature_evidence.xml` | `467` passed, `7` skipped (`246.79s`) | `0` | **PASS** |
+| **Python Backend Total Collected (`tests/`)** | `pytest --collect-only` | `617` files | `6738` collected; collection only | `not measured` | **MEASURED** |
+| **Feature Matrix Evidence Suite** | `pytest --junitxml` | `evidence/junit/feature_evidence.xml` | `489` passed, `7` skipped (`68.78s`) | `0` | **PASS** |
 | **Batch 07 platform-v2 suites** | `make batch07-check` | `reports/check/batch07/junit.xml` | `0` passed, `0` skipped | `0` | **NOT MEASURED** |
 | **Batch 07 truth guards** | `make batch07-check` | `reports/check/batch07/truth.xml` | `0` passed, `0` skipped | `0` | **NOT MEASURED** |
 | **Vite React Dashboard (`dashboard/`)** | `vitest run` | Historical report; not rerun by Batch 07 | `575` previously reported | `not measured in Batch 07` | **HISTORICAL** |
@@ -34,7 +34,7 @@ treating them as current validation.
 | **Fake-Success Scanner** | `python scripts/verify_no_fake_success.py` | `0` unallowlisted findings; `scripts/fake_success_allowlist.txt` is `0` bytes |
 | **Dependency Pin Verification** | `python scripts/verify_dependencies.py` | `OK: all third-party imports are declared in requirements.txt` |
 | **Protobuf / OpenAPI / AsyncAPI Contracts** | `python scripts/verify_contracts.py` | `OK: contracts verified` |
-| **Alembic Single Head Verification** | `python -m alembic heads` | `0068_platform_v2 (head)` (`322` registered tables) |
+| **Alembic Single Head Verification** | `python -m alembic heads` | `0069_voice_demo_sessions (head)` (`323` registered tables) |
 | **Terraform / Helm / Caddy** | `make batch07-check` | `PASS`; see raw Batch 07 validation log |
 | **SDK / Admin Console** | `make batch07-check` | `PASS`; native Android/iOS source checks were structural, not compiled |
 

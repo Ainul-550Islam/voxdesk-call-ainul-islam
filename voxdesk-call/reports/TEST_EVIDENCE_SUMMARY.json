@@ -1,0 +1,33 @@
+{
+  "schema": "voxdesk.test_evidence_summary/v1",
+  "generated_at": "2026-10-30T05:47:28Z",
+  "commit_sha": "554fb1f9602d1dd0a62d407b9b3f991c41e369e1",
+  "marker": "",
+  "population": 6738,
+  "recorded": 6738,
+  "counts": {
+    "passed": 6659,
+    "failed": 0,
+    "error": 0,
+    "skipped": 78,
+    "xfailed": 1,
+    "xpassed": 0,
+    "not_run": 0
+  },
+  "duration_seconds": 328.72,
+  "reconciled": true,
+  "problems": [],
+  "artifacts": [
+    {
+      "path": "reports/check/pytest_results.json",
+      "bytes": 1242223,
+      "sha256": "2ab80a847583bdb51a69314265dbcee02d3b7baa8d0febfa2c89a9c280180b3b"
+    },
+    {
+      "path": "reports/check/junit_all.xml",
+      "bytes": 1189844,
+      "sha256": "b4807c1b73c15a8249678150177bfcec450465cffdc3c1c9aeb4c8957955f6b2"
+    }
+  ],
+  "note": "Counts come from scripts/pytest_chunks.py --results-out. The artifacts listed here are uploaded as workflow artifacts, not committed; verify a copy against the sha256 recorded above."
+}

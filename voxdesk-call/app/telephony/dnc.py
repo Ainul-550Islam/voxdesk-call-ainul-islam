@@ -204,3 +204,71 @@ async def is_blocked(
         agent_id=agent_id,
     )
     return verdict.blocked, verdict.reason
+
+
+async def is_dnc(
+    db: AsyncSession,
+    *,
+    tenant_id: uuid.UUID,
+    phone: str,
+) -> bool:
+    """Return True when ``phone`` is opted-out or blocked for ``tenant_id``."""
+    verdict = await evaluate_dnc(db, tenant_id, phone)
+    return verdict.blocked
+
+
+async def add_dnc(
+    db: AsyncSession,
+    *,
+    tenant_id: uuid.UUID,
+    phone: str,
+    reason: str = "opt_out",
+    source: str = "inbound_keyword",
+) -> DncEntry:
+    """Idempotently add ``phone`` to the tenant ``DncEntry`` list."""
+    norm = normalize_phone(phone)
+    existing = (
+        await db.execute(
+            select(DncEntry)
+            .where(DncEntry.tenant_id == tenant_id, DncEntry.phone == norm)
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+    if existing is not None:
+        return existing
+    entry = DncEntry(
+        tenant_id=tenant_id,
+        phone=norm,
+        reason=reason,
+        source=source,
+    )
+    db.add(entry)
+    await db.flush()
+    return entry
+
+
+async def remove_dnc(
+    db: AsyncSession,
+    *,
+    tenant_id: uuid.UUID,
+    phone: str,
+) -> int:
+    """Remove ``phone`` from the tenant ``DncEntry`` list on explicit START opt-in."""
+    norm = normalize_phone(phone)
+    rows = list(
+        (
+            await db.execute(
+                select(DncEntry).where(
+                    DncEntry.tenant_id == tenant_id,
+                    DncEntry.phone == norm,
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    for row in rows:
+        await db.delete(row)
+    await db.flush()
+    return len(rows)
+

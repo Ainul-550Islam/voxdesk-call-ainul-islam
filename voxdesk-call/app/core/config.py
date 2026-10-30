@@ -216,6 +216,15 @@ class Settings(BaseSettings):
     # Channels
     whatsapp_enabled: bool = False
     twilio_whatsapp_number: str = ""      # e.g. whatsapp:+14155238886 (sandbox)
+    telnyx_messaging_profile_id: str = ""
+    telnyx_from_number: str = ""
+    vonage_from_number: str = ""
+
+    # Public Voice Demo (durable DB-backed marketing demo)
+    voice_demo_agent_id: str = ""
+    voice_demo_session_ttl_seconds: int = 300
+    voice_demo_rate_limit_per_minute: int = 10
+    voice_demo_max_turns: int = 12
 
     # Default language for new tenants
     default_language: str = "en-US"

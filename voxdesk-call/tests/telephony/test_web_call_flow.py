@@ -352,7 +352,8 @@ async def test_small_webrtc_offer_returns_honest_501_when_aiortc_unavailable(
             "type": "offer",
         },
     )
-    assert offer_resp.status_code == 501
+    # corrected: /telephony/web/offer now returns 503 (not 501) advertising fallback_transport="ws-protobuf" when aiortc is absent
+    assert offer_resp.status_code == 503
     detail = offer_resp.json()["detail"]
     assert detail["code"] == "UNSUPPORTED_CAPABILITY"
     assert detail["fallback_transport"] == "ws-protobuf"

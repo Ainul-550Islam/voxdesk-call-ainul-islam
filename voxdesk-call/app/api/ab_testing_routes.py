@@ -32,7 +32,9 @@ from app.services.experiment_service import (
     MIN_SAMPLE_SIZE_PER_ARM,
     assign_call_to_experiment,
     compute_experiment_results,
+    promote_experiment_variant,
     record_call_outcome,
+    rollback_experiment_promotion,
     select_variant_by_hash,
 )
 
@@ -109,6 +111,11 @@ class OutcomeRecordRequest(_Strict):
     cost: float = Field(default=0.0, ge=0.0)
 
 
+class AssignmentRequest(_Strict):
+    call_id: uuid.UUID | None = None
+    call_sid: str | None = Field(default=None, max_length=96)
+
+
 class AssignmentOut(_Strict):
     experiment_id: str
     variant_id: str
@@ -121,19 +128,21 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _not_configured(capability: str) -> None:
+def _validation_error(message: str) -> None:
     raise HTTPException(
-        status_code=501,
+        status_code=422,
         detail={
-            "code": "AB_TESTING_CAPABILITY_UNAVAILABLE",
-            "capability": capability,
-            "message": (
-                "A/B experiment management is persisted, but this operation is not "
-                "connected to immutable call-version assignment. No call, metric, "
-                "promotion, or rollback side effect was performed."
-            ),
+            "code": "VALIDATION_ERROR",
+            "message": message,
         },
     )
+
+
+def _conflict_error(code: str, message: str, *, capability: str | None = None) -> None:
+    detail: dict[str, Any] = {"code": code, "message": message}
+    if capability:
+        detail["capability"] = capability
+    raise HTTPException(status_code=409, detail=detail)
 
 
 def _validate_variant_weights(weights: list[int]) -> None:
@@ -429,6 +438,34 @@ async def update_experiment(
     return _exp_out(experiment, variants)
 
 
+@_handlers.delete("/{experiment_id}", response_model=dict)
+async def delete_experiment(
+    experiment_id: uuid.UUID,
+    ctx: TenantContext = Depends(require_permission(Permission.TENANT_UPDATE)),
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    if ctx is None or session is None:
+        _validation_error("Authenticated tenant context and database session are required.")
+    experiment = await _get_experiment(session, experiment_id, ctx.tenant_id)
+    if experiment.status == ExperimentStatus.RUNNING.value:
+        _conflict_error(
+            "EXPERIMENT_RUNNING",
+            "Pause or complete a running experiment before deleting it.",
+        )
+    await session.delete(experiment)
+    await record_enterprise_audit(
+        session,
+        ctx.tenant_id,
+        ctx.user_id,
+        "experiment.deleted",
+        {"experiment_id": str(experiment_id)},
+        resource_type="experiment",
+        resource_id=experiment_id,
+    )
+    await session.commit()
+    return {"deleted": True, "id": str(experiment_id)}
+
+
 @_handlers.get("/{experiment_id}/variants", response_model=dict)
 async def list_variants(
     experiment_id: uuid.UUID,
@@ -493,7 +530,7 @@ async def update_variant(
     if "is_control" in changes:
         variant.is_control = changes["is_control"]
     experiment.traffic_split = {
-        str(item.id): (changes["weight"] if item.id == variant_id else item.weight)
+        str(item.id): (changes.get("weight", item.weight) if item.id == variant_id else item.weight)
         for item in variants
     }
     experiment.updated_at = _now()
@@ -518,12 +555,34 @@ async def start_experiment(
     session: AsyncSession = Depends(get_session),
 ) -> ExperimentOut:
     if ctx is None or session is None:
-        _not_configured("live call traffic selection")
+        _validation_error("Authenticated tenant context and database session are required.")
     experiment = await _get_experiment(session, experiment_id, ctx.tenant_id)
+    if experiment.status == ExperimentStatus.COMPLETED.value:
+        _conflict_error(
+            "EXPERIMENT_ALREADY_COMPLETED",
+            "Completed experiments cannot be restarted; create a new experiment.",
+        )
+    already_running = await session.scalar(
+        select(Experiment.id).where(
+            Experiment.tenant_id == ctx.tenant_id,
+            Experiment.agent_id == experiment.agent_id,
+            Experiment.status == ExperimentStatus.RUNNING.value,
+            Experiment.id != experiment.id,
+        )
+    )
+    if already_running is not None:
+        _conflict_error(
+            "EXPERIMENT_ALREADY_RUNNING",
+            "Another experiment is already running for this agent; pause or complete it first.",
+        )
     if not await _agent_supports_live_experiment(
         session, ctx.tenant_id, experiment.agent_id
     ):
-        _not_configured("live call traffic selection")
+        _conflict_error(
+            "AGENT_NOT_PUBLISHED",
+            "Target agent must have a published immutable version before starting a live experiment.",
+            capability="live call traffic selection",
+        )
     variants = await _get_variants(session, experiment_id, ctx.tenant_id)
     _validate_variant_weights([v.weight for v in variants])
     _validate_control_flags([v.is_control for v in variants])
@@ -551,7 +610,7 @@ async def pause_experiment(
     session: AsyncSession = Depends(get_session),
 ) -> ExperimentOut:
     if ctx is None or session is None:
-        _not_configured("live call traffic selection")
+        _validation_error("Authenticated tenant context and database session are required.")
     experiment = await _get_experiment(session, experiment_id, ctx.tenant_id)
     if experiment.status != ExperimentStatus.RUNNING.value:
         raise HTTPException(
@@ -574,21 +633,69 @@ async def pause_experiment(
     return _exp_out(experiment, variants)
 
 
-@_handlers.get("/{experiment_id}/assignment", response_model=AssignmentOut)
-async def get_assignment(
+@_handlers.post("/{experiment_id}/complete", response_model=ExperimentOut)
+async def complete_experiment(
     experiment_id: uuid.UUID,
-    call_id: uuid.UUID = Query(
-        ..., description="Call identifier for a persisted immutable version assignment"
-    ),
-    call_sid: str | None = Query(default=None),
-    ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)),
+    ctx: TenantContext = Depends(require_permission(Permission.TENANT_UPDATE)),
     session: AsyncSession = Depends(get_session),
-) -> AssignmentOut:
+) -> ExperimentOut:
     if ctx is None or session is None:
-        _not_configured("per-call immutable version assignment")
+        _validation_error("Authenticated tenant context and database session are required.")
+    experiment = await _get_experiment(session, experiment_id, ctx.tenant_id)
+    if experiment.status not in (
+        ExperimentStatus.RUNNING.value,
+        ExperimentStatus.PAUSED.value,
+    ):
+        _conflict_error(
+            "EXPERIMENT_INVALID_STATE",
+            f"Only running or paused experiments can be completed (current: {experiment.status}).",
+        )
+    summary = await compute_experiment_results(
+        session,
+        tenant_id=ctx.tenant_id,
+        experiment_id=experiment.id,
+    )
+    rec_winner = summary.get("recommended_winner_variant_id")
+    if rec_winner and experiment.winner_variant_id is None:
+        try:
+            experiment.winner_variant_id = uuid.UUID(str(rec_winner))
+        except (TypeError, ValueError):
+            pass
+    experiment.status = ExperimentStatus.COMPLETED.value
+    experiment.updated_at = _now()
+    await record_enterprise_audit(
+        session,
+        ctx.tenant_id,
+        ctx.user_id,
+        "experiment.completed",
+        {
+            "experiment_id": str(experiment.id),
+            "recommended_winner_variant_id": rec_winner,
+        },
+        resource_type="experiment",
+        resource_id=experiment.id,
+    )
+    await session.commit()
+    await session.refresh(experiment)
+    variants = await _get_variants(session, experiment_id, ctx.tenant_id)
+    return _exp_out(experiment, variants)
+
+
+async def _perform_assignment(
+    session: AsyncSession,
+    *,
+    ctx: TenantContext,
+    experiment_id: uuid.UUID,
+    call_id: uuid.UUID,
+    call_sid: str | None,
+) -> AssignmentOut:
     experiment = await _get_experiment(session, experiment_id, ctx.tenant_id)
     if experiment.status != ExperimentStatus.RUNNING.value:
-        _not_configured("per-call immutable version assignment")
+        _conflict_error(
+            "EXPERIMENT_NOT_RUNNING",
+            "Experiment must be in 'running' state before assigning live calls.",
+            capability="per-call immutable version assignment",
+        )
 
     call_row = await session.scalar(
         select(Call).where(Call.id == call_id, Call.tenant_id == ctx.tenant_id)
@@ -607,7 +714,11 @@ async def get_assignment(
         experiment_id=experiment.id,
     )
     if assigned is None:
-        _not_configured("per-call immutable version assignment")
+        _conflict_error(
+            "ASSIGNMENT_UNAVAILABLE",
+            "No eligible experiment variant could be assigned.",
+            capability="per-call immutable version assignment",
+        )
     await session.commit()
     return AssignmentOut(
         experiment_id=assigned["experiment_id"],
@@ -615,6 +726,46 @@ async def get_assignment(
         variant_name=assigned["variant_name"],
         is_control=assigned["is_control"],
         config=assigned["config"],
+    )
+
+
+@_handlers.get("/{experiment_id}/assignment", response_model=AssignmentOut)
+async def get_assignment(
+    experiment_id: uuid.UUID,
+    call_id: uuid.UUID = Query(
+        ..., description="Call identifier for a persisted immutable version assignment"
+    ),
+    call_sid: str | None = Query(default=None),
+    ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)),
+    session: AsyncSession = Depends(get_session),
+) -> AssignmentOut:
+    if ctx is None or session is None:
+        _validation_error("Authenticated tenant context and database session are required.")
+    return await _perform_assignment(
+        session,
+        ctx=ctx,
+        experiment_id=experiment_id,
+        call_id=call_id,
+        call_sid=call_sid,
+    )
+
+
+@_handlers.post("/{experiment_id}/assign", response_model=AssignmentOut)
+async def post_assignment(
+    experiment_id: uuid.UUID,
+    payload: AssignmentRequest,
+    ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)),
+    session: AsyncSession = Depends(get_session),
+) -> AssignmentOut:
+    if ctx is None or session is None:
+        _validation_error("Authenticated tenant context and database session are required.")
+    resolved_call_id = payload.call_id or uuid.uuid4()
+    return await _perform_assignment(
+        session,
+        ctx=ctx,
+        experiment_id=experiment_id,
+        call_id=resolved_call_id,
+        call_sid=payload.call_sid,
     )
 
 
@@ -663,7 +814,7 @@ async def get_experiment_results(
 ) -> dict[str, Any]:
     """GET /api/ab-testing/experiments/{id}/results — Real two-proportion z-test & Welch's t-test."""
     if ctx is None or session is None:
-        _not_configured("call-linked experiment metrics")
+        _validation_error("Authenticated tenant context and database session are required.")
     await _get_experiment(session, experiment_id, ctx.tenant_id)
     return await compute_experiment_results(
         session,
@@ -680,7 +831,7 @@ async def get_metrics(
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
     if ctx is None or session is None:
-        _not_configured("call-linked experiment metrics")
+        _validation_error("Authenticated tenant context and database session are required.")
     await _get_experiment(session, experiment_id, ctx.tenant_id)
     return await compute_experiment_results(
         session,
@@ -696,16 +847,26 @@ async def promote_variant(
     ctx: TenantContext = Depends(require_permission(Permission.TENANT_UPDATE)),
     session: AsyncSession = Depends(get_session),
 ) -> ExperimentOut:
-    if ctx is None or session is None:
-        _not_configured("approval-controlled immutable version promotion")
-    experiment = await _get_experiment(session, experiment_id, ctx.tenant_id)
-    variants = await _get_variants(session, experiment_id, ctx.tenant_id)
-    winner = next((v for v in variants if v.id == payload.variant_id), None)
-    if winner is None:
-        raise HTTPException(status_code=404, detail="variant not found")
-    experiment.winner_variant_id = winner.id
-    experiment.status = ExperimentStatus.COMPLETED.value
-    experiment.updated_at = _now()
+    if ctx is None or session is None or payload is None:
+        _validation_error("Authenticated tenant context, session, and payload are required.")
+    await _get_experiment(session, experiment_id, ctx.tenant_id)
+    try:
+        experiment, variants, promo = await promote_experiment_variant(
+            session,
+            tenant_id=ctx.tenant_id,
+            experiment_id=experiment_id,
+            variant_id=payload.variant_id,
+            actor_user_id=ctx.user_id,
+            reason=payload.reason,
+        )
+    except LookupError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "NOT_FOUND", "message": str(exc)},
+        ) from None
+    except ValueError as exc:
+        _validation_error(str(exc))
+
     await record_enterprise_audit(
         session,
         ctx.tenant_id,
@@ -713,7 +874,9 @@ async def promote_variant(
         "experiment.promoted",
         {
             "experiment_id": str(experiment.id),
-            "winner_variant_id": str(winner.id),
+            "winner_variant_id": str(payload.variant_id),
+            "promoted_version_id": promo.get("promoted_version_id"),
+            "promoted_version_number": promo.get("promoted_version_number"),
             "reason": payload.reason,
         },
         resource_type="experiment",
@@ -731,19 +894,32 @@ async def rollback_experiment(
     session: AsyncSession = Depends(get_session),
 ) -> ExperimentOut:
     if ctx is None or session is None:
-        _not_configured("approval-controlled immutable version rollback")
-    experiment = await _get_experiment(session, experiment_id, ctx.tenant_id)
-    variants = await _get_variants(session, experiment_id, ctx.tenant_id)
-    control = next((v for v in variants if v.is_control), None)
-    experiment.winner_variant_id = control.id if control else None
-    experiment.status = ExperimentStatus.PAUSED.value
-    experiment.updated_at = _now()
+        _validation_error("Authenticated tenant context and database session are required.")
+    await _get_experiment(session, experiment_id, ctx.tenant_id)
+    try:
+        experiment, variants, restored = await rollback_experiment_promotion(
+            session,
+            tenant_id=ctx.tenant_id,
+            experiment_id=experiment_id,
+            actor_user_id=ctx.user_id,
+        )
+    except LookupError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "NOT_FOUND", "message": str(exc)},
+        ) from None
+    except RuntimeError as exc:
+        _conflict_error("EXPERIMENT_NOT_PROMOTED", str(exc))
+
     await record_enterprise_audit(
         session,
         ctx.tenant_id,
         ctx.user_id,
         "experiment.rolled_back",
-        {"experiment_id": str(experiment.id)},
+        {
+            "experiment_id": str(experiment.id),
+            **restored,
+        },
         resource_type="experiment",
         resource_id=experiment.id,
     )

@@ -7,6 +7,16 @@ unverified provider connections or third-party compliance certifications.
 
 ---
 
+## [Unreleased] — 2026-10-29 (Final verification & runtime gap-fill)
+
+### Added
+- **Durable public voice-demo sessions (`0069_voice_demo_sessions`).** Replaced process-local demo state with PostgreSQL/SQLite `VoiceDemoSession` rows, HMAC-SHA256 session tokens (`vds1.`), per-IP rate limiting (`429`), TTL expiry (`410`), fail-closed `503 NOT_CONFIGURED` when `VOICE_DEMO_AGENT_ID` is unset, background reaper in `app/jobs/scheduler.py` / `scripts/scheduler.py`, and `dashboard/src/pages/public/VoiceDemoPage.tsx`.
+- **Persisted agent-test session transport.** `POST /api/v1/agents/{agent_id}/test`, `GET/POST /api/v1/agent-tests/{session_id}*`, and `WS /api/v1/agent-tests/{session_id}/ws` now persist sessions and transcripts in `TestRun` via `app/services/agent_test_session_service.py` with HMAC token verification and `410` expiry semantics.
+- **Multichannel messaging adapter registry (`app/messaging/channels/`).** Added `TwilioWhatsAppAdapter` (HMAC-SHA1 + `ContentSid` templates), `TelnyxMessagingAdapter` (Ed25519 signature + timestamp freshness), and `VonageSmsAdapter` (HS256 JWT `payload_hash` verification) with TCPA `STOP`/`START`/`HELP` compliance handling, `409 NOT_CONFIGURED` fail-closed responses, and `422 UNSUPPORTED_CHANNEL` rejection for unsupported Slack/Teams channels.
+- **SIP outbound origination & legacy outbound routing.** Added `SipOutboundOrchestrator` (`app/telephony/sip/sip_outbound.py`) with SSRF validation against `services/sip-gateway`, wired `POST /api/calls` through the versioned telephony runtime (`MOCK` rejected with `422`), and updated `/telephony/web/offer` to return `503` advertising `fallback_transport="ws-protobuf"` when `SmallWebRTCConnection` is unavailable.
+- **A/B testing UI & promotion/rollback hardening.** Added `dashboard/src/pages/testing/ExperimentsPage.tsx` and `dashboard/src/api/ab-testing.ts`, enforced single concurrent running experiment per agent (`409 EXPERIMENT_ALREADY_RUNNING`), fixed variant-patch weight preservation in `app/api/ab_testing_routes.py`, and fixed missing `func` import in `promote_experiment_variant`.
+- **Static & operational verification gates.** Fixed primary-key declarations in `alembic/versions/0068_platform_v2.py` for PostgreSQL foreign-key parity, extended `scripts/verify_observability.py`, `scripts/frontend_api_contract_check.py`, and `scripts/verify_docs_match_code.py`, made `scripts/backup.sh`, `scripts/restore.sh`, and `scripts/dr_drill.sh` `shellcheck`-clean, and added `docs/HANDOFF_CHECKLIST.md` + `docs/MESSAGING_CHANNELS.md`.
+
 ## [Unreleased] — 2026-10-18 (Round 8: media-stream close hardening)
 
 ### Fixed

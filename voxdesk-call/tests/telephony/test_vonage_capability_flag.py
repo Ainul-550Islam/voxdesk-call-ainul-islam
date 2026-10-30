@@ -52,3 +52,39 @@ def test_capability_row_is_not_configured_without_credentials() -> None:
     assert row["serializer"] is None
 
 
+def test_capability_row_is_configured_with_full_vonage_credentials(
+    vonage_credentials,
+) -> None:
+    row = vonage_media_capabilities()["vonage"]
+    assert row["supported"] is True
+    assert row["serializer"] is not None
+
+
+def test_telnyx_supports_ai_media_stream_configured_vs_unconfigured(
+    monkeypatch,
+) -> None:
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    from cryptography.hazmat.primitives import serialization
+    import base64
+    from app.telephony.providers.telnyx import TelnyxAdapter
+
+    monkeypatch.setattr(settings, "telnyx_api_key", "", raising=False)
+    monkeypatch.setattr(settings, "telnyx_public_key", "", raising=False)
+    monkeypatch.setattr(settings, "telnyx_connection_id", "", raising=False)
+    unconfigured = TelnyxAdapter()
+    assert unconfigured.supports_ai_media_stream is False
+
+    pub_b64 = base64.b64encode(
+        Ed25519PrivateKey.generate().public_key().public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw,
+        )
+    ).decode("ascii")
+    monkeypatch.setattr(settings, "telnyx_api_key", "KEY_telnyx_live_1", raising=False)
+    monkeypatch.setattr(settings, "telnyx_public_key", pub_b64, raising=False)
+    monkeypatch.setattr(settings, "telnyx_connection_id", "conn_12345", raising=False)
+    configured = TelnyxAdapter()
+    assert configured.supports_ai_media_stream is True
+
+
+

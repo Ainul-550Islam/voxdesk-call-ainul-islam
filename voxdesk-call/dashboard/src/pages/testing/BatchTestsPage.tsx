@@ -65,7 +65,7 @@ export function BatchTestsPage() {
     setError(null);
     try {
       const summary = await runBatchTestSuite(selectedSuiteId, {
-        allow_mock_fallback: true,
+        allow_mock_fallback: false,
       });
       setBatchSummary(summary);
       setRuns(summary.runs);

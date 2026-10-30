@@ -951,7 +951,7 @@ async def web_call_webrtc_offer_endpoint(
         from pipecat.transports.smallwebrtc.transport import SmallWebRTCTransport  # noqa: F401
     except Exception as exc:
         raise HTTPException(
-            status_code=501,
+            status_code=503,
             detail={
                 "code": "UNSUPPORTED_CAPABILITY",
                 "state": "UNSUPPORTED_CAPABILITY",

@@ -53,7 +53,7 @@ def upgrade() -> None:
     if not _has_table(bind, "wfm_interval_history"):
         op.create_table(
             "wfm_interval_history",
-            sa.Column("id", sa.Uuid(), nullable=False),
+            sa.Column("id", sa.Uuid(), primary_key=True, nullable=False),
             sa.Column("queue_key", sa.String(length=36), nullable=False),
             sa.Column("interval_start", sa.DateTime(timezone=True), nullable=False),
             sa.Column("interval_minutes", sa.Integer(), nullable=False),
@@ -81,7 +81,7 @@ def upgrade() -> None:
     if not _has_table(bind, "wfm_forecasts"):
         op.create_table(
             "wfm_forecasts",
-            sa.Column("id", sa.Uuid(), nullable=False),
+            sa.Column("id", sa.Uuid(), primary_key=True, nullable=False),
             sa.Column("queue_key", sa.String(length=36), nullable=False),
             sa.Column("timezone", sa.String(length=64), nullable=False),
             sa.Column("interval_minutes", sa.Integer(), nullable=False),
@@ -104,7 +104,7 @@ def upgrade() -> None:
     if not _has_table(bind, "wfm_forecast_accuracy"):
         op.create_table(
             "wfm_forecast_accuracy",
-            sa.Column("id", sa.Uuid(), nullable=False),
+            sa.Column("id", sa.Uuid(), primary_key=True, nullable=False),
             sa.Column("queue_key", sa.String(length=36), nullable=False),
             sa.Column("forecast_id", sa.Uuid(), sa.ForeignKey("wfm_forecasts.id", ondelete="CASCADE"), nullable=False),
             sa.Column("evaluated_from", sa.DateTime(timezone=True), nullable=False),
@@ -128,7 +128,7 @@ def upgrade() -> None:
     if not _has_table(bind, "wfm_shift_templates"):
         op.create_table(
             "wfm_shift_templates",
-            sa.Column("id", sa.Uuid(), nullable=False),
+            sa.Column("id", sa.Uuid(), primary_key=True, nullable=False),
             sa.Column("name", sa.String(length=80), nullable=False),
             sa.Column("start_minute", sa.Integer(), nullable=False),
             sa.Column("length_minutes", sa.Integer(), nullable=False),
@@ -149,7 +149,7 @@ def upgrade() -> None:
     if not _has_table(bind, "wfm_labor_rules"):
         op.create_table(
             "wfm_labor_rules",
-            sa.Column("id", sa.Uuid(), nullable=False),
+            sa.Column("id", sa.Uuid(), primary_key=True, nullable=False),
             sa.Column("name", sa.String(length=80), nullable=False),
             sa.Column("max_hours_per_week", sa.Numeric(precision=5, scale=2), nullable=False),
             sa.Column("min_rest_hours", sa.Numeric(precision=5, scale=2), nullable=False),
@@ -170,7 +170,7 @@ def upgrade() -> None:
     if not _has_table(bind, "wfm_schedules"):
         op.create_table(
             "wfm_schedules",
-            sa.Column("id", sa.Uuid(), nullable=False),
+            sa.Column("id", sa.Uuid(), primary_key=True, nullable=False),
             sa.Column("name", sa.String(length=120), nullable=False),
             sa.Column("week_start", sa.Date(), nullable=False),
             sa.Column("timezone", sa.String(length=64), nullable=False),
@@ -190,7 +190,7 @@ def upgrade() -> None:
     if not _has_table(bind, "wfm_schedule_versions"):
         op.create_table(
             "wfm_schedule_versions",
-            sa.Column("id", sa.Uuid(), nullable=False),
+            sa.Column("id", sa.Uuid(), primary_key=True, nullable=False),
             sa.Column("schedule_id", sa.Uuid(), sa.ForeignKey("wfm_schedules.id", ondelete="CASCADE"), nullable=False),
             sa.Column("version_number", sa.Integer(), nullable=False),
             sa.Column("status", sa.String(length=16), nullable=False),
@@ -215,7 +215,7 @@ def upgrade() -> None:
     if not _has_table(bind, "wfm_shifts"):
         op.create_table(
             "wfm_shifts",
-            sa.Column("id", sa.Uuid(), nullable=False),
+            sa.Column("id", sa.Uuid(), primary_key=True, nullable=False),
             sa.Column("schedule_version_id", sa.Uuid(), sa.ForeignKey("wfm_schedule_versions.id", ondelete="CASCADE")),
             sa.Column("user_id", sa.Uuid(), sa.ForeignKey("users.id", ondelete="CASCADE")),
             sa.Column("template_id", sa.Uuid(), sa.ForeignKey("wfm_shift_templates.id", ondelete="SET NULL")),
@@ -239,7 +239,7 @@ def upgrade() -> None:
     if not _has_table(bind, "wfm_time_off_requests"):
         op.create_table(
             "wfm_time_off_requests",
-            sa.Column("id", sa.Uuid(), nullable=False),
+            sa.Column("id", sa.Uuid(), primary_key=True, nullable=False),
             sa.Column("user_id", sa.Uuid(), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
             sa.Column("kind", sa.String(length=16), nullable=False),
             sa.Column("starts_at", sa.DateTime(timezone=True), nullable=False),
@@ -262,7 +262,7 @@ def upgrade() -> None:
     if not _has_table(bind, "wfm_time_off_balances"):
         op.create_table(
             "wfm_time_off_balances",
-            sa.Column("id", sa.Uuid(), nullable=False),
+            sa.Column("id", sa.Uuid(), primary_key=True, nullable=False),
             sa.Column("user_id", sa.Uuid(), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
             sa.Column("kind", sa.String(length=16), nullable=False),
             sa.Column("balance_hours", sa.Numeric(precision=8, scale=2), nullable=False),
@@ -280,7 +280,7 @@ def upgrade() -> None:
     if not _has_table(bind, "wfm_shift_swaps"):
         op.create_table(
             "wfm_shift_swaps",
-            sa.Column("id", sa.Uuid(), nullable=False),
+            sa.Column("id", sa.Uuid(), primary_key=True, nullable=False),
             sa.Column("shift_id", sa.Uuid(), sa.ForeignKey("wfm_shifts.id", ondelete="CASCADE"), nullable=False),
             sa.Column("offering_user_id", sa.Uuid(), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
             sa.Column("target_user_id", sa.Uuid(), sa.ForeignKey("users.id", ondelete="SET NULL")),
@@ -302,7 +302,7 @@ def upgrade() -> None:
     if not _has_table(bind, "wfm_open_shift_bids"):
         op.create_table(
             "wfm_open_shift_bids",
-            sa.Column("id", sa.Uuid(), nullable=False),
+            sa.Column("id", sa.Uuid(), primary_key=True, nullable=False),
             sa.Column("shift_id", sa.Uuid(), sa.ForeignKey("wfm_shifts.id", ondelete="CASCADE"), nullable=False),
             sa.Column("user_id", sa.Uuid(), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
             sa.Column("status", sa.String(length=16), nullable=False),
@@ -320,7 +320,7 @@ def upgrade() -> None:
     if not _has_table(bind, "wfm_adherence_exceptions"):
         op.create_table(
             "wfm_adherence_exceptions",
-            sa.Column("id", sa.Uuid(), nullable=False),
+            sa.Column("id", sa.Uuid(), primary_key=True, nullable=False),
             sa.Column("user_id", sa.Uuid(), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
             sa.Column("shift_id", sa.Uuid(), sa.ForeignKey("wfm_shifts.id", ondelete="SET NULL")),
             sa.Column("day", sa.Date(), nullable=False),
@@ -343,7 +343,7 @@ def upgrade() -> None:
     if not _has_table(bind, "wl_custom_domains"):
         op.create_table(
             "wl_custom_domains",
-            sa.Column("id", sa.Uuid(), nullable=False),
+            sa.Column("id", sa.Uuid(), primary_key=True, nullable=False),
             sa.Column("environment_id", sa.Uuid(), sa.ForeignKey("environments.id", ondelete="SET NULL")),
             sa.Column("domain", sa.String(length=253), nullable=False),
             sa.Column("status", sa.String(length=16), nullable=False),
@@ -369,7 +369,7 @@ def upgrade() -> None:
     if not _has_table(bind, "wl_domain_checks"):
         op.create_table(
             "wl_domain_checks",
-            sa.Column("id", sa.Uuid(), nullable=False),
+            sa.Column("id", sa.Uuid(), primary_key=True, nullable=False),
             sa.Column("domain_id", sa.Uuid(), sa.ForeignKey("wl_custom_domains.id", ondelete="CASCADE"), nullable=False),
             sa.Column("check_type", sa.String(length=16), nullable=False),
             sa.Column("passed", sa.Boolean(), nullable=False),
@@ -389,7 +389,7 @@ def upgrade() -> None:
     if not _has_table(bind, "wl_tls_cert_status"):
         op.create_table(
             "wl_tls_cert_status",
-            sa.Column("id", sa.Uuid(), nullable=False),
+            sa.Column("id", sa.Uuid(), primary_key=True, nullable=False),
             sa.Column("domain_id", sa.Uuid(), sa.ForeignKey("wl_custom_domains.id", ondelete="CASCADE"), nullable=False),
             sa.Column("status", sa.String(length=16), nullable=False),
             sa.Column("issuer", sa.String(length=120), nullable=False),
@@ -410,7 +410,7 @@ def upgrade() -> None:
     if not _has_table(bind, "wl_brand_themes"):
         op.create_table(
             "wl_brand_themes",
-            sa.Column("id", sa.Uuid(), nullable=False),
+            sa.Column("id", sa.Uuid(), primary_key=True, nullable=False),
             sa.Column("name", sa.String(length=80), nullable=False),
             sa.Column("active_key", sa.String(length=8)),
             sa.Column("current_version_id", sa.Uuid()),
@@ -427,7 +427,7 @@ def upgrade() -> None:
     if not _has_table(bind, "wl_brand_theme_versions"):
         op.create_table(
             "wl_brand_theme_versions",
-            sa.Column("id", sa.Uuid(), nullable=False),
+            sa.Column("id", sa.Uuid(), primary_key=True, nullable=False),
             sa.Column("theme_id", sa.Uuid(), sa.ForeignKey("wl_brand_themes.id", ondelete="CASCADE"), nullable=False),
             sa.Column("version_number", sa.Integer(), nullable=False),
             sa.Column("payload", sa.JSON(), nullable=False),
@@ -445,7 +445,7 @@ def upgrade() -> None:
     if not _has_table(bind, "wl_brand_assets"):
         op.create_table(
             "wl_brand_assets",
-            sa.Column("id", sa.Uuid(), nullable=False),
+            sa.Column("id", sa.Uuid(), primary_key=True, nullable=False),
             sa.Column("kind", sa.String(length=16), nullable=False),
             sa.Column("filename", sa.String(length=200), nullable=False),
             sa.Column("content_type", sa.String(length=80), nullable=False),
@@ -465,7 +465,7 @@ def upgrade() -> None:
     if not _has_table(bind, "wl_email_sender_domains"):
         op.create_table(
             "wl_email_sender_domains",
-            sa.Column("id", sa.Uuid(), nullable=False),
+            sa.Column("id", sa.Uuid(), primary_key=True, nullable=False),
             sa.Column("domain", sa.String(length=253), nullable=False),
             sa.Column("from_name", sa.String(length=120), nullable=False),
             sa.Column("dkim_selector", sa.String(length=64), nullable=False),
@@ -487,7 +487,7 @@ def upgrade() -> None:
     if not _has_table(bind, "wl_dns_record_checks"):
         op.create_table(
             "wl_dns_record_checks",
-            sa.Column("id", sa.Uuid(), nullable=False),
+            sa.Column("id", sa.Uuid(), primary_key=True, nullable=False),
             sa.Column("sender_domain_id", sa.Uuid(), sa.ForeignKey("wl_email_sender_domains.id", ondelete="CASCADE")),
             sa.Column("domain_id", sa.Uuid(), sa.ForeignKey("wl_custom_domains.id", ondelete="CASCADE")),
             sa.Column("record_type", sa.String(length=8), nullable=False),
@@ -506,7 +506,7 @@ def upgrade() -> None:
     if not _has_table(bind, "mob_devices"):
         op.create_table(
             "mob_devices",
-            sa.Column("id", sa.Uuid(), nullable=False),
+            sa.Column("id", sa.Uuid(), primary_key=True, nullable=False),
             sa.Column("user_id", sa.Uuid(), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
             sa.Column("platform", sa.String(length=8), nullable=False),
             sa.Column("device_id", sa.String(length=120), nullable=False),
@@ -528,7 +528,7 @@ def upgrade() -> None:
     if not _has_table(bind, "mob_push_tokens"):
         op.create_table(
             "mob_push_tokens",
-            sa.Column("id", sa.Uuid(), nullable=False),
+            sa.Column("id", sa.Uuid(), primary_key=True, nullable=False),
             sa.Column("device_id", sa.Uuid(), sa.ForeignKey("mob_devices.id", ondelete="CASCADE"), nullable=False),
             sa.Column("platform", sa.String(length=8), nullable=False),
             sa.Column("token", sa.String(length=512), nullable=False),
@@ -549,7 +549,7 @@ def upgrade() -> None:
     if not _has_table(bind, "mob_push_deliveries"):
         op.create_table(
             "mob_push_deliveries",
-            sa.Column("id", sa.Uuid(), nullable=False),
+            sa.Column("id", sa.Uuid(), primary_key=True, nullable=False),
             sa.Column("device_id", sa.Uuid(), sa.ForeignKey("mob_devices.id", ondelete="CASCADE"), nullable=False),
             sa.Column("template", sa.String(length=48), nullable=False),
             sa.Column("provider", sa.String(length=16), nullable=False),
@@ -572,7 +572,7 @@ def upgrade() -> None:
     if not _has_table(bind, "mob_auth_codes"):
         op.create_table(
             "mob_auth_codes",
-            sa.Column("id", sa.Uuid(), nullable=False),
+            sa.Column("id", sa.Uuid(), primary_key=True, nullable=False),
             sa.Column("code_hash", sa.String(length=64), nullable=False),
             sa.Column("user_id", sa.Uuid(), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
             sa.Column("device_id", sa.String(length=120), nullable=False),
@@ -592,7 +592,7 @@ def upgrade() -> None:
     if not _has_table(bind, "mob_refresh_tokens"):
         op.create_table(
             "mob_refresh_tokens",
-            sa.Column("id", sa.Uuid(), nullable=False),
+            sa.Column("id", sa.Uuid(), primary_key=True, nullable=False),
             sa.Column("token_hash", sa.String(length=64), nullable=False),
             sa.Column("family_id", sa.Uuid(), nullable=False),
             sa.Column("user_id", sa.Uuid(), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False),

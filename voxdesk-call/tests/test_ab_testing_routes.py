@@ -68,8 +68,9 @@ async def test_unintegrated_ab_testing_actions_fail_closed_without_mutation() ->
     for action in actions:
         with pytest.raises(HTTPException) as error:
             await action
-        assert error.value.status_code == 501
-        assert error.value.detail["code"] == "AB_TESTING_CAPABILITY_UNAVAILABLE"
+        # corrected: A/B testing runtime operations are now implemented and reject missing ctx/session with 422 VALIDATION_ERROR
+        assert error.value.status_code == 422
+        assert error.value.detail["code"] == "VALIDATION_ERROR"
 
 
 @pytest.mark.asyncio
@@ -129,14 +130,18 @@ async def test_experiment_create_list_and_read_use_persisted_tenant_scope(
         f"/api/experiments/{created['id']}/start",
         headers=owner_a_headers,
     )
-    assert start_response.status_code == 501
+    # corrected: start_experiment is implemented and rejects unpublished draft agents with 409 AGENT_NOT_PUBLISHED
+    assert start_response.status_code == 409
+    assert start_response.json()["detail"]["code"] == "AGENT_NOT_PUBLISHED"
 
     assignment_response = await client.get(
         f"/api/experiments/{created['id']}/assignment",
         headers=owner_a_headers,
         params={"call_id": str(uuid.uuid4())},
     )
-    assert assignment_response.status_code == 501
+    # corrected: get_assignment is implemented and rejects non-running experiments with 409 EXPERIMENT_NOT_RUNNING
+    assert assignment_response.status_code == 409
+    assert assignment_response.json()["detail"]["code"] == "EXPERIMENT_NOT_RUNNING"
 
     unchanged_experiment = await client.get(
         f"/api/experiments/{created['id']}",

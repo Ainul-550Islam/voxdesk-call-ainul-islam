@@ -161,8 +161,8 @@ primitive instead of blind repetition.
 | `/telephony/*` | Twilio HMAC (`stream_auth`) | `call_sid` unique + terminal-state guard | `call_state` refuses regressions |
 | `/channels/message` | Twilio HMAC | `MessageWebhookReceipt` | thread reuse by idle window |
 | `/billing/webhooks/*` | Stripe signature (raw body) | `BillingWebhookReceipt` | `_apply_remote` monotonic + event time |
-| `/api/integrations/crm/webhook` | provider HMAC where supported | `CrmWebhookReceipt` | n/a (one state change) |
-| `/api/calendar/webhook` | provider HMAC where supported | `CalendarWebhookReceipt` | n/a (one state change) |
+| `/api/integrations/crm/inbound/{provider}/{token}` | provider HMAC where supported | `CrmWebhookReceipt` | n/a (one state change) |
+| `/api/calendar/webhooks/{provider}/{token}` | provider HMAC where supported | `CalendarWebhookReceipt` | n/a (one state change) |
 
 Receipts are pruned by age (`prune_receipts` on each channel, wired into the
 scheduler's daily retention loop via `core.retention.prune_webhook_receipts`),

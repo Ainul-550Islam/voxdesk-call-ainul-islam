@@ -149,7 +149,7 @@ system.
   license/secret scanning across languages.
 - Contract tests and a local `docker compose` multi-service dev topology.
 - **Estimated LOC: 12K–20K** (schemas, harnesses, generators, tests).
-- **Exit:** `make verify` runs the full 4-language gate on a clean checkout;
+- **Exit:** `make verify-truth` runs the truth and hygiene gate on a clean checkout;
   existing Python + frontend suites still green.
 
 ### Phase 1 — Next.js/TypeScript surface (strangler migration)

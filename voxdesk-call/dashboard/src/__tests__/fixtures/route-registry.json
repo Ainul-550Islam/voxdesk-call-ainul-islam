@@ -320,6 +320,14 @@
     "category": "company"
   },
   {
+    "path": "/voice-demo",
+    "title": "Live Public Voice Demo | VoxDesk",
+    "description": "Interactive DB-backed public voice demo session authenticated with short-lived HMAC tokens.",
+    "component": "VoiceDemoPage",
+    "exact": true,
+    "category": "public"
+  },
+  {
     "path": "/login",
     "title": "Sign In | VoxDesk",
     "description": "Sign in to your VoxDesk workspace.",
@@ -580,6 +588,30 @@
     "title": "Simulations & Batch Suites | VoxDesk Studio",
     "description": "Durable TestSuites, version-pinned TestCases, batch runner, and WebRTC/PSTN call testers.",
     "component": "SimulationsPage",
+    "exact": true,
+    "category": "dashboard"
+  },
+  {
+    "path": "/experiments",
+    "title": "A/B Experiments | VoxDesk Studio",
+    "description": "Deterministic traffic splits across immutable AgentVersions with statistical promotion and rollback.",
+    "component": "ExperimentsPage",
+    "exact": true,
+    "category": "dashboard"
+  },
+  {
+    "path": "/dashboard/experiments",
+    "title": "A/B Experiments | VoxDesk Studio",
+    "description": "Deterministic traffic splits across immutable AgentVersions with statistical promotion and rollback.",
+    "component": "ExperimentsPage",
+    "exact": true,
+    "category": "dashboard"
+  },
+  {
+    "path": "/app/experiments",
+    "title": "A/B Experiments | VoxDesk Studio",
+    "description": "Deterministic traffic splits across immutable AgentVersions with statistical promotion and rollback.",
+    "component": "ExperimentsPage",
     "exact": true,
     "category": "dashboard"
   },

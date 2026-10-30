@@ -89,6 +89,8 @@ import BookDemoPage from './pages/contact/BookDemoPage';
 import LoginPage from './pages/auth/LoginPage';
 import SignupPage from './pages/auth/SignupPage';
 import DocsPage from './pages/docs/DocsPage';
+import ExperimentsPage from './pages/testing/ExperimentsPage';
+import VoiceDemoPage from './pages/public/VoiceDemoPage';
 
 
 
@@ -430,6 +432,18 @@ const ROUTES = [
     permission: P.TENANT_READ,
     render: () => <SolutionsPage />,
   },
+  {
+    pattern: '/experiments',
+    title: 'Experiments',
+    permission: P.TENANT_READ,
+    render: () => <ExperimentsPage />,
+  },
+  {
+    pattern: '/voice-demo',
+    title: 'Voice Demo',
+    permission: P.TENANT_READ,
+    render: () => <VoiceDemoPage />,
+  },
 
 ]
 
@@ -481,6 +495,9 @@ export default function App() {
   }
 
   if (!me) {
+    if (path === '/voice-demo') {
+      return <VoiceDemoPage />
+    }
     return <Login onSuccess={() => bootstrap().then(setMe)} />
   }
 

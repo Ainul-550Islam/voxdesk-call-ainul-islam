@@ -59,6 +59,8 @@ env/
 
 # Vendor & Node modules
 vendor/
+!services/realtime/media-engine-rs/vendor/
+!services/realtime/media-engine-rs/vendor/**
 node_modules/
 
 # Reports, Logs & Temporary Files
@@ -75,6 +77,9 @@ reports/check/chunks/*.xml
 reports/check/junit/
 !reports/check/.gitkeep
 !reports/check/*.md
+.cache/
+docs/archive/PART_0_REPORT_pre-reaudit.md
+docs/archive/part0-initial-evidence/openapi-before.json
 
 # >>> voxdesk:repo-cleanup >>>
 # Managed by scripts/repo_cleanup.sh -- keep the markers intact.
@@ -97,3 +102,4 @@ htmlcov/
 # The 8.5 MB pytest dump has been superseded by reports/TEST_EVIDENCE_SUMMARY.json.
 FINAL_TEST_RESULTS.json
 # <<< voxdesk:repo-cleanup <<<
+reports/PART_0_REPORT.md

@@ -24,7 +24,7 @@
 set -uo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cd "$REPO_ROOT"
+cd "$REPO_ROOT" || exit 2
 
 JSON_OUT=""
 SKIP_TFLINT=0
@@ -163,7 +163,7 @@ if require_tool terraform "install https://developer.hashicorp.com/terraform/dow
   # validated. `init -backend=false` touches no remote state.
   while IFS= read -r dir; do
     [ -n "$dir" ] || continue
-    label="${dir#$TERRAFORM_DIR/}"
+    label="${dir#"$TERRAFORM_DIR"/}"
     if ! ( cd "$dir" && terraform init -backend=false -input=false -no-color >/dev/null 2>&1 ); then
       record "terraform:init:$label" "FAIL" "terraform init failed"
       continue
@@ -196,7 +196,7 @@ if require_tool caddy "install https://caddyserver.com/docs/install"; then
     # edge-global.caddy and tenant-domains.caddy are *imports*, not standalone
     # configs, so each is validated through a wrapper that imports it.
     wrapper="$(mktemp /tmp/voxdesk-caddy-validate.XXXXXX.caddy)"
-    if [[ "$caddyfile" == infra/caddy/* ]]; then
+    if [[ "$caddyfile" == "infra/caddy/edge-global.caddy" ]]; then
       {
         echo "{"
         echo "  admin off"
@@ -206,6 +206,17 @@ if require_tool caddy "install https://caddyserver.com/docs/install"; then
         echo "http://localhost {"
         echo "  reverse_proxy api:8000"
         echo "}"
+      } > "$wrapper"
+      cp "$wrapper" "$(dirname "$caddyfile")/.validate-$(basename "$wrapper")"
+      wrapper_path="$(dirname "$caddyfile")/.validate-$(basename "$wrapper")"
+    elif [[ "$caddyfile" == "infra/caddy/tenant-domains.caddy" ]]; then
+      {
+        echo "{"
+        echo "  admin off"
+        echo "  import edge-global.caddy"
+        echo "}"
+        echo
+        echo "import $(basename "$caddyfile")"
       } > "$wrapper"
       cp "$wrapper" "$(dirname "$caddyfile")/.validate-$(basename "$wrapper")"
       wrapper_path="$(dirname "$caddyfile")/.validate-$(basename "$wrapper")"

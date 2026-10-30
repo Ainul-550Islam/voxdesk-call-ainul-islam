@@ -140,6 +140,31 @@ class VonageAdapter(TelephonyAdapter):
                 provider=self.name,
             )
 
+    def media_stream_capability(self) -> dict:
+        """Structured capability probe matching ``TelnyxAdapter.media_stream_capability``."""
+        carrier = _carrier_settings()
+        missing: list[str] = []
+        if not (carrier.vonage_api_key or settings.vonage_api_key or "").strip():
+            missing.append("VONAGE_API_KEY")
+        if not (carrier.vonage_api_secret or settings.vonage_api_secret or "").strip():
+            missing.append("VONAGE_API_SECRET")
+        if not self._application_id():
+            missing.append("VONAGE_APPLICATION_ID")
+        if not self._private_key_available():
+            missing.append("VONAGE_PRIVATE_KEY")
+        if not self._signature_secret():
+            missing.append("VONAGE_SIGNATURE_SECRET")
+        ready = len(missing) == 0
+        return {
+            "provider": self.name,
+            "supports_ai_media_stream": ready,
+            "state": "READY" if ready else "NOT_CONFIGURED",
+            "serializer": "VonageFrameSerializer" if ready else None,
+            "encodings": ["audio/l16;rate=16000"] if ready else [],
+            "sample_rates": [16000] if ready else [],
+            "missing": missing,
+        }
+
     def health(self) -> HealthResult:
         if not self.configured():
             return HealthResult(self.name, False, "credentials_missing", probed=False)

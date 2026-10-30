@@ -7,12 +7,21 @@ type, attempt count and error class. It does not store secrets or media URLs.
 
 from __future__ import annotations
 
+import uuid
+from datetime import datetime, timezone
+
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+from app.db.models import DurableJob
+from app.db.session import get_sessionmaker
+from app.jobs.models import PermanentJobError
 from app.jobs.repository import create_job, move_to_dlq
+from app.jobs.types import JobType, register_handler_function
 from app.telephony.call_events import TelephonyCallbackEvent, scrub
 from app.telephony.provider_errors import TelephonyError
 
 _MAX_ATTEMPTS = 5
-JOB_TYPE = "telephony.callback"
+JOB_TYPE = JobType.TELEPHONY_CALLBACK
 
 
 def safe_payload(event: TelephonyCallbackEvent) -> dict:
@@ -74,3 +83,56 @@ def _class_of(exc: Exception) -> str:
     if isinstance(exc, TelephonyError):
         return exc.code
     return type(exc).__name__
+
+
+def make_telephony_callback_handler(
+    session_factory: async_sessionmaker[AsyncSession] | None = None,
+):
+    """Build the durable worker handler for ``telephony.callback`` retry jobs."""
+
+    async def _handle(job: DurableJob) -> None:
+        from app.telephony.callback_reconciliation import _apply
+
+        raw_id = str((job.payload or {}).get("event_id") or "")
+        try:
+            event_id = uuid.UUID(raw_id)
+        except (ValueError, AttributeError, TypeError) as exc:
+            raise PermanentJobError(
+                "invalid_payload", "telephony.callback payload lacks a valid event_id"
+            ) from exc
+
+        maker = session_factory or get_sessionmaker()
+        async with maker() as session:
+            event = await session.get(TelephonyCallbackEvent, event_id)
+            if event is None or event.tenant_id != job.tenant_id:
+                raise PermanentJobError("event_not_found")
+            if event.status in {"processed", "replayed", "dead_letter"}:
+                return
+
+            envelope = {
+                "provider": event.provider,
+                "event_type": event.event_type,
+                "external_id": event.external_id,
+                "event_id": event.event_id,
+                "tenant_id": event.tenant_id,
+                "observed_at": event.provider_observed_at,
+                "metadata": dict(event.safe_metadata or {}),
+                **dict(event.safe_metadata or {}),
+            }
+            try:
+                outcome, _changed = await _apply(session, event, envelope)
+            except Exception as exc:  # noqa: BLE001 - schedule next retry or DLQ
+                await note_failure(session, event, exc)
+                await session.commit()
+                return
+
+            event.status = "processed"
+            event.outcome = outcome[:64]
+            event.processed_at = datetime.now(timezone.utc)
+            await session.commit()
+
+    return _handle
+
+
+handle_telephony_callback = make_telephony_callback_handler()
+register_handler_function(JobType.TELEPHONY_CALLBACK, handle_telephony_callback)

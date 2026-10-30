@@ -205,8 +205,28 @@ jobs:
         working-directory: dashboard
         run: npm audit --omit=dev --audit-level=high
 
+  frontend-next:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: dashboard-next/package-lock.json
+
+      - name: Install, test, typecheck, build, and audit
+        working-directory: dashboard-next
+        run: |
+          npm ci
+          npx vitest run
+          npx tsc --noEmit
+          npm run build
+          npm audit --omit=dev --audit-level=high
+
   image:
-    needs: [backend, gateway, frontend, truth-guards]
+    needs: [backend, gateway, frontend, frontend-next, truth-guards]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -96,8 +96,9 @@ async def test_persisted_chat_message_memory_and_sms_provider_fail_closed(
     health = await client.post(
         f"/api/channels/{channel_id}/health-check", headers=headers
     )
-    assert health.status_code == 501
-    assert health.json()["detail"]["code"] == "channel_health_check_not_implemented"
+    # corrected: /api/channels health-check and send now return 409 NOT_CONFIGURED (instead of 501) when carrier credentials are absent
+    assert health.status_code == 409
+    assert health.json()["detail"]["code"] == "NOT_CONFIGURED"
 
     send = await client.post(
         "/api/channels/send",
@@ -108,6 +109,6 @@ async def test_persisted_chat_message_memory_and_sms_provider_fail_closed(
             "message": "Prompt 8 test; no SMS should be delivered.",
         },
     )
-    assert send.status_code == 501
-    assert send.json()["detail"]["code"] == "channel_send_not_implemented"
+    assert send.status_code == 409
+    assert send.json()["detail"]["code"] == "NOT_CONFIGURED"
     assert "no message or call was created" in send.json()["detail"]["message"]

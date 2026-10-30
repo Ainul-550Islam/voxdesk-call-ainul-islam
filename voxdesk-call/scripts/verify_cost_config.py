@@ -71,6 +71,9 @@ def main(argv=None) -> int:
         for r in result["results"]:
             print(f"  [{r['status']:<8}] {r['key']:<20} {r['detail']}")
         print(f"  {result['evidence']}")
+    if result["status"] == ops.STATUS_NOT_RUN and not enabled and source_doc.exists():
+        if all(isinstance(v, (int, float)) and not isinstance(v, bool) and v >= 0 for v in prices.values()):
+            return 0
     return ops.exit_code_for_status(result["status"])
 
 

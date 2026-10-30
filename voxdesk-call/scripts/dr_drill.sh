@@ -185,7 +185,7 @@ PGHOST="${PG_HOST}" PGPORT="${PG_PORT}" POSTGRES_USER="${PG_DRILL_USER}" POSTGRE
   sh "${SCRIPT_DIR}/backup.sh" "${BACKUP_DIR}"
 T_BACKUP_END_NS="$(date +%s%N)"
 
-BACKUP_FILE="$(ls -1t "${BACKUP_DIR}"/voxdesk-*.dump | head -n 1)"
+BACKUP_FILE="$(find "${BACKUP_DIR}" -maxdepth 1 -type f -name 'voxdesk-*.dump' -printf '%T@ %p\n' | sort -nr | head -n 1 | cut -d' ' -f2-)"
 if [[ -z "${BACKUP_FILE}" || ! -f "${BACKUP_FILE}" ]]; then
   echo "[dr-drill] ERROR: Backup file not found in ${BACKUP_DIR}" >&2
   exit 1

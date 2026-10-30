@@ -1,8 +1,6 @@
 """Regression coverage for the hardened legacy transfer-control surface."""
 from __future__ import annotations
 
-import uuid
-
 import pytest
 from fastapi import HTTPException
 
@@ -10,13 +8,12 @@ from app.api.transfer_control_routes import (
     TransferRequest,
     _redact_credential_material,
     _validate_context_data,
-    bulk_transfer,
-    complete_transfer,
-    fail_transfer,
-    send_whisper,
 )
+from app.db.models import CallStatus, TransferState
+from app.environments.resource_scope import resolve_scope
 from app.telephony.transfer import transfer_twiml
 from app.telephony.transfer_service import _safe_whisper_reason
+from tests.conftest import auth_headers, make_call
 
 
 def test_transfer_request_accepts_only_valid_e164_destinations():
@@ -65,17 +62,48 @@ def test_transfer_twiml_uses_requested_timeout_and_bridge_behavior():
     assert 'answerOnBridge="false"' in twiml
 
 
+# corrected: endpoint implemented in gap-fill — send_whisper and bulk_transfer are real
+# CallControlService operations while complete_transfer / fail_transfer refuse client-authored
+# outcomes with 403 and are omitted from OpenAPI.
 @pytest.mark.asyncio
-async def test_client_authored_transfer_outcomes_and_unverified_bulk_fail_closed():
-    call_id = uuid.uuid4()
-    principal = object()
-    cases = (
-        send_whisper(call_id, "hello", principal),
-        bulk_transfer([call_id], "+14155552671", None, principal),
-        complete_transfer(call_id, principal),
-        fail_transfer(call_id, "busy", principal),
+async def test_client_authored_transfer_outcomes_and_unverified_bulk_fail_closed(
+    client, db, tenant_a, owner_a
+):
+    scope = await resolve_scope(db, tenant_id=tenant_a.id, user_id=owner_a.id)
+    call = await make_call(
+        db,
+        tenant_a,
+        environment_id=scope.id,
+        status=CallStatus.IN_PROGRESS,
+        transfer_state=TransferState.DIALING,
     )
-    for operation in cases:
-        with pytest.raises(HTTPException) as caught:
-            await operation
-        assert caught.value.status_code == 501
+    call_id = call.id
+
+    headers = await auth_headers(client, owner_a)
+
+    comp = await client.post(f"/api/calls/{call_id}/transfer/complete", headers=headers)
+    assert comp.status_code == 403
+    assert comp.json()["detail"]["code"] == "client_transfer_completion_forbidden"
+
+    fail = await client.post(
+        f"/api/calls/{call_id}/transfer/fail",
+        params={"reason": "busy"},
+        headers=headers,
+    )
+    assert fail.status_code == 403
+    assert fail.json()["detail"]["code"] == "client_transfer_failure_forbidden"
+
+    whisper = await client.post(
+        f"/api/calls/{call_id}/transfer/whisper",
+        json={"message": "Customer is asking about billing"},
+        headers=headers,
+    )
+    assert whisper.status_code != 501
+
+    bulk = await client.post(
+        "/api/calls/bulk-transfer",
+        json={"items": [{"call_id": str(call_id), "destination": "+14155552671"}]},
+        headers=headers,
+    )
+    assert bulk.status_code != 501
+

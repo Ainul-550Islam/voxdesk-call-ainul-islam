@@ -37,6 +37,7 @@ V2_REVISIONS = (
     "0066_contact_center_v2",
     "0067_integrations_v2",
     "0068_platform_v2",
+    "0069_voice_demo_sessions",  # corrected: added 0069_voice_demo_sessions migration
 )
 V2_MODEL_MODULES = frozenset(
     {
@@ -149,8 +150,8 @@ def _registered_tables() -> frozenset[str]:
 
 def test_there_is_exactly_one_head():
     heads = _script_directory().get_heads()
-    # The platform-v2 revision is the current head after Batch 07.
-    assert heads == ["0068_platform_v2"], heads
+    # corrected: head advanced from 0068_platform_v2 to 0069_voice_demo_sessions
+    assert heads == ["0069_voice_demo_sessions"], heads
 
 
 def test_the_history_is_a_single_linear_chain():
@@ -166,6 +167,7 @@ def test_the_history_is_a_single_linear_chain():
         "0066_contact_center_v2": "0065_compliance_v2",
         "0067_integrations_v2": "0066_contact_center_v2",
         "0068_platform_v2": "0067_integrations_v2",
+        "0069_voice_demo_sessions": "0068_platform_v2",  # corrected: added 0069_voice_demo_sessions
     }
     for revision_id, parent in expected.items():
         assert script.get_revision(revision_id).down_revision == parent, revision_id

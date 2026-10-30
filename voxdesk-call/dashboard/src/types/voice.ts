@@ -1,6 +1,7 @@
 export type VoiceState='IDLE'|'LISTENING'|'PROCESSING'|'SPEAKING'|'INTERRUPTED'|'ERROR'|'NOT_CONFIGURED';
-export interface VoiceDemoSession { status:'ok'; session_id:string; expires_at:string; transport:string; configuration:{ session_id:string; expires_at:string; transport:string; ice_servers:{urls:string[]}[]; voice_states:VoiceState[]; initial_state:VoiceState; provider_configured:boolean; message:string; }; }
-export interface VoiceDemoEvent { event:'start'|'stop'|'interrupt'|'error'; timestamp:string; data?:Record<string,unknown>; }
-export interface VoiceDemoEventResponse { status:'ok'; session_id:string; event:string; new_state:VoiceState; at:string; }
-export interface VoiceDemoSessionState { status:'ok'; session_id:string; state:VoiceState; created_at:string; expires_at:string; events:{event:string; timestamp:string; new_state:VoiceState; data:Record<string,unknown>}[]; }
+export interface VoiceDemoTranscriptTurn { role:string; text:string; timestamp:string; }
+export interface VoiceDemoSession { status:'ok'; session_id:string; session_token?:string; agent_id?:string; agent_name?:string; expires_at:string; transport:string; transcript?:VoiceDemoTranscriptTurn[]; configuration:{ session_id:string; expires_at:string; transport:string; ice_servers:{urls:string[]}[]; voice_states:VoiceState[]; initial_state:VoiceState; provider_configured:boolean; message:string; }; }
+export interface VoiceDemoEvent { event:'start'|'stop'|'end'|'interrupt'|'error'|'turn'|'text'|'utterance'; timestamp?:string; data?:Record<string,unknown>; session_token?:string; }
+export interface VoiceDemoEventResponse { status:'ok'; session_id:string; event:string; new_state:VoiceState; at:string; reply?:string|null; turn_count?:number; transcript?:VoiceDemoTranscriptTurn[]; }
+export interface VoiceDemoSessionState { status:'ok'; session_id:string; state:VoiceState; session_status?:string; turn_count?:number; max_turns?:number; transcript?:VoiceDemoTranscriptTurn[]; created_at:string; expires_at:string; events:{event:string; timestamp:string; new_state:VoiceState; data:Record<string,unknown>}[]; }
 export interface UseVoiceDemoReturn { state:VoiceState; session:VoiceDemoSession|null; loading:boolean; error:string|null; start:()=>Promise<void>; stop:()=>Promise<void>; interrupt:()=>Promise<void>; isConfigured:boolean; }

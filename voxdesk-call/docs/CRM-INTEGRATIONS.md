@@ -91,8 +91,8 @@ All endpoints require authentication (`Authorization: Bearer <jwt>` or `X-API-Ke
 | `PUT /api/integrations/crm/{provider}` | `integration:write` | Upsert credentials (re-encrypted), config, field mappings, and event subscriptions |
 | `DELETE /api/integrations/crm/{provider}` | `integration:write` | Delete a provider integration and its sync logs |
 | `POST /api/integrations/crm/{provider}/test` | `integration:write` | Live `health_check()` against the provider; returns `{connected, provider, latency_ms, message}` |
-| `POST /api/integrations/crm/{provider}/sync` | `integration:sync` | Manually dispatch a `call.completed` or `lead.created` sync |
-| `GET /api/integrations/crm/{provider}/logs` | `integration:read` | Recent `CrmSyncLog` entries (`status` filter, `limit`) |
+| `GET /api/integrations/crm/syncs` | `integration:read` | List recent `CrmSyncLog` sync executions across providers |
+| `GET /api/crm/writebacks` | `integration:read` | Recent `CrmWritebackLog` entries (`status` filter, `limit`) |
 | `POST /api/integrations/salesforce/connect` | `integration:write` | Connect Salesforce with AES-GCM encrypted tokens |
 | `POST /api/integrations/salesforce/oauth/authorize` | `integration:write` | Start Salesforce OAuth2 + S256 PKCE flow |
 | `POST /api/integrations/salesforce/oauth/callback` | `integration:write` | Complete OAuth2 + PKCE exchange and persist encrypted credentials |

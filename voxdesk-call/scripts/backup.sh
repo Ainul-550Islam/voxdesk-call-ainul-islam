@@ -36,7 +36,7 @@ pg_restore --list "${FILE}" > /dev/null
 echo "Backup verified: ${FILE} ($(du -h "${FILE}" | cut -f1))"
 
 # Keep the last 14 local dumps.
-ls -1 "${OUT_DIR}"/*.dump 2>/dev/null | head -n -14 | xargs -r rm
+find "${OUT_DIR}" -maxdepth 1 -type f -name '*.dump' | sort | head -n -14 | xargs -r rm -f
 
 if [ -n "${RCLONE_REMOTE:-}" ]; then
   echo "Syncing to ${RCLONE_REMOTE}"

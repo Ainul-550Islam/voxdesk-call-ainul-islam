@@ -130,8 +130,8 @@ class TestSchema:
         # The chain is linear by design; the current head includes the
         # deployment, governance, transfer-context, and Boolean-default fixes.
         heads = script.get_heads()
-        # Objective reason: Alembic's live single head is 0068 after Batch 07.
-        assert heads == ["0068_platform_v2"]
+        # corrected: Alembic's live single head is 0069_voice_demo_sessions.
+        assert heads == ["0069_voice_demo_sessions"]
         head = script.get_revision("0049_runtime_schema_alignment")
         assert head.down_revision == "0048_boolean_defaults"
         # Prompt 6 — Telephony / Voice Runtime head.

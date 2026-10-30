@@ -11,6 +11,7 @@ def bootstrap() -> dict[str, object]:
     from app.services import post_call_workflow  # noqa: F401 - workflow.execution
     from app.qa import auto_review  # noqa: F401 - QA_AUTO_REVIEW
     from app.telephony import post_call  # noqa: F401 - registers POST_CALL
+    from app.telephony import callback_dlq  # noqa: F401 - registers TELEPHONY_CALLBACK
     from app.deployment import runtime as deployment_runtime  # noqa: F401 - registers deployment handler
     from app.services import simulation_service  # noqa: F401 - registers evaluation handler
     # BATCH06: contact-center-v2 durable jobs (dialer start/tick, assist turn and

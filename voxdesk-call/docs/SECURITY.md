@@ -70,13 +70,13 @@ the dashboard.
 | Registration | `POST /auth/register` (owner bootstrap) | — | creates tenant + owner |
 | Admin/tenant | `PATCH /api/tenants/{id}/settings`, `/team/**`, `/leads/**`, `/appointments/**` | JWT + RBAC | `ctx.tenant_id` + `get_owned()` |
 | Agent | `GET /api/agent/**` | JWT + RBAC | tenant-scoped |
-| Billing | `POST /billing/checkout`, `/cancel`, `/portal`, `POST /api/billing/webhooks` | JWT / Stripe signature | tenant from JWT; webhook by signature |
+| Billing | `POST /billing/checkout`, `/cancel`, `/portal`, `POST /api/billing/webhook/{provider}` | JWT / Stripe signature | tenant from JWT; webhook by signature |
 | Analytics | `GET /api/analytics/**` | JWT + RBAC | every query `WHERE tenant_id` |
 | Integrations | `POST/GET/PATCH/DELETE /api/integrations/**` (CRM + calendar) | JWT + RBAC | credentials/config allowlists |
 | Knowledge | `POST /api/knowledge/documents`, `GET /documents`, `/search` | JWT + RBAC | tenant-mandatory retrieval |
 | File upload | `POST /api/knowledge/documents` (multipart) | JWT + RBAC | size/type/ext/traversal checks |
-| Webhooks (in) | `POST /api/integrations/crm/webhook/{token}`, `/calendar/webhook/{token}` | HMAC signature + routing token | token is tenant-bound, never body |
-| Billing webhook | `POST /api/billing/webhooks` | Stripe raw-body signature | — |
+| Webhooks (in) | `POST /api/integrations/crm/inbound/{provider}/{token}`, `/api/calendar/webhooks/{provider}/{token}` | HMAC signature + routing token | token is tenant-bound, never body |
+| Billing webhook | `POST /api/billing/webhook/{provider}` | Stripe raw-body signature | — |
 | Telephony | `POST /telephony/voice`, `/status`, `/transfer`, `/media` (WS), `/outbound` | Twilio HMAC / signed stream token | per-call |
 | Health/metrics | `GET /health`, `/ready`, `/metrics` | bearer token (metrics) | fail-closed on absence |
 | Dashboard | static SPA under `/dashboard` | cookie session | API is the boundary |

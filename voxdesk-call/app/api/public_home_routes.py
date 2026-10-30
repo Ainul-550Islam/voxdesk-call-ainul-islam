@@ -8,12 +8,26 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Literal, Optional, Set
+import uuid
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, status
 from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.rate_limit import allow_identity_action, client_ip as trusted_client_ip
 from app.core.logging import log
+from app.db.session import get_session
+from app.services.voice_demo_service import (
+    VoiceDemoExpiredError,
+    VoiceDemoNotConfiguredError,
+    VoiceDemoNotFoundError,
+    VoiceDemoRateLimitedError,
+    VoiceDemoUnauthorizedError,
+    create_demo_session,
+    get_demo_session_state,
+    handle_demo_event,
+)
 
 router = APIRouter(prefix="/api/v1/public", tags=["public-home"])
 
@@ -106,12 +120,19 @@ class AnalyticsSummaryResponse(_Strict):
 class VoiceDemoSessionCreate(_Strict):
     tenant_id: Optional[str] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
+    ttl_seconds: Optional[int] = Field(default=None, ge=5, le=1800)
 
 
 class VoiceDemoEventIn(_Strict):
-    event: Literal["start", "stop", "interrupt", "error"]
-    timestamp: str
+    event: Literal["start", "stop", "end", "interrupt", "error", "turn", "text", "utterance"]
+    timestamp: Optional[str] = None
     data: Dict[str, Any] = Field(default_factory=dict)
+    session_token: Optional[str] = None
+
+
+class VoiceDemoTurnIn(_Strict):
+    text: str = Field(..., min_length=1, max_length=2000)
+    session_token: Optional[str] = None
 
 
 def _registered_api_operations(app: Any) -> Set[str]:
@@ -275,61 +296,214 @@ async def get_public_analytics_summary() -> AnalyticsSummaryResponse:
     return AnalyticsSummaryResponse(data=summary)
 
 
-async def _check_demo_rate_limit(ip: str, max_per_minute: int = 10) -> bool:
+async def _check_demo_rate_limit(ip: str, max_per_minute: Optional[int] = None) -> bool:
+    budget = int(
+        max_per_minute
+        if max_per_minute is not None
+        else settings.voice_demo_rate_limit_per_minute
+    )
     return await allow_identity_action(
         action="public:voice_demo",
         who=ip,
-        limit=max_per_minute,
+        limit=max(1, budget),
         window=60.0,
     )
 
 
-@router.post("/voice-demo/session", status_code=503)
+def _extract_demo_token(
+    *,
+    x_demo_session_token: Optional[str] = None,
+    authorization: Optional[str] = None,
+    query_token: Optional[str] = None,
+    body_token: Optional[str] = None,
+) -> Optional[str]:
+    for candidate in (x_demo_session_token, authorization, body_token, query_token):
+        if isinstance(candidate, str) and candidate.strip():
+            return candidate.strip()
+    return None
+
+
+def _parse_demo_session_uuid(session_id: str) -> uuid.UUID:
+    try:
+        return uuid.UUID(str(session_id))
+    except (TypeError, ValueError):
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "NOT_FOUND", "message": "Voice demo session not found."},
+        ) from None
+
+
+def _raise_demo_http_error(exc: Exception) -> None:
+    if isinstance(exc, VoiceDemoRateLimitedError):
+        raise HTTPException(
+            status_code=429,
+            detail={"code": "RATE_LIMITED", "message": str(exc)},
+        ) from None
+    if isinstance(exc, VoiceDemoNotConfiguredError):
+        raise HTTPException(
+            status_code=503,
+            detail={"code": "voice_demo_not_configured", "message": str(exc)},
+        ) from None
+    if isinstance(exc, VoiceDemoUnauthorizedError):
+        raise HTTPException(
+            status_code=401,
+            detail={"code": "INVALID_DEMO_TOKEN", "message": str(exc)},
+        ) from None
+    if isinstance(exc, VoiceDemoExpiredError):
+        raise HTTPException(
+            status_code=410,
+            detail={"code": "DEMO_SESSION_EXPIRED", "message": str(exc)},
+        ) from None
+    if isinstance(exc, VoiceDemoNotFoundError):
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "NOT_FOUND", "message": str(exc)},
+        ) from None
+    raise HTTPException(
+        status_code=422,
+        detail={"code": "VALIDATION_ERROR", "message": str(exc)},
+    ) from None
+
+
+@router.post("/voice-demo/session", status_code=status.HTTP_201_CREATED)
 async def create_voice_demo_session(
     payload: VoiceDemoSessionCreate,
     request: Request,
-) -> None:
-    """Fail closed until a public, provider-backed demo session is implemented."""
-    del payload
+    session: AsyncSession = Depends(get_session),
+) -> Dict[str, Any]:
+    """Create a durable DB-backed public voice demo session with an HMAC session token."""
     ip = trusted_client_ip(request)
-    if not await _check_demo_rate_limit(ip, max_per_minute=10):
-        raise HTTPException(status_code=429, detail="Too many demo sessions. Please wait a moment.")
-    raise HTTPException(
-        status_code=503,
-        detail={
-            "code": "voice_demo_not_configured",
-            "message": "No provider-backed public voice demo is configured; no session was created.",
-        },
-    )
+    if settings.voice_demo_rate_limit_per_minute <= 0 or not await _check_demo_rate_limit(ip):
+        raise HTTPException(
+            status_code=429,
+            detail={"code": "RATE_LIMITED", "message": "Too many demo sessions. Please wait a moment."},
+        )
+    try:
+        return await create_demo_session(
+            session,
+            client_ip=ip,
+            requested_tenant_id=payload.tenant_id,
+            metadata=payload.metadata,
+            ttl_seconds=payload.ttl_seconds,
+        )
+    except Exception as exc:
+        _raise_demo_http_error(exc)
+        raise
 
 
-@router.post("/voice-demo/session/{session_id}/event", status_code=501)
+@router.post("/voice-demo/session/{session_id}/event")
 async def post_voice_demo_event(
     session_id: str,
     payload: VoiceDemoEventIn,
-) -> None:
-    """Do not accept client-authored state transitions as provider events."""
-    del session_id, payload
-    raise HTTPException(
-        status_code=501,
-        detail={
-            "code": "voice_demo_events_not_implemented",
-            "message": "A verified server-side demo session is required before events can be accepted.",
-        },
+    session: AsyncSession = Depends(get_session),
+    x_demo_session_token: Optional[str] = Header(default=None, alias="X-Demo-Session-Token"),
+    authorization: Optional[str] = Header(default=None, alias="Authorization"),
+    token: Optional[str] = Query(default=None),
+) -> Dict[str, Any]:
+    """Process a verified voice-demo lifecycle event (start/turn/interrupt/stop) against PostgreSQL/SQLite."""
+    sess_uuid = _parse_demo_session_uuid(session_id)
+    resolved_token = _extract_demo_token(
+        x_demo_session_token=x_demo_session_token,
+        authorization=authorization,
+        query_token=token,
+        body_token=payload.session_token,
     )
+    try:
+        return await handle_demo_event(
+            session,
+            session_id=sess_uuid,
+            token=resolved_token,
+            event=payload.event,
+            timestamp=payload.timestamp,
+            data=payload.data,
+        )
+    except Exception as exc:
+        _raise_demo_http_error(exc)
+        raise
 
 
-@router.get("/voice-demo/session/{session_id}", status_code=501)
-async def get_voice_demo_session(session_id: str) -> None:
-    """Do not serve worker-local demo session state."""
-    del session_id
-    raise HTTPException(
-        status_code=501,
-        detail={
-            "code": "voice_demo_sessions_not_implemented",
-            "message": "No durable provider-backed public demo session store is configured.",
-        },
+@router.post("/voice-demo/session/{session_id}/turn")
+async def post_voice_demo_turn(
+    session_id: str,
+    payload: VoiceDemoTurnIn,
+    session: AsyncSession = Depends(get_session),
+    x_demo_session_token: Optional[str] = Header(default=None, alias="X-Demo-Session-Token"),
+    authorization: Optional[str] = Header(default=None, alias="Authorization"),
+    token: Optional[str] = Query(default=None),
+) -> Dict[str, Any]:
+    """Process one conversational demo turn against the persisted session."""
+    sess_uuid = _parse_demo_session_uuid(session_id)
+    resolved_token = _extract_demo_token(
+        x_demo_session_token=x_demo_session_token,
+        authorization=authorization,
+        query_token=token,
+        body_token=payload.session_token,
     )
+    try:
+        return await handle_demo_event(
+            session,
+            session_id=sess_uuid,
+            token=resolved_token,
+            event="turn",
+            timestamp=_now_iso(),
+            data={"text": payload.text},
+        )
+    except Exception as exc:
+        _raise_demo_http_error(exc)
+        raise
+
+
+@router.post("/voice-demo/session/{session_id}/end")
+async def end_voice_demo_session(
+    session_id: str,
+    session: AsyncSession = Depends(get_session),
+    x_demo_session_token: Optional[str] = Header(default=None, alias="X-Demo-Session-Token"),
+    authorization: Optional[str] = Header(default=None, alias="Authorization"),
+    token: Optional[str] = Query(default=None),
+) -> Dict[str, Any]:
+    """Terminate an active public voice demo session."""
+    sess_uuid = _parse_demo_session_uuid(session_id)
+    resolved_token = _extract_demo_token(
+        x_demo_session_token=x_demo_session_token,
+        authorization=authorization,
+        query_token=token,
+    )
+    try:
+        return await handle_demo_event(
+            session,
+            session_id=sess_uuid,
+            token=resolved_token,
+            event="end",
+            timestamp=_now_iso(),
+            data={},
+        )
+    except Exception as exc:
+        _raise_demo_http_error(exc)
+        raise
+
+
+@router.get("/voice-demo/session/{session_id}")
+async def get_voice_demo_session(
+    session_id: str,
+    session: AsyncSession = Depends(get_session),
+    x_demo_session_token: Optional[str] = Header(default=None, alias="X-Demo-Session-Token"),
+    authorization: Optional[str] = Header(default=None, alias="Authorization"),
+    token: Optional[str] = Query(default=None),
+) -> Dict[str, Any]:
+    """Return durable public demo session state (requires valid HMAC session token)."""
+    sess_uuid = _parse_demo_session_uuid(session_id)
+    resolved_token = _extract_demo_token(
+        x_demo_session_token=x_demo_session_token,
+        authorization=authorization,
+        query_token=token,
+    )
+    try:
+        return await get_demo_session_state(
+            session, session_id=sess_uuid, token=resolved_token
+        )
+    except Exception as exc:
+        _raise_demo_http_error(exc)
+        raise
 
 
 @router.get("/health", response_model=dict)

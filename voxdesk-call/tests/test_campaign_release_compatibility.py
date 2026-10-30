@@ -31,8 +31,8 @@ PREVIOUS_HEAD = "0048_boolean_defaults"
 
 def test_migration_heads_reports_exactly_the_current_head():
     heads = facts.migration_heads(VERSIONS_DIR)
-    # Objective reason: platform-v2 migration 0068 is the current sole head.
-    assert heads == ("0068_platform_v2",)
+    # corrected: migration 0069_voice_demo_sessions is now the current sole head.
+    assert heads == ("0069_voice_demo_sessions",)
 
 
 def test_migration_file_declares_the_correct_chain():

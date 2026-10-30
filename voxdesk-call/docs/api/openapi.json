@@ -2944,6 +2944,37 @@
         "title": "AssignmentOut",
         "type": "object"
       },
+      "AssignmentRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "call_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Call Id"
+          },
+          "call_sid": {
+            "anyOf": [
+              {
+                "maxLength": 96,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Call Sid"
+          }
+        },
+        "title": "AssignmentRequest",
+        "type": "object"
+      },
       "AssistFeedbackBody": {
         "additionalProperties": false,
         "properties": {
@@ -8010,7 +8041,8 @@
         "additionalProperties": false,
         "properties": {
           "channel_type": {
-            "pattern": "^(sms|whatsapp|email|webchat)$",
+            "maxLength": 32,
+            "minLength": 1,
             "title": "Channel Type",
             "type": "string"
           },
@@ -8024,7 +8056,8 @@
             "type": "boolean"
           },
           "provider": {
-            "pattern": "^(twilio|meta|sendgrid|internal|webhook)$",
+            "maxLength": 32,
+            "minLength": 1,
             "title": "Provider",
             "type": "string"
           }
@@ -30661,9 +30694,29 @@
         "additionalProperties": false,
         "properties": {
           "channel_type": {
-            "pattern": "^(sms|whatsapp|email|webchat)$",
+            "maxLength": 32,
+            "minLength": 1,
             "title": "Channel Type",
             "type": "string"
+          },
+          "from_number": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Number"
+          },
+          "media_urls": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Media Urls",
+            "type": "array"
           },
           "message": {
             "maxLength": 4000,
@@ -30674,6 +30727,18 @@
           "metadata": {
             "title": "Metadata",
             "type": "object"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "maxLength": 32,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
           },
           "subject": {
             "anyOf": [
@@ -30686,6 +30751,22 @@
               }
             ],
             "title": "Subject"
+          },
+          "template_sid": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Sid"
+          },
+          "template_variables": {
+            "title": "Template Variables",
+            "type": "object"
           },
           "to": {
             "maxLength": 200,
@@ -34432,16 +34513,38 @@
             "title": "New State",
             "type": "string"
           },
+          "reply": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reply"
+          },
+          "session": {
+            "$ref": "#/components/schemas/TestSessionSummaryOut"
+          },
           "session_id": {
             "title": "Session Id",
             "type": "string"
+          },
+          "transcript": {
+            "items": {
+              "$ref": "#/components/schemas/TestTranscriptOut"
+            },
+            "title": "Transcript",
+            "type": "array"
           }
         },
         "required": [
           "session_id",
           "event",
           "new_state",
-          "at"
+          "at",
+          "session"
         ],
         "title": "TestEventOut",
         "type": "object"
@@ -34896,7 +34999,7 @@
           "timeout_sec": {
             "default": 120,
             "maximum": 600.0,
-            "minimum": 10.0,
+            "minimum": 1.0,
             "title": "Timeout Sec",
             "type": "integer"
           }
@@ -34918,12 +35021,23 @@
             "title": "Expires At",
             "type": "string"
           },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
           "mode": {
             "title": "Mode",
             "type": "string"
           },
+          "session": {
+            "$ref": "#/components/schemas/TestSessionSummaryOut"
+          },
           "session_id": {
             "title": "Session Id",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
             "type": "string"
           },
           "status": {
@@ -34938,6 +35052,13 @@
             "title": "Token",
             "type": "string"
           },
+          "transcript": {
+            "items": {
+              "$ref": "#/components/schemas/TestTranscriptOut"
+            },
+            "title": "Transcript",
+            "type": "array"
+          },
           "ws_url": {
             "anyOf": [
               {
@@ -34951,21 +35072,32 @@
           }
         },
         "required": [
+          "id",
           "session_id",
           "agent_id",
           "tenant_id",
           "mode",
           "status",
+          "state",
           "ws_url",
           "token",
           "expires_at",
-          "created_at"
+          "created_at",
+          "session"
         ],
         "title": "TestSessionOut",
         "type": "object"
       },
       "TestSessionStateOut": {
         "properties": {
+          "agent_id": {
+            "title": "Agent Id",
+            "type": "string"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
           "error": {
             "anyOf": [
               {
@@ -34977,9 +35109,27 @@
             ],
             "title": "Error"
           },
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
           "latency_ms": {
             "title": "Latency Ms",
             "type": "integer"
+          },
+          "session": {
+            "$ref": "#/components/schemas/TestSessionSummaryOut"
           },
           "session_id": {
             "title": "Session Id",
@@ -34998,13 +35148,56 @@
           }
         },
         "required": [
+          "id",
           "session_id",
+          "agent_id",
           "state",
           "transcript",
           "latency_ms",
-          "error"
+          "created_at",
+          "session"
         ],
         "title": "TestSessionStateOut",
+        "type": "object"
+      },
+      "TestSessionSummaryOut": {
+        "properties": {
+          "agent_id": {
+            "title": "Agent Id",
+            "type": "string"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "transcript": {
+            "items": {
+              "$ref": "#/components/schemas/TestTranscriptOut"
+            },
+            "title": "Transcript",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "agent_id",
+          "state",
+          "created_at"
+        ],
+        "title": "TestSessionSummaryOut",
         "type": "object"
       },
       "TestSuiteCreateRequest": {
@@ -35285,9 +35478,7 @@
         "required": [
           "role",
           "text",
-          "timestamp",
-          "latency_ms",
-          "tool_calls"
+          "timestamp"
         ],
         "title": "TestTranscriptOut",
         "type": "object"
@@ -38272,20 +38463,41 @@
             "enum": [
               "start",
               "stop",
+              "end",
               "interrupt",
-              "error"
+              "error",
+              "turn",
+              "text",
+              "utterance"
             ],
             "title": "Event",
             "type": "string"
           },
+          "session_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Token"
+          },
           "timestamp": {
-            "title": "Timestamp",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestamp"
           }
         },
         "required": [
-          "event",
-          "timestamp"
+          "event"
         ],
         "title": "VoiceDemoEventIn",
         "type": "object"
@@ -38307,9 +38519,49 @@
               }
             ],
             "title": "Tenant Id"
+          },
+          "ttl_seconds": {
+            "anyOf": [
+              {
+                "maximum": 1800.0,
+                "minimum": 5.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ttl Seconds"
           }
         },
         "title": "VoiceDemoSessionCreate",
+        "type": "object"
+      },
+      "VoiceDemoTurnIn": {
+        "additionalProperties": false,
+        "properties": {
+          "session_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Token"
+          },
+          "text": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "VoiceDemoTurnIn",
         "type": "object"
       },
       "VoiceOut": {
@@ -40045,9 +40297,20 @@
             "title": "Data"
           },
           "event": {
-            "pattern": "^(start|stop|interrupt|text|audio)$",
+            "pattern": "^(start|stop|end|interrupt|text|utterance|turn|audio)$",
             "title": "Event",
             "type": "string"
+          },
+          "payload": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payload"
           },
           "timestamp": {
             "anyOf": [
@@ -43215,6 +43478,54 @@
       }
     },
     "/api/ab-testing/experiments/{experiment_id}": {
+      "delete": {
+        "operationId": "delete_experiment_api_ab_testing_experiments__experiment_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "experiment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Experiment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Delete Experiment Api Ab Testing Experiments  Experiment Id  Delete",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Experiment",
+        "tags": [
+          "ab-testing",
+          "ab-testing"
+        ]
+      },
       "get": {
         "operationId": "get_experiment_api_ab_testing_experiments__experiment_id__get",
         "parameters": [
@@ -43320,6 +43631,65 @@
         ]
       }
     },
+    "/api/ab-testing/experiments/{experiment_id}/assign": {
+      "post": {
+        "operationId": "post_assignment_api_ab_testing_experiments__experiment_id__assign_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "experiment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Experiment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignmentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignmentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Post Assignment",
+        "tags": [
+          "ab-testing",
+          "ab-testing"
+        ]
+      }
+    },
     "/api/ab-testing/experiments/{experiment_id}/assignment": {
       "get": {
         "operationId": "get_assignment_api_ab_testing_experiments__experiment_id__assignment_get",
@@ -43391,6 +43761,55 @@
           }
         ],
         "summary": "Get Assignment",
+        "tags": [
+          "ab-testing",
+          "ab-testing"
+        ]
+      }
+    },
+    "/api/ab-testing/experiments/{experiment_id}/complete": {
+      "post": {
+        "operationId": "complete_experiment_api_ab_testing_experiments__experiment_id__complete_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "experiment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Experiment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExperimentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Complete Experiment",
         "tags": [
           "ab-testing",
           "ab-testing"
@@ -61527,7 +61946,6 @@
         ]
       },
       "post": {
-        "description": "POST /api/channels \u2014 Register messaging channel (SMS/WhatsApp/Email/Webchat).",
         "operationId": "create_channel_api_channels_post",
         "requestBody": {
           "content": {
@@ -61572,9 +61990,37 @@
         ]
       }
     },
+    "/api/channels/adapters": {
+      "get": {
+        "description": "List supported messaging ``(provider, channel_type)`` adapters and deployment readiness.",
+        "operationId": "get_channel_adapters_api_channels_adapters_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Channel Adapters Api Channels Adapters Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Channel Adapters",
+        "tags": [
+          "multichannel"
+        ]
+      }
+    },
     "/api/channels/send": {
       "post": {
-        "description": "POST /api/channels/send \u2014 Send message over configured channel via app/messaging/sms.py.",
+        "description": "Send an outbound SMS or WhatsApp message via the configured ``ChannelAdapter``.",
         "operationId": "send_channel_message_api_channels_send_post",
         "requestBody": {
           "content": {
@@ -61703,6 +62149,74 @@
         ]
       }
     },
+    "/api/channels/webhook/telnyx": {
+      "post": {
+        "description": "POST /api/channels/webhook/telnyx \u2014 Telnyx v2 inbound SMS webhook with Ed25519 signature verification.",
+        "operationId": "inbound_telnyx_channel_webhook_api_channels_webhook_telnyx_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Inbound Telnyx Channel Webhook Api Channels Webhook Telnyx Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Inbound Telnyx Channel Webhook",
+        "tags": [
+          "multichannel"
+        ]
+      }
+    },
+    "/api/channels/webhook/vonage": {
+      "post": {
+        "description": "POST /api/channels/webhook/vonage \u2014 Vonage Messages v1 inbound SMS webhook with JWT/HMAC verification.",
+        "operationId": "inbound_vonage_channel_webhook_api_channels_webhook_vonage_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Inbound Vonage Channel Webhook Api Channels Webhook Vonage Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Inbound Vonage Channel Webhook",
+        "tags": [
+          "multichannel"
+        ]
+      }
+    },
+    "/api/channels/webhook/whatsapp": {
+      "post": {
+        "description": "POST /api/channels/webhook/whatsapp \u2014 Twilio WhatsApp inbound webhook with HMAC-SHA1 verification.",
+        "operationId": "inbound_whatsapp_channel_webhook_api_channels_webhook_whatsapp_post",
+        "responses": {
+          "200": {
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Inbound Whatsapp Channel Webhook",
+        "tags": [
+          "multichannel"
+        ]
+      }
+    },
     "/api/channels/{channel_id}": {
       "delete": {
         "operationId": "delete_channel_api_channels__channel_id__delete",
@@ -61722,7 +62236,10 @@
           "200": {
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "title": "Response Delete Channel Api Channels  Channel Id  Delete",
+                  "type": "object"
+                }
               }
             },
             "description": "Successful Response"
@@ -61853,7 +62370,7 @@
     },
     "/api/channels/{channel_id}/health-check": {
       "post": {
-        "description": "POST /api/channels/{id}/health-check \u2014 Check provider credentials via app/messaging/sms.py.",
+        "description": "Check provider credentials for a tenant messaging channel (409 ``NOT_CONFIGURED`` when absent).",
         "operationId": "health_check_channel_api_channels__channel_id__health_check_post",
         "parameters": [
           {
@@ -61903,7 +62420,7 @@
     },
     "/api/channels/{channel_id}/receipts": {
       "get": {
-        "description": "GET /api/channels/{id}/receipts \u2014 Real inbound/outbound receipts from MessageWebhookReceipt & MessageChannel.",
+        "description": "Return persisted inbound/outbound receipts from ``MessageWebhookReceipt`` & ``MessageChannel``.",
         "operationId": "list_channel_receipts_api_channels__channel_id__receipts_get",
         "parameters": [
           {
@@ -68303,6 +68820,54 @@
       }
     },
     "/api/experiments/{experiment_id}": {
+      "delete": {
+        "operationId": "delete_experiment_api_experiments__experiment_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "experiment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Experiment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Delete Experiment Api Experiments  Experiment Id  Delete",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Experiment",
+        "tags": [
+          "ab-testing",
+          "ab-testing"
+        ]
+      },
       "get": {
         "operationId": "get_experiment_api_experiments__experiment_id__get",
         "parameters": [
@@ -68408,6 +68973,65 @@
         ]
       }
     },
+    "/api/experiments/{experiment_id}/assign": {
+      "post": {
+        "operationId": "post_assignment_api_experiments__experiment_id__assign_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "experiment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Experiment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignmentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignmentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Post Assignment",
+        "tags": [
+          "ab-testing",
+          "ab-testing"
+        ]
+      }
+    },
     "/api/experiments/{experiment_id}/assignment": {
       "get": {
         "operationId": "get_assignment_api_experiments__experiment_id__assignment_get",
@@ -68479,6 +69103,55 @@
           }
         ],
         "summary": "Get Assignment",
+        "tags": [
+          "ab-testing",
+          "ab-testing"
+        ]
+      }
+    },
+    "/api/experiments/{experiment_id}/complete": {
+      "post": {
+        "operationId": "complete_experiment_api_experiments__experiment_id__complete_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "experiment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Experiment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExperimentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Complete Experiment",
         "tags": [
           "ab-testing",
           "ab-testing"
@@ -103440,11 +104113,18 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/TestSessionCreateIn"
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/TestSessionCreateIn"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {
@@ -110294,7 +110974,7 @@
     },
     "/api/v1/public/voice-demo/session": {
       "post": {
-        "description": "Fail closed until a public, provider-backed demo session is implemented.",
+        "description": "Create a durable DB-backed public voice demo session with an HMAC session token.",
         "operationId": "create_voice_demo_session_api_v1_public_voice_demo_session_post",
         "requestBody": {
           "content": {
@@ -110307,6 +110987,17 @@
           "required": true
         },
         "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Create Voice Demo Session Api V1 Public Voice Demo Session Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -110316,14 +111007,6 @@
               }
             },
             "description": "Validation Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful Response"
           }
         },
         "summary": "Create Voice Demo Session",
@@ -110334,7 +111017,7 @@
     },
     "/api/v1/public/voice-demo/session/{session_id}": {
       "get": {
-        "description": "Do not serve worker-local demo session state.",
+        "description": "Return durable public demo session state (requires valid HMAC session token).",
         "operationId": "get_voice_demo_session_api_v1_public_voice_demo_session__session_id__get",
         "parameters": [
           {
@@ -110345,9 +111028,68 @@
               "title": "Session Id",
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Token"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Demo-Session-Token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Demo-Session-Token"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
           }
         ],
         "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Voice Demo Session Api V1 Public Voice Demo Session  Session Id  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -110357,14 +111099,6 @@
               }
             },
             "description": "Validation Error"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful Response"
           }
         },
         "summary": "Get Voice Demo Session",
@@ -110373,9 +111107,101 @@
         ]
       }
     },
+    "/api/v1/public/voice-demo/session/{session_id}/end": {
+      "post": {
+        "description": "Terminate an active public voice demo session.",
+        "operationId": "end_voice_demo_session_api_v1_public_voice_demo_session__session_id__end_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Token"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Demo-Session-Token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Demo-Session-Token"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response End Voice Demo Session Api V1 Public Voice Demo Session  Session Id  End Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "End Voice Demo Session",
+        "tags": [
+          "public-home"
+        ]
+      }
+    },
     "/api/v1/public/voice-demo/session/{session_id}/event": {
       "post": {
-        "description": "Do not accept client-authored state transitions as provider events.",
+        "description": "Process a verified voice-demo lifecycle event (start/turn/interrupt/stop) against PostgreSQL/SQLite.",
         "operationId": "post_voice_demo_event_api_v1_public_voice_demo_session__session_id__event_post",
         "parameters": [
           {
@@ -110385,6 +111211,54 @@
             "schema": {
               "title": "Session Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Token"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Demo-Session-Token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Demo-Session-Token"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
             }
           }
         ],
@@ -110399,6 +111273,17 @@
           "required": true
         },
         "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Post Voice Demo Event Api V1 Public Voice Demo Session  Session Id  Event Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -110408,17 +111293,111 @@
               }
             },
             "description": "Validation Error"
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful Response"
           }
         },
         "summary": "Post Voice Demo Event",
+        "tags": [
+          "public-home"
+        ]
+      }
+    },
+    "/api/v1/public/voice-demo/session/{session_id}/turn": {
+      "post": {
+        "description": "Process one conversational demo turn against the persisted session.",
+        "operationId": "post_voice_demo_turn_api_v1_public_voice_demo_session__session_id__turn_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Token"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Demo-Session-Token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Demo-Session-Token"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoiceDemoTurnIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Post Voice Demo Turn Api V1 Public Voice Demo Session  Session Id  Turn Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Post Voice Demo Turn",
         "tags": [
           "public-home"
         ]

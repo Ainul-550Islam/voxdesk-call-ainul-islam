@@ -76,8 +76,8 @@ docker compose exec -T api python loadtest/voice_ws_user.py --self-test
 
 VoxDesk boots and passes all offline CI and synthetic call tests **without**
 external provider keys. To place or receive live PSTN calls and use live cloud
-STT/LLM/TTS providers, populate the following variables in `.env` (or configure
-them per tenant via the encrypted SecretStore API `POST /api/secrets`):
+STT/LLM/TTS providers, populate the following variables in `.env` (or store
+per-tenant secrets via the encrypted `SecretStore` in `app/security/secret_store.py`):
 
 | Provider | Purpose | Environment Variables in `.env` | How to Verify |
 |---|---|---|---|

@@ -62,6 +62,8 @@ import { ContactSalesPage } from '../pages/public/ContactSalesPage';
 import { LoginPage } from '../pages/public/LoginPage';
 import { SignupPage } from '../pages/public/SignupPage';
 import { StatusPage } from '../pages/public/StatusPage';
+import { VoiceDemoPage } from '../pages/public/VoiceDemoPage';
+import { ExperimentsPage } from '../pages/testing/ExperimentsPage';
 import { ResourcesPage } from '../pages/resources/ResourcesPage';
 import { SecurityPage } from '../pages/security/SecurityPage';
 import { SolutionsPage } from '../pages/solutions/SolutionsPage';
@@ -277,6 +279,10 @@ export function App() {
       return <ContactSalesPage />;
     case 'BookDemoPage':
       return <BookDemoPage />;
+    case 'VoiceDemoPage':
+      return <VoiceDemoPage />;
+    case 'ExperimentsPage':
+      return <ExperimentsPage />;
     case 'LoginPage':
       return <LoginPage />;
     case 'SignupPage':

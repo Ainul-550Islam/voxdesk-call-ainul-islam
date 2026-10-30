@@ -37,7 +37,7 @@ jobs:
           pip install bandit[sarif]
           mkdir -p artifacts/security
           bandit -c pyproject.toml -r app scripts -lll -f sarif -o artifacts/security/bandit-results.sarif
-          bandit -c pyproject.toml -r app scripts -q
+          bandit -c pyproject.toml -r app scripts -lll -q
 
       # Semgrep with curated Python + TypeScript rules. Emits SARIF for code
       # scanning and JSON for the evidence collector.

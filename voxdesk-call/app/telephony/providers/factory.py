@@ -110,6 +110,7 @@ def media_serializer_for(provider: str) -> str:
     mapping = {
         "twilio": "TwilioMediaStream",
         "telnyx": "TelnyxMediaStream",
+        "vonage": "VonageFrameSerializer",
         "plivo": "PlivoMediaStream",
         "sip": "SIPBridgeFrameSerializer",
     }

@@ -15,7 +15,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, Sequence
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.enterprise_models import (
@@ -516,3 +516,250 @@ async def compute_experiment_results(
         "comparisons": comparisons,
         "recommended_winner_variant_id": best_winner_id,
     }
+
+
+async def promote_experiment_variant(
+    session: AsyncSession,
+    *,
+    tenant_id: uuid.UUID,
+    experiment_id: uuid.UUID,
+    variant_id: uuid.UUID,
+    actor_user_id: uuid.UUID | None = None,
+    reason: str | None = None,
+) -> tuple[Experiment, list[ExperimentVariant], dict[str, Any]]:
+    """Promote ``variant_id`` to an immutable published ``AgentVersion`` on the target ``Agent``."""
+    import hashlib
+    import json
+
+    from app.db.models import Agent, AgentVersion
+
+    experiment = await session.scalar(
+        select(Experiment).where(
+            Experiment.id == experiment_id,
+            Experiment.tenant_id == tenant_id,
+        )
+    )
+    if experiment is None:
+        raise LookupError("experiment not found")
+
+    variants = list(
+        (
+            await session.scalars(
+                select(ExperimentVariant)
+                .where(
+                    ExperimentVariant.experiment_id == experiment_id,
+                    ExperimentVariant.tenant_id == tenant_id,
+                )
+                .order_by(ExperimentVariant.created_at, ExperimentVariant.id)
+            )
+        ).all()
+    )
+    winner = next((v for v in variants if v.id == variant_id), None)
+    if winner is None:
+        raise LookupError("variant not found")
+
+    try:
+        agent_uuid = uuid.UUID(str(experiment.agent_id))
+    except (TypeError, ValueError) as exc:
+        raise ValueError("experiment agent_id is not a valid UUID") from exc
+
+    agent = await session.scalar(
+        select(Agent).where(Agent.id == agent_uuid, Agent.tenant_id == tenant_id)
+    )
+    if agent is None:
+        raise LookupError("agent not found")
+
+    previous_version_id = agent.published_version_id
+    previous_version_number = agent.published_version_number
+    previous_draft_config = dict(agent.current_draft_config or {})
+
+    active_versions = list(
+        (
+            await session.scalars(
+                select(AgentVersion).where(
+                    AgentVersion.agent_id == agent.id,
+                    AgentVersion.tenant_id == tenant_id,
+                    AgentVersion.is_active.is_(True),
+                )
+            )
+        ).all()
+    )
+    for ver in active_versions:
+        ver.is_active = False
+        if ver.status == "published":
+            ver.status = "superseded"
+
+    max_ver = await session.scalar(
+        select(func.max(AgentVersion.version_number)).where(
+            AgentVersion.agent_id == agent.id,
+            AgentVersion.tenant_id == tenant_id,
+        )
+    )
+    next_version = int(max_ver or 0) + 1
+
+    base_config: dict[str, Any] = dict(previous_draft_config)
+    if previous_version_id is not None:
+        prior_ver = await session.get(AgentVersion, previous_version_id)
+        if prior_ver is not None and prior_ver.tenant_id == tenant_id:
+            base_config = {**dict(prior_ver.config_snapshot or {}), **base_config}
+
+    merged_config: dict[str, Any] = {**base_config, **dict(winner.config or {})}
+    if winner.prompt:
+        merged_config["system_prompt"] = winner.prompt
+        merged_config["prompt"] = winner.prompt
+
+    config_hash = hashlib.sha256(
+        json.dumps(merged_config, sort_keys=True, default=str).encode("utf-8")
+    ).hexdigest()
+
+    new_version = AgentVersion(
+        tenant_id=tenant_id,
+        agent_id=agent.id,
+        version_number=next_version,
+        version_label=f"ab-{str(experiment.id)[:8]}-v{next_version}",
+        status="published",
+        config_snapshot=merged_config,
+        config_hash=config_hash,
+        changelog=(reason or f"Promoted variant '{winner.name}' from experiment '{experiment.name}'")[:500],
+        source_version_id=previous_version_id,
+        is_rollback=False,
+        is_active=True,
+        published_by_user_id=actor_user_id,
+    )
+    session.add(new_version)
+    await session.flush()
+
+    meta = dict(agent.meta or {})
+    promotions = dict(meta.get("ab_promotions") or {})
+    promotion_record = {
+        "experiment_id": str(experiment.id),
+        "promoted_variant_id": str(winner.id),
+        "promoted_variant_name": winner.name,
+        "promoted_version_id": str(new_version.id),
+        "promoted_version_number": next_version,
+        "previous_version_id": str(previous_version_id) if previous_version_id else None,
+        "previous_version_number": previous_version_number,
+        "previous_draft_config": previous_draft_config,
+        "reason": reason or "",
+        "promoted_at": _now().isoformat(),
+    }
+    promotions[str(experiment.id)] = promotion_record
+    meta["ab_promotions"] = promotions
+
+    agent.published_version_id = new_version.id
+    agent.published_version_number = next_version
+    agent.current_draft_config = merged_config
+    agent.status = "published"
+    agent.lock_version = int(agent.lock_version or 1) + 1
+    agent.updated_by_user_id = actor_user_id
+    agent.meta = meta
+
+    win_metrics = dict(winner.metrics or {})
+    win_metrics["promoted_version_id"] = str(new_version.id)
+    win_metrics["promoted_version_number"] = next_version
+    winner.metrics = win_metrics
+
+    experiment.winner_variant_id = winner.id
+    experiment.status = ExperimentStatus.COMPLETED.value
+    experiment.updated_at = _now()
+    await session.flush()
+    return experiment, variants, promotion_record
+
+
+async def rollback_experiment_promotion(
+    session: AsyncSession,
+    *,
+    tenant_id: uuid.UUID,
+    experiment_id: uuid.UUID,
+    actor_user_id: uuid.UUID | None = None,
+) -> tuple[Experiment, list[ExperimentVariant], dict[str, Any]]:
+    """Roll back a promoted experiment and restore the target ``Agent``'s prior active version."""
+    from app.db.models import Agent, AgentVersion
+
+    experiment = await session.scalar(
+        select(Experiment).where(
+            Experiment.id == experiment_id,
+            Experiment.tenant_id == tenant_id,
+        )
+    )
+    if experiment is None:
+        raise LookupError("experiment not found")
+
+    variants = list(
+        (
+            await session.scalars(
+                select(ExperimentVariant)
+                .where(
+                    ExperimentVariant.experiment_id == experiment_id,
+                    ExperimentVariant.tenant_id == tenant_id,
+                )
+                .order_by(ExperimentVariant.created_at, ExperimentVariant.id)
+            )
+        ).all()
+    )
+    if experiment.status == ExperimentStatus.DRAFT.value and experiment.winner_variant_id is None:
+        raise RuntimeError("experiment has not been started or promoted")
+
+    restored_info: dict[str, Any] = {"experiment_id": str(experiment.id)}
+    try:
+        agent_uuid = uuid.UUID(str(experiment.agent_id))
+    except (TypeError, ValueError):
+        agent_uuid = None
+
+    if agent_uuid is not None:
+        agent = await session.scalar(
+            select(Agent).where(Agent.id == agent_uuid, Agent.tenant_id == tenant_id)
+        )
+        if agent is not None:
+            meta = dict(agent.meta or {})
+            promotions = dict(meta.get("ab_promotions") or {})
+            promo = promotions.get(str(experiment.id))
+            if isinstance(promo, dict):
+                promoted_vid_raw = promo.get("promoted_version_id")
+                if promoted_vid_raw:
+                    try:
+                        promoted_ver = await session.get(AgentVersion, uuid.UUID(str(promoted_vid_raw)))
+                        if promoted_ver is not None and promoted_ver.tenant_id == tenant_id:
+                            promoted_ver.is_active = False
+                            promoted_ver.status = "rolled_back"
+                    except (TypeError, ValueError):
+                        pass
+
+                prev_vid_raw = promo.get("previous_version_id")
+                restored_ver: AgentVersion | None = None
+                if prev_vid_raw:
+                    try:
+                        candidate = await session.get(AgentVersion, uuid.UUID(str(prev_vid_raw)))
+                        if candidate is not None and candidate.tenant_id == tenant_id:
+                            restored_ver = candidate
+                    except (TypeError, ValueError):
+                        restored_ver = None
+
+                if restored_ver is not None:
+                    restored_ver.is_active = True
+                    restored_ver.status = "published"
+                    agent.published_version_id = restored_ver.id
+                    agent.published_version_number = restored_ver.version_number
+                    agent.current_draft_config = dict(
+                        restored_ver.config_snapshot or promo.get("previous_draft_config") or {}
+                    )
+                    restored_info["restored_version_id"] = str(restored_ver.id)
+                    restored_info["restored_version_number"] = restored_ver.version_number
+                else:
+                    agent.published_version_id = None
+                    agent.published_version_number = promo.get("previous_version_number")
+                    agent.current_draft_config = dict(promo.get("previous_draft_config") or {})
+
+                promo = {**promo, "rolled_back_at": _now().isoformat()}
+                promotions[str(experiment.id)] = promo
+                meta["ab_promotions"] = promotions
+                agent.meta = meta
+                agent.lock_version = int(agent.lock_version or 1) + 1
+                agent.updated_by_user_id = actor_user_id
+
+    control = next((v for v in variants if v.is_control), None)
+    experiment.winner_variant_id = control.id if control else None
+    experiment.status = ExperimentStatus.PAUSED.value
+    experiment.updated_at = _now()
+    await session.flush()
+    return experiment, variants, restored_info

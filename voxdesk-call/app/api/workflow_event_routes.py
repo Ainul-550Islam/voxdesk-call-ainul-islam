@@ -825,7 +825,8 @@ async def outcome_writeback(
     if call is None or call.tenant_id != ctx.tenant_id:
         raise HTTPException(status_code=404, detail="call not found")
 
-    key = (payload.idempotency_key or idempotency_key or "").strip()
+    header_key = idempotency_key if isinstance(idempotency_key, str) else ""
+    key = (payload.idempotency_key or header_key or "").strip()
     if not key:
         raise HTTPException(
             status_code=400,

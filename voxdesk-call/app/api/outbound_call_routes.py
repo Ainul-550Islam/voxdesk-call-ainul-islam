@@ -98,6 +98,8 @@ class CallAction(str, PyEnum):
 class OutboundProvider(str, PyEnum):
     TWILIO = "twilio"
     TELNYX = "telnyx"
+    VONAGE = "vonage"
+    SIP = "sip"
     MOCK = "mock"
 
 class WebCallStatus(str, PyEnum):
@@ -335,13 +337,11 @@ def _provider_from_request(requested: Optional[str]) -> OutboundProvider:
         ) from None
     if provider == OutboundProvider.MOCK:
         raise HTTPException(
-            status_code=501,
-            detail={"code": "telephony_mock_not_implemented", "message": "The mock provider is not a live telephony provider."},
-        )
-    if provider == OutboundProvider.TELNYX:
-        raise HTTPException(
-            status_code=501,
-            detail={"code": "telnyx_legacy_route_not_implemented", "message": "Use the versioned telephony runtime for a configured provider adapter."},
+            status_code=422,
+            detail={
+                "code": "telephony_mock_not_supported",
+                "message": "The mock provider is not a live telephony provider.",
+            },
         )
     return provider
 
@@ -592,6 +592,39 @@ def _require_twilio_ready() -> str:
     return base_url
 
 
+def _require_provider_ready(provider: OutboundProvider) -> str:
+    """Validate live carrier credentials for the requested outbound provider."""
+    if provider == OutboundProvider.TWILIO:
+        return _require_twilio_ready()
+
+    from urllib.parse import urlsplit
+    from app.core.config import settings
+    from app.telephony.runtime import get_provider_adapter
+
+    adapter = get_provider_adapter(provider.value.upper())
+    if not adapter.configured():
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "telephony_provider_not_configured",
+                "message": f"{provider.value.capitalize()} live calling is not configured.",
+            },
+        )
+    base_url = str(settings.public_base_url or "https://api.voxdesk.local").rstrip("/")
+    parsed = urlsplit(base_url)
+    if provider in {OutboundProvider.TELNYX, OutboundProvider.VONAGE} and (
+        parsed.scheme != "https" or not parsed.hostname
+    ):
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "telephony_public_url_not_configured",
+                "message": "A valid HTTPS public callback URL is required.",
+            },
+        )
+    return base_url
+
+
 async def _attempt_provider_dial(
     session: AsyncSession,
     tenant: Any,
@@ -602,17 +635,112 @@ async def _attempt_provider_dial(
     record: bool = True,
     lead_id: Optional[uuid.UUID] = None,
     provider_override: Optional[str] = None,
+    *,
+    agent_id: Optional[str] = None,
+    environment_id: Optional[uuid.UUID] = None,
+    idempotency_key: Optional[str] = None,
 ) -> str:
-    """Create a live Twilio call and return only the SID issued by Twilio."""
-    del session, call  # These are retained in the helper signature for compatibility.
+    """Dial via the versioned ``TelephonyRuntimeService`` (when ``agent_id`` is bound) or carrier adapter."""
+    del call
     provider = _provider_from_request(provider_override)
-    if provider != OutboundProvider.TWILIO:
-        raise HTTPException(
-            status_code=501,
-            detail={"code": "telephony_provider_not_implemented", "message": "This legacy route supports only configured Twilio calls."},
-        )
 
-    base_url = _require_twilio_ready()
+    # When an agent_id is supplied, route Telnyx/Vonage/Twilio/SIP through the
+    # versioned TelephonyRuntimeService so AgentVersion and TelephonyCallSession
+    # invariants apply identically to /api/v1/telephony/calls/outbound.
+    if agent_id and session is not None and hasattr(tenant, "id"):
+        from app.telephony.enums import TelephonyProviderName
+        from app.telephony.exceptions import (
+            TelephonyAuthorizationError,
+            TelephonyConfigurationError,
+            TelephonyRuntimeError,
+        )
+        from app.telephony.runtime import TelephonyRuntimeService
+        from app.telephony.schemas import OutboundCallCreateRequest
+
+        runtime_key = f"vrt:{idempotency_key or uuid.uuid4().hex}"[:128]
+        try:
+            runtime_resp = await TelephonyRuntimeService(session).initiate_outbound_call(
+                tenant_id=tenant.id,
+                environment_id=environment_id,
+                payload=OutboundCallCreateRequest(
+                    to_number=to,
+                    from_number=from_number,
+                    agent_id=agent_id,
+                    provider=TelephonyProviderName(provider.value.upper()),
+                    idempotency_key=runtime_key,
+                    is_simulation=False,
+                    metadata={"legacy_route": True, "lead_id": str(lead_id) if lead_id else None},
+                ),
+            )
+            call_sid = str(runtime_resp.provider_call_id or "").strip()
+            if not call_sid:
+                raise HTTPException(
+                    status_code=502,
+                    detail={
+                        "code": "telephony_provider_outcome_unknown",
+                        "message": "Carrier returned no confirmed call identifier.",
+                    },
+                )
+            return call_sid
+        except TelephonyConfigurationError as exc:
+            raise HTTPException(
+                status_code=exc.status_code,
+                detail={"code": exc.code, "message": str(exc)},
+            ) from None
+        except TelephonyAuthorizationError as exc:
+            raise HTTPException(
+                status_code=403,
+                detail={"code": exc.code, "message": str(exc)},
+            ) from None
+        except TelephonyRuntimeError as exc:
+            raise HTTPException(
+                status_code=exc.status_code,
+                detail={"code": exc.code, "message": str(exc)},
+            ) from None
+
+    base_url = _require_provider_ready(provider)
+
+    if provider != OutboundProvider.TWILIO:
+        from app.telephony.runtime import get_provider_adapter
+
+        adapter = get_provider_adapter(provider.value.upper())
+        kwargs: Dict[str, Any] = {
+            "to_number": to,
+            "from_number": from_number,
+        }
+        if provider == OutboundProvider.VONAGE:
+            kwargs["answer_url"] = f"{base_url}/api/v1/carriers/vonage/answer"
+            if idempotency_key:
+                kwargs["idempotency_key"] = idempotency_key
+        elif provider == OutboundProvider.SIP and idempotency_key:
+            kwargs["idempotency_key"] = idempotency_key
+        try:
+            res = await adapter.create_outbound(**kwargs)
+        except Exception as exc:
+            _audit(
+                "outbound.provider_dial_failed",
+                error_category=type(exc).__name__,
+                provider=provider.value,
+                to=_redact_phone(to),
+                tenant_id=str(tenant.id) if hasattr(tenant, "id") else "unknown",
+            )
+            raise HTTPException(
+                status_code=502,
+                detail={
+                    "code": "telephony_provider_outcome_unknown",
+                    "message": f"{provider.value.capitalize()} did not return a confirmed call identifier.",
+                },
+            ) from None
+        ext_id = str(res.external_id or "").strip()
+        if not ext_id:
+            raise HTTPException(
+                status_code=502,
+                detail={
+                    "code": "telephony_provider_outcome_unknown",
+                    "message": f"{provider.value.capitalize()} returned no confirmed call identifier.",
+                },
+            )
+        return ext_id
 
     from app.telephony.outbound import _twilio_client
 
@@ -744,7 +872,14 @@ async def create_outbound_call(
     caller_id = None
     if campaign is None:
         provider = _provider_from_request(payload.provider)
-        _require_twilio_ready()
+        if not payload.agent_id:
+            _require_provider_ready(provider)
+        elif provider == OutboundProvider.TWILIO:
+            # Verify carrier readiness when using Twilio unless runtime handles custom adapter.
+            from app.telephony.runtime import get_provider_adapter
+
+            if not get_provider_adapter("TWILIO").configured():
+                _require_twilio_ready()
         caller_id = await _resolve_caller_id(tenant, payload.from_number)
         configured_callers = {
             _normalize_phone(str(value))
@@ -755,10 +890,19 @@ async def create_outbound_call(
             if value
         }
         if caller_id not in configured_callers:
-            raise HTTPException(
-                status_code=403,
-                detail="from_number must be a tenant-configured caller ID",
+            from app.db.telephony_models import TelephonyPhoneNumber
+
+            owned_number = await session.scalar(
+                select(TelephonyPhoneNumber).where(
+                    TelephonyPhoneNumber.tenant_id == ctx.tenant_id,
+                    TelephonyPhoneNumber.e164_number == caller_id,
+                )
             )
+            if owned_number is None:
+                raise HTTPException(
+                    status_code=403,
+                    detail="from_number must be a tenant-configured caller ID",
+                )
 
     request_data = payload.model_dump(mode="json", exclude={"idempotency_key"})
     request_data.update({"environment_id": str(scope.id), "destination_normalized": to_normalized})
@@ -902,6 +1046,9 @@ async def create_outbound_call(
             payload.record,
             payload.lead_id,
             provider.value,
+            agent_id=payload.agent_id,
+            environment_id=scope.id,
+            idempotency_key=idem_key,
         )
     except HTTPException as exc:
         if exc.status_code == 502:

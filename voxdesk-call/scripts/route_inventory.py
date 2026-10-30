@@ -118,6 +118,7 @@ PUBLIC_EXACT_ALLOWLIST: frozenset[str] = frozenset(
 
 PUBLIC_PREFIX_ALLOWLIST: tuple[str, ...] = (
     "/api/v1/public/",
+    "/api/whitelabel/public/",
     "/api/v1/sso/",
     "/api/v1/webhooks/",
     "/api/v1/calendar/webhooks/",
@@ -147,7 +148,14 @@ HANDLER_VERIFIED_ALLOWLIST: frozenset[str] = frozenset(
         "/channels/message",
         "/channels/status",
         "/api/channels/webhook/sms",
+        "/api/channels/webhook/whatsapp",
+        "/api/channels/webhook/telnyx",
+        "/api/channels/webhook/vonage",
         "/api/channels/webhook/status",
+        "/api/mobile/oauth/token",
+        "/api/mobile/oauth/refresh",
+        "/api/mobile/oauth/revoke",
+        "/api/platform/tls/ask",
         "/messaging/sms/twilio",
         "/messaging/sms/webhook",
         "/messaging/sms/status",

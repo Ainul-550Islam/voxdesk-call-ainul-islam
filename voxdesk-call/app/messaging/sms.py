@@ -680,11 +680,37 @@ async def check_channel_health(
     session: AsyncSession,
     channel: MessageChannel,
 ) -> dict[str, Any]:
-    """Verify SMS/WhatsApp channel configuration; fail closed with ``NOT_CONFIGURED`` if missing."""
-    configured, creds = _channel_credentials_configured(channel)
+    """Verify messaging channel configuration via ``app.messaging.channels``; fail closed if missing."""
+    from app.messaging.channels import ChannelUnsupportedError, get_channel_adapter
+
     now = _now()
     channel.last_health_check_at = now
     channel.updated_at = now
+    cfg = dict((channel.config if isinstance(channel.config, dict) else {}) or {})
+
+    if (channel.provider, channel.channel_type) != ("twilio", "sms"):
+        try:
+            adapter = get_channel_adapter(channel.provider, channel.channel_type)
+        except ChannelUnsupportedError as exc:
+            channel.health_status = "unsupported"
+            await session.flush()
+            raise SmsNotConfiguredError(f"NOT_CONFIGURED: {exc}") from exc
+        health = adapter.health_check(cfg)
+        if not health.configured:
+            channel.health_status = "not_configured"
+            await session.flush()
+            raise SmsNotConfiguredError(f"NOT_CONFIGURED: {health.reason}")
+        channel.health_status = "healthy"
+        await session.flush()
+        return {
+            "channel_id": str(channel.id),
+            "channel_type": channel.channel_type,
+            "provider": channel.provider,
+            "status": "healthy",
+            "checked_at": now.isoformat(),
+        }
+
+    configured, creds = _channel_credentials_configured(channel)
     if not configured:
         channel.health_status = "not_configured"
         await session.flush()
@@ -713,13 +739,12 @@ async def send_outbound_message(
     message: str,
     metadata: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Send an outbound SMS/WhatsApp message and record a real ``MessageWebhookReceipt``."""
-    configured, creds = _channel_credentials_configured(channel)
-    if not configured:
-        raise SmsNotConfiguredError(
-            f"NOT_CONFIGURED: {channel.provider} {channel.channel_type} adapter is not configured; "
-            "no message or call was created."
-        )
+    """Send an outbound message via ``app.messaging.channels`` and record a real ``MessageWebhookReceipt``."""
+    from app.messaging.channels import (
+        ChannelNotConfiguredError,
+        ChannelUnsupportedError,
+        get_channel_adapter,
+    )
 
     raw_to = strip_channel_prefix(to_number)
     try:
@@ -731,7 +756,30 @@ async def send_outbound_message(
     if blocked:
         raise ValueError(f"Destination {norm_to} is blocked by DNC ({reason}).")
 
-    provider_msg_id = f"SM{uuid.uuid4().hex[:32]}"
+    cfg = dict(channel.config or {})
+    try:
+        adapter = get_channel_adapter(channel.provider, channel.channel_type)
+        outbound = await adapter.send_message(
+            to_number=to_number,
+            from_number=str(
+                cfg.get("from_number")
+                or cfg.get("phone_number")
+                or cfg.get("whatsapp_number")
+                or settings.twilio_phone_number
+                or ""
+            )
+            or None,
+            body=message,
+            metadata=metadata,
+            channel_config=cfg,
+        )
+    except (ChannelNotConfiguredError, ChannelUnsupportedError) as exc:
+        raise SmsNotConfiguredError(
+            f"NOT_CONFIGURED: {channel.provider} {channel.channel_type} adapter is not configured; "
+            f"no message or call was created ({exc})."
+        ) from exc
+
+    provider_msg_id = outbound.provider_message_id
     receipt = MessageWebhookReceipt(
         tenant_id=tenant_id,
         channel=channel.channel_type,
@@ -739,17 +787,16 @@ async def send_outbound_message(
     )
     session.add(receipt)
 
-    cfg = dict(channel.config or {})
     sent_log = list(cfg.get("outbound_receipts") or [])
     now = _now()
     entry = {
         "id": str(receipt.id) if getattr(receipt, "id", None) else provider_msg_id,
         "provider_message_id": provider_msg_id,
-        "to": norm_to,
-        "from": creds["from_number"],
+        "to": outbound.to_address,
+        "from": outbound.from_address,
         "channel_type": channel.channel_type,
         "provider": channel.provider,
-        "status": "sent",
+        "status": outbound.status,
         "message": message,
         "metadata": dict(metadata or {}),
         "sent_at": now.isoformat(),
@@ -767,9 +814,9 @@ async def send_outbound_message(
         "channel_id": str(channel.id),
         "channel_type": channel.channel_type,
         "provider": channel.provider,
-        "to": norm_to,
-        "from": creds["from_number"],
-        "status": "sent",
+        "to": outbound.to_address,
+        "from": outbound.from_address,
+        "status": outbound.status,
         "sent_at": now.isoformat(),
     }
 

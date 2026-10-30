@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev -H 0.0.0.0",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "test": "vitest run",
     "test:watch": "vitest"
@@ -15,10 +15,14 @@
   "dependencies": {
     "@xyflow/react": "^12.3.5",
     "dagre": "^0.8.5",
-    "next": "14.2.35",
+    "next": "16.4.3",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "zod": "^3.23.8"
+    "zod": "^4.6.7"
+  },
+  "overrides": {
+    "postcss": "8.5.32",
+    "source-map-js": "1.2.2"
   },
   "devDependencies": {
     "@types/dagre": "^0.7.52",

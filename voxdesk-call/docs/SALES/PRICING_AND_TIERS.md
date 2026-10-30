@@ -64,7 +64,7 @@ feature rows in [`docs/SALES/FEATURE_MATRIX_VERIFIED.md`](FEATURE_MATRIX_VERIFIE
    clean runner to independently verify all test suites, truth guards, migrations,
    SBOMs, and SHA-256 checksums before releasing escrow funds.
 2. **Deliverables at Closing**:
-   - Full git repository (`voxdesk-call`) at head migration `0062_drop_pcap_artifacts`.
+   - Full git repository (`voxdesk-call`) at head migration `0069_voice_demo_sessions`.
    - Signed due-diligence bundle (`dist/due-diligence-<date>.zip` + `dist/SHA256SUMS`).
    - Static OpenAPI 3.1 reference (`docs/api/`), CycloneDX SBOMs (`sbom/*.cdx.json`),
      and third-party license ledger (`THIRD_PARTY_LICENSES.md`).

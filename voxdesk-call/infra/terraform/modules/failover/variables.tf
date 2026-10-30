@@ -37,12 +37,6 @@ variable "secondary" {
   })
 }
 
-variable "failover_ttl" {
-  description = "TTL on the failover records. 60s is the shortest honest value: resolvers cache longer."
-  type        = number
-  default     = 60
-}
-
 variable "latency_records_enabled" {
   description = "Also publish latency records for api.<domain> so clients prefer the nearer region."
   type        = bool

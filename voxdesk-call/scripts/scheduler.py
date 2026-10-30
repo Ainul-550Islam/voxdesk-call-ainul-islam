@@ -554,6 +554,25 @@ def _start_metrics_server() -> None:
         logger.info("scheduler.metrics_server", port=port)
 
 
+async def voice_demo_reaper_loop() -> None:
+    """Reap expired rows from ``voice_demo_sessions`` every 60 seconds."""
+    from app.services.voice_demo_service import reap_expired_voice_demo_sessions
+
+    maker = get_sessionmaker()
+    while not _stop.is_set():
+        try:
+            async with maker() as session:
+                reaped = await reap_expired_voice_demo_sessions(session)
+                if reaped:
+                    await session.commit()
+                    logger.info("scheduler.voice_demo_reaped", reaped=reaped)
+            observability.record_job_run("voice_demo_reaper", ok=True)
+        except Exception as exc:
+            observability.record_job_run("voice_demo_reaper", ok=False)
+            logger.error("scheduler.voice_demo_reaper_failed", error=str(exc)[:300])
+        await _sleep(60)
+
+
 async def main() -> None:
     from app.core.graceful_shutdown import begin_drain, drain_and_shutdown, reset_drain_state
 
@@ -572,7 +591,7 @@ async def main() -> None:
     await asyncio.gather(
         reminder_loop(), campaign_loop(), knowledge_ingestion_loop(),
         crm_sync_loop(), billing_reconciliation_loop(), retention_loop(),
-        stuck_sweep_loop(),
+        stuck_sweep_loop(), voice_demo_reaper_loop(),
         # Batch 07: the durable job platform and the outbox admission cycle.
         durable_jobs_loop(), outbox_dispatch_loop(),
         # Batch 06: the compliance / contact-center / integrations v2 maintenance

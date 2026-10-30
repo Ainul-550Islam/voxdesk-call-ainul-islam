@@ -245,3 +245,33 @@ def select_checks(tenant_id, carrier):
         CarrierConnectionCheck.tenant_id == tenant_id,
         CarrierConnectionCheck.carrier == carrier,
     )
+
+
+async def test_s2s_capability_tracks_enable_s2s_and_provider_credentials(
+    client, owner_a, monkeypatch
+):
+    from app.carriers_v2.settings import get_carrier_v2_settings
+    from app.core.config import settings as core_settings
+    from tests.conftest import auth_headers
+
+    headers = await auth_headers(client, owner_a)
+
+    monkeypatch.setenv("ENABLE_S2S", "false")
+    monkeypatch.setattr(core_settings, "openai_api_key", "")
+    get_carrier_v2_settings.cache_clear()
+    try:
+        off_resp = await client.get("/api/v1/carriers/capabilities", headers=headers)
+        assert off_resp.status_code == 200
+        s2s_off = next(r for r in off_resp.json()["carriers"] if r["carrier"] == "s2s")
+        assert s2s_off["status"] == "not_configured"
+
+        monkeypatch.setattr(core_settings, "openai_api_key", "sk-live-test-key-998877")
+        monkeypatch.setenv("ENABLE_S2S", "true")
+        get_carrier_v2_settings.cache_clear()
+        on_resp = await client.get("/api/v1/carriers/capabilities", headers=headers)
+        assert on_resp.status_code == 200
+        s2s_on = next(r for r in on_resp.json()["carriers"] if r["carrier"] == "s2s")
+        assert s2s_on["status"] == "ok"
+    finally:
+        get_carrier_v2_settings.cache_clear()
+

@@ -116,7 +116,7 @@ and resonator synthesis (`numpy`). No third-party copyrighted recordings are bun
 | `jsdom` | `24.1.3` | MIT / Apache-2.0 | `dashboard-next/package.json` |
 | `jsdom` | `24.1.3` | MIT / Apache-2.0 | `sdk/web/package.json` |
 | `jsdom` | `29.1.1` | MIT / Apache-2.0 | `dashboard/package.json` |
-| `next` | `14.2.35` | MIT / Apache-2.0 | `dashboard-next/package.json` |
+| `next` | `16.4.3` | MIT / Apache-2.0 | `dashboard-next/package.json` |
 | `react` | `18.3.1` | MIT / Apache-2.0 | `dashboard-next/package.json` |
 | `react` | `18.3.1` | MIT / Apache-2.0 | `dashboard/package.json` |
 | `react-dom` | `18.3.1` | MIT / Apache-2.0 | `dashboard-next/package.json` |
@@ -129,7 +129,7 @@ and resonator synthesis (`numpy`). No third-party copyrighted recordings are bun
 | `vitest` | `3.2.7` | MIT / Apache-2.0 | `dashboard-next/package.json` |
 | `vitest` | `3.2.7` | MIT / Apache-2.0 | `sdk/web/package.json` |
 | `vitest` | `4.1.11` | MIT / Apache-2.0 | `dashboard/package.json` |
-| `zod` | `3.23.8` | MIT / Apache-2.0 | `dashboard-next/package.json` |
+| `zod` | `4.6.7` | MIT / Apache-2.0 | `dashboard-next/package.json` |
 
 ---
 

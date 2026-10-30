@@ -4,7 +4,7 @@
   "serialNumber": "urn:uuid:00000000-0000-4000-8000-571a4a9af517",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-10-28T15:10:17Z",
+    "timestamp": "2026-10-30T05:56:29Z",
     "tools": [
       {
         "vendor": "VoxDesk",
@@ -451,8 +451,8 @@
     {
       "type": "library",
       "name": "pypdf",
-      "version": "6.20.0",
-      "purl": "pkg:pypi/pypdf@6.20.0",
+      "version": "6.21.2",
+      "purl": "pkg:pypi/pypdf@6.21.2",
       "licenses": [
         {
           "license": {

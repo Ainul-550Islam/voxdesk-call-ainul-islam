@@ -210,6 +210,11 @@ def test_upgrade_creates_every_compliance_table(alembic_env):
 
 
 def test_every_created_table_carries_a_tenant_index(alembic_env):
+    from alembic import command
+    from alembic.config import Config
+
+    # corrected: ensure 0065_compliance_v2 is applied so node-sorted chunk execution is order-independent
+    command.upgrade(Config(str(alembic_env / "alembic.ini")), "0065_compliance_v2")
     connection = sqlite3.connect(alembic_env / "migration.db")
     try:
         missing = []
@@ -237,6 +242,8 @@ def test_downgrade_removes_everything_it_created(alembic_env):
     from alembic.config import Config
 
     config = Config(str(alembic_env / "alembic.ini"))
+    # corrected: ensure 0065_compliance_v2 is applied before downgrading when tests run in alphabetical node order
+    command.upgrade(config, "0065_compliance_v2")
     command.downgrade(config, "0064_carrier_s2s")
 
     remaining = _tables(alembic_env / "migration.db")

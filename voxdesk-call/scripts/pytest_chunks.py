@@ -27,14 +27,17 @@ allowed to disappear behind a green summary.
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import importlib.util
 import json
 import os
+import queue
 import re
 import socket
 import subprocess
 import sys
 import time
+import xml.etree.ElementTree as ET  # nosec B405
 from pathlib import Path
 from typing import Any
 
@@ -44,9 +47,34 @@ if str(ROOT) not in sys.path:
 
 from scripts.junit_xml import iter_suites  # noqa: E402
 
+
+def _merge_junit(src_paths: list[Path], dst_path: Path) -> None:
+    """Combine multiple pytest JUnit XML files into a single ``<testsuites>`` file."""
+    body: list[str] = ['<?xml version="1.0" encoding="utf-8"?>', "<testsuites>"]
+    for src in src_paths:
+        if src.is_file():
+            for suite in iter_suites(src):
+                body.append(ET.tostring(suite, encoding="unicode"))
+    body.append("</testsuites>\n")
+    dst_path.write_text("\n".join(body), encoding="utf-8")
+
 #: Node-id shapes emitted by ``pytest --collect-only -q``. A node id always
-#: carries the ``::`` separator; plain ``-q`` summary lines never do.
-_NODE_LINE = re.compile(r"^(?P<node>[^\s]+::[^\s]+)\s*$")
+#: carries a ``.py::`` separator (and may contain spaces inside ``[...]``
+#: parameter labels); plain ``-q`` summary lines never do.
+_NODE_LINE = re.compile(r"^(?P<node>\S+\.py::\S.*?)\s*$")
+
+#: Test files that spawn nested ``sys.executable`` interpreters; isolating them
+#: into dedicated sub-batches prevents parent + child RSS from exceeding 2 GiB.
+_SUBPROCESS_HEAVY_FILES = frozenset({
+    "tests/compliance_v2/test_evidence_run_fail_closed.py",
+    "tests/live_proof/test_pstn_probe_refuses_without_keys.py",
+    "tests/test_alembic_models_in_sync.py",
+    "tests/test_backend_runtime_closure.py",
+    "tests/test_boot_and_mount.py",
+    "tests/test_memory_safe_final_validation.py",
+    "tests/test_stt_lazy_import.py",
+    "tests/truth/test_part9_packaging_sales_proof.py",
+})
 
 #: Exit code used when the run itself went fine but the population does not
 #: balance. Distinct from 1 (test failures) so CI can tell them apart.
@@ -144,6 +172,31 @@ def chunk_nodes(nodes: list[str], chunk_size: int) -> list[list[str]]:
     return [ordered[i : i + chunk_size] for i in range(0, len(ordered), chunk_size)]
 
 
+def _junit_key_for_node(node: str) -> tuple[str, str]:
+    """Return the ``(classname, name)`` pair pytest writes into JUnit XML for ``node``."""
+    file_part, _, rest = node.partition("::")
+    parts = rest.split("::")
+    mod_dotted = file_part.removesuffix(".py").replace("/", ".")
+    return (".".join([mod_dotted, *parts[:-1]]), parts[-1])
+
+
+def _reconstruct_nodeid(classname: str, file_attr: str, name: str) -> tuple[str, str]:
+    """Reconstruct ``tests/.../test_mod.py[::Class]::test_fn`` from JUnit attributes."""
+    if classname:
+        parts = classname.split(".")
+        for idx in range(len(parts), 0, -1):
+            candidate = Path(*parts[:idx]).with_suffix(".py")
+            if (ROOT / candidate).is_file():
+                rel_file = candidate.as_posix()
+                cls_parts = parts[idx:]
+                suffix = "::".join([*cls_parts, name]) if cls_parts else name
+                return f"{rel_file}::{suffix}", rel_file
+    if file_attr:
+        return f"{file_attr}::{name}", file_attr
+    fallback_file = classname.replace(".", "/") + ".py" if classname else ""
+    return f"{classname}::{name}", fallback_file
+
+
 def parse_junit_xml(xml_path: Path) -> dict[str, Any]:
     result: dict[str, Any] = {
         "tests": 0,
@@ -167,7 +220,7 @@ def parse_junit_xml(xml_path: Path) -> dict[str, Any]:
             name = case.attrib.get("name", "")
             file_attr = case.attrib.get("file", "")
             time_val = float(case.attrib.get("time", "0") or 0.0)
-            nodeid = f"{file_attr}::{name}" if file_attr else f"{classname}::{name}"
+            nodeid, resolved_file = _reconstruct_nodeid(classname, file_attr, name)
 
             result["tests"] += 1
             result["time_seconds"] += time_val
@@ -232,7 +285,7 @@ def parse_junit_xml(xml_path: Path) -> dict[str, Any]:
             result["testcases"].append(
                 {
                     "nodeid": nodeid,
-                    "file": file_attr or classname.replace(".", "/") + ".py",
+                    "file": resolved_file,
                     "classname": classname,
                     "name": name,
                     "status": status,
@@ -339,6 +392,9 @@ def run_chunks(
     resume: bool = False,
     junit_out: Path | None = None,
     results_out: Path | None = None,
+    workers: int = 1,
+    worker_db_urls: list[str] | None = None,
+    stop_after_seconds: int = 0,
 ) -> dict[str, Any]:
     """Run the suite file-by-file in chunks and write the roll-up summary.
 
@@ -355,8 +411,12 @@ def run_chunks(
             marker=marker,
             junit_dir=junit_dir,
             summary_path=summary_path,
+            resume=resume,
             junit_out=junit_out,
             results_out=results_out,
+            workers=workers,
+            worker_db_urls=worker_db_urls,
+            stop_after_seconds=stop_after_seconds,
         )
 
     all_files = discover_test_files(tests_dir)
@@ -703,8 +763,12 @@ def _run_node_chunks(
     marker: str,
     junit_dir: Path,
     summary_path: Path,
+    resume: bool = False,
     junit_out: Path | None,
     results_out: Path | None,
+    workers: int = 1,
+    worker_db_urls: list[str] | None = None,
+    stop_after_seconds: int = 0,
 ) -> dict[str, Any]:
     """Collect every node id, run them in node-id chunks, account for each one."""
     junit_dir.mkdir(parents=True, exist_ok=True)
@@ -713,11 +777,282 @@ def _run_node_chunks(
     use_timeout_plugin = has_pytest_timeout()
 
     nodes = collect_nodes(tests_dir=tests_dir, marker=marker, env=env)
+    node_by_junit_key = {_junit_key_for_node(node): node for node in nodes}
     chunks = chunk_nodes(nodes, chunk_size)
     print(
         f"collected {len(nodes)} node(s); {len(chunks)} chunk(s) of {chunk_size}",
         flush=True,
     )
+
+    worker_count = max(1, int(workers or 1))
+    env_pool: queue.Queue[dict[str, str]] = queue.Queue()
+    for slot in range(worker_count):
+        slot_env = dict(env)
+        if worker_db_urls and slot < len(worker_db_urls) and worker_db_urls[slot]:
+            slot_env["DATABASE_URL"] = worker_db_urls[slot]
+        env_pool.put(slot_env)
+
+    def _run_one_chunk(idx_and_chunk: tuple[int, list[str]]) -> dict[str, Any]:
+        idx, chunk = idx_and_chunk
+        slot_env = env_pool.get()
+        try:
+            xml_path = junit_dir / f"nodes_{idx:04d}.xml"
+            if resume and xml_path.is_file():
+                cached = parse_junit_xml(xml_path)
+                if cached["tests"] == len(chunk) and cached["failed"] == 0 and cached["errors"] == 0:
+                    print(
+                        f"[chunk {idx:04d}/{len(chunks):04d}] RESUMED "
+                        f"passed={cached['passed']} skipped={cached['skipped']}",
+                        flush=True,
+                    )
+                    return {
+                        "idx": idx,
+                        "testcases": cached["testcases"],
+                        "failures": cached["failures"],
+                        "crash": None,
+                        "timeout": None,
+                        "chunk_result": {
+                            "chunk_index": idx,
+                            "xml_path": str(xml_path.relative_to(ROOT)),
+                            "node_count": len(chunk),
+                            "exit_code": 0,
+                            "status": "OK",
+                            "duration_seconds": round(cached["time_seconds"], 2),
+                            "passed": cached["passed"],
+                            "failed": 0,
+                            "errors": 0,
+                            "skipped": cached["skipped"],
+                        },
+                    }
+            if xml_path.exists():
+                xml_path.unlink()
+            heavy_nodes = [
+                n for n in chunk if n.partition("::")[0] in _SUBPROCESS_HEAVY_FILES
+            ]
+            regular_nodes = [
+                n for n in chunk if n.partition("::")[0] not in _SUBPROCESS_HEAVY_FILES
+            ]
+            if heavy_nodes and regular_nodes:
+                queue_batches_h: list[tuple[str, list[str]]] = [("p0", regular_nodes)]
+                by_heavy_file: dict[str, list[str]] = {}
+                for hn in heavy_nodes:
+                    by_heavy_file.setdefault(hn.partition("::")[0], []).append(hn)
+                for h_idx, h_nodes in enumerate(by_heavy_file.values(), start=1):
+                    queue_batches_h.append((f"p{h_idx}", h_nodes))
+                t0 = time.perf_counter()
+                part_xmls: list[Path] = []
+                last_rc = 0
+                while queue_batches_h:
+                    p_tag, p_nodes = queue_batches_h.pop(0)
+                    if not p_nodes:
+                        continue
+                    p_xml = junit_dir / f"nodes_{idx:04d}_{p_tag}.xml"
+                    p_xml.unlink(missing_ok=True)
+                    p_cmd = _build_pytest_cmd(
+                        p_nodes,
+                        marker=marker,
+                        xml_path=p_xml,
+                        per_test_timeout=per_test_timeout,
+                        use_timeout_plugin=use_timeout_plugin,
+                    )
+                    p_proc = subprocess.run(
+                        p_cmd, cwd=ROOT, env=slot_env, capture_output=True, text=True,
+                        timeout=per_chunk_timeout,
+                    )
+                    if p_proc.returncode < 0 and len(p_nodes) > 1:
+                        mid = len(p_nodes) // 2
+                        queue_batches_h.insert(0, (f"{p_tag}b", p_nodes[mid:]))
+                        queue_batches_h.insert(0, (f"{p_tag}a", p_nodes[:mid]))
+                        continue
+                    if p_proc.returncode not in (0, 5):
+                        last_rc = p_proc.returncode
+                    if p_xml.is_file():
+                        part_xmls.append(p_xml)
+                elapsed = round(time.perf_counter() - t0, 2)
+                if part_xmls:
+                    _merge_junit(part_xmls, xml_path)
+                    for p_xml in part_xmls:
+                        p_xml.unlink(missing_ok=True)
+                parsed = parse_junit_xml(xml_path)
+                print(
+                    f"[chunk {idx:04d}/{len(chunks):04d}] "
+                    f"passed={parsed['passed']} failed={parsed['failed']} "
+                    f"errors={parsed['errors']} skipped={parsed['skipped']} in {elapsed:.1f}s",
+                    flush=True,
+                )
+                return {
+                    "idx": idx,
+                    "testcases": parsed["testcases"],
+                    "failures": parsed["failures"],
+                    "crash": None,
+                    "timeout": None,
+                    "chunk_result": {
+                        "chunk_index": idx,
+                        "xml_path": str(xml_path.relative_to(ROOT)),
+                        "node_count": len(chunk),
+                        "exit_code": last_rc,
+                        "status": "OK" if parsed["failed"] == 0 and parsed["errors"] == 0 else "FAILED",
+                        "duration_seconds": elapsed,
+                        "passed": parsed["passed"],
+                        "failed": parsed["failed"],
+                        "errors": parsed["errors"],
+                        "skipped": parsed["skipped"],
+                    },
+                }
+            cmd = _build_pytest_cmd(
+                list(chunk),
+                marker=marker,
+                xml_path=xml_path,
+                per_test_timeout=per_test_timeout,
+                use_timeout_plugin=use_timeout_plugin,
+            )
+            t0 = time.perf_counter()
+            try:
+                proc = subprocess.run(
+                    cmd, cwd=ROOT, env=slot_env, capture_output=True, text=True,
+                    timeout=per_chunk_timeout,
+                )
+                elapsed = round(time.perf_counter() - t0, 2)
+                if proc.returncode < 0 or (
+                    proc.returncode not in (0, 1, 5) and not xml_path.is_file()
+                ):
+                    print(
+                        f"[chunk {idx:04d}/{len(chunks):04d}] CRASH rc={proc.returncode}; splitting {len(chunk)} nodes into halves",
+                        flush=True,
+                    )
+                    offenders: list[dict[str, Any]] = []
+                    sub_xmls: list[Path] = []
+                    queue_batches: list[tuple[str, list[str]]] = [
+                        ("a", list(chunk[: max(1, len(chunk) // 2)])),
+                        ("b", list(chunk[max(1, len(chunk) // 2) :])),
+                    ]
+                    while queue_batches:
+                        tag, sub_nodes = queue_batches.pop(0)
+                        if not sub_nodes:
+                            continue
+                        sub_xml = junit_dir / f"nodes_{idx:04d}_{tag}.xml"
+                        if sub_xml.exists():
+                            sub_xml.unlink()
+                        sub_cmd = _build_pytest_cmd(
+                            sub_nodes,
+                            marker=marker,
+                            xml_path=sub_xml,
+                            per_test_timeout=per_test_timeout,
+                            use_timeout_plugin=use_timeout_plugin,
+                        )
+                        st0 = time.perf_counter()
+                        sproc = subprocess.run(
+                            sub_cmd, cwd=ROOT, env=slot_env, capture_output=True, text=True,
+                            timeout=per_chunk_timeout,
+                        )
+                        selapsed = round(time.perf_counter() - st0, 2)
+                        if (
+                            sproc.returncode < 0
+                            or (sproc.returncode not in (0, 1, 5) and not sub_xml.is_file())
+                        ):
+                            if len(sub_nodes) > 1:
+                                mid = len(sub_nodes) // 2
+                                queue_batches.insert(0, (f"{tag}2", sub_nodes[mid:]))
+                                queue_batches.insert(0, (f"{tag}1", sub_nodes[:mid]))
+                            else:
+                                offenders.append(
+                                    {
+                                        "file": sub_nodes[0],
+                                        "status": "CRASH",
+                                        "exit_code": sproc.returncode,
+                                        "duration_seconds": selapsed,
+                                        "stderr_tail": (sproc.stderr or sproc.stdout or "")[-500:],
+                                    }
+                                )
+                        elif sub_xml.is_file():
+                            sub_xmls.append(sub_xml)
+                    if not offenders and sub_xmls:
+                        _merge_junit(sub_xmls, xml_path)
+                        for sub_xml in sub_xmls:
+                            sub_xml.unlink(missing_ok=True)
+                    sub_cases: list[dict[str, Any]] = []
+                    sub_failures: list[dict[str, Any]] = []
+                    xml_sources = [xml_path] if xml_path.is_file() else sub_xmls
+                    for sub_xml in xml_sources:
+                        sub_parsed = parse_junit_xml(sub_xml)
+                        sub_cases.extend(sub_parsed["testcases"])
+                        sub_failures.extend(sub_parsed["failures"])
+                    crash_entry = None
+                    if offenders:
+                        crash_entry = {
+                            "chunk_index": idx,
+                            "status": "CRASH",
+                            "exit_code": proc.returncode,
+                            "duration_seconds": elapsed,
+                            "offenders": offenders,
+                            "stderr_tail": (proc.stderr or proc.stdout or "")[-500:],
+                        }
+                    return {
+                        "idx": idx,
+                        "testcases": sub_cases,
+                        "failures": sub_failures,
+                        "crash": crash_entry,
+                        "timeout": None,
+                        "chunk_result": {
+                            "chunk_index": idx,
+                            "xml_path": str(xml_path.relative_to(ROOT)),
+                            "node_count": len(chunk),
+                            "exit_code": proc.returncode,
+                            "status": "CRASH" if offenders else "OK",
+                            "duration_seconds": elapsed,
+                        },
+                    }
+                parsed = parse_junit_xml(xml_path)
+                print(
+                    f"[chunk {idx:04d}/{len(chunks):04d}] "
+                    f"passed={parsed['passed']} failed={parsed['failed']} "
+                    f"errors={parsed['errors']} skipped={parsed['skipped']} in {elapsed:.1f}s",
+                    flush=True,
+                )
+                return {
+                    "idx": idx,
+                    "testcases": parsed["testcases"],
+                    "failures": parsed["failures"],
+                    "crash": None,
+                    "timeout": None,
+                    "chunk_result": {
+                        "chunk_index": idx,
+                        "xml_path": str(xml_path.relative_to(ROOT)),
+                        "node_count": len(chunk),
+                        "exit_code": proc.returncode,
+                        "status": "OK" if parsed["failed"] == 0 and parsed["errors"] == 0 else "FAILED",
+                        "duration_seconds": elapsed,
+                        "passed": parsed["passed"],
+                        "failed": parsed["failed"],
+                        "errors": parsed["errors"],
+                        "skipped": parsed["skipped"],
+                    },
+                }
+            except subprocess.TimeoutExpired:
+                elapsed = round(time.perf_counter() - t0, 2)
+                print(f"[chunk {idx:04d}/{len(chunks):04d}] TIMEOUT after {elapsed:.1f}s", flush=True)
+                return {
+                    "idx": idx,
+                    "testcases": [],
+                    "failures": [],
+                    "crash": None,
+                    "timeout": {
+                        "chunk_index": idx,
+                        "status": "TIMEOUT",
+                        "exit_code": None,
+                        "duration_seconds": elapsed,
+                    },
+                    "chunk_result": {
+                        "chunk_index": idx,
+                        "xml_path": str(xml_path.relative_to(ROOT)),
+                        "node_count": len(chunk),
+                        "exit_code": None,
+                        "status": "TIMEOUT",
+                        "duration_seconds": elapsed,
+                    },
+                }
+        finally:
+            env_pool.put(slot_env)
 
     chunk_results: list[dict[str, Any]] = []
     per_node: dict[str, dict[str, Any]] = {}
@@ -726,93 +1061,40 @@ def _run_node_chunks(
     crashes: list[dict[str, Any]] = []
     suite_start = time.perf_counter()
 
-    for idx, chunk in enumerate(chunks, start=1):
-        xml_path = junit_dir / f"nodes_{idx:04d}.xml"
-        if xml_path.exists():
-            xml_path.unlink()
-        cmd = _build_pytest_cmd(
-            list(chunk),
-            marker=marker,
-            xml_path=xml_path,
-            per_test_timeout=per_test_timeout,
-            use_timeout_plugin=use_timeout_plugin,
-        )
-        t0 = time.perf_counter()
-        try:
-            proc = subprocess.run(
-                cmd, cwd=ROOT, env=env, capture_output=True, text=True,
-                timeout=per_chunk_timeout,
-            )
-            elapsed = round(time.perf_counter() - t0, 2)
-            if proc.returncode < 0 or (
-                proc.returncode not in (0, 1, 5) and not xml_path.is_file()
-            ):
-                crashes.append(
-                    {
-                        "chunk_index": idx,
-                        "status": "CRASH",
-                        "exit_code": proc.returncode,
-                        "duration_seconds": elapsed,
-                        "stderr_tail": (proc.stderr or proc.stdout or "")[-500:],
-                    }
-                )
-                chunk_results.append(
-                    {
-                        "chunk_index": idx,
-                        "xml_path": str(xml_path.relative_to(ROOT)),
-                        "node_count": len(chunk),
-                        "exit_code": proc.returncode,
-                        "status": "CRASH",
-                        "duration_seconds": elapsed,
-                    }
-                )
-                print(f"[chunk {idx:04d}/{len(chunks):04d}] CRASH rc={proc.returncode}", flush=True)
-                continue
-            parsed = parse_junit_xml(xml_path)
-            for case in parsed["testcases"]:
-                per_node.setdefault(case["nodeid"], case)
-            all_failures.extend(parsed["failures"])
-            chunk_results.append(
-                {
-                    "chunk_index": idx,
-                    "xml_path": str(xml_path.relative_to(ROOT)),
-                    "node_count": len(chunk),
-                    "exit_code": proc.returncode,
-                    "status": "OK" if parsed["failed"] == 0 and parsed["errors"] == 0 else "FAILED",
-                    "duration_seconds": elapsed,
-                    "passed": parsed["passed"],
-                    "failed": parsed["failed"],
-                    "errors": parsed["errors"],
-                    "skipped": parsed["skipped"],
-                }
-            )
-            print(
-                f"[chunk {idx:04d}/{len(chunks):04d}] "
-                f"passed={parsed['passed']} failed={parsed['failed']} "
-                f"errors={parsed['errors']} skipped={parsed['skipped']} in {elapsed:.1f}s",
-                flush=True,
-            )
-        except subprocess.TimeoutExpired:
-            elapsed = round(time.perf_counter() - t0, 2)
-            timeouts.append(
-                {
-                    "chunk_index": idx,
-                    "status": "TIMEOUT",
-                    "exit_code": None,
-                    "duration_seconds": elapsed,
-                }
-            )
-            chunk_results.append(
-                {
-                    "chunk_index": idx,
-                    "xml_path": str(xml_path.relative_to(ROOT)),
-                    "node_count": len(chunk),
-                    "exit_code": None,
-                    "status": "TIMEOUT",
-                    "duration_seconds": elapsed,
-                }
-            )
-            print(f"[chunk {idx:04d}/{len(chunks):04d}] TIMEOUT after {elapsed:.1f}s", flush=True)
+    indexed_chunks = list(enumerate(chunks, start=1))
+    paused_early = False
+    if worker_count == 1:
+        outcomes = []
+        for item in indexed_chunks:
+            outcomes.append(_run_one_chunk(item))
+            if stop_after_seconds > 0 and (time.perf_counter() - suite_start) >= stop_after_seconds:
+                if item[0] < len(indexed_chunks):
+                    paused_early = True
+                    print(
+                        f"PAUSED after chunk {item[0]:04d}/{len(chunks):04d} "
+                        f"at {time.perf_counter() - suite_start:.1f}s (resume to continue)",
+                        flush=True,
+                    )
+                    break
+    else:
+        with ThreadPoolExecutor(max_workers=worker_count) as pool:
+            outcomes = list(pool.map(_run_one_chunk, indexed_chunks))
+
+    for out in sorted(outcomes, key=lambda item: item["idx"]):
+        for case in out["testcases"]:
+            canonical = case["nodeid"]
+            if canonical not in node_by_junit_key.values():
+                mapped = node_by_junit_key.get((case["classname"], case["name"]))
+                if mapped is not None:
+                    canonical = mapped
+                    case = {**case, "nodeid": canonical}
+            per_node.setdefault(canonical, case)
+        all_failures.extend(out["failures"])
+        if out["crash"] is not None:
+            crashes.append(out["crash"])
+        if out["timeout"] is not None:
+            timeouts.append(out["timeout"])
+        chunk_results.append(out["chunk_result"])
 
     suite_duration = round(time.perf_counter() - suite_start, 2)
 
@@ -833,6 +1115,7 @@ def _run_node_chunks(
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "marker": marker,
         "chunk_size": chunk_size,
+        "paused_early": paused_early,
         "duration_seconds": suite_duration,
         "population": len(nodes),
         "collected": len(nodes),
@@ -1035,6 +1318,25 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Reuse existing chunk_XX.xml files if already present (file mode only).",
     )
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=1,
+        help="Concurrent chunk subprocesses in node mode (default: 1).",
+    )
+    parser.add_argument(
+        "--worker-db-url",
+        action="append",
+        default=[],
+        dest="worker_db_urls",
+        help="Optional per-worker DATABASE_URL (repeatable, one per worker slot).",
+    )
+    parser.add_argument(
+        "--stop-after-seconds",
+        type=int,
+        default=0,
+        help="Stop cleanly after finishing the current chunk once elapsed >= N seconds (for --resume).",
+    )
     args = parser.parse_args(argv)
 
     summary = run_chunks(
@@ -1048,7 +1350,13 @@ def main(argv: list[str] | None = None) -> int:
         resume=args.resume,
         junit_out=args.junit_out.resolve() if args.junit_out else None,
         results_out=args.results_out.resolve() if args.results_out else None,
+        workers=args.workers,
+        worker_db_urls=args.worker_db_urls,
+        stop_after_seconds=args.stop_after_seconds,
     )
+
+    if summary.get("paused_early") and not summary["counts"]["failed"] and not summary["counts"]["errors"]:
+        return 0
 
     if args.results_out is not None:
         counts = summary["counts"]

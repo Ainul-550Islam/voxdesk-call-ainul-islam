@@ -150,13 +150,21 @@ async def list_scheduled(
 
 
 async def tick(session: AsyncSession, *, now: datetime | None = None) -> dict:
-    """One scheduler pass: reap abandoned leases, finalise cancels, report depth.
+    """One scheduler pass: reap abandoned leases, reap expired voice demos, report depth.
 
     Every statement is conditional, so concurrent/repeated ticks are safe
     and split work by row. Execution is *not* part of the tick — the worker
     claims separately, which is what keeps multi-instance scheduling from
     ever duplicating a run. Flushes; the caller commits.
     """
+    from app.services.voice_demo_service import reap_expired_voice_demo_sessions
+
     recovered = await recover_abandoned(session, now=now)
     due = await count_due(session, now=now)
-    return {"requeued": recovered["requeued"], "cancelled": recovered["cancelled"], "due": due}
+    reaped_demos = await reap_expired_voice_demo_sessions(session, now=now)
+    return {
+        "requeued": recovered["requeued"],
+        "cancelled": recovered["cancelled"],
+        "due": due,
+        "reaped_voice_demos": reaped_demos,
+    }

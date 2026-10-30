@@ -5,8 +5,8 @@ Generated deterministically by `scripts/build_api_docs.sh` from `app.main:app.op
 ## Summary Metrics
 
 - **OpenAPI Version**: `3.1.0`
-- **Total Unique Paths**: `1241`
-- **Total HTTP Operations**: `1485`
+- **Total Unique Paths**: `1251`
+- **Total HTTP Operations**: `1497`
 - **Total Tag Groups**: `155`
 - **Machine-Readable Schema**: [`openapi.json`](openapi.json) (mirrored at [`../../contracts/openapi.json`](../../contracts/openapi.json))
 - **Static HTML Reference (Redoc / Scalar + Offline Explorer)**: [`index.html`](index.html)
@@ -15,10 +15,10 @@ Generated deterministically by `scripts/build_api_docs.sh` from `app.main:app.op
 
 | HTTP Method | Operation Count |
 |---|---:|
-| `DELETE` | 68 |
-| `GET` | 642 |
+| `DELETE` | 70 |
+| `GET` | 643 |
 | `PATCH` | 58 |
-| `POST` | 690 |
+| `POST` | 699 |
 | `PUT` | 27 |
 
 ## Tag Inventory
@@ -28,7 +28,7 @@ Generated deterministically by `scripts/build_api_docs.sh` from `app.main:app.op
 | `Carrier Media` | 4 | `GET /api/v1/carriers/capabilities`, `POST /api/v1/carriers/{carrier}/test-connection`, `GET /api/v1/s2s/sessions` (+1 more) |
 | `Telephony Runtime` | 18 | `GET /api/v1/telephony/calls`, `POST /api/v1/telephony/calls/outbound`, `GET /api/v1/telephony/calls/{call_id}` (+15 more) |
 | `Telephony Webhooks` | 4 | `POST /api/v1/telephony/webhooks/{provider}/dtmf`, `POST /api/v1/telephony/webhooks/{provider}/inbound`, `POST /api/v1/telephony/webhooks/{provider}/recording` (+1 more) |
-| `ab-testing` | 56 | `GET /api/ab-testing/experiments`, `GET /api/ab-testing/experiments`, `POST /api/ab-testing/experiments` (+53 more) |
+| `ab-testing` | 68 | `GET /api/ab-testing/experiments`, `GET /api/ab-testing/experiments`, `POST /api/ab-testing/experiments` (+65 more) |
 | `agent-builder` | 11 | `GET /api/v1/agents`, `POST /api/v1/agents`, `GET /api/v1/agents/{agent_id}` (+8 more) |
 | `agent-catalog` | 3 | `GET /api/agents/models`, `GET /api/agents/tools/catalog`, `GET /api/agents/voices` |
 | `agent-flow` | 6 | `GET /api/agents/flow/schema`, `GET /api/agents/{agent_id}/flow`, `PUT /api/agents/{agent_id}/flow` (+3 more) |
@@ -123,7 +123,7 @@ Generated deterministically by `scripts/build_api_docs.sh` from `app.main:app.op
 | `messaging-sms` | 4 | `POST /messaging/sms/send`, `POST /messaging/sms/status`, `POST /messaging/sms/twilio` (+1 more) |
 | `mobile` | 14 | `GET /api/mobile/deliveries`, `GET /api/mobile/devices`, `POST /api/mobile/devices` (+11 more) |
 | `model-registry` | 15 | `GET /api/governance/models`, `POST /api/governance/models`, `GET /api/governance/models/approved` (+12 more) |
-| `multichannel` | 10 | `GET /api/channels`, `POST /api/channels`, `POST /api/channels/send` (+7 more) |
+| `multichannel` | 14 | `GET /api/channels`, `POST /api/channels`, `GET /api/channels/adapters` (+11 more) |
 | `notifications` | 13 | `GET /api/notifications`, `POST /api/notifications`, `POST /api/notifications/preferences/check` (+10 more) |
 | `number-trust` | 4 | `GET /api/phone-numbers/{number_id}/trust-profile`, `POST /api/phone-numbers/{number_id}/trust-profile/refresh`, `GET /api/v1/telephony/phone-numbers/{number_id}/trust-profile` (+1 more) |
 | `organization-membership` | 11 | `POST /api/organizations/{organization_id}/invitations`, `POST /api/organizations/{organization_id}/invitations/accept`, `POST /api/organizations/{organization_id}/invitations/{invitation_id}/resend` (+8 more) |
@@ -133,7 +133,7 @@ Generated deterministically by `scripts/build_api_docs.sh` from `app.main:app.op
 | `phone-numbers` | 12 | `GET /api/phone-numbers`, `POST /api/phone-numbers/provision`, `POST /api/phone-numbers/search` (+9 more) |
 | `phone-numbers-lifecycle` | 5 | `PATCH /api/phone-numbers/{number_id}`, `DELETE /api/phone-numbers/{number_id}`, `POST /api/phone-numbers/{number_id}/configure` (+2 more) |
 | `post-call-analysis` | 21 | `GET /api/analysis/backfill`, `POST /api/analysis/backfill`, `POST /api/analysis/backfill/preview` (+18 more) |
-| `public-home` | 6 | `GET /api/v1/public/analytics/summary`, `GET /api/v1/public/health`, `GET /api/v1/public/home` (+3 more) |
+| `public-home` | 8 | `GET /api/v1/public/analytics/summary`, `GET /api/v1/public/health`, `GET /api/v1/public/home` (+5 more) |
 | `public-site` | 5 | `POST /api/v1/public/contact-sales`, `GET /api/v1/public/site/manifest`, `GET /api/v1/public/site/pricing` (+2 more) |
 | `public-use-cases` | 4 | `GET /api/v1/public/use-cases`, `GET /api/v1/public/use-cases/categories`, `GET /api/v1/public/use-cases/health` (+1 more) |
 | `public-webhooks` | 1 | `POST /public/webhooks/{endpoint_id}` |

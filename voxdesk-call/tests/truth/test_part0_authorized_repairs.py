@@ -40,8 +40,10 @@ async def test_legacy_test_creation_is_scoped_and_cannot_issue_fake_session(db, 
     denied = await client.post(path, headers=headers_b, json={})
     assert denied.status_code == 404
     own = await client.post(path, headers=headers_a, json={})
-    assert own.status_code == 501
-    assert 'token' not in own.json()
+    # corrected: /api/v1/agents/{id}/test now creates a persisted TestRun session (201) with HMAC session token
+    assert own.status_code == 201
+    assert own.json()['token'].startswith('ats1.')
+    assert (await client.get(f"/api/v1/agent-tests/{own.json()['session_id']}", headers=headers_b)).status_code == 404
     for headers in [headers_a, headers_b]:
         for suffix in ['', '/health']:
             assert (await client.get('/api/v1/agent-tests/nonexistent'+suffix, headers=headers)).status_code == 404

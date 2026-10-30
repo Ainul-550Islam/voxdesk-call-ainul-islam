@@ -1,0 +1,8 @@
+# Commands that could not execute in this sandbox environment (max 15 lines)
+docker compose -f docker-compose.prod.yml config — docker binary/daemon not installed in sandbox
+docker compose -f docker-compose.staging.yml config — docker binary/daemon not installed in sandbox
+docker build . -t voxdesk-api:ci — docker binary/daemon not installed in sandbox
+docker build services/realtime/gateway-go -t voxdesk-realtime-gateway:ci — docker binary/daemon not installed in sandbox
+make staging-proof — requires live Docker daemon and container compose stack
+checkov -d infra/terraform — checkov CLI not installed in sandbox (terraform validate + tflint v0.54.0 ran and passed)
+make live-evidence (LIVE_PROVEN tier) — external paid provider credentials (Twilio/Telnyx/Vonage/OpenAI/Gemini/AWS KMS) not present in sandbox

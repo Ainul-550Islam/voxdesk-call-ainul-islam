@@ -25,8 +25,9 @@ from httpx import ASGITransport, AsyncClient
 BODYLESS_METHODS = frozenset({"GET", "HEAD", "DELETE"})
 
 #: A value that is wrong for at least one declared scalar type in this codebase.
+# corrected: deterministic UUID hex literal so pytest --collect-only produces stable node IDs across collection passes
 HOSTILE_VALUES = (
-    uuid.uuid4().hex,  # a UUID string where an int is declared
+    "8eba804b9fcf49268ffa30e892464312",  # a UUID string where an int is declared
     "not-a-uuid-at-all",
     "999999999999999999999999999999",
 )

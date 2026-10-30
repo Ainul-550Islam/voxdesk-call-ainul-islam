@@ -1,4 +1,7 @@
-# VoxDesk dashboard — Next.js / TypeScript (Phase 1, strangler)
+# VoxDesk dashboard — Next.js / TypeScript (Experimental)
+
+> **Status: Experimental (`dashboard/` is the canonical production UI).**
+> `dashboard/` (Vite + React) is the canonical production operator console built into `Dockerfile` and `docker-compose.prod.yml`. `dashboard-next/` is an experimental Next.js 14 App Router migration built, type-checked, and contract-tested on every push via `.github/workflows/polyglot.yml` (`dashboard-next` job) and `scripts/frontend_api_contract_check.py`. Development-only routes such as `/dashboard/connection-demo` refuse to render when `NODE_ENV === "production"`.
 
 The Next.js successor to the Vite dashboard in `dashboard/`. The Vite app
 remains the production dashboard until every page here has proven parity; this

@@ -64,6 +64,7 @@ from app.telephony.providers.base import SimulatedTelephonyAdapter, TelephonyAda
 from app.telephony.providers.telnyx import TelnyxAdapter
 from app.telephony.providers.twilio import TwilioAdapter
 from app.telephony.providers.vonage import VonageAdapter
+from app.telephony.sip.sip_outbound import SipOutboundAdapter
 from app.telephony.schemas import (
     CallDtmfRequest,
     CallDtmfResponse,
@@ -110,12 +111,7 @@ def get_provider_adapter(provider_name: str | TelephonyProviderName) -> Telephon
     if prov == TelephonyProviderName.SIMULATED.value:
         return SimulatedTelephonyAdapter()
     if prov == TelephonyProviderName.SIP.value:
-        raise TelephonyConfigurationError(
-            "SIP call origination is not implemented by the outbound runtime.",
-            status_code=501,
-            code="SIP_OUTBOUND_NOT_IMPLEMENTED",
-            detail={"provider": prov},
-        )
+        return SipOutboundAdapter()
     raise TelephonyConfigurationError(
         "The requested telephony provider is not supported.",
         status_code=422,
@@ -315,16 +311,11 @@ class TelephonyRuntimeService:
                     "provider='SIMULATED' requires is_simulation=true so the result is not presented as a live call.",
                     code="SIMULATION_FLAG_REQUIRED",
                 )
-            elif resolved_provider == TelephonyProviderName.SIP.value:
-                raise TelephonyConfigurationError(
-                    "SIP call origination is not implemented by the outbound runtime.",
-                    status_code=501,
-                    code="SIP_OUTBOUND_NOT_IMPLEMENTED",
-                )
             elif resolved_provider not in {
                 TelephonyProviderName.TWILIO.value,
                 TelephonyProviderName.TELNYX.value,
                 TelephonyProviderName.VONAGE.value,
+                TelephonyProviderName.SIP.value,
             }:
                 raise TelephonyConfigurationError(
                     "The requested telephony provider is not supported.",
@@ -529,10 +520,19 @@ class TelephonyRuntimeService:
             return serialize_call_session(call_session)
 
         try:
-            provider_result = await adapter.create_outbound(
-                to_number=to_e164,
-                from_number=from_e164,
-            )
+            outbound_kwargs: dict[str, Any] = {
+                "to_number": to_e164,
+                "from_number": from_e164,
+            }
+            if resolved_provider == TelephonyProviderName.SIP.value:
+                outbound_kwargs["idempotency_key"] = idem_key
+            elif resolved_provider == TelephonyProviderName.VONAGE.value:
+                from app.core.config import settings as _app_settings
+
+                pub_base = str(_app_settings.public_base_url or "https://api.voxdesk.local").rstrip("/")
+                outbound_kwargs["answer_url"] = f"{pub_base}/api/v1/carriers/vonage/answer"
+                outbound_kwargs["idempotency_key"] = idem_key
+            provider_result = await adapter.create_outbound(**outbound_kwargs)
             external_id = str(provider_result.external_id or "").strip()
             if (
                 not external_id
@@ -749,6 +749,7 @@ class TelephonyRuntimeService:
             TwilioAdapter(),
             TelnyxAdapter(),
             VonageAdapter(),
+            SipOutboundAdapter(),
             SimulatedTelephonyAdapter(),
         ]
         provider_statuses: list[ProviderRuntimeStatus] = [
@@ -756,7 +757,7 @@ class TelephonyRuntimeService:
         ]
 
         any_live_provider_ready = any(
-            p.configured and p.provider in {"TWILIO", "TELNYX", "VONAGE"}
+            p.configured and p.provider in {"TWILIO", "TELNYX", "VONAGE", "SIP"}
             for p in provider_statuses
         )
         if ready_numbers > 0 or ready_sip > 0 or any_live_provider_ready:

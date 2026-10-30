@@ -21,14 +21,17 @@ from app.telephony.sip.connection import (
     compute_sip_digest_response,
     verify_sip_digest_auth,
 )
+from app.telephony.sip.sip_outbound import SipOutboundAdapter
 
 __all__ = [
     "SipConnectionService",
+    "SipOutboundAdapter",
     "check_sip_ip_acl",
     "compute_sip_digest_response",
     "sip_capabilities",
     "sip_codec",
     "sip_gateway_client",
     "sip_handler",
+    "sip_outbound",
     "verify_sip_digest_auth",
 ]

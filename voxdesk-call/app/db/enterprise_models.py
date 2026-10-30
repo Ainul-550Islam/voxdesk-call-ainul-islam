@@ -731,3 +731,62 @@ class DncEntry(Base):
             "source": self.source,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
+
+
+# -------------------------------------------------------------- Public Voice Demo Sessions
+class VoiceDemoSession(Base):
+    __tablename__ = "voice_demo_sessions"
+    __table_args__ = (
+        Index("ix_voice_demo_sessions_expires_at", "expires_at"),
+        Index("ix_voice_demo_sessions_client_ip", "client_ip", "created_at"),
+        Index("ix_voice_demo_sessions_status", "status"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    tenant_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True
+    )
+    agent_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("agents.id", ondelete="CASCADE"), nullable=False
+    )
+    agent_version_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    agent_version_number: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    agent_name: Mapped[str] = mapped_column(String(160), default="", nullable=False)
+    language: Mapped[str] = mapped_column(String(32), default="en-US", nullable=False)
+    voice_id: Mapped[str] = mapped_column(String(120), default="", nullable=False)
+    status: Mapped[str] = mapped_column(String(24), default="active", nullable=False)
+    token_hash: Mapped[str] = mapped_column(String(128), nullable=False)
+    client_ip: Mapped[str] = mapped_column(String(64), default="unknown", nullable=False)
+    turn_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    max_turns: Mapped[int] = mapped_column(Integer, default=12, nullable=False)
+    transcript: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    system_prompt: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    meta: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, onupdate=_now, nullable=False
+    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    def as_dict(self) -> dict:
+        return {
+            "session_id": str(self.id),
+            "tenant_id": str(self.tenant_id) if self.tenant_id else None,
+            "agent_id": str(self.agent_id),
+            "agent_version_id": str(self.agent_version_id) if self.agent_version_id else None,
+            "agent_version_number": self.agent_version_number,
+            "agent_name": self.agent_name,
+            "language": self.language,
+            "voice_id": self.voice_id,
+            "status": self.status,
+            "turn_count": self.turn_count,
+            "max_turns": self.max_turns,
+            "transcript": list(self.transcript or []),
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "expires_at": self.expires_at.isoformat() if self.expires_at else None,
+            "ended_at": self.ended_at.isoformat() if self.ended_at else None,
+        }

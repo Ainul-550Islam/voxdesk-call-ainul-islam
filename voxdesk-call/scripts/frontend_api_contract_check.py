@@ -36,7 +36,50 @@ SILENT_CATCH_RE = re.compile(
 )
 
 
-def load_backend_routes(routes_path: Path) -> list[dict[str, Any]]:
+def _compile_backend_rows(rows: list[dict[str, str]]) -> list[dict[str, Any]]:
+    compiled: list[dict[str, Any]] = []
+    for row in rows:
+        bpath = row["path"].rstrip("/") or "/"
+        pattern_str = "^" + re.sub(
+            r"\{[^}/]+:path\}",
+            ".+",
+            re.sub(r"\{[^}/]+\}", "[^/]+", bpath),
+        ) + "$"
+        is_clone = bool(re.search(r"/endpoint-\d+$", bpath))
+        compiled.append(
+            {
+                "path": bpath,
+                "methods": row["methods"],
+                "endpoint": row["endpoint"],
+                "regex": re.compile(pattern_str),
+                "is_template_clone": is_clone,
+            }
+        )
+    return compiled
+
+
+def load_live_backend_routes() -> list[dict[str, Any]]:
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+    from fastapi.routing import APIRoute, APIWebSocketRoute
+
+    from app.main import app
+
+    rows: list[dict[str, str]] = []
+    for route in app.routes:
+        if isinstance(route, APIRoute):
+            methods = "|".join(sorted(m for m in (route.methods or set()) if m not in {"HEAD", "OPTIONS"}))
+            endpoint = f"{route.endpoint.__module__}.{route.endpoint.__qualname__}"
+            rows.append({"path": route.path, "methods": methods, "endpoint": endpoint})
+        elif isinstance(route, APIWebSocketRoute):
+            endpoint = f"{route.endpoint.__module__}.{route.endpoint.__qualname__}"
+            rows.append({"path": route.path, "methods": "WS", "endpoint": endpoint})
+    return _compile_backend_rows(rows)
+
+
+def load_backend_routes(routes_path: Path | None) -> list[dict[str, Any]]:
+    if routes_path is None:
+        return load_live_backend_routes()
     rows: list[dict[str, Any]] = []
     if routes_path.suffix.lower() == ".json":
         payload = json.loads(routes_path.read_text(encoding="utf-8"))
@@ -65,25 +108,7 @@ def load_backend_routes(routes_path: Path) -> list[dict[str, Any]]:
                     }
                 )
 
-    compiled: list[dict[str, Any]] = []
-    for row in rows:
-        bpath = row["path"].rstrip("/") or "/"
-        pattern_str = "^" + re.sub(
-            r"\{[^}/]+:path\}",
-            ".+",
-            re.sub(r"\{[^}/]+\}", "[^/]+", bpath),
-        ) + "$"
-        is_clone = bool(re.search(r"/endpoint-\d+$", bpath))
-        compiled.append(
-            {
-                "path": bpath,
-                "methods": row["methods"],
-                "endpoint": row["endpoint"],
-                "regex": re.compile(pattern_str),
-                "is_template_clone": is_clone,
-            }
-        )
-    return compiled
+    return _compile_backend_rows(rows)
 
 
 def normalize_frontend_path(fe_path: str) -> tuple[str, str]:
@@ -145,7 +170,7 @@ def scan_silent_catches() -> list[dict[str, Any]]:
     return catches
 
 
-def check_contract(routes_path: Path) -> dict[str, Any]:
+def check_contract(routes_path: Path | None) -> dict[str, Any]:
     backend_routes = load_backend_routes(routes_path)
     fe_files = collect_frontend_files()
 
@@ -215,8 +240,14 @@ def check_contract(routes_path: Path) -> dict[str, Any]:
         },
     }
 
+    routes_source = (
+        "app.main:app"
+        if routes_path is None
+        else (str(routes_path.relative_to(ROOT)) if routes_path.is_relative_to(ROOT) else str(routes_path))
+    )
+
     return {
-        "routes_source": str(routes_path.relative_to(ROOT)) if routes_path.is_relative_to(ROOT) else str(routes_path),
+        "routes_source": routes_source,
         "backend_routes_loaded": len(backend_routes),
         "frontend_files_scanned": len(fe_files),
         "matched_real_routes_count": len(matched_calls),
@@ -244,8 +275,8 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--routes",
-        default="reports/check/routes.csv",
-        help="Path to backend routes.csv or routes.json",
+        default=None,
+        help="Optional path to backend routes.csv or routes.json (defaults to live app.main:app inspection if reports/check/routes.csv is absent)",
     )
     parser.add_argument(
         "--json-out",
@@ -254,16 +285,27 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    routes_path = Path(args.routes)
-    if not routes_path.is_absolute():
-        routes_path = ROOT / routes_path
-    if not routes_path.exists():
-        alt = routes_path.with_suffix(".json" if routes_path.suffix == ".csv" else ".csv")
-        if alt.exists():
-            routes_path = alt
+    routes_path: Path | None
+    if args.routes is None:
+        default_csv = ROOT / "reports" / "check" / "routes.csv"
+        default_json = ROOT / "reports" / "check" / "routes.json"
+        if default_csv.exists():
+            routes_path = default_csv
+        elif default_json.exists():
+            routes_path = default_json
         else:
-            print(f"ERROR: routes file not found: {routes_path}", file=sys.stderr)
-            return 2
+            routes_path = None
+    else:
+        routes_path = Path(args.routes)
+        if not routes_path.is_absolute():
+            routes_path = ROOT / routes_path
+        if not routes_path.exists():
+            alt = routes_path.with_suffix(".json" if routes_path.suffix == ".csv" else ".csv")
+            if alt.exists():
+                routes_path = alt
+            else:
+                print(f"ERROR: routes file not found: {routes_path}", file=sys.stderr)
+                return 2
 
     report = check_contract(routes_path)
     payload = json.dumps(report, indent=2)

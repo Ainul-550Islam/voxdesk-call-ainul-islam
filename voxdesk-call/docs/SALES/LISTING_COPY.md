@@ -14,8 +14,8 @@ exclusively from the **`LIVE`** rows of [`docs/SALES/FEATURE_MATRIX_VERIFIED.md`
 
 **Summary**:
 VoxDesk (`voxdesk-call`) is a self-hosted, multi-tenant AI Voice & Omnichannel
-Contact Center platform built on FastAPI, PostgreSQL 16 (`322` registered tables at head
-migration `0068_platform_v2`), Pipecat 0.0.94, React 18 / Next.js 14,
+Contact Center platform built on FastAPI, PostgreSQL 16 (`323` registered tables at head
+migration `0069_voice_demo_sessions`), Pipecat 0.0.94, React 18 / Next.js 14,
 Go realtime/signaling services, and a Rust RFC 5764 DTLS-SRTP media engine.
 Every advertised capability below is verified `LIVE` by automated JUnit test
 suites (`make verify-sale`).
@@ -96,41 +96,41 @@ To ensure 100% technical accuracy during buyer due diligence, the following
 
 | Matrix ID | Category | Verified `LIVE` Capability | JUnit Last Green Run |
 |---:|---|---|---|
-| `#1` | Voice Pipeline | End-to-end latency | `2026-10-08` |
-| `#2` | Voice Pipeline | Turn-taking & interruption controls | `2026-10-08` |
-| `#4` | Voice Pipeline | STT / TTS provider choice | `2026-10-08` |
-| `#5` | Voice Pipeline | Voice cloning / voice library | `2026-10-08` |
-| `#6` | Voice Pipeline | Voice controls (speed, volume, pronunciation, boosted keywords, ambient sound, denoise) | `2026-10-08` |
-| `#7` | Voice Pipeline | Multilingual / language switching | `2026-10-08` |
-| `#8` | Agent Builder | Visual conversation-flow builder | `2026-10-08` |
-| `#9` | Agent Builder | Agent versions / publish / rollback | `2026-10-08` |
-| `#10` | Agent Builder | Agent bound to phone number | `2026-10-08` |
-| `#11` | Tools & Actions | Custom functions (HTTP tools) | `2026-10-08` |
-| `#12` | Tools & Actions | MCP tools | `2026-10-08` |
-| `#13` | Tools & Actions | Cold/warm transfer + AI briefing to human | `2026-10-08` |
-| `#14` | Tools & Actions | Agent-to-agent transfer | `2026-10-08` |
-| `#15` | Tools & Actions | IVR navigation (press digits on external phone trees) | `2026-10-08` |
-| `#16` | Tools & Actions | DTMF | `2026-10-08` |
-| `#17` | Telephony & Channels | Voicemail detection + message | `2026-10-08` |
-| `#18` | Telephony & Channels | Numbers: buy / import / SIP trunk | `2026-10-08` |
-| `#20` | Telephony & Channels | Branded caller ID / verified numbers | `2026-10-08` |
-| `#21` | Telephony & Channels | Batch calls / power dialer | `2026-10-08` |
-| `#22` | Telephony & Channels | Web calls, widget, web SDK | `2026-10-08` |
-| `#23` | Telephony & Channels | Chat / SMS agents | `2026-10-08` |
-| `#24` | Telephony & Channels | Knowledge base (RAG) | `2026-10-08` |
-| `#25` | Events & Intelligence | Webhooks (call started/ended/analyzed) | `2026-10-08` |
-| `#26` | Events & Intelligence | Post-call analysis (summary, sentiment, custom fields) | `2026-10-08` |
-| `#27` | Events & Intelligence | Automated QA on all calls | `2026-10-08` |
-| `#28` | Quality & Analytics | Simulation testing & regression from production calls | `2026-10-08` |
-| `#29` | Quality & Analytics | A/B test agent versions | `2026-10-08` |
-| `#30` | Quality & Analytics | Analytics & custom dashboards | `2026-10-08` |
-| `#31` | Live Operations | Live call monitoring / takeover | `2026-10-08` |
-| `#32` | Quality & Analytics | AI copilot (Conductor) | `2026-10-08` |
-| `#33` | Integrations | CRM (Salesforce/HubSpot) | `2026-10-08` |
-| `#34` | Integrations | Calendar booking | `2026-10-08` |
-| `#36` | Enterprise & Compliance | SSO / SCIM / RBAC / PII redaction | `2026-10-08` |
-| `#37` | Integrations | SDKs | `2026-10-08` |
-| `#38` | Integrations | Automation connectors | `2026-10-08` |
-| `#39` | Enterprise & Compliance | Scale & reliability evidence | `2026-10-08` |
-| `#40` | Enterprise & Compliance | Billing & metering | `2026-10-08` |
-| `#41` | Telephony & Channels | Contact memory & dynamic variables | `2026-10-08` |
+| `#1` | Voice Pipeline | End-to-end latency | `2026-10-29` |
+| `#2` | Voice Pipeline | Turn-taking & interruption controls | `2026-10-29` |
+| `#4` | Voice Pipeline | STT / TTS provider choice | `2026-10-29` |
+| `#5` | Voice Pipeline | Voice cloning / voice library | `2026-10-29` |
+| `#6` | Voice Pipeline | Voice controls (speed, volume, pronunciation, boosted keywords, ambient sound, denoise) | `2026-10-29` |
+| `#7` | Voice Pipeline | Multilingual / language switching | `2026-10-29` |
+| `#8` | Agent Builder | Visual conversation-flow builder | `2026-10-29` |
+| `#9` | Agent Builder | Agent versions / publish / rollback | `2026-10-29` |
+| `#10` | Agent Builder | Agent bound to phone number | `2026-10-29` |
+| `#11` | Tools & Actions | Custom functions (HTTP tools) | `2026-10-29` |
+| `#12` | Tools & Actions | MCP tools | `2026-10-29` |
+| `#13` | Tools & Actions | Cold/warm transfer + AI briefing to human | `2026-10-29` |
+| `#14` | Tools & Actions | Agent-to-agent transfer | `2026-10-29` |
+| `#15` | Tools & Actions | IVR navigation (press digits on external phone trees) | `2026-10-29` |
+| `#16` | Tools & Actions | DTMF | `2026-10-29` |
+| `#17` | Telephony & Channels | Voicemail detection + message | `2026-10-29` |
+| `#18` | Telephony & Channels | Numbers: buy / import / SIP trunk | `2026-10-29` |
+| `#20` | Telephony & Channels | Branded caller ID / verified numbers | `2026-10-29` |
+| `#21` | Telephony & Channels | Batch calls / power dialer | `2026-10-29` |
+| `#22` | Telephony & Channels | Web calls, widget, web SDK | `2026-10-29` |
+| `#23` | Telephony & Channels | Chat / SMS agents | `2026-10-29` |
+| `#24` | Telephony & Channels | Knowledge base (RAG) | `2026-10-29` |
+| `#25` | Events & Intelligence | Webhooks (call started/ended/analyzed) | `2026-10-29` |
+| `#26` | Events & Intelligence | Post-call analysis (summary, sentiment, custom fields) | `2026-10-29` |
+| `#27` | Events & Intelligence | Automated QA on all calls | `2026-10-29` |
+| `#28` | Quality & Analytics | Simulation testing & regression from production calls | `2026-10-29` |
+| `#29` | Quality & Analytics | A/B test agent versions | `2026-10-29` |
+| `#30` | Quality & Analytics | Analytics & custom dashboards | `2026-10-29` |
+| `#31` | Live Operations | Live call monitoring / takeover | `2026-10-29` |
+| `#32` | Quality & Analytics | AI copilot (Conductor) | `2026-10-29` |
+| `#33` | Integrations | CRM (Salesforce/HubSpot) | `2026-10-29` |
+| `#34` | Integrations | Calendar booking | `2026-10-29` |
+| `#36` | Enterprise & Compliance | SSO / SCIM / RBAC / PII redaction | `2026-10-29` |
+| `#37` | Integrations | SDKs | `2026-10-29` |
+| `#38` | Integrations | Automation connectors | `2026-10-29` |
+| `#39` | Enterprise & Compliance | Scale & reliability evidence | `2026-10-29` |
+| `#40` | Enterprise & Compliance | Billing & metering | `2026-10-29` |
+| `#41` | Telephony & Channels | Contact memory & dynamic variables | `2026-10-29` |

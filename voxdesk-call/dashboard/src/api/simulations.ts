@@ -117,7 +117,7 @@ export async function runSingleTestCase(
     {
       agent_version_override: options?.agent_version_override,
       dynamic_variables_override: options?.dynamic_variables_override || {},
-      allow_mock_fallback: options?.allow_mock_fallback ?? true,
+      allow_mock_fallback: options?.allow_mock_fallback ?? false,
     }
   );
 }

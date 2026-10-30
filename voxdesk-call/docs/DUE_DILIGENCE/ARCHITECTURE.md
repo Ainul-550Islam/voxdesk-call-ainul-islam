@@ -64,7 +64,7 @@ flowchart TB
     end
 
     subgraph Storage["Durable Storage & Secret Layer"]
-        PG[("PostgreSQL 16<br/>239 Tables @ 0062_drop_pcap_artifacts")]
+        PG[("PostgreSQL 16<br/>323 Tables @ 0069_voice_demo_sessions")]
         Redis[("Redis 7<br/>Rate Limits, CPS Token Bucket, Circuit Breakers")]
         KMS["Secret Store & Envelope Crypto<br/>(AES-256-GCM: k1/k2 key ring)"]
     end

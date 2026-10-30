@@ -162,13 +162,37 @@ def _now_iso() -> str:
     return _now().isoformat()
 
 
-def _not_implemented(
-    message: str = "CRM writeback runtime operation is not configured.",
+def _validation_error(
+    message: str = "Invalid CRM writeback request payload.",
 ) -> HTTPException:
     return HTTPException(
-        status_code=501,
+        status_code=422,
         detail={
-            "code": "CRM_WRITEBACK_NOT_IMPLEMENTED",
+            "code": "VALIDATION_ERROR",
+            "message": message,
+        },
+    )
+
+
+def _not_configured(
+    message: str = "CRM integration is not configured for this tenant.",
+) -> HTTPException:
+    return HTTPException(
+        status_code=409,
+        detail={
+            "code": "NOT_CONFIGURED",
+            "message": message,
+        },
+    )
+
+
+def _upstream_error(
+    message: str = "Upstream CRM provider rejected or failed the operation.",
+) -> HTTPException:
+    return HTTPException(
+        status_code=502,
+        detail={
+            "code": "UPSTREAM_PROVIDER_ERROR",
             "message": message,
         },
     )
@@ -204,13 +228,13 @@ async def _verify_call(
 def _resolve_provider_enum(provider_name: str) -> CrmProviderType:
     key = (provider_name or "").strip().lower()
     if key not in ALLOWED_PROVIDERS:
-        raise HTTPException(
-            status_code=422, detail=f"provider must be one of {sorted(ALLOWED_PROVIDERS)}"
+        raise _validation_error(
+            f"provider must be one of {sorted(ALLOWED_PROVIDERS)}"
         )
     enum_val = _PROVIDER_ENUM_MAP.get(key)
     if enum_val is None:
-        raise _not_implemented(
-            f"CRM provider {provider_name!r} has no runtime transport adapter."
+        raise _validation_error(
+            f"CRM provider {provider_name!r} has no runtime transport adapter; supported providers: {sorted(_PROVIDER_ENUM_MAP)}."
         )
     return enum_val
 
@@ -223,7 +247,7 @@ async def _load_provider_for_tenant(
     provider_type = _resolve_provider_enum(provider_name)
     key_ring = crypto.key_ring_from_settings()
     if key_ring is None:
-        raise _not_implemented(
+        raise _not_configured(
             "CRM credential encryption (CRM_ENCRYPTION_KEYS) is not configured."
         )
 
@@ -260,11 +284,11 @@ async def _load_provider_for_tenant(
             await session.flush()
 
     if integration is None or not integration.is_enabled:
-        raise _not_implemented(
+        raise _not_configured(
             f"CRM integration for provider {provider_type.value!r} is not configured for this tenant."
         )
     if not integration.credentials_encrypted:
-        raise _not_implemented(
+        raise _not_configured(
             f"CRM credentials for provider {provider_type.value!r} are not configured."
         )
 
@@ -354,7 +378,7 @@ async def writeback_disposition(
 ):
     """POST /api/crm/calls/{call_id}/disposition — Write call disposition to the configured CRM."""
     if call_id is None or payload is None:
-        raise _not_implemented("call_id and payload are required.")
+        raise _validation_error("call_id and payload are required.")
     await enforce_tenant_rate_limit(ctx.tenant_id, "crm_disposition", 60)
 
     idem_key = payload.idempotency_key or (
@@ -467,7 +491,7 @@ async def writeback_disposition(
     await session.commit()
     await session.refresh(row)
     if status_str == "failed":
-        raise HTTPException(status_code=502, detail=error_msg or "CRM writeback failed")
+        raise _upstream_error(error_msg or "CRM writeback failed")
     return _to_out(row)
 
 
@@ -481,7 +505,7 @@ async def writeback_task_note(
 ):
     """POST /api/crm/calls/{call_id}/task — Create a follow-up task or note in the CRM."""
     if call_id is None or payload is None:
-        raise _not_implemented("call_id and payload are required.")
+        raise _validation_error("call_id and payload are required.")
     await enforce_tenant_rate_limit(ctx.tenant_id, "crm_task_note", 60)
 
     idem_key = payload.idempotency_key or (
@@ -586,7 +610,7 @@ async def writeback_task_note(
     await session.commit()
     await session.refresh(row)
     if status_str == "failed":
-        raise HTTPException(status_code=502, detail=error_msg or "CRM writeback failed")
+        raise _upstream_error(error_msg or "CRM writeback failed")
     return _to_out(row)
 
 
@@ -600,13 +624,11 @@ async def writeback_extracted_fields(
 ):
     """POST /api/crm/calls/{call_id}/fields — Sync extracted conversation fields to CRM."""
     if call_id is None or payload is None:
-        raise _not_implemented("call_id and payload are required.")
+        raise _validation_error("call_id and payload are required.")
     await enforce_tenant_rate_limit(ctx.tenant_id, "crm_fields", 60)
 
     if len(payload.fields) > MAX_FIELDS_COUNT:
-        raise HTTPException(
-            status_code=422, detail=f"maximum {MAX_FIELDS_COUNT} fields allowed"
-        )
+        raise _validation_error(f"maximum {MAX_FIELDS_COUNT} fields allowed")
 
     idem_key = payload.idempotency_key or (
         x_idempotency_key if isinstance(x_idempotency_key, str) else None
@@ -701,7 +723,7 @@ async def writeback_extracted_fields(
     await session.commit()
     await session.refresh(row)
     if status_str == "failed":
-        raise HTTPException(status_code=502, detail=error_msg or "CRM writeback failed")
+        raise _upstream_error(error_msg or "CRM writeback failed")
     return _to_out(row)
 
 
@@ -870,6 +892,10 @@ async def retry_writeback(
     )
     await session.commit()
     await session.refresh(row)
+    if row.status == "failed":
+        raise _upstream_error(
+            str(payload_data.get("error_message") or "CRM writeback retry failed")
+        )
     return _to_out(row)
 
 
@@ -909,13 +935,13 @@ async def create_mapping(
 ):
     """POST /api/crm/mappings — Validate and persist CRM field mappings on CrmIntegration."""
     if payload is None:
-        raise _not_implemented("CRM field mapping payload is required.")
+        raise _validation_error("CRM field mapping payload is required.")
 
     provider_type = _resolve_provider_enum(payload.provider)
     try:
         validated = validate_field_mappings_against_describe(payload.mappings)
     except MappingError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from None
+        raise _validation_error(str(exc)) from None
 
     integration = (
         await session.execute(
@@ -987,7 +1013,7 @@ async def list_mappings(
         await session.execute(select(CrmIntegration).where(*scope))
     ).scalars().all()
     if not rows:
-        raise _not_implemented(
+        raise _not_configured(
             "No CRM integration mappings are configured for this tenant."
         )
 
@@ -1012,7 +1038,9 @@ async def backfill_crm(
 ):
     """POST /api/crm/backfill — Backfill historical calls within date range to CRM."""
     if payload is None:
-        raise _not_implemented("CRM backfill payload is required.")
+        raise _validation_error("CRM backfill payload is required.")
+    if payload.to_date < payload.from_date:
+        raise _validation_error("to_date must be greater than or equal to from_date.")
     await enforce_tenant_rate_limit(ctx.tenant_id, "crm_backfill", 5)
 
     integration, adapter = await _load_provider_for_tenant(

@@ -119,12 +119,15 @@ features:
   - tests/telephony/test_number_provisioning.py::test_cross_tenant_assign_and_release_are_not_found
   - tests/telephony/test_sip_connection.py::test_sip_digest_auth_and_cidr_ip_acl
   - tests/telephony/test_sip_connection.py::test_sip_connection_lifecycle_and_inbound_invite_routing
+  - tests/telephony/test_sip_outbound.py::test_sip_outbound_posts_v1_calls_with_bearer_hmac_and_idempotency_key
 - id: 19
   name: Multi-carrier live media
   status: NOT_CONFIGURED
   evidence_tests:
   - tests/telephony/test_telnyx_media_path.py::test_multi_carrier_serializers_twilio_telnyx_plivo_sip_and_vonage_honesty
   - tests/telephony/test_telnyx_media_path.py::test_telnyx_inbound_voice_webhook_binds_agent_and_returns_stream
+  - tests/telephony/test_vonage_capability_flag.py::test_telnyx_supports_ai_media_stream_configured_vs_unconfigured
+  - tests/telephony/test_vonage_capability_flag.py::test_capability_row_is_configured_with_full_vonage_credentials
 - id: 20
   name: Branded caller ID / verified numbers
   status: LIVE
@@ -146,6 +149,8 @@ features:
   - tests/telephony/test_web_call_flow.py::test_widget_embed_js_and_python_sdk_helpers
   - tests/telephony/test_web_call_security.py::test_origin_mismatch_rejected_on_public_web_call_and_websocket
   - tests/telephony/test_web_call_security.py::test_single_use_jwt_cannot_be_replayed
+  - tests/telephony/test_webrtc_dependency.py::test_webrtc_offer_returns_503_with_ws_protobuf_fallback_when_aiortc_absent
+  - tests/api/test_voice_demo_sessions.py::test_voice_demo_lifecycle_hmac_401_rate_limit_429_expiry_410_and_reaper
 - id: 23
   name: Chat / SMS agents
   status: LIVE
@@ -153,6 +158,9 @@ features:
   - tests/messaging/test_sms_flow.py::test_inbound_sms_routes_to_chat_agent_and_returns_twiml_reply
   - tests/messaging/test_sms_flow.py::test_inbound_sms_stop_keyword_adds_dnc_and_blocks_outbound
   - tests/e2e/test_chat_sms_flow.py::test_persisted_chat_message_memory_and_sms_provider_fail_closed
+  - tests/messaging/test_twilio_whatsapp.py::test_twilio_whatsapp_webhook_hmac_verification_and_stop_start_help
+  - tests/messaging/test_telnyx_messaging.py::test_telnyx_inbound_ed25519_verification_and_stop_keyword
+  - tests/messaging/test_vonage_sms.py::test_vonage_inbound_jwt_payload_hash_verification_and_stop
 - id: 24
   name: Knowledge base (RAG)
   status: LIVE
@@ -187,6 +195,7 @@ features:
   evidence_tests:
   - tests/services/test_simulation_caller.py::test_simulated_caller_run_judges_goal_and_criteria
   - tests/services/test_regression_from_calls.py::test_create_regression_test_from_real_call_redacts_pii_and_marks_needs_review
+  - tests/api/test_agent_test_transport.py::test_agent_test_session_persists_across_restart_and_completes_exchange
 - id: 29
   name: A/B test agent versions
   status: LIVE
@@ -194,6 +203,7 @@ features:
   - tests/telephony/test_experiment_assignment.py::test_deterministic_hash_assignment_and_distribution
   - tests/telephony/test_experiment_assignment.py::test_runtime_call_setup_persists_experiment_and_variant_and_results_compute_stats
   - tests/test_ab_testing_routes.py::test_experiment_create_list_and_read_use_persisted_tenant_scope
+  - tests/api/test_ab_testing_runtime_routes.py::test_ab_testing_full_10_operations_promote_and_rollback
 - id: 30
   name: Analytics & custom dashboards
   status: LIVE
@@ -212,7 +222,7 @@ features:
   name: AI copilot (Conductor)
   status: LIVE
   evidence_tests:
-  - tests/e2e/test_conductor_flow.py::test_conductor_full_workflow_partial_approve_simulate_and_immutable_apply
+  - tests/e2e/test_conductor_flow.py::test_prompt8_conductor_failure_reproduction_review_and_immutable_apply
   - tests/services/test_regression_from_calls.py::test_conductor_rejects_fabricated_call_evidence_and_applies_real_evidence_to_draft
 - id: 33
   name: CRM (Salesforce/HubSpot)

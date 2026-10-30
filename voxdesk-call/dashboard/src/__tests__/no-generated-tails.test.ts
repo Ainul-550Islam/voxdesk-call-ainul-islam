@@ -85,6 +85,7 @@ describe('Generated-tail regression guard', () => {
 });
 
 describe('Route preservation during cleanup', () => {
+  // corrected: route-registry.json updated to include /voice-demo and /experiments (/dashboard/experiments, /app/experiments) routes
   it('preserves every route, metadata field, alias, and declaration order', () => {
     expect(ROUTES).toEqual(routeSnapshot);
   });

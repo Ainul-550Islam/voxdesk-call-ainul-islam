@@ -95,8 +95,12 @@ async def test_unimplemented_remote_operations_do_not_fabricate_completion(db, t
     kwargs.update(ctx=ctx, session=db)
     with pytest.raises(HTTPException) as caught:
         await operation(**kwargs)
-    assert caught.value.status_code == 501
-    assert "NOT_IMPLEMENTED" in str(caught.value.detail)
+    # corrected: CRM/Salesforce routes now return structured 422 (VALIDATION_ERROR) / 409 (NOT_CONFIGURED) instead of 501 stubs
+    assert caught.value.status_code in (409, 422)
+    assert any(
+        token in str(caught.value.detail)
+        for token in ("NOT_CONFIGURED", "VALIDATION_ERROR")
+    )
     for model in (SalesforceConnection, CrmWritebackLog):
         assert (await db.scalar(select(func.count()).select_from(model))) == 0
 
@@ -111,5 +115,13 @@ async def test_workflow_preserves_local_context_but_does_not_fake_remote_writeba
     assert context.bookings == []
     with pytest.raises(HTTPException) as caught:
         await outcome_writeback(call.id, OutcomeWritebackRequest(target="crm"), ctx, db)
-    assert caught.value.status_code == 501
+    # corrected: outcome_writeback enforces durable idempotency (400 without key) and reports skipped/no_active_connection without faking CrmWritebackLog rows
+    assert caught.value.status_code == 400
+    skipped = await outcome_writeback(
+        call.id,
+        OutcomeWritebackRequest(target="crm", idempotency_key="honesty-writeback-001"),
+        ctx,
+        db,
+    )
+    assert skipped.status == "skipped"
     assert (await db.scalar(select(func.count()).select_from(CrmWritebackLog))) == 0

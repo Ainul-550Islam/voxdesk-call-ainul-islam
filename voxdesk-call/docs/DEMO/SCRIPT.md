@@ -16,12 +16,12 @@ Every step in this script exercises only capabilities verified as `LIVE` in
 |---|---|---|---|---|
 | 1 | **Inbound PSTN Call & Voice Controls** | `#1`, `#2`, `#4`, `#6`, `#10` | `01_inbound_call.json`, `01_inbound_call_audio.wav` | Dial the Twilio number bound to a published `AgentVersion`; show `POST /telephony/voice` -> `WS /telephony/ws`, ambient background bed, interruption/barge-in, and persisted `CallLatencyStat` (`e2e_p50_ms`, `e2e_p95_ms`). |
 | 2 | **Outbound Batch / Power Dialer** | `#17`, `#21` | `02_outbound_batch.json` | Upload a CSV batch (`POST /api/batch-calls`) containing valid E.164 numbers, a duplicate number, and a DNC-listed number; show DNC suppression, CPS token-bucket pacing, AMD voicemail detection (`leave_message` / `hangup`), and `SELECT ... FOR UPDATE SKIP LOCKED` single-claim proof. |
-| 3 | **Browser Web Call & Embeddable Widget** | `#22`, `#37` | `03_web_call.json`, `03_web_call_audio.wav` | Open a page with `<script src="/widget/v1/embed.js" data-public-key="pk_live_..."></script>`; click **Start Call**, grant mic permission, speak two turns over `/api/v1/telephony/web-calls/{id}/ws`, and show origin-allowlist + single-use JWT enforcement. |
+| 3 | **Browser Web Call & Embeddable Widget** | `#22`, `#37` | `03_web_call.json`, `03_web_call_audio.wav` | Open a page with `<script src="/widget/v1/embed.js" data-public-key="pk_live_..."></script>`; click **Start Call**, grant mic permission, speak two turns over `/telephony/web/ws`, and show origin-allowlist + single-use JWT enforcement. |
 | 4 | **Live Supervisor Listen, Whisper & Takeover** | `#31` | `04_live_takeover.json` | While an inbound or web call is active, open the Supervisor Console (`calls.monitor` RBAC permission), click **Listen** (`/api/calls/{id}/monitor/ws`), send a **Whisper** instruction (`POST /api/calls/{id}/monitor/whisper`) that changes the AI's next response, then click **Takeover** (`POST /api/calls/{id}/monitor/takeover`) to bridge the caller to the human supervisor's phone/SIP URI. |
 | 5 | **Visual Conversation-Flow Builder Call** | `#8`, `#9`, `#10` | `05_flow_call.json` | Open the React Flow visual builder (`dashboard` / `dashboard-next`), inspect a 6-node flow (`conversation` -> `function` -> `branch` -> `press_digit` -> `transfer` / `end`), click **Validate** (`0` errors) and **Publish**, bind the version to a phone number, and run a call that traverses the graph with real-time active-node highlighting. |
-| 6 | **Signed Webhook Lifecycle Delivery & DLQ Redrive** | `#25`, `#38` | `06_webhook_delivery.json` | Show the webhook receiver receiving `call_started`, `call_ended`, and `call_analyzed` with `X-VoxDesk-Signature: t=<ts>,v1=<hmac_sha256>`, verify the signature via `voxdesk.webhooks.verify_signature`, simulate a 500 receiver outage to move a delivery to `dlq`, and redrive it via `POST /api/webhooks/deliveries/{id}/redrive`. |
+| 6 | **Signed Webhook Lifecycle Delivery & DLQ Redrive** | `#25`, `#38` | `06_webhook_delivery.json` | Show the webhook receiver receiving `call_started`, `call_ended`, and `call_analyzed` with `X-VoxDesk-Signature: t=<ts>,v1=<hmac_sha256>`, verify the signature via `voxdesk.webhooks.verify_signature`, simulate a 500 receiver outage to move a delivery to `dlq`, and redrive it via `POST /api/webhooks/{endpoint_id}/deliveries/{delivery_id}/retry`. |
 | 7 | **Post-Call Analysis & Automated QA Review** | `#26`, `#27` | `07_post_call_analysis.json` | Inspect a completed call's automatically extracted `summary`, `sentiment`, `call_successful`, and typed `custom_analysis_data` (`boolean`, `number`, `enum`, `text`), alongside its automatic QA scorecard review (`QAReview`, per-criterion scores, transcript evidence citations, and `CoachingSignal`). |
-| 8 | **Custom Analytics Dashboard & A/B Experiment** | `#28`, `#29`, `#30` | `08_custom_dashboard.json` | Show a live A/B experiment splitting inbound traffic (`50/50`) between Agent Version 1 and Version 2 with two-proportion z-test conversion metrics, then open a tenant-scoped custom analytics dashboard and export the CSV report (`GET /api/analytics/dashboards/{id}/export.csv`). |
+| 8 | **Custom Analytics Dashboard & A/B Experiment** | `#28`, `#29`, `#30` | `08_custom_dashboard.json` | Show a live A/B experiment splitting inbound traffic (`50/50`) between Agent Version 1 and Version 2 with two-proportion z-test conversion metrics, then open a tenant-scoped custom analytics dashboard and export the CSV report (`GET /api/v1/analytics/dashboards/{dashboard_id}/export.csv`). |
 
 ---
 
@@ -35,8 +35,8 @@ Every step in this script exercises only capabilities verified as `LIVE` in
 ### Minute 1:00 – 2:30 | Agent Versioning, Phone Number Binding & Visual Flow Builder (`Recording #5`)
 1. Open the Agent & Flow Builder UI.
 2. Load the 6-node appointment-triage flow (`conversation` greeting -> `function` CRM lookup -> `branch` equation check -> `press_digit` extension -> `transfer` / `end`).
-3. Click **Validate Flow** (`POST /api/flows/{id}/validate`) and **Publish Version** (`POST /api/agents/{id}/publish`), creating an immutable `AgentVersion` snapshot.
-4. Bind the published version to `+15550001111` via `PATCH /api/v1/telephony/numbers/{number_id}`.
+3. Click **Validate Flow** (`POST /api/agents/{agent_id}/flow/validate`) and **Publish Version** (`POST /api/agents/{id}/publish`), creating an immutable `AgentVersion` snapshot.
+4. Bind the published version to `+15550001111` via `PATCH /api/v1/telephony/phone-numbers/{phone_number_id}`.
 
 ### Minute 2:30 – 4:00 | Live Inbound Call, Voice Controls & Turn-Taking (`Recording #1`)
 1. Place a call to `+15550001111` (or run `python loadtest/voice_ws_user.py --self-test` for deterministic local replay).
@@ -53,7 +53,7 @@ Every step in this script exercises only capabilities verified as `LIVE` in
 
 ### Minute 5:30 – 6:45 | Browser Web Call & Embeddable Widget (`Recording #3`)
 1. Open the sample customer landing page embedding `/widget/v1/embed.js` inside a Shadow DOM root.
-2. Click the floating voice button; show `POST /api/v1/telephony/web-calls/public` validating the `Origin` header against the key's `allowed_origins` and minting a 60-second single-use JWT.
+2. Click the floating voice button; show `POST /api/public/web-calls` validating the `Origin` header against the key's `allowed_origins` and minting a 60-second single-use JWT.
 3. Speak with the agent in the browser, hang up, and show that replaying the same token returns `401 Unauthorized`.
 
 ### Minute 6:45 – 8:00 | Outbound Batch Dialer, DNC & AMD Voicemail (`Recording #2`)
@@ -69,6 +69,6 @@ Every step in this script exercises only capabilities verified as `LIVE` in
 3. Show the encrypted Salesforce integration (`app/integrations/crm/providers/salesforce.py`) logging the completed call as a Salesforce `Task` with a real `external_id`.
 
 ### Minute 9:00 – 10:00 | Simulation, A/B Experiments, Custom Dashboards & Due-Diligence Pack (`Recording #8`)
-1. Promote a failed call to a PII-redacted regression test case (`POST /api/simulations/from-call/{call_id}`) and run `SimulatedCaller` against the new `AgentVersion`.
+1. Promote a failed call to a PII-redacted regression test case (`POST /api/v1/testing/regressions/from-call/{call_id}`) and run `SimulatedCaller` against the new `AgentVersion`.
 2. Open the A/B Experiment view showing live call variant assignment and z-test significance, then open the Custom Dashboard and download the CSV export.
 3. Conclude by showing `docs/CAPACITY_MODEL.md`, `evidence/dr/dr_drill_report.json` (`RPO = 0.35s`, `RTO = 2.23s`), and `dist/due-diligence-<date>.zip`.
