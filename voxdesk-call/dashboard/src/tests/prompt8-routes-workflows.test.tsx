@@ -6,6 +6,7 @@ import { isProtectedPath, matchRoute } from '../app/router';
 import { WorkflowsPage } from '../pages/WorkflowsPage';
 import { FinalParityPage } from '../pages/FinalParityPage';
 import { getCapabilityInventory, getIntegrationInventory, inspectE2EFlow } from '../lib/parityApi';
+import { clearSession, setSessionAccessToken } from '../lib/session';
 
 const WORKFLOW_ID = 'workflow-prompt8-001';
 const LEAD_ID = '11111111-2222-4333-8444-555555555555';
@@ -92,7 +93,8 @@ describe('Prompt 8 direct routes and workflow UI', () => {
   });
   beforeEach(() => {
     localStorage.clear();
-    localStorage.setItem('voxdesk_access_token', 'prompt8-ui-test-token');
+    clearSession();
+    setSessionAccessToken('prompt8-ui-test-token');
   });
 
   it.each([
@@ -100,6 +102,8 @@ describe('Prompt 8 direct routes and workflow UI', () => {
     ['/dashboard/campaigns', 'LegacyCampaignsPage'],
     ['/workflows', 'WorkflowsPage'],
     ['/dashboard/workflows', 'WorkflowsPage'],
+    ['/dashboard/customer-service/analytics', 'CustomerServiceAnalytics'],
+    ['/app/customer-service/analytics', 'CustomerServiceAnalytics'],
     ['/settings', 'LegacySettingsPage'],
     ['/dashboard/settings', 'LegacySettingsPage'],
     ['/billing', 'LegacyBillingPage'],

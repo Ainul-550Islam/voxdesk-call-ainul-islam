@@ -162,6 +162,32 @@ QUERY_SUFFIX_RE = re.compile(
 )
 
 
+def _strip_url_suffix(value: str) -> str:
+    """Drop a query/fragment only when it is outside ``${...}``.
+
+    A path interpolation can itself contain a string such as ``"?"`` or
+    ``"#"``. Splitting the raw template at those characters would truncate the
+    route and could compare it with an unrelated endpoint.
+    """
+    index = 0
+    depth = 0
+    while index < len(value):
+        if value.startswith("${", index):
+            depth += 1
+            index += 2
+            continue
+        char = value[index]
+        if depth:
+            if char == "{":
+                depth += 1
+            elif char == "}":
+                depth -= 1
+        elif char in "?#":
+            return value[:index]
+        index += 1
+    return value
+
+
 def normalize_path(value: str) -> str:
     """Collapse a requested path and a route path to a comparable shape.
 
@@ -169,8 +195,11 @@ def normalize_path(value: str) -> str:
     ``/api/calls/${callId}``, ``/api/calls/{call_id}`` or ``/api/calls/:id``.
     The query string is dropped because it is not part of routing.
     """
+    # Nullish coalescing inside an id expression is not a URL query marker.
+    # Protect it before applying the legacy trailing-query shortcut below.
+    value = value.replace("??", "\0")
     value = QUERY_SUFFIX_RE.sub("", value)
-    value = value.split("?", 1)[0].split("#", 1)[0]
+    value = _strip_url_suffix(value)
     out: list[str] = []
     index = 0
     length = len(value)

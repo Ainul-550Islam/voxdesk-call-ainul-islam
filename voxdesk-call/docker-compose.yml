@@ -1,9 +1,6 @@
-# Dev compose — local development only, NOT production
-# RISK-02 Fix: static DB password voxdesk is dev-only, clearly non-reusable, injected from env
-# Production compose (docker-compose.prod.yml) uses environment-required secrets
-# Dev password is overridable via POSTGRES_PASSWORD env var, defaults to dev-only value
-# Never reuse this password in production — prod requires POSTGRES_PASSWORD from .env
-
+# Dev compose — local development only, NOT production.
+# Production uses docker-compose.prod.yml (Postgres/Redis stay private and Caddy
+# terminates TLS). Password defaults below are deliberately development-only.
 services:
   db:
     image: postgres:16-alpine
@@ -18,12 +15,29 @@ services:
       interval: 5s
       retries: 10
 
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes --maxmemory-policy noeviction
+    volumes: ["redisdata:/data"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   api:
     build: .
-    env_file: .env
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      APP_ENV: development
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-voxdesk}:${POSTGRES_PASSWORD:-voxdesk-dev-only-do-not-use-in-prod}@db:5432/${POSTGRES_DB:-voxdesk}
+      REDIS_URL: redis://redis:6379/0
     ports: ["8000:8000"]
     depends_on:
       db: {condition: service_healthy}
+      redis: {condition: service_healthy}
     volumes:
       - ./app:/srv/app
       - ./secrets:/srv/secrets
@@ -31,14 +45,22 @@ services:
 
   scheduler:
     build: .
-    env_file: .env
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      APP_ENV: development
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-voxdesk}:${POSTGRES_PASSWORD:-voxdesk-dev-only-do-not-use-in-prod}@db:5432/${POSTGRES_DB:-voxdesk}
+      REDIS_URL: redis://redis:6379/0
     depends_on:
       db: {condition: service_healthy}
+      redis: {condition: service_healthy}
     volumes:
       - ./app:/srv/app
       - ./scripts:/srv/scripts
       - ./secrets:/srv/secrets
-    command: python -m scripts.scheduler
+    # The API owns migrations; start the worker directly like production.
+    entrypoint: ["python", "-m", "scripts.scheduler"]
     restart: unless-stopped
 
   dashboard:
@@ -46,10 +68,25 @@ services:
     working_dir: /srv
     volumes: ["./dashboard:/srv"]
     ports: ["5173:5173"]
-    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    command: sh -c "npm ci --no-audit --no-fund && npm run dev -- --host 0.0.0.0"
     depends_on: [api]
     environment:
-      VOXDESK_ALLOW_ALL_HOSTS: "true"
+      VITE_API_PROXY_TARGET: http://api:8000
+      VITE_ALLOWED_HOSTS: ${VITE_ALLOWED_HOSTS:-}
+
+  nginx:
+    image: nginx:1.27-alpine
+    ports: ["8080:80"]
+    volumes: ["./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro"]
+    depends_on:
+      api: {condition: service_started}
+      dashboard: {condition: service_started}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
 
 volumes:
   pgdata:
+  redisdata:

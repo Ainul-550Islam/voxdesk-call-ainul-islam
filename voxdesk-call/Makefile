@@ -1,10 +1,11 @@
 .PHONY: help up down logs migrate seed test lint deps-check contracts-check api-docs sbom due-diligence-pack verify-truth verify-fe-be verify-sale check-backend check-frontend check-docker check-other check-all test-backend-fast test-backend-full test-migrations dev worker clean \
-        staging-proof live-evidence polyglot-evidence security-evidence verify-deploy-assets verify-artifacts
+        staging-proof live-evidence polyglot-evidence security-evidence verify-deploy-assets verify-artifacts \
+        frontend-install frontend-test frontend-typecheck frontend-build frontend-check compose-config
 
 FEATURE_EVIDENCE_TESTS := $(shell python3 -c "import yaml; d=yaml.safe_load(open('tests/truth/feature_manifest.yaml')); print(' '.join(sorted({t.split('::')[0] for f in d['features'] for t in f.get('evidence_tests', [])})))")
 
 help:
-	@echo "make up                 - start postgres + api + scheduler"
+	@echo "make up                 - start the full local development stack"
 	@echo "make migrate            - apply database migrations"
 	@echo "make seed               - create a demo tenant"
 	@echo "make test               - run the test suite"
@@ -24,6 +25,8 @@ help:
 	@echo "make verify-sale        - full Gate G9 release gate (lint + typecheck + backend/frontend/go/cargo/c++ tests + truth + contracts + SBOM + matrix + due-diligence pack)"
 	@echo "make check-backend      - run full backend check & test pipeline (scripts/check_backend.sh)"
 	@echo "make check-frontend     - run full frontend check & test pipeline (scripts/check_frontend.sh)"
+	@echo "make frontend-check     - typecheck, test, and build both React frontends"
+	@echo "make compose-config     - validate the development Compose model"
 	@echo "make check-docker       - run full Docker stack check & smoke pipeline (scripts/check_docker.sh)"
 	@echo "make check-other        - run polyglot, contracts, truth, security & due-diligence checks (scripts/check_other.sh)"
 	@echo "make check-all          - run all 4 check pipelines and generate reports/check/SUMMARY.md (scripts/check_all.sh)"
@@ -38,7 +41,7 @@ up:
 	@echo "waiting for the database..."
 	@sleep 5
 	docker compose exec -T api alembic upgrade head
-	@echo "VoxDesk is running on http://localhost:8000/docs"
+	@echo "VoxDesk is running on http://localhost:8080 (API docs: http://localhost:8080/docs)"
 
 down:
 	docker compose down
@@ -141,6 +144,27 @@ check-backend:
 
 check-frontend:
 	bash scripts/check_frontend.sh
+
+frontend-install:
+	cd dashboard && npm ci --no-audit --no-fund
+	cd dashboard-next && npm ci --no-audit --no-fund
+
+frontend-test:
+	cd dashboard && npm test
+	cd dashboard-next && npm test
+
+frontend-typecheck:
+	cd dashboard && npm run typecheck
+	cd dashboard-next && npm run typecheck
+
+frontend-build:
+	cd dashboard && npm run build
+	cd dashboard-next && npm run build
+
+frontend-check: frontend-typecheck frontend-test frontend-build
+
+compose-config:
+	docker compose -f docker-compose.yml config -q
 
 check-docker:
 	bash scripts/check_docker.sh

@@ -185,6 +185,43 @@ def test_entrypoint_trusts_proxy_headers():
     assert "scripts/migrate.py" in text
 
 
+def test_entrypoint_honors_compose_command_after_migration():
+    text = (REPO / "scripts" / "entrypoint.sh").read_text()
+    migrate = text.index("python scripts/migrate.py")
+    override = text.index('exec "$@"')
+    default_server = text.index("exec uvicorn app.main:app")
+    assert migrate < override < default_server
+
+
+def test_development_compose_and_proxy_cover_the_full_stack():
+    compose = yaml.safe_load((REPO / "docker-compose.yml").read_text())
+    assert set(compose["services"]) == {"db", "redis", "api", "scheduler", "dashboard", "nginx"}
+    for service in ("api", "scheduler"):
+        # Validation must also work from a clean checkout, before .env exists.
+        assert compose["services"][service]["env_file"] == [
+            {"path": ".env", "required": False}
+        ]
+    assert compose["services"]["scheduler"]["entrypoint"] == [
+        "python", "-m", "scripts.scheduler"
+    ]
+
+    text = (REPO / "deploy" / "nginx.conf").read_text()
+    groups = re.findall(r"location\s+~\s+\^/\(\?:([^)]+)\)", text)
+    prefixes = {
+        item.replace(r"\.", ".")
+        for group in groups
+        for item in group.split("|")
+    }
+    assert {
+        "api", "auth", "channels", "messaging", "public", "scim", "sso",
+        "telephony", "webhooks", "widget", "ws", "docs", "redoc",
+        "openapi.json", "metrics", ".well-known", "robots.txt",
+        "sitemap.xml", "security.txt",
+    } <= prefixes
+    assert "location = /health" in text
+    assert "location ^~ /health/" in text
+
+
 # ------------------------------------------------------------ (7) migrations ---
 
 

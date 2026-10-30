@@ -8,6 +8,7 @@
 //   the 422 validation-list form.
 
 import { clearToken, getToken, setToken } from "./auth";
+import type { CallAnalyticsResponse, UsagePoint } from "./operations";
 import type {
   AgentConfig,
   AppointmentListResponse,
@@ -497,6 +498,62 @@ export interface VoiceCloneJob {
   updated_at: string;
 }
 
+export interface ForecastProjection {
+  step: number;
+  period: string;
+  value: number;
+  lower: number | null;
+  upper: number | null;
+  interval_status: string;
+}
+
+export interface ForecastResult {
+  execution_id: string;
+  operation: "forecast";
+  status: string;
+  method: string;
+  series_reference: string | null;
+  horizon: number;
+  projections: ForecastProjection[];
+  data_quality: string;
+  interval_method?: string;
+  review_required: boolean;
+  review_state: string;
+  disclaimer?: string;
+  created_at?: string | null;
+}
+
+export interface BacktestResult {
+  execution_id: string;
+  operation: "backtest";
+  status: string;
+  method: string;
+  train_points: number;
+  test_points: number;
+  comparisons: Array<{ period: string; actual: number; predicted: number }>;
+  mape: number | null;
+  mape_status: string;
+  rmse: number;
+  disclaimer?: string;
+}
+
+export interface ForecastListResult {
+  items: Array<ForecastResult | BacktestResult>;
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+interface ForecastExecutionInput {
+  environment_id: string;
+  model_version_id: string;
+  idempotency_key: string;
+  series_reference?: string;
+  series: UsagePoint[];
+  method: string;
+  configuration: { window: number; alpha: number };
+}
+
 export const api = {
   // ---- auth ----
 
@@ -527,6 +584,12 @@ export const api = {
   // ---- overview / analytics ----
   overview(): Promise<OverviewResponse> {
     return request<OverviewResponse>("/api/analytics/overview");
+  },
+
+  analyticsCalls(range = "last_30_days"): Promise<CallAnalyticsResponse> {
+    return request<CallAnalyticsResponse>(
+      `/api/analytics/calls?range=${encodeURIComponent(range)}`,
+    );
   },
 
   // ---- calls ----
@@ -957,6 +1020,33 @@ export const api = {
     );
   },
 
+  // ---- forecasting ----
+  forecast(payload: ForecastExecutionInput & { horizon: number }): Promise<ForecastResult> {
+    return request<ForecastResult>("/api/forecast", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  backtestForecast(
+    payload: ForecastExecutionInput & { test_size: number },
+  ): Promise<BacktestResult> {
+    return request<BacktestResult>("/api/forecast/backtest", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  forecasts(
+    environmentId: string,
+    params: { limit?: number; offset?: number } = {},
+  ): Promise<ForecastListResult> {
+    const qs = new URLSearchParams({ environment_id: environmentId });
+    if (params.limit !== undefined) qs.set("limit", String(params.limit));
+    if (params.offset !== undefined) qs.set("offset", String(params.offset));
+    return request<ForecastListResult>(`/api/forecast?${qs.toString()}`);
+  },
+
   // ---- anomaly (P1) ----
   /** Run a detector over observations. `POST /api/anomaly/analyze` is the only
    *  analysis route the backend serves; there is no "list detections" feed. */
@@ -1141,7 +1231,7 @@ export const api = {
     const headers: Record<string, string> = {};
     if (expectedEtag) headers["If-Match"] = expectedEtag;
     return request<Record<string, unknown>>(`/api/agents/${encodeURIComponent(agentId)}`, {
-      method: "PATCH",
+      method: "PUT",
       headers,
       body: JSON.stringify(payload),
     });

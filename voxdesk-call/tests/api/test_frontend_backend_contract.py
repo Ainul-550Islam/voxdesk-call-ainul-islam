@@ -112,6 +112,11 @@ def test_normalization_collapses_placeholders_and_drops_queries(scanner: ModuleT
     assert scanner.normalize_path("/api/calls/abc#section") == "/api/calls/abc"
     assert scanner.normalize_path("/api/calls//abc") == "/api/calls/abc"
     assert scanner.normalize_path("/api/calls/abc/") == "/api/calls/abc"
+    assert scanner.normalize_path(
+        '/api/webhooks/${encodeURIComponent(subscriptionId ?? "")}'
+        "/deliveries/${encodeURIComponent(deliveryId)}/retry"
+    ) == "/api/webhooks/{}/deliveries/{}/retry"
+    assert scanner.normalize_path('/api/calls/${id ?? "fallback"}') == "/api/calls/{}"
 
 
 def test_a_trailing_query_interpolation_is_not_a_path_segment(scanner: ModuleType) -> None:

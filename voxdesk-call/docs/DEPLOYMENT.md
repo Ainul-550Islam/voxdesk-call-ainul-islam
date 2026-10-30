@@ -8,6 +8,22 @@ here is enforced by code (`Settings.validate_security()`, `scripts/migrate.py`,
 `scripts/deploy.sh`, `scripts/restore.sh`) and verified by
 `tests/test_deployment.py` — not just prose.
 
+## Local full-stack development
+
+The root `docker-compose.yml` runs the canonical React dashboard, FastAPI, PostgreSQL, Redis, and the scheduler behind one Nginx entry point. The experimental `dashboard-next` application is tested in CI but is not mounted into this stack.
+
+```bash
+cp .env.example .env
+# Replace SECRET_KEY and METRICS_TOKEN with locally generated random values.
+docker compose up --build
+```
+
+Open `http://localhost:8080`. The API is available under the same origin at `/api`; health is at `/health`. PostgreSQL and Redis use private container networking, and PostgreSQL data persists in the named `pgdata` volume. The API entry point applies Alembic migrations before accepting traffic. No live provider credentials are included, and provider calls remain credential-gated.
+
+For frontend hot reload, run PostgreSQL, Redis, and the API through Compose and start the canonical dashboard separately with `npm run dev` inside `dashboard/`; its Vite proxy targets `http://localhost:8000`. The all-in-one Nginx route remains the single-page development entry point when using the full Compose command.
+
+Before committing deployment changes, validate the resolved configuration with `docker compose config` and run the frontend and backend verification targets documented in the Makefile.
+
 ## 1. Deployment dependency graph
 
 Built from the repository, not assumed. Arrows mean "depends on to serve or
@@ -60,7 +76,7 @@ Three environments, strictly separated:
 | Stripe | — | test-mode keys only | live keys |
 | E2E guard (Step 5) | allowed | allowed (default off) | **refused at boot** |
 | Failure injection | allowed | allowed | refused |
-| Host ports | `8000`, `3000` | `8001`, `3001`, `8080/8443` | `8000`, `3000`, `80/443` |
+| Host ports | `5432`, `8000`, `5173`, `8080` | `8001`, `3001`, `8080/8443` | `8000`, `3000`, `80/443` |
 
 Rules:
 
@@ -153,7 +169,7 @@ silently skips migrations: the entrypoint runs `migrate.py` and exits on
 failure, so the container never serves with a stale schema.
 
 Migration chain (`alembic/versions/`): a single linear head at
-`0024_qa_conversation_intelligence` with no gaps back to `0001_baseline`
+`0069_voice_demo_sessions` with no gaps back to `0001_baseline`
 (enforced by `tests/test_deployment.py`). `0018` adds membership, invitation
 and quota tables and backfills one active membership per existing user without
 rewriting user or tenant ids. `0017` adds `organizations`,
@@ -236,8 +252,10 @@ is set). `Caddyfile`:
   it is reachable only inside the compose network
 
 The API trusts `X-Forwarded-*` via `--proxy-headers` (entrypoint) so
-`PUBLIC_BASE_URL`, `wss://` and Twilio signature validation work; tighten
-`FORWARDED_ALLOW_IPS` from the default `*` in hardened setups.
+`PUBLIC_BASE_URL`, `wss://` and Twilio signature validation work. Keep
+`FORWARDED_ALLOW_IPS` restricted to trusted proxies: development defaults to
+loopback, while the staging/production Compose files pin their Caddy bridge
+addresses.
 
 ## 9. Monitoring exposure
 
@@ -273,8 +291,6 @@ set. The API `/metrics` scrape endpoint is gated by `METRICS_TOKEN` when set
   breaking Vitest major). It does not affect shipped code: `npm audit
   --omit=dev` is clean. Mitigation: upgrade Vitest on its next major in a
   dedicated change; do not `--force` a breaking upgrade mid-step.
-* `FORWARDED_ALLOW_IPS` defaults to `*` for single-proxy deployments; document
-  and tighten when a second proxy is introduced.
 
 ## 11. CI/CD and deploy authorization
 

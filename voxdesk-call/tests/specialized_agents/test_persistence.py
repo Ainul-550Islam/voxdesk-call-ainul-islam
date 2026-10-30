@@ -70,3 +70,61 @@ async def test_forecast_api_reuses_analytics_and_discloses_unavailable_intervals
     assert detail.status_code == 200
     pure = ForecastingService().analyze(points=[__import__("app.analytics.forecast", fromlist=["UsagePoint"]).UsagePoint(**item) for item in points], method="moving_average", horizon=1, window=2)
     assert pure["interval_method"] == "NOT_AVAILABLE"
+
+    backtest_points = [
+        {"period": f"2026-01-0{index}", "value": index}
+        for index in range(1, 7)
+    ]
+    backtest = await client.post(
+        "/api/forecast/backtest",
+        json={
+            "environment_id": str(environment.id),
+            "model_version_id": str(model.id),
+            "idempotency_key": "forecast-backtest-001",
+            "series_reference": "daily-usage-series",
+            "series": backtest_points,
+            "method": "linear",
+            "test_size": 2,
+            "configuration": {},
+        },
+        headers=await auth_headers(client, user),
+    )
+    assert backtest.status_code == 201, backtest.text
+    assert backtest.json()["operation"] == "backtest"
+    assert backtest.json()["rmse"] == 0.0
+    assert backtest.json()["mape"] == 0.0
+
+    listed = await client.get(
+        f"/api/forecast?environment_id={environment.id}&limit=10&offset=0",
+        headers=await auth_headers(client, user),
+    )
+    assert listed.status_code == 200, listed.text
+    assert listed.json()["total"] == 2
+    assert {item["operation"] for item in listed.json()["items"]} == {
+        "forecast",
+        "backtest",
+    }
+
+    # Scalar coercion happens before the governed executor. A malformed value
+    # must become the documented 422 response, not escape as a HierarchyError
+    # and surface as an unhandled 500.
+    headers = await auth_headers(client, user)
+    for path, idempotency_key, extra in (
+        ("/api/forecast", "forecast-invalid-001", {"horizon": 1}),
+        ("/api/forecast/backtest", "backtest-invalid-001", {"test_size": 1}),
+    ):
+        invalid = await client.post(
+            path,
+            json={
+                "environment_id": str(environment.id),
+                "model_version_id": str(model.id),
+                "idempotency_key": idempotency_key,
+                "series": [{"period": "2026-01-01", "value": "not-a-number"}],
+                "method": "linear",
+                "configuration": {},
+                **extra,
+            },
+            headers=headers,
+        )
+        assert invalid.status_code == 422, invalid.text
+        assert invalid.json()["detail"]["code"] == "invalid_forecast_input"

@@ -3,7 +3,10 @@
  * Unified Application Shell — Public Business Site + Auth Boundary + Agent Studio + Operator Console
  */
 import React, { useEffect, useMemo, useState } from 'react';
-import { hasAuthenticatedSessionToken } from '../api/public-site';
+import {
+  ProtectedRoute,
+  useProtectedSession,
+} from '../components/ProtectedRoute';
 import OperatorConsoleApp from '../App';
 import { WidgetSettings } from '../features/public-widget/WidgetSettings';
 import { AgentArchivePage } from '../pages/agents/AgentArchivePage';
@@ -51,6 +54,7 @@ import { WorkflowsPage } from '../pages/WorkflowsPage';
 import { AnsweringServicePage } from '../pages/product/answering-service/AnsweringServicePage';
 import { AppointmentSetterPage } from '../pages/product/appointment-setter/AppointmentSetterPage';
 import { CustomerServicePage } from '../pages/product/customer-service/CustomerServicePage';
+import { CustomerServiceAnalytics } from '../pages/product/customer-service/CustomerServiceAnalytics';
 import { InboundPage } from '../pages/product/inbound/InboundPage';
 import { OutboundPage } from '../pages/product/outbound/OutboundPage';
 import { QAScorecards } from '../pages/product/QAScorecards';
@@ -151,7 +155,13 @@ export function App() {
   }, [pathname]);
 
   const matched = useMemo(() => matchRoute(pathname), [pathname]);
-  const isAuthenticated = hasAuthenticatedSessionToken();
+  const requiresAuth = isProtectedPath(pathname) || (
+    hash.startsWith('#/') && hash !== '#/voice-demo'
+  );
+  const sessionStatus = useProtectedSession(requiresAuth);
+  const requestedPath = hash.startsWith('#/') && !isProtectedPath(pathname)
+    ? `/${hash}`
+    : pathname;
 
   useEffect(() => {
     const legacyPath = matched?.route.legacyPath;
@@ -168,16 +178,19 @@ export function App() {
     }
   }, [matched]);
 
-  // Enforce Protected Route Boundary: unauthenticated requests to /app/* or /dashboard/*
-  // render LoginPage with a safe local return path (`next`) and never mount private consoles.
-  if (isProtectedPath(pathname) && !isAuthenticated) {
+  // Restore the HttpOnly-cookie session before mounting any private console.
+  // Bearer tokens remain in memory; token presence is only a UX gate and every
+  // API still enforces the server's JWT/RBAC policy.
+  if (requiresAuth && sessionStatus !== 'authenticated') {
     return (
-      <LoginPage
-        nextPath={pathname}
+      <ProtectedRoute
+        status={sessionStatus}
+        nextPath={requestedPath}
         onLoginSuccess={(redirectTo) => {
           if (typeof window !== 'undefined') {
             window.history.pushState(null, '', redirectTo);
             setPathname(window.location.pathname);
+            setHash(window.location.hash);
           }
         }}
       />
@@ -216,6 +229,8 @@ export function App() {
       return <InboundPage />;
     case 'AnalyticsPage':
       return <AnalyticsPage />;
+    case 'CustomerServiceAnalytics':
+      return <CustomerServiceAnalytics />;
     case 'PhoneNumbersPage':
       return <PhoneNumbersPage />;
     case 'CallRuntimePage':

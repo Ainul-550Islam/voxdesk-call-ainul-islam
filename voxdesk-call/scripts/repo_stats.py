@@ -189,13 +189,12 @@ Read from the generated matrix, never typed by hand. Regenerate with
 python3.12 -m venv .venv && . .venv/bin/activate
 pip install -r requirements.txt -r requirements-test.txt
 cp .env.example .env          # then fill in real secrets; the app refuses weak ones
-make up                       # postgres + redis
-make migrate                  # alembic upgrade head
-python -m scripts.create_owner --help
-uvicorn app.main:app --reload
+make up                       # full local stack; the API applies migrations
+docker compose exec -T api python -m scripts.create_owner --help
 ```
 
-The application refuses to boot with a default or short JWT secret, and in
+Open `http://localhost:8080`; the same Nginx origin serves the dashboard,
+API, and API documentation. The application refuses to boot with a default or short JWT secret, and in
 production it also requires an https `PUBLIC_BASE_URL`, a webhook signature
 secret, and E2E mode off. Those checks are enforced by
 `tests/security/test_boot_secret_policy.py`.
@@ -219,7 +218,7 @@ secret, and E2E mode off. Those checks are enforced by
 * `dashboard/` (Vite + React 18) is the **canonical production operator console**
   built into `Dockerfile` and served by FastAPI/Caddy in `docker-compose.prod.yml`
   and `infra/helm/voxdesk`.
-* `dashboard-next/` (Next.js 14 App Router) is an **experimental, opt-in shadow
+* `dashboard-next/` (Next.js 16 App Router) is an **experimental, opt-in shadow
   console** (`dashboard-next/README.md`) validated in CI (`npm test`,
   `tsc --noEmit`, `next build`) and not deployed by default in production compose
   or Helm manifests.

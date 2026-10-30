@@ -713,6 +713,22 @@
     "category": "dashboard"
   },
   {
+    "path": "/dashboard/customer-service/analytics",
+    "title": "Customer-service Analytics | VoxDesk Studio",
+    "description": "Inspect real tenant-scoped customer-service call aggregates returned by the backend.",
+    "component": "CustomerServiceAnalytics",
+    "exact": true,
+    "category": "dashboard"
+  },
+  {
+    "path": "/app/customer-service/analytics",
+    "title": "Customer-service Analytics | VoxDesk Studio",
+    "description": "Inspect real tenant-scoped customer-service call aggregates returned by the backend.",
+    "component": "CustomerServiceAnalytics",
+    "exact": true,
+    "category": "dashboard"
+  },
+  {
     "path": "/dashboard/final-parity",
     "title": "Final Retell Parity | VoxDesk Studio",
     "description": "Evidence-backed Retell public-surface comparison, integration state, and read-only lifecycle inspection.",
