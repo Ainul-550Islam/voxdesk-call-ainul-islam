@@ -1,6 +1,14 @@
 #!/bin/sh
 # Production entrypoint: migrate (under an advisory lock), then serve.
 #
+# Contract with Compose and `docker run`:
+#   1. `python scripts/migrate.py` always runs first, so Alembic — the sole
+#      schema owner in production and staging — is at head before any traffic.
+#   2. If a command was supplied it is executed verbatim as PID 1. That is what
+#      a Compose `command:` override reaches; dropping it silently replaced the
+#      scheduler with a second uvicorn.
+#   3. With no command, the production server defaults below apply.
+#
 # Alembic is the sole schema owner in production and staging. The application
 # never runs Base.metadata.create_all there, so the schema MUST be brought up
 # to date here before any traffic arrives.
@@ -12,6 +20,16 @@
 set -e
 
 python scripts/migrate.py
+
+# A Compose service that sets `command:` supplies this container's real process
+# (the scheduler runs `python -m scripts.scheduler`; the API may pin
+# `--workers`). Migration always happens first and exactly once, then the
+# caller's command owns the PID. Without this branch the entrypoint executed
+# uvicorn unconditionally, so the scheduler service silently served HTTP with
+# the API's default worker count instead of running its loop.
+if [ "$#" -gt 0 ]; then
+  exec "$@"
+fi
 
 # uvicorn production defaults:
 #   --workers            : one per CPU core (override with WEB_CONCURRENCY)

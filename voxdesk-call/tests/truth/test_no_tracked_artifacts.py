@@ -7,12 +7,11 @@ working, so the first half of this module builds throwaway git repositories in
 ``tmp_path`` and proves the gate catches each violation class and honours its
 allowlist.
 
-The second half runs the gate against *this* repository. That one is expected to
-fail until ``bash scripts/repo_cleanup.sh --apply`` has been run: 677 log files,
-17 archives and 13 oversized evidence dumps entered this repository before the
-gate existed. It is marked xfail rather than skipped so the state stays visible
-in the test report, and non-strictly so that the day someone runs the cleanup the
-suite does not break on an unexpected pass.
+The second half runs the gate against *this* repository and must pass: 677 log
+files, 17 archives and 13 oversized evidence dumps entered this repository
+before the gate existed, and ``bash scripts/repo_cleanup.sh --apply`` has since
+untracked them. The assertion is left as a hard one on purpose — re-tracking an
+artifact now has to break a test, not produce an expected failure.
 """
 from __future__ import annotations
 
@@ -204,14 +203,6 @@ def test_the_cli_is_executable_end_to_end(tmp_path: Path) -> None:
     assert payload["tracked_files_checked"] > 0
 
 
-@pytest.mark.xfail(
-    strict=False,
-    reason=(
-        "this repository still tracks 677 *.log files, 17 *.zip archives and 13 "
-        "files over 1 MB from before the gate existed; run "
-        "'bash scripts/repo_cleanup.sh --apply' to clear it"
-    ),
-)
 def test_this_repository_tracks_no_generated_artifacts() -> None:
     if shutil.which("git") is None:
         pytest.skip("git is not available")

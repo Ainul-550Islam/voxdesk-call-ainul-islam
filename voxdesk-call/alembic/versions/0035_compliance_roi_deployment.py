@@ -18,7 +18,10 @@ revision = "0035_compliance_roi_deployment"
 down_revision = "0034_review_specialized_persist"
 branch_labels = None
 depends_on = None
-U=sa.Uuid; S=sa.String; J=sa.JSON; D=sa.DateTime(timezone=True)
+U = sa.Uuid
+S = sa.String
+J = sa.JSON
+D = sa.DateTime(timezone=True)
 def _stamp(): return sa.func.now()
 def _tenant_rls(table: str):
     op.execute(sa.text(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY"))
@@ -72,7 +75,23 @@ def upgrade():
     op.create_index("ix_deployment_readiness_target_id","deployment_readiness",["target_id"])
     op.create_index("ix_deployment_verifications_revision_id","deployment_verifications",["revision_id"])
     if op.get_bind().dialect.name=="postgresql":
-        for table in ("compliance_frameworks","compliance_findings","compliance_remediations","roi_baselines","roi_outcomes","roi_costs","roi_kpis","roi_results","roi_kpi_evaluations","deployment_targets","deployment_revisions","deployment_artifacts","deployment_readiness","deployment_verifications"):_tenant_rls(table)
+        for table in (
+            "compliance_frameworks",
+            "compliance_findings",
+            "compliance_remediations",
+            "roi_baselines",
+            "roi_outcomes",
+            "roi_costs",
+            "roi_kpis",
+            "roi_results",
+            "roi_kpi_evaluations",
+            "deployment_targets",
+            "deployment_revisions",
+            "deployment_artifacts",
+            "deployment_readiness",
+            "deployment_verifications",
+        ):
+            _tenant_rls(table)
         op.execute(sa.text("ALTER TABLE compliance_controls ENABLE ROW LEVEL SECURITY"))
         op.execute(sa.text("ALTER TABLE compliance_controls FORCE ROW LEVEL SECURITY"))
         op.execute(sa.text("CREATE POLICY compliance_controls_tenant_isolation ON compliance_controls USING (EXISTS (SELECT 1 FROM compliance_frameworks f WHERE f.id = framework_id AND f.tenant_id::text = current_setting('app.tenant_id', true))) WITH CHECK (EXISTS (SELECT 1 FROM compliance_frameworks f WHERE f.id = framework_id AND f.tenant_id::text = current_setting('app.tenant_id', true)))"))
@@ -85,4 +104,5 @@ def downgrade():
         for table in tables:
             op.execute(sa.text(f"DROP POLICY IF EXISTS {table}_tenant_isolation ON {table}"))
             op.execute(sa.text(f"ALTER TABLE {table} DISABLE ROW LEVEL SECURITY"))
-    for table in tables: op.drop_table(table)
+    for table in tables:
+        op.drop_table(table)

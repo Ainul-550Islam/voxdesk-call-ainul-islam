@@ -137,6 +137,9 @@ verify-truth: verify-fe-be
 	python3 scripts/verify_no_null_bytes.py
 	python3 scripts/strip_padding_markers.py --check
 	test ! -s scripts/fake_success_allowlist.txt
+	# Tracked environment files must never carry generated secrets
+	# (enforced in depth by tests/truth/test_no_tracked_secrets.py).
+	test -z "$$(git ls-files -- '.env' '.env.*' ':!*.example')"
 	python3 -m pytest tests/truth -q
 
 check-backend:

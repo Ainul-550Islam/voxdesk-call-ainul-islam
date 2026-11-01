@@ -3994,6 +3994,88 @@
         "title": "BackfillRequest",
         "type": "object"
       },
+      "BacktestRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "agent_version": {
+            "default": "1.0.0",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Agent Version",
+            "type": "string"
+          },
+          "configuration": {
+            "title": "Configuration",
+            "type": "object"
+          },
+          "environment_id": {
+            "format": "uuid",
+            "title": "Environment Id",
+            "type": "string"
+          },
+          "idempotency_key": {
+            "maxLength": 200,
+            "minLength": 8,
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "method": {
+            "default": "linear",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Method",
+            "type": "string"
+          },
+          "model_version_id": {
+            "format": "uuid",
+            "title": "Model Version Id",
+            "type": "string"
+          },
+          "risk_tier": {
+            "default": "high",
+            "maxLength": 24,
+            "minLength": 1,
+            "title": "Risk Tier",
+            "type": "string"
+          },
+          "series": {
+            "items": {
+              "type": "object"
+            },
+            "maxItems": 100000,
+            "minItems": 1,
+            "title": "Series",
+            "type": "array"
+          },
+          "series_reference": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Series Reference"
+          },
+          "test_size": {
+            "default": 2,
+            "maximum": 99998.0,
+            "minimum": 1.0,
+            "title": "Test Size",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "environment_id",
+          "model_version_id",
+          "idempotency_key",
+          "series"
+        ],
+        "title": "BacktestRequest",
+        "type": "object"
+      },
       "BaselineInput": {
         "additionalProperties": false,
         "properties": {
@@ -69657,6 +69739,74 @@
       }
     },
     "/api/forecast": {
+      "get": {
+        "description": "List persisted forecast/backtest executions for scenario comparison.",
+        "operationId": "list_forecasts_api_forecast_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "environment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Environment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Forecasts",
+        "tags": [
+          "forecasting"
+        ]
+      },
       "post": {
         "operationId": "forecast_api_forecast_post",
         "requestBody": {
@@ -69695,6 +69845,50 @@
           }
         ],
         "summary": "Forecast",
+        "tags": [
+          "forecasting"
+        ]
+      }
+    },
+    "/api/forecast/backtest": {
+      "post": {
+        "operationId": "backtest_api_forecast_backtest_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BacktestRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Backtest",
         "tags": [
           "forecasting"
         ]

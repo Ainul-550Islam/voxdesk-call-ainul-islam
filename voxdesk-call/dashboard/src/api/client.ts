@@ -1,4 +1,5 @@
 import { getEnv } from '../config/env';
+import { getAccessToken, refreshAccessToken } from '../lib/session';
 export type ApiErrorCode = 'NETWORK_ERROR' | 'TIMEOUT' | 'UNAUTHORIZED' | 'FORBIDDEN' | 'NOT_FOUND' | 'VALIDATION_ERROR' | 'SERVER_ERROR' | 'NOT_CONFIGURED' | 'RATE_LIMITED' | 'UNKNOWN';
 export class ApiError extends Error {
   code: ApiErrorCode; status: number; detail: unknown; requestId?: string;
@@ -23,7 +24,46 @@ function friendlyMessage(status: number, detail: unknown): string {
   const map: Record<number,string> = {0:'Could not reach server.',400:'Request could not be processed.',401:'Session expired.',403:'No permission.',404:'Not found.',409:'Conflict.',422:'Invalid details.',429:'Too many requests.',502:'Third-party unavailable.',503:'Service unavailable.',504:'Timed out.'};
   return map[status] || 'Something went wrong.';
 }
-async function readErrorBody(resp: Response): Promise<unknown> { try { const data=await resp.json(); return (data as any).detail ?? data; } catch { return null; } }
+/**
+ * The backend's canonical failure body is
+ * ``{"error": {"code", "message", "request_id", "detail"?}}``
+ * (``app/core/errors.py``). Unwrap it so callers see the *safe* message the
+ * server authored instead of degrading to a generic status sentence, and keep
+ * the machine code reachable for status-independent classification.
+ */
+interface BackendErrorEnvelope { code?: unknown; message?: unknown; request_id?: unknown; detail?: unknown; }
+async function readErrorBody(resp: Response): Promise<{ detail: unknown; code?: string; requestId?: string }> {
+  try {
+    const data = await resp.json() as any;
+    const envelope = data && typeof data === 'object' ? (data as any).error : null;
+    if (envelope && typeof envelope === 'object') {
+      const body = envelope as BackendErrorEnvelope;
+      return {
+        detail: typeof body.detail === 'undefined' ? (body.message ?? envelope) : body.detail,
+        code: typeof body.code === 'string' ? body.code : undefined,
+        requestId: typeof body.request_id === 'string' ? body.request_id : undefined,
+      };
+    }
+    return { detail: data && typeof data === 'object' && 'detail' in data ? data.detail : data };
+  } catch { return { detail: null }; }
+}
+
+/** Backend ``error.code`` values that are not a plain HTTP-status translation. */
+const CODE_OVERRIDES: Record<string, ApiErrorCode> = {
+  not_configured: 'NOT_CONFIGURED',
+  rate_limited: 'RATE_LIMITED',
+  permission_denied: 'FORBIDDEN',
+  not_found: 'NOT_FOUND',
+  conflict: 'UNKNOWN',
+  bad_request: 'VALIDATION_ERROR',
+  service_unavailable: 'SERVER_ERROR',
+  internal_error: 'SERVER_ERROR',
+};
+
+function classify(status: number, detail: unknown, code?: string): ApiErrorCode {
+  if (code && CODE_OVERRIDES[code]) return CODE_OVERRIDES[code];
+  return mapStatusToCode(status, detail);
+}
 export interface RequestOptions { method?: 'GET'|'POST'|'PUT'|'PATCH'|'DELETE'; body?: unknown; headers?: Record<string,string>; timeoutMs?: number; retry?: boolean; raw?: boolean; signal?: AbortSignal; authenticated?: boolean; credentials?: RequestCredentials; }
 const DEFAULT_TIMEOUT=15000;
 export function resolveApiUrl(base: string, path: string): string {
@@ -35,22 +75,57 @@ export function resolveApiUrl(base: string, path: string): string {
   }
   return `${root}${relative}`;
 }
-export async function apiRequest<T=unknown>(path: string, opts: RequestOptions={}): Promise<T> {
+/**
+ * One request attempt. ``sessionToken`` overrides the value read from the
+ * session store so a replayed request can carry the freshly rotated token.
+ */
+async function attemptRequest<T>(path: string, opts: RequestOptions, sessionToken?: string|null): Promise<T> {
   const env=getEnv(); const url=resolveApiUrl(env.apiBaseUrl,path);
   const method=opts.method||'GET'; const timeoutMs=opts.timeoutMs??DEFAULT_TIMEOUT; const controller=new AbortController(); const timeoutId=setTimeout(()=>controller.abort(), timeoutMs);
   const combinedSignal=opts.signal?(()=>{ const combined=new AbortController(); const onAbort=()=>combined.abort(); opts.signal!.addEventListener('abort',onAbort); controller.signal.addEventListener('abort',onAbort); return combined.signal; })():controller.signal;
   const headers: Record<string,string> = {...(opts.raw?{}:{'Content-Type':'application/json'}), ...(opts.headers||{})};
-  const token=opts.authenticated===false?null:(typeof window!=='undefined'?localStorage.getItem('voxdesk_access_token'):null); if (token) headers['Authorization']=`Bearer ${token}`;
+  const token=opts.authenticated===false?null:(sessionToken !== undefined ? sessionToken : getAccessToken()); if (token) headers['Authorization']=`Bearer ${token}`;
   const requestId=`req_${Math.random().toString(36).slice(2,10)}`; headers['X-Request-ID']=requestId;
   let resp: Response;
   try { resp=await fetch(url,{method,headers,credentials:opts.credentials??'same-origin',body:opts.raw?(opts.body as BodyInit):opts.body!==undefined?JSON.stringify(opts.body):undefined,signal:combinedSignal}); }
   catch (e:any) { clearTimeout(timeoutId); if (e.name==='AbortError') throw new ApiError('TIMEOUT',0,'Request timed out.',null,requestId); throw new ApiError('NETWORK_ERROR',0,friendlyMessage(0,null),null,requestId); }
   finally { clearTimeout(timeoutId); }
   const responseRequestId=resp.headers.get('X-Request-ID')||requestId;
-  if (!resp.ok) { const detail=await readErrorBody(resp); const code=mapStatusToCode(resp.status,detail); const message=friendlyMessage(resp.status,detail); throw new ApiError(code,resp.status,message,detail,responseRequestId); }
+  if (!resp.ok) { const body=await readErrorBody(resp); const code=classify(resp.status,body.detail,body.code); const message=friendlyMessage(resp.status,body.detail); const error=new ApiError(code,resp.status,message,body.detail,body.requestId||responseRequestId); (error as ApiError & { fromAttempt?: boolean }).fromAttempt=true; throw error; }
   if (resp.status===204) return null as unknown as T;
   try { const data=await resp.json(); return data as T; } catch { throw new ApiError('UNKNOWN',resp.status,'Invalid response format.',null,responseRequestId); }
 }
+/**
+ * Replay an expired bearer token exactly once.
+ *
+ * A 401 from an authenticated call means the short-lived access token expired,
+ * not that the user signed out: the HttpOnly refresh cookie is still valid.
+ * ``refreshAccessToken`` is single-flight across concurrent callers, so a burst
+ * of parallel requests rotates the cookie once and every request replays with
+ * the same new token. When rotation fails the original 401 is surfaced.
+ */
+async function withSessionRefresh<T>(
+  path: string,
+  opts: RequestOptions,
+  attempt: () => Promise<T>,
+): Promise<T> {
+  try {
+    return await attempt();
+  } catch (error) {
+    const expired = error instanceof ApiError
+      && error.status === 401
+      && (error as ApiError & { fromAttempt?: boolean }).fromAttempt === true;
+    if (!expired || opts.authenticated === false) throw error;
+    const refreshed = await refreshAccessToken();
+    if (!refreshed) throw error;
+    return attemptRequest<T>(path, opts, refreshed);
+  }
+}
+
+export async function apiRequest<T=unknown>(path: string, opts: RequestOptions={}): Promise<T> {
+  return withSessionRefresh<T>(path, opts, () => attemptRequest<T>(path, opts));
+}
+
 export async function apiRequestWithRetry<T>(path: string, opts: RequestOptions={}, maxRetries=2): Promise<T> {
   let lastError: ApiError|null=null;
   for (let attempt=0; attempt<=maxRetries; attempt++) {

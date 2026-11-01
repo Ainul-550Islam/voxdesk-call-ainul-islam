@@ -70,10 +70,10 @@ exclude generated/vendor/build trees; collected tests are not passed tests.
 
 ```json
 {
-  "source_files": 2094,
-  "source_physical_lines": 425553,
+  "source_files": 2088,
+  "source_physical_lines": 425777,
   "registered_routes": 1526,
-  "collected_pytest_nodes": 6746,
+  "collected_pytest_nodes": 6751,
   "passed_tests": "not measured by collection"
 }
 ```
@@ -120,6 +120,37 @@ secret, and E2E mode off. Those checks are enforced by
 | `bash scripts/verify_deploy_assets.sh` | validates Helm, Terraform and Caddy for real |
 | `make verify-truth` | every number quoted in the docs equals the code |
 | `make verify-hygiene` | no generated artifact is tracked by git |
+
+### Live stack smoke tests
+
+`tests/smoke/test_stack_smoke.py` (`-m docker`) only runs against a stack that
+is actually up, so it skips whenever the stack is down. The wrappers call into
+`scripts/stack_smoke.py`, which is also runnable on its own:
+
+```bash
+python scripts/make_check_env.py                      # writes .env.check (mode 0600)
+uvicorn app.main:app --port 8000                      # API
+./realtime-gateway                                    # Go gateway      :8790
+./media-engine                                        # Rust media      :9001 / UDP 5000
+python scripts/stack_smoke.py http     --base http://127.0.0.1:8000
+python scripts/stack_smoke.py realtime --media http://127.0.0.1:9001
+python scripts/stack_smoke.py twilio   --base http://127.0.0.1:8000
+python scripts/stack_smoke.py call-ws  --base ws://127.0.0.1:8000
+pytest tests/smoke/test_stack_smoke.py -m docker      # 4 passed
+```
+
+Two defects in that path were found only by standing the stack up, and both are
+now fixed and pinned by `tests/truth/test_check_env_and_smoke_scripts.py`:
+
+- `scripts/make_check_env.py` seeded every `.env.example` key with an empty
+  string instead of its documented value, so check stacks refused to
+  boot (`voice_demo_rate_limit_per_minute: Input should be a valid integer`).
+  Non-empty template defaults are now carried over; genuinely blank provider
+  credentials stay blank.
+- `scripts/stack_smoke.py` posted `work_email`/`company_name`/`plan_tier` to
+  `/auth/signup`, but `PublicSignupRequest` requires
+  `organization_name`/`email`/`password`, so the owner session could never be
+  created (422) on a fresh stack.
 
 ## Frontends
 

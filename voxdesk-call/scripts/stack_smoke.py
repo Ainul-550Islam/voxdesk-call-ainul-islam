@@ -98,14 +98,17 @@ def _ensure_owner_session(
     if email.endswith(".local"):
         email = email[:-6] + ".example.com"
 
+    # Field names come from the API's own contract
+    # (``PublicSignupRequest``: organization_name, email, password). The old
+    # payload sent work_email/company_name/plan_tier, which the schema rejects
+    # with 422, so the owner session could never be created on a fresh stack.
     signup_resp = client.post(
         "/auth/signup",
         json={
             "full_name": "Check Owner",
-            "work_email": email,
-            "company_name": "Check Tenant",
+            "email": email,
+            "organization_name": "Check Tenant",
             "password": password,
-            "plan_tier": "growth",
         },
     )
     if signup_resp.status_code in (200, 201):

@@ -5,8 +5,8 @@ Generated deterministically by `scripts/build_api_docs.sh` from `app.main:app.op
 ## Summary Metrics
 
 - **OpenAPI Version**: `3.1.0`
-- **Total Unique Paths**: `1251`
-- **Total HTTP Operations**: `1497`
+- **Total Unique Paths**: `1252`
+- **Total HTTP Operations**: `1499`
 - **Total Tag Groups**: `155`
 - **Machine-Readable Schema**: [`openapi.json`](openapi.json) (mirrored at [`../../contracts/openapi.json`](../../contracts/openapi.json))
 - **Static HTML Reference (Redoc / Scalar + Offline Explorer)**: [`index.html`](index.html)
@@ -16,9 +16,9 @@ Generated deterministically by `scripts/build_api_docs.sh` from `app.main:app.op
 | HTTP Method | Operation Count |
 |---|---:|
 | `DELETE` | 70 |
-| `GET` | 643 |
+| `GET` | 644 |
 | `PATCH` | 58 |
-| `POST` | 699 |
+| `POST` | 700 |
 | `PUT` | 27 |
 
 ## Tag Inventory
@@ -98,7 +98,7 @@ Generated deterministically by `scripts/build_api_docs.sh` from `app.main:app.op
 | `environments` | 11 | `GET /api/tenants/{tenant_id}/environments`, `POST /api/tenants/{tenant_id}/environments`, `GET /api/tenants/{tenant_id}/environments/{environment_id}` (+8 more) |
 | `evaluations` | 7 | `GET /api/v1/evaluations/rules`, `POST /api/v1/evaluations/rules`, `GET /api/v1/evaluations/rules/{rule_id}` (+4 more) |
 | `evidence` | 7 | `GET /api/governance/evidence`, `POST /api/governance/evidence/package`, `POST /api/governance/evidence/verify` (+4 more) |
-| `forecasting` | 2 | `POST /api/forecast`, `GET /api/forecast/{execution_id}` |
+| `forecasting` | 4 | `GET /api/forecast`, `POST /api/forecast`, `POST /api/forecast/backtest` (+1 more) |
 | `gdpr` | 3 | `POST /api/gdpr/erasure`, `GET /api/gdpr/export`, `GET /api/gdpr/status` |
 | `governance` | 16 | `POST /api/governance/evaluate`, `GET /api/governance/policies`, `POST /api/governance/policies` (+13 more) |
 | `health` | 3 | `GET /health`, `GET /health/dependencies`, `GET /health/ready` |

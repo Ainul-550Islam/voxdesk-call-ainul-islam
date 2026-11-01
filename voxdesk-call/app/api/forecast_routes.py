@@ -57,8 +57,14 @@ def _response_body(
     result: dict[str, Any],
 ) -> dict[str, Any]:
     stored = row.result if isinstance(row.result, dict) else {}
+    # ``operation`` is the discriminator between a projection and a backtest.
+    # ``specialized_execution_records`` has no operation column, so the value
+    # can only come from the persisted result; the engines stamp it there so a
+    # listed row is never returned without saying which operation produced it.
+    operation = result.get("operation") or stored.get("operation")
     return {
         **result,
+        "operation": operation,
         "execution_id": str(row.id),
         "status": row.status,
         "review_required": row.review_required,
