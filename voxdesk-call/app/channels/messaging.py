@@ -12,7 +12,7 @@ differ only in the `whatsapp:` address prefix and the reply length budget.
 from __future__ import annotations
 
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import structlog
 
@@ -91,7 +91,7 @@ def help_text(business: str) -> str:
 async def _find_active_thread(
     session: AsyncSession, tenant: Tenant, customer: str, channel: str
 ) -> Call | None:
-    cutoff = datetime.utcnow() - timedelta(minutes=THREAD_IDLE_MINUTES)
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=THREAD_IDLE_MINUTES)
     stmt = (
         select(Call)
         .where(
@@ -124,7 +124,7 @@ async def get_or_start_thread(
 
     thread = Call(
         tenant_id=tenant.id,
-        call_sid=f"{channel}-{customer}-{int(datetime.utcnow().timestamp())}",
+        call_sid=f"{channel}-{customer}-{int(datetime.now(timezone.utc).timestamp())}",
         from_number=customer,
         to_number=tenant.twilio_number,
         status=CallStatus.IN_PROGRESS,
@@ -426,7 +426,7 @@ async def prune_receipts(session: AsyncSession, *, older_than_days: int = 30) ->
     plausibly redeliver. Keeping receipts forever turns a defence into an
     unbounded table.
     """
-    cutoff = datetime.utcnow() - timedelta(days=older_than_days)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=older_than_days)
     result = await session.execute(
         delete(MessageWebhookReceipt)
         .where(MessageWebhookReceipt.received_at < cutoff)

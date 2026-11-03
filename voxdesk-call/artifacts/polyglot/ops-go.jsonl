@@ -1,0 +1,184 @@
+{"Time":"2026-11-01T14:44:10.842712018Z","Action":"start","Package":"github.com/voxdesk/ops/cmd/voxops"}
+{"Time":"2026-11-01T14:44:10.853817723Z","Action":"run","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunBackupVerifyPassHuman"}
+{"Time":"2026-11-01T14:44:10.853889407Z","Action":"output","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunBackupVerifyPassHuman","Output":"=== RUN   TestRunBackupVerifyPassHuman\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.857566196Z","Action":"output","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunBackupVerifyPassHuman","Output":"--- PASS: TestRunBackupVerifyPassHuman (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.857586195Z","Action":"pass","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunBackupVerifyPassHuman","Elapsed":0}
+{"Time":"2026-11-01T14:44:10.857596058Z","Action":"run","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunBackupVerifyFailHuman"}
+{"Time":"2026-11-01T14:44:10.857599275Z","Action":"output","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunBackupVerifyFailHuman","Output":"=== RUN   TestRunBackupVerifyFailHuman\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.860442489Z","Action":"output","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunBackupVerifyFailHuman","Output":"--- PASS: TestRunBackupVerifyFailHuman (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.860460348Z","Action":"pass","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunBackupVerifyFailHuman","Elapsed":0}
+{"Time":"2026-11-01T14:44:10.860465623Z","Action":"run","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunBackupVerifyJSON"}
+{"Time":"2026-11-01T14:44:10.860468444Z","Action":"output","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunBackupVerifyJSON","Output":"=== RUN   TestRunBackupVerifyJSON\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.863248813Z","Action":"output","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunBackupVerifyJSON","Output":"--- PASS: TestRunBackupVerifyJSON (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.863268205Z","Action":"pass","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunBackupVerifyJSON","Elapsed":0}
+{"Time":"2026-11-01T14:44:10.863272771Z","Action":"run","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunBackupVerifyOfflineNotRun"}
+{"Time":"2026-11-01T14:44:10.863276779Z","Action":"output","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunBackupVerifyOfflineNotRun","Output":"=== RUN   TestRunBackupVerifyOfflineNotRun\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.863282968Z","Action":"output","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunBackupVerifyOfflineNotRun","Output":"--- PASS: TestRunBackupVerifyOfflineNotRun (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.863287268Z","Action":"pass","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunBackupVerifyOfflineNotRun","Elapsed":0}
+{"Time":"2026-11-01T14:44:10.863291146Z","Action":"run","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunUsageErrors"}
+{"Time":"2026-11-01T14:44:10.863293596Z","Action":"output","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunUsageErrors","Output":"=== RUN   TestRunUsageErrors\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.863296826Z","Action":"run","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunUsageErrors/no_args"}
+{"Time":"2026-11-01T14:44:10.863322298Z","Action":"output","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunUsageErrors/no_args","Output":"=== RUN   TestRunUsageErrors/no_args\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.863327456Z","Action":"output","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunUsageErrors/no_args","Output":"--- PASS: TestRunUsageErrors/no_args (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.863330792Z","Action":"pass","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunUsageErrors/no_args","Elapsed":0}
+{"Time":"2026-11-01T14:44:10.863339852Z","Action":"run","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunUsageErrors/unknown_command"}
+{"Time":"2026-11-01T14:44:10.863342524Z","Action":"output","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunUsageErrors/unknown_command","Output":"=== RUN   TestRunUsageErrors/unknown_command\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.863346533Z","Action":"output","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunUsageErrors/unknown_command","Output":"--- PASS: TestRunUsageErrors/unknown_command (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.86334993Z","Action":"pass","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunUsageErrors/unknown_command","Elapsed":0}
+{"Time":"2026-11-01T14:44:10.863352515Z","Action":"run","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunUsageErrors/missing_dump"}
+{"Time":"2026-11-01T14:44:10.8633549Z","Action":"output","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunUsageErrors/missing_dump","Output":"=== RUN   TestRunUsageErrors/missing_dump\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.863358588Z","Action":"output","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunUsageErrors/missing_dump","Output":"--- PASS: TestRunUsageErrors/missing_dump (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.86336175Z","Action":"pass","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunUsageErrors/missing_dump","Elapsed":0}
+{"Time":"2026-11-01T14:44:10.863364739Z","Action":"run","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunUsageErrors/extra_dump"}
+{"Time":"2026-11-01T14:44:10.863367166Z","Action":"output","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunUsageErrors/extra_dump","Output":"=== RUN   TestRunUsageErrors/extra_dump\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.863370363Z","Action":"output","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunUsageErrors/extra_dump","Output":"--- PASS: TestRunUsageErrors/extra_dump (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.863372983Z","Action":"pass","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunUsageErrors/extra_dump","Elapsed":0}
+{"Time":"2026-11-01T14:44:10.863375287Z","Action":"run","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunUsageErrors/bad_flag"}
+{"Time":"2026-11-01T14:44:10.863377506Z","Action":"output","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunUsageErrors/bad_flag","Output":"=== RUN   TestRunUsageErrors/bad_flag\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.863380686Z","Action":"output","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunUsageErrors/bad_flag","Output":"--- PASS: TestRunUsageErrors/bad_flag (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.863383251Z","Action":"pass","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunUsageErrors/bad_flag","Elapsed":0}
+{"Time":"2026-11-01T14:44:10.863386229Z","Action":"output","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunUsageErrors","Output":"--- PASS: TestRunUsageErrors (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.863389264Z","Action":"pass","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunUsageErrors","Elapsed":0}
+{"Time":"2026-11-01T14:44:10.86339179Z","Action":"run","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunBadTimeoutIsConfigError"}
+{"Time":"2026-11-01T14:44:10.863394413Z","Action":"output","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunBadTimeoutIsConfigError","Output":"=== RUN   TestRunBadTimeoutIsConfigError\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.863397857Z","Action":"output","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunBadTimeoutIsConfigError","Output":"--- PASS: TestRunBadTimeoutIsConfigError (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.863400398Z","Action":"pass","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunBadTimeoutIsConfigError","Elapsed":0}
+{"Time":"2026-11-01T14:44:10.863405364Z","Action":"run","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunHelp"}
+{"Time":"2026-11-01T14:44:10.863407819Z","Action":"output","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunHelp","Output":"=== RUN   TestRunHelp\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.863412156Z","Action":"output","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunHelp","Output":"--- PASS: TestRunHelp (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.863415233Z","Action":"pass","Package":"github.com/voxdesk/ops/cmd/voxops","Test":"TestRunHelp","Elapsed":0}
+{"Time":"2026-11-01T14:44:10.8634178Z","Action":"output","Package":"github.com/voxdesk/ops/cmd/voxops","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.869241649Z","Action":"start","Package":"github.com/voxdesk/ops/internal/backup"}
+{"Time":"2026-11-01T14:44:10.878670494Z","Action":"run","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestLocalCheckParity"}
+{"Time":"2026-11-01T14:44:10.878744415Z","Action":"output","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestLocalCheckParity","Output":"=== RUN   TestLocalCheckParity\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.878891495Z","Action":"run","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestLocalCheckParity/missing"}
+{"Time":"2026-11-01T14:44:10.878896606Z","Action":"output","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestLocalCheckParity/missing","Output":"=== RUN   TestLocalCheckParity/missing\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.878951724Z","Action":"output","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestLocalCheckParity/missing","Output":"--- PASS: TestLocalCheckParity/missing (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.878962086Z","Action":"pass","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestLocalCheckParity/missing","Elapsed":0}
+{"Time":"2026-11-01T14:44:10.878967382Z","Action":"run","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestLocalCheckParity/directory"}
+{"Time":"2026-11-01T14:44:10.878970918Z","Action":"output","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestLocalCheckParity/directory","Output":"=== RUN   TestLocalCheckParity/directory\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.879053135Z","Action":"output","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestLocalCheckParity/directory","Output":"--- PASS: TestLocalCheckParity/directory (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.879059494Z","Action":"pass","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestLocalCheckParity/directory","Elapsed":0}
+{"Time":"2026-11-01T14:44:10.879064664Z","Action":"run","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestLocalCheckParity/empty"}
+{"Time":"2026-11-01T14:44:10.879068549Z","Action":"output","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestLocalCheckParity/empty","Output":"=== RUN   TestLocalCheckParity/empty\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.879075044Z","Action":"output","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestLocalCheckParity/empty","Output":"--- PASS: TestLocalCheckParity/empty (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.879082494Z","Action":"pass","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestLocalCheckParity/empty","Elapsed":0}
+{"Time":"2026-11-01T14:44:10.879098485Z","Action":"run","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestLocalCheckParity/present_is_not_run"}
+{"Time":"2026-11-01T14:44:10.879102902Z","Action":"output","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestLocalCheckParity/present_is_not_run","Output":"=== RUN   TestLocalCheckParity/present_is_not_run\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.879184307Z","Action":"output","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestLocalCheckParity/present_is_not_run","Output":"--- PASS: TestLocalCheckParity/present_is_not_run (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.879197566Z","Action":"pass","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestLocalCheckParity/present_is_not_run","Elapsed":0}
+{"Time":"2026-11-01T14:44:10.879344441Z","Action":"output","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestLocalCheckParity","Output":"--- PASS: TestLocalCheckParity (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.879351603Z","Action":"pass","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestLocalCheckParity","Elapsed":0}
+{"Time":"2026-11-01T14:44:10.87935806Z","Action":"run","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestMagicCheck"}
+{"Time":"2026-11-01T14:44:10.879389946Z","Action":"output","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestMagicCheck","Output":"=== RUN   TestMagicCheck\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.879928336Z","Action":"output","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestMagicCheck","Output":"--- PASS: TestMagicCheck (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.87995064Z","Action":"pass","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestMagicCheck","Elapsed":0}
+{"Time":"2026-11-01T14:44:10.879955768Z","Action":"run","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestVerifyLocalFailureShortCircuits"}
+{"Time":"2026-11-01T14:44:10.879958934Z","Action":"output","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestVerifyLocalFailureShortCircuits","Output":"=== RUN   TestVerifyLocalFailureShortCircuits\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.880166656Z","Action":"output","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestVerifyLocalFailureShortCircuits","Output":"--- PASS: TestVerifyLocalFailureShortCircuits (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.880255453Z","Action":"pass","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestVerifyLocalFailureShortCircuits","Elapsed":0}
+{"Time":"2026-11-01T14:44:10.88046701Z","Action":"run","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestVerifyAuthoritativePass"}
+{"Time":"2026-11-01T14:44:10.880470886Z","Action":"output","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestVerifyAuthoritativePass","Output":"=== RUN   TestVerifyAuthoritativePass\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.882079144Z","Action":"output","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestVerifyAuthoritativePass","Output":"--- PASS: TestVerifyAuthoritativePass (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.882091378Z","Action":"pass","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestVerifyAuthoritativePass","Elapsed":0}
+{"Time":"2026-11-01T14:44:10.882095588Z","Action":"run","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestVerifyAuthoritativeFailure"}
+{"Time":"2026-11-01T14:44:10.882098212Z","Action":"output","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestVerifyAuthoritativeFailure","Output":"=== RUN   TestVerifyAuthoritativeFailure\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.883883925Z","Action":"output","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestVerifyAuthoritativeFailure","Output":"--- PASS: TestVerifyAuthoritativeFailure (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.883905739Z","Action":"pass","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestVerifyAuthoritativeFailure","Elapsed":0}
+{"Time":"2026-11-01T14:44:10.883940526Z","Action":"run","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestVerifyDefaultTimeoutIsAccepted"}
+{"Time":"2026-11-01T14:44:10.883943497Z","Action":"output","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestVerifyDefaultTimeoutIsAccepted","Output":"=== RUN   TestVerifyDefaultTimeoutIsAccepted\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.885199729Z","Action":"output","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestVerifyDefaultTimeoutIsAccepted","Output":"--- PASS: TestVerifyDefaultTimeoutIsAccepted (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.885222524Z","Action":"pass","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestVerifyDefaultTimeoutIsAccepted","Elapsed":0}
+{"Time":"2026-11-01T14:44:10.885228377Z","Action":"run","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestVerifyOfflineGoodMagicStaysNotRun"}
+{"Time":"2026-11-01T14:44:10.885232026Z","Action":"output","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestVerifyOfflineGoodMagicStaysNotRun","Output":"=== RUN   TestVerifyOfflineGoodMagicStaysNotRun\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.885439302Z","Action":"output","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestVerifyOfflineGoodMagicStaysNotRun","Output":"--- PASS: TestVerifyOfflineGoodMagicStaysNotRun (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.885445634Z","Action":"pass","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestVerifyOfflineGoodMagicStaysNotRun","Elapsed":0}
+{"Time":"2026-11-01T14:44:10.885451153Z","Action":"run","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestVerifyOfflineBadMagicFails"}
+{"Time":"2026-11-01T14:44:10.885455046Z","Action":"output","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestVerifyOfflineBadMagicFails","Output":"=== RUN   TestVerifyOfflineBadMagicFails\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.885642488Z","Action":"output","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestVerifyOfflineBadMagicFails","Output":"--- PASS: TestVerifyOfflineBadMagicFails (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.885654968Z","Action":"pass","Package":"github.com/voxdesk/ops/internal/backup","Test":"TestVerifyOfflineBadMagicFails","Elapsed":0}
+{"Time":"2026-11-01T14:44:10.885743251Z","Action":"output","Package":"github.com/voxdesk/ops/internal/backup","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:11.86488658Z","Action":"output","Package":"github.com/voxdesk/ops/cmd/voxops","Output":"ok  \tgithub.com/voxdesk/ops/cmd/voxops\t1.022s\n"}
+{"Time":"2026-11-01T14:44:11.864940607Z","Action":"pass","Package":"github.com/voxdesk/ops/cmd/voxops","Elapsed":1.022}
+{"Time":"2026-11-01T14:44:11.887185599Z","Action":"output","Package":"github.com/voxdesk/ops/internal/backup","Output":"ok  \tgithub.com/voxdesk/ops/internal/backup\t1.018s\n"}
+{"Time":"2026-11-01T14:44:11.887221283Z","Action":"pass","Package":"github.com/voxdesk/ops/internal/backup","Elapsed":1.018}
+{"Time":"2026-11-01T14:44:12.089434055Z","Action":"start","Package":"github.com/voxdesk/ops/internal/status"}
+{"Time":"2026-11-01T14:44:12.098245674Z","Action":"run","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus"}
+{"Time":"2026-11-01T14:44:12.098292076Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus","Output":"=== RUN   TestExitCodeForStatus\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.098305123Z","Action":"run","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/pass"}
+{"Time":"2026-11-01T14:44:12.098307787Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/pass","Output":"=== RUN   TestExitCodeForStatus/pass\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.098383179Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/pass","Output":"--- PASS: TestExitCodeForStatus/pass (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.098469286Z","Action":"pass","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/pass","Elapsed":0}
+{"Time":"2026-11-01T14:44:12.098510547Z","Action":"run","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/fail"}
+{"Time":"2026-11-01T14:44:12.09851355Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/fail","Output":"=== RUN   TestExitCodeForStatus/fail\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.098598146Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/fail","Output":"--- PASS: TestExitCodeForStatus/fail (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.098613015Z","Action":"pass","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/fail","Elapsed":0}
+{"Time":"2026-11-01T14:44:12.098619911Z","Action":"run","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/blocked"}
+{"Time":"2026-11-01T14:44:12.098622558Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/blocked","Output":"=== RUN   TestExitCodeForStatus/blocked\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.098697267Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/blocked","Output":"--- PASS: TestExitCodeForStatus/blocked (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.098700945Z","Action":"pass","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/blocked","Elapsed":0}
+{"Time":"2026-11-01T14:44:12.098703711Z","Action":"run","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/not_run"}
+{"Time":"2026-11-01T14:44:12.098706031Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/not_run","Output":"=== RUN   TestExitCodeForStatus/not_run\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.098730318Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/not_run","Output":"--- PASS: TestExitCodeForStatus/not_run (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.098750699Z","Action":"pass","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/not_run","Elapsed":0}
+{"Time":"2026-11-01T14:44:12.098771967Z","Action":"run","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/skipped_is_success"}
+{"Time":"2026-11-01T14:44:12.098792333Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/skipped_is_success","Output":"=== RUN   TestExitCodeForStatus/skipped_is_success\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.098810073Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/skipped_is_success","Output":"--- PASS: TestExitCodeForStatus/skipped_is_success (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.098816045Z","Action":"pass","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/skipped_is_success","Elapsed":0}
+{"Time":"2026-11-01T14:44:12.098841402Z","Action":"run","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/not_applicable_is_success"}
+{"Time":"2026-11-01T14:44:12.098844385Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/not_applicable_is_success","Output":"=== RUN   TestExitCodeForStatus/not_applicable_is_success\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.098880235Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/not_applicable_is_success","Output":"--- PASS: TestExitCodeForStatus/not_applicable_is_success (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.09890318Z","Action":"pass","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/not_applicable_is_success","Elapsed":0}
+{"Time":"2026-11-01T14:44:12.098906719Z","Action":"run","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/waived_falls_through_to_config"}
+{"Time":"2026-11-01T14:44:12.0989092Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/waived_falls_through_to_config","Output":"=== RUN   TestExitCodeForStatus/waived_falls_through_to_config\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.098941253Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/waived_falls_through_to_config","Output":"--- PASS: TestExitCodeForStatus/waived_falls_through_to_config (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.098945439Z","Action":"pass","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/waived_falls_through_to_config","Elapsed":0}
+{"Time":"2026-11-01T14:44:12.098969305Z","Action":"run","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/empty_falls_through_to_config"}
+{"Time":"2026-11-01T14:44:12.098972179Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/empty_falls_through_to_config","Output":"=== RUN   TestExitCodeForStatus/empty_falls_through_to_config\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.099020479Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/empty_falls_through_to_config","Output":"--- PASS: TestExitCodeForStatus/empty_falls_through_to_config (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.099024649Z","Action":"pass","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/empty_falls_through_to_config","Elapsed":0}
+{"Time":"2026-11-01T14:44:12.099041496Z","Action":"run","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/unknown_falls_through_to_config"}
+{"Time":"2026-11-01T14:44:12.099044558Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/unknown_falls_through_to_config","Output":"=== RUN   TestExitCodeForStatus/unknown_falls_through_to_config\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.09907242Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/unknown_falls_through_to_config","Output":"--- PASS: TestExitCodeForStatus/unknown_falls_through_to_config (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.099076611Z","Action":"pass","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/unknown_falls_through_to_config","Elapsed":0}
+{"Time":"2026-11-01T14:44:12.099099579Z","Action":"run","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/lowercase_pass_is_unknown"}
+{"Time":"2026-11-01T14:44:12.099102388Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/lowercase_pass_is_unknown","Output":"=== RUN   TestExitCodeForStatus/lowercase_pass_is_unknown\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.099157118Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/lowercase_pass_is_unknown","Output":"--- PASS: TestExitCodeForStatus/lowercase_pass_is_unknown (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.099161653Z","Action":"pass","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus/lowercase_pass_is_unknown","Elapsed":0}
+{"Time":"2026-11-01T14:44:12.099165548Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus","Output":"--- PASS: TestExitCodeForStatus (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.099191759Z","Action":"pass","Package":"github.com/voxdesk/ops/internal/status","Test":"TestExitCodeForStatus","Elapsed":0}
+{"Time":"2026-11-01T14:44:12.099212308Z","Action":"run","Package":"github.com/voxdesk/ops/internal/status","Test":"TestWorstExitCode"}
+{"Time":"2026-11-01T14:44:12.099215128Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestWorstExitCode","Output":"=== RUN   TestWorstExitCode\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.099236968Z","Action":"run","Package":"github.com/voxdesk/ops/internal/status","Test":"TestWorstExitCode/empty_is_ok"}
+{"Time":"2026-11-01T14:44:12.099239604Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestWorstExitCode/empty_is_ok","Output":"=== RUN   TestWorstExitCode/empty_is_ok\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.099279663Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestWorstExitCode/empty_is_ok","Output":"--- PASS: TestWorstExitCode/empty_is_ok (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.099299872Z","Action":"pass","Package":"github.com/voxdesk/ops/internal/status","Test":"TestWorstExitCode/empty_is_ok","Elapsed":0}
+{"Time":"2026-11-01T14:44:12.099303835Z","Action":"run","Package":"github.com/voxdesk/ops/internal/status","Test":"TestWorstExitCode/all_ok"}
+{"Time":"2026-11-01T14:44:12.099306384Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestWorstExitCode/all_ok","Output":"=== RUN   TestWorstExitCode/all_ok\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.099377893Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestWorstExitCode/all_ok","Output":"--- PASS: TestWorstExitCode/all_ok (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.099381523Z","Action":"pass","Package":"github.com/voxdesk/ops/internal/status","Test":"TestWorstExitCode/all_ok","Elapsed":0}
+{"Time":"2026-11-01T14:44:12.099384182Z","Action":"run","Package":"github.com/voxdesk/ops/internal/status","Test":"TestWorstExitCode/fail_beats_ok"}
+{"Time":"2026-11-01T14:44:12.099386516Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestWorstExitCode/fail_beats_ok","Output":"=== RUN   TestWorstExitCode/fail_beats_ok\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.099390565Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestWorstExitCode/fail_beats_ok","Output":"--- PASS: TestWorstExitCode/fail_beats_ok (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.0993939Z","Action":"pass","Package":"github.com/voxdesk/ops/internal/status","Test":"TestWorstExitCode/fail_beats_ok","Elapsed":0}
+{"Time":"2026-11-01T14:44:12.099414877Z","Action":"run","Package":"github.com/voxdesk/ops/internal/status","Test":"TestWorstExitCode/blocked_beats_ok"}
+{"Time":"2026-11-01T14:44:12.099417716Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestWorstExitCode/blocked_beats_ok","Output":"=== RUN   TestWorstExitCode/blocked_beats_ok\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.099450786Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestWorstExitCode/blocked_beats_ok","Output":"--- PASS: TestWorstExitCode/blocked_beats_ok (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.099485958Z","Action":"pass","Package":"github.com/voxdesk/ops/internal/status","Test":"TestWorstExitCode/blocked_beats_ok","Elapsed":0}
+{"Time":"2026-11-01T14:44:12.099534515Z","Action":"run","Package":"github.com/voxdesk/ops/internal/status","Test":"TestWorstExitCode/fail_beats_blocked"}
+{"Time":"2026-11-01T14:44:12.099537679Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestWorstExitCode/fail_beats_blocked","Output":"=== RUN   TestWorstExitCode/fail_beats_blocked\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.09957535Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestWorstExitCode/fail_beats_blocked","Output":"--- PASS: TestWorstExitCode/fail_beats_blocked (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.099596765Z","Action":"pass","Package":"github.com/voxdesk/ops/internal/status","Test":"TestWorstExitCode/fail_beats_blocked","Elapsed":0}
+{"Time":"2026-11-01T14:44:12.099599682Z","Action":"run","Package":"github.com/voxdesk/ops/internal/status","Test":"TestWorstExitCode/config_beats_everything"}
+{"Time":"2026-11-01T14:44:12.099602078Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestWorstExitCode/config_beats_everything","Output":"=== RUN   TestWorstExitCode/config_beats_everything\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.099636309Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestWorstExitCode/config_beats_everything","Output":"--- PASS: TestWorstExitCode/config_beats_everything (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.099643095Z","Action":"pass","Package":"github.com/voxdesk/ops/internal/status","Test":"TestWorstExitCode/config_beats_everything","Elapsed":0}
+{"Time":"2026-11-01T14:44:12.099665836Z","Action":"run","Package":"github.com/voxdesk/ops/internal/status","Test":"TestWorstExitCode/unknown_code_is_ignored"}
+{"Time":"2026-11-01T14:44:12.099668695Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestWorstExitCode/unknown_code_is_ignored","Output":"=== RUN   TestWorstExitCode/unknown_code_is_ignored\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.09974681Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestWorstExitCode/unknown_code_is_ignored","Output":"--- PASS: TestWorstExitCode/unknown_code_is_ignored (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.099751013Z","Action":"pass","Package":"github.com/voxdesk/ops/internal/status","Test":"TestWorstExitCode/unknown_code_is_ignored","Elapsed":0}
+{"Time":"2026-11-01T14:44:12.099769796Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Test":"TestWorstExitCode","Output":"--- PASS: TestWorstExitCode (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:12.099790193Z","Action":"pass","Package":"github.com/voxdesk/ops/internal/status","Test":"TestWorstExitCode","Elapsed":0}
+{"Time":"2026-11-01T14:44:12.099816303Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:13.101907254Z","Action":"output","Package":"github.com/voxdesk/ops/internal/status","Output":"ok  \tgithub.com/voxdesk/ops/internal/status\t1.012s\n"}
+{"Time":"2026-11-01T14:44:13.101997308Z","Action":"pass","Package":"github.com/voxdesk/ops/internal/status","Elapsed":1.013}

@@ -128,3 +128,39 @@ async def test_forecast_api_reuses_analytics_and_discloses_unavailable_intervals
         )
         assert invalid.status_code == 422, invalid.text
         assert invalid.json()["detail"]["code"] == "invalid_forecast_input"
+
+    tenant_b = await make_tenant(db, "forecast-api-other")
+    user_b = await make_user(db, tenant_b, UserRole.OWNER)
+    headers_b = await auth_headers(client, user_b)
+    foreign_list = await client.get(
+        f"/api/forecast?environment_id={environment.id}&limit=10&offset=0",
+        headers=headers_b,
+    )
+    assert foreign_list.status_code == 404, foreign_list.text
+    foreign_detail = await client.get(
+        f"/api/forecast/{result['execution_id']}?environment_id={environment.id}",
+        headers=headers_b,
+    )
+    assert foreign_detail.status_code == 404, foreign_detail.text
+
+
+@pytest.mark.asyncio
+async def test_forecast_routes_reject_unauthenticated_requests(client):
+    env_id = "00000000-0000-0000-0000-000000000001"
+    payload = {
+        "environment_id": env_id,
+        "model_version_id": "00000000-0000-0000-0000-000000000002",
+        "idempotency_key": "forecast-unauth-001",
+        "series": [{"period": "2026-01-01", "value": 1}],
+        "method": "linear",
+        "configuration": {},
+    }
+    listed = await client.get(f"/api/forecast?environment_id={env_id}")
+    assert listed.status_code == 401, listed.text
+    backtest = await client.post(
+        "/api/forecast/backtest",
+        json={**payload, "test_size": 1},
+    )
+    assert backtest.status_code == 401, backtest.text
+    forecast = await client.post("/api/forecast", json={**payload, "horizon": 1})
+    assert forecast.status_code == 401, forecast.text

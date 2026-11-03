@@ -22,6 +22,7 @@ from app.auth.identity import policies
 from app.auth.identity import sessions as identity_sessions
 from app.auth.identity.models import UserSession
 from app.auth.identity.policies import AuthMethod
+from app.core.time import as_utc
 from app.db.models import AuditAction, AuditLog, RefreshToken, UserRole
 from tests.conftest import make_tenant, make_user
 
@@ -91,8 +92,8 @@ async def test_touching_a_live_session_pushes_the_idle_deadline_out(db):
     before = row.idle_expires_at
     assert await identity_sessions.touch(db, row, idle_minutes=60, commit=True) is True
     await db.refresh(row)
-    assert row.idle_expires_at > before
-    assert row.last_seen_at <= _now()
+    assert as_utc(row.idle_expires_at) > as_utc(before)
+    assert as_utc(row.last_seen_at) <= as_utc(_now())
 
 
 async def test_the_concurrent_session_ceiling_evicts_the_least_recently_used(db):

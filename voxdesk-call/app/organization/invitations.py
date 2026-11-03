@@ -40,6 +40,7 @@ from app.organization.membership_policies import (
     assert_organization_accepts_members,
 )
 from app.organization.membership_service import organization_for_user
+from app.core.time import as_utc, utc_now
 from app.organization.service import Actor
 from app.tenancy.isolation import Conflict, LifecycleDenied
 
@@ -56,7 +57,7 @@ class InvitationInvalid(Exception):
 
 
 def _now() -> datetime:
-    return datetime.now(timezone.utc).replace(tzinfo=None)
+    return utc_now()
 
 
 def _actor(actor: Actor | None) -> Actor:
@@ -404,7 +405,7 @@ async def accept_invitation(
     if _ids_disagree(row, organization_id=organization_id, tenant_id=tenant_id):
         raise InvitationInvalid()
     now = _now()
-    if row.expires_at <= now and row.status == MembershipStatus.INVITED.value:
+    if as_utc(row.expires_at) <= now and row.status == MembershipStatus.INVITED.value:
         row.status = MembershipStatus.EXPIRED.value
         row.updated_at = now
         await session.commit()

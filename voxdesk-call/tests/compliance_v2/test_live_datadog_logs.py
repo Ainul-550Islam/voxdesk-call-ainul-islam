@@ -62,6 +62,7 @@ async def test_live_datadog_logs_accepts_a_batch():
     sink = DatadogLogsSink(
         api_key=env["VOXDESK_LIVE_DATADOG_API_KEY"],
         site=os.environ.get("VOXDESK_LIVE_DATADOG_SITE", "us1"),
+        endpoint=os.environ.get("VOXDESK_LIVE_DATADOG_ENDPOINT", ""),
     )
     try:
         result = await sink.send_batch([_event()])

@@ -84,7 +84,7 @@ def now_utc() -> datetime:
     """
     The current instant, aware.
 
-    Exists so no billing code calls `datetime.utcnow()`, which returns a naive
+    Exists so no billing code calls `datetime.now(timezone.utc)`, which returns a naive
     value that compares wrongly against aware ones. That mistake cost the
     reminder scheduler every reminder due inside the tenant's UTC offset
     (STEP 6, audit F3); in billing it would misfile usage across a period

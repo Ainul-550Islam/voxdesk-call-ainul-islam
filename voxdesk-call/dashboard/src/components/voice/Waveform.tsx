@@ -49,7 +49,9 @@ export function Waveform({ state: rawState, active, bars = 24, className = '' }:
             amplitude = Math.abs(Math.sin(phase * 1.5 + i * 0.4)) * 0.9 + 0.1;
             break;
           case 'INTERRUPTED':
-            amplitude = Math.random() * 0.3;
+            // Deterministic indicator only — this canvas is not wired to
+            // microphone or playback levels.
+            amplitude = Math.abs(Math.sin(phase * 4 + i * 0.9)) * 0.3;
             break;
           case 'ERROR':
             amplitude = 0.05;
@@ -96,9 +98,13 @@ export function Waveform({ state: rawState, active, bars = 24, className = '' }:
   }, [state, bars]);
 
   return (
-    <div className={`relative ${className}`} role="img" aria-label={`Audio waveform: ${state}`}>
+    <div
+      className={`relative ${className}`}
+      role="img"
+      aria-label={`Voice-state indicator: ${state}. Decorative bars, not live audio levels.`}
+    >
       <canvas ref={canvasRef} width={240} height={60} className="h-16 w-full" aria-hidden="true" />
-      <span className="sr-only">Waveform in {state} state</span>
+      <span className="sr-only">Voice-state indicator ({state}); not a live audio level</span>
     </div>
   );
 }

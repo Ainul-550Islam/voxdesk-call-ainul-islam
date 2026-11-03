@@ -628,9 +628,10 @@ func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request) {
 func (s *Server) handleReady(w http.ResponseWriter, _ *http.Request) {
 	ready := s.ready()
 	status := http.StatusOK
-	body := map[string]any{"ready": ready, "reason": "sip_gateway_ready"}
+	body := map[string]any{"ready": ready, "status": "ready", "reason": "sip_gateway_ready"}
 	if !ready {
 		status = http.StatusServiceUnavailable
+		body["status"] = "not_ready"
 		body["reason"] = "sip_gateway_not_ready"
 	}
 	writeJSON(w, status, body)

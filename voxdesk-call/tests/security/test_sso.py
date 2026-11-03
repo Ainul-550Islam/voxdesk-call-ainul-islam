@@ -43,8 +43,6 @@ from app.auth.identity.exceptions import SSOConfigurationError, SSOValidationErr
 from app.auth.identity.sso import oidc, saml
 from app.core.config import settings
 
-pytestmark = pytest.mark.asyncio
-
 SAML_NS = "urn:oasis:names:tc:SAML:2.0:assertion"
 SAMLP_NS = "urn:oasis:names:tc:SAML:2.0:protocol"
 DS_NS = "http://www.w3.org/2000/09/xmldsig#"

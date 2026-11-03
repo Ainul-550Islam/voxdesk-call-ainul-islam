@@ -104,7 +104,7 @@ async def start_conversation(
         return await get_or_start_thread(session, tenant, from_number, chat_channel)
     call = Call(
         tenant_id=tenant.id,
-        call_sid=f"{channel.value}-{int(datetime.utcnow().timestamp()*1000)}",
+        call_sid=f"{channel.value}-{int(datetime.now(timezone.utc).timestamp()*1000)}",
         from_number=from_number,
         to_number=tenant.twilio_number,
         status=CallStatus.RINGING if direction is CallDirection.INBOUND else CallStatus.RINGING,

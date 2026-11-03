@@ -24,6 +24,9 @@ from tests.conftest import make_user
 from tests.platform_v2.conftest import PlatScope, seed_shift
 
 BASE = datetime(2026, 11, 2, 9, 0, tzinfo=UTC)
+# Offers cannot be recorded for a shift that has already started; keep seeded
+# offer/bid windows on a later Monday so the suite stays valid after BASE.
+OFFER_BASE = BASE + timedelta(days=7)
 
 
 def window(
@@ -276,7 +279,7 @@ def test_a_preference_can_only_tip_a_close_race():
 async def test_an_offer_records_the_rule_check(db: AsyncSession, plat_scope: PlatScope):
     owner = await agent(db, plat_scope, "offer")
     other = await agent(db, plat_scope, "target")
-    shift = await seed_shift(db, plat_scope, owner, starts_at=BASE, hours=8)
+    shift = await seed_shift(db, plat_scope, owner, starts_at=OFFER_BASE, hours=8)
     swap = await swaps.offer_swap(
         db,
         tenant_id=plat_scope.tenant.id,
@@ -295,8 +298,8 @@ async def test_a_violating_offer_is_recorded_with_the_violations(
 ):
     owner = await agent(db, plat_scope, "bad")
     other = await agent(db, plat_scope, "bad-target")
-    shift = await seed_shift(db, plat_scope, owner, starts_at=BASE, hours=8)
-    await seed_shift(db, plat_scope, other, starts_at=BASE + timedelta(hours=4), hours=8)
+    shift = await seed_shift(db, plat_scope, owner, starts_at=OFFER_BASE, hours=8)
+    await seed_shift(db, plat_scope, other, starts_at=OFFER_BASE + timedelta(hours=4), hours=8)
     swap = await swaps.offer_swap(
         db,
         tenant_id=plat_scope.tenant.id,

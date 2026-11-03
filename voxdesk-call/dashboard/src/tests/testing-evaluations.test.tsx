@@ -147,6 +147,7 @@ const sampleRun: TestRun = {
         expected: "APT-2026",
         actual: "Matched in 1 turn(s)",
         judge_rationale: null,
+        is_mock_judge: true,
         error_detail: null,
       },
       explanation: "Substring 'APT-2026' matched in turns [1].",
@@ -191,6 +192,7 @@ describe("Prompt 3 Testing, Simulation, Evaluation & Call Studio", () => {
     expect(screen.getByTestId("trace-provider-badge")).toHaveTextContent(
       /SANDBOX MOCK/i
     );
+    expect(screen.getByText("MOCK")).toBeInTheDocument();
     expect(
       screen.getByText(/Your appointment is confirmed with reference APT-2026/i)
     ).toBeInTheDocument();

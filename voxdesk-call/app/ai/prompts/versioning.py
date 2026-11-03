@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -90,9 +90,9 @@ async def publish(
         raise Conflict("Prompt checksum does not match the stored body")
     if version.status != "published":
         version.status = "published"
-        version.published_at = datetime.utcnow()
+        version.published_at = datetime.now(timezone.utc)
     prompt.current_version = version.version_number
-    prompt.updated_at = datetime.utcnow()
+    prompt.updated_at = datetime.now(timezone.utc)
     await session.flush()
     return version
 

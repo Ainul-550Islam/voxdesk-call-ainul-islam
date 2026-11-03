@@ -10,7 +10,7 @@ import hashlib
 import hmac
 import json
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Mapping
 from uuid import UUID
 
@@ -287,7 +287,7 @@ class TelephonyWebhookProcessor:
             )
 
         call_session = existing_call
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         if call_session is None:
             # Inbound call initiation: verify phone number and inbound agent binding

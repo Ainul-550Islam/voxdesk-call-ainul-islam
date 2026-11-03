@@ -8,7 +8,7 @@ here would nest the prefix.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, time, timedelta
+from datetime import datetime, time, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
@@ -624,7 +624,7 @@ async def stats(
 ):
     environment = await _call_environment_scope(session, ctx, Permission.ANALYTICS_READ)
     days = max(1, min(days, 90))
-    since = datetime.utcnow() - timedelta(days=days)
+    since = datetime.now(timezone.utc) - timedelta(days=days)
     base = select(func.count()).select_from(Call).where(
         Call.tenant_id == ctx.tenant_id,
         Call.environment_id == environment.id,

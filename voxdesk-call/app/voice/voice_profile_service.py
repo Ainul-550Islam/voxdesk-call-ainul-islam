@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -134,7 +134,7 @@ async def activate_profile(session: AsyncSession, profile: VoiceProfile, *, prov
 
 async def deactivate_profile(session: AsyncSession, profile: VoiceProfile) -> VoiceProfile:
     profile.status = INACTIVE
-    profile.deactivated_at = datetime.utcnow()
+    profile.deactivated_at = datetime.now(timezone.utc)
     await session.flush()
     return profile
 

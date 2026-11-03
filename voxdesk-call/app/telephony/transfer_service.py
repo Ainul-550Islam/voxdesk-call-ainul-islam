@@ -33,7 +33,7 @@ from __future__ import annotations
 import enum
 import re
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 
 import structlog
 from sqlalchemy import select
@@ -285,7 +285,7 @@ async def request_transfer(
         return _fail_result(dest_error, call.transfer_state)
 
     # -- 4. record intent (REQUESTED) --------------------------------------
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     call.escalated = True
     call.intent = call.intent or "escalation"
     call.transfer_state = TransferState.REQUESTED
@@ -337,7 +337,7 @@ async def request_transfer(
 
     # -- 6. provider accepted: now, and only now, it is TRANSFERRED --------
     call.transfer_state = TransferState.DIALING
-    call.transfer_started_at = datetime.utcnow()
+    call.transfer_started_at = datetime.now(timezone.utc)
     transition_result = call_state.apply_status(call, CallStatus.TRANSFERRED, source="transfer_service")
     await call_state.publish_transition(session, call, transition_result)
     await add_system_event(session, call, SYSTEM_EVENT["started"])
@@ -406,7 +406,7 @@ async def mark_transfer_connected(session: AsyncSession, call: Call) -> bool:
         call.transfer_error = None
 
     call.transfer_state = TransferState.CONNECTED
-    call.transfer_completed_at = datetime.utcnow()
+    call.transfer_completed_at = datetime.now(timezone.utc)
     await add_system_event(session, call, SYSTEM_EVENT["connected"])
     from app.webhooks.call_event_bridge import publish_call_event
     await publish_call_event(session, call, "transfer_completed")
@@ -469,7 +469,7 @@ async def _record_failure(
     error: TransferError | None,
 ) -> None:
     call.transfer_state = TransferState.FAILED
-    call.transfer_failed_at = datetime.utcnow()
+    call.transfer_failed_at = datetime.now(timezone.utc)
     call.transfer_error = _redact_reason_for_storage(detail)[:300] or None
     call.escalated = True  # it was still attempted; keep it visible
     await add_system_event(session, call, SYSTEM_EVENT["failed"])
@@ -618,7 +618,7 @@ async def initiate_warm_transfer(
         briefing_text=briefing_text,
     )
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     call.escalated = True
     call.intent = call.intent or "escalation"
     call.transfer_state = TransferState.DIALING

@@ -31,7 +31,7 @@ a human answered. The call can subsequently reach COMPLETED or FAILED.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 
 import structlog
 
@@ -258,7 +258,7 @@ def _stamp(
         call.duration_seconds = duration_seconds
 
     if is_terminal(target) and call.ended_at is None:
-        call.ended_at = ended_at or datetime.utcnow()
+        call.ended_at = ended_at or datetime.now(timezone.utc)
 
 
 def apply_provider_status(

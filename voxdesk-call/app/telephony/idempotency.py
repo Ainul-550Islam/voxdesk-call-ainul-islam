@@ -11,7 +11,7 @@ import hashlib
 import json
 import time
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
@@ -151,7 +151,7 @@ async def claim_provider_event(
             call_id=call_id,
             provider_call_id=provider_call_id,
             payload_hash=payload_hash,
-            received_at=datetime.utcnow(),
+            received_at=datetime.now(timezone.utc),
             processing_status="processing",
             duplicate_count=0,
             normalized_payload=normalized_payload,

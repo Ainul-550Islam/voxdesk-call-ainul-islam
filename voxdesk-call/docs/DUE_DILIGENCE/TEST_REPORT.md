@@ -13,7 +13,7 @@ treating them as current validation.
 
 | Plane / Test Suite | Runner | Test Files / Packages | Verified Test Cases | Failures / Errors | Status |
 |---|---|---:|---:|---:|---|
-| **Python Backend Total Collected (`tests/`)** | `pytest --collect-only` | `617` files | `6738` collected; collection only | `not measured` | **MEASURED** |
+| **Python Backend Total Collected (`tests/`)** | `pytest --collect-only` | `619` files | `6752` collected; collection only | `not measured` | **MEASURED** |
 | **Feature Matrix Evidence Suite** | `pytest --junitxml` | `evidence/junit/feature_evidence.xml` | `489` passed, `7` skipped (`68.78s`) | `0` | **PASS** |
 | **Batch 07 platform-v2 suites** | `make batch07-check` | `reports/check/batch07/junit.xml` | `0` passed, `0` skipped | `0` | **NOT MEASURED** |
 | **Batch 07 truth guards** | `make batch07-check` | `reports/check/batch07/truth.xml` | `0` passed, `0` skipped | `0` | **NOT MEASURED** |

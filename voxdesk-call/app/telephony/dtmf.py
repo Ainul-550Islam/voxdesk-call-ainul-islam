@@ -6,7 +6,7 @@ DTMF digit validation, buffer accumulation, IVR route matching, and barge-in han
 from __future__ import annotations
 
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -91,7 +91,7 @@ async def process_call_dtmf(
         )
 
     normalized_digits = validate_dtmf_digits(digits)
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     # Trigger barge-in if media session is currently speaking
     barge_in_triggered = False

@@ -8,7 +8,7 @@ A foreign tenant id is a 404.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field
@@ -258,7 +258,7 @@ async def post_rollback(
             raise LifecycleDenied("Rollback target must be a published version")
         before = version.body
         prompt.current_version = version.version_number
-        prompt.updated_at = datetime.utcnow()
+        prompt.updated_at = datetime.now(timezone.utc)
         await session.flush()
         if version.body != before:
             raise LifecycleDenied("Rollback must not change the published body")
@@ -302,7 +302,7 @@ async def post_retire(
             require_can(ctx, Permission.SECURITY_SETTINGS)
         prompt = await require_prompt(session, ctx.tenant_id, prompt_key)
         prompt.status = "retired"
-        prompt.updated_at = datetime.utcnow()
+        prompt.updated_at = datetime.now(timezone.utc)
         await emit(
             session,
             AuditAction.SECURITY_SETTINGS_CHANGED,

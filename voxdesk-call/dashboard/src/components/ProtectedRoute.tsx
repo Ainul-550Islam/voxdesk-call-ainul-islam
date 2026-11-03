@@ -149,7 +149,7 @@ export function ProtectedRoute({ status, nextPath, onLoginSuccess }: ProtectedRo
   // reached when there is no session, so there is nothing to clear, and a
   // second control labelled like the form's submit button is an accessibility
   // ambiguity for no benefit.
-  return <Login onSuccess={handleSuccess} />
+  return <Login onSuccess={handleSuccess} nextPath={safeNextPath(nextPath)} />
 }
 
 export default ProtectedRoute

@@ -368,6 +368,23 @@ export const SimulationTraceViewer: React.FC<SimulationTraceViewerProps> = ({
                       <code style={{ fontSize: 11, color: '#93c5fd' }}>
                         [{res.rule_type}]
                       </code>
+                      {res.evidence?.is_mock_judge ? (
+                        <span
+                          data-testid={`eval-mock-judge-${res.id}`}
+                          style={{
+                            marginLeft: 8,
+                            padding: '2px 8px',
+                            borderRadius: 6,
+                            fontSize: 10,
+                            fontWeight: 800,
+                            letterSpacing: 0.4,
+                            background: 'rgba(245, 158, 11, 0.18)',
+                            color: '#fbbf24',
+                          }}
+                        >
+                          MOCK
+                        </span>
+                      ) : null}
                     </div>
                     <span
                       style={{

@@ -29,7 +29,7 @@ documented window, not an unbounded retry.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import structlog
 from sqlalchemy import or_, select, update
@@ -70,7 +70,7 @@ async def schedule_for_appointment(
         return None
 
     send_at = appointment.starts_at - timedelta(hours=tenant.reminder_hours_before)
-    if send_at <= datetime.utcnow().replace(tzinfo=send_at.tzinfo):
+    if send_at <= datetime.now(timezone.utc).replace(tzinfo=send_at.tzinfo):
         return None
 
     reminder = Reminder(
@@ -111,7 +111,7 @@ async def _claim(
     committed immediately so a crash right after claiming still leaves the row
     visibly owned for the lease duration.
     """
-    now = now or datetime.utcnow()
+    now = now or datetime.now(timezone.utc)
     lease = settings.reminder_lease_seconds
     result = await session.execute(
         update(Reminder)
@@ -141,7 +141,7 @@ async def release_stuck_reminders(
     A reminder is only released once its lease has expired, so a healthy,
     in-flight send is never double-claimed. Returns how many were released.
     """
-    now = now or datetime.utcnow()
+    now = now or datetime.now(timezone.utc)
     lease = settings.reminder_lease_seconds
     cutoff = now - timedelta(seconds=lease)
     # A single conditional UPDATE rather than load-modify-commit: the session's
@@ -178,7 +178,7 @@ async def due_reminders(session: AsyncSession, now: datetime | None = None) -> l
     the real guarantee): it stops an unleased row from being offered to a
     worker that would just lose the claim.
     """
-    now = now or datetime.utcnow()
+    now = now or datetime.now(timezone.utc)
     lease = settings.reminder_lease_seconds
     cutoff = now - timedelta(seconds=lease)
     stmt = (

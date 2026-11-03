@@ -30,7 +30,7 @@ from __future__ import annotations
 import time as _time
 import uuid
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
 from sqlalchemy import select
@@ -981,7 +981,7 @@ async def _schedule_reminder(
     unsent reminder rather than adding a second one — the audit found no
     dedupe at all, so a rescheduled appointment would have produced two.
 
-    Uses `now_utc()` rather than `datetime.utcnow()`. That is the audit's F3:
+    Uses `now_utc()` rather than `datetime.now(timezone.utc)`. That is the audit's F3:
     the old comparison relabelled a naive UTC clock with the appointment's
     timezone and silently dropped every reminder due within the offset.
     """

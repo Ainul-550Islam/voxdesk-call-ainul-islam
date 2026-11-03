@@ -7,7 +7,7 @@ Call Sessions, Outbound Calls, Transfers, DTMF, Media Gateway, Webhooks, and Hea
 from __future__ import annotations
 
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
@@ -399,7 +399,7 @@ class NormalizedProviderWebhookEvent(BaseModel):
     hangup_reason: str | None = None
     duration_seconds: int | None = None
     recording_url: str | None = None
-    occurred_at: datetime = Field(default_factory=datetime.utcnow)
+    occurred_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     raw_payload: dict[str, Any] = Field(default_factory=dict)
 
 

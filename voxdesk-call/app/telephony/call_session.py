@@ -7,7 +7,7 @@ and deterministic terminal usage finalization.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
@@ -201,7 +201,7 @@ def append_runtime_event(
     detail: dict[str, Any] | None = None,
     occurred_at: datetime | None = None,
 ) -> dict[str, Any]:
-    ts = (occurred_at or datetime.utcnow()).isoformat()
+    ts = (occurred_at or datetime.now(timezone.utc)).isoformat()
     evt_str = (
         event_type.value
         if isinstance(event_type, InternalTelephonyEventType)
@@ -234,7 +234,7 @@ def append_transcript_turn(
         "turn_index": len(turns),
         "role": role,
         "content": content,
-        "timestamp": (occurred_at or datetime.utcnow()).isoformat(),
+        "timestamp": (occurred_at or datetime.now(timezone.utc)).isoformat(),
         "agent_id": agent_id or row.agent_id,
         "metadata": dict(metadata or {}),
     }
@@ -328,7 +328,7 @@ class CallSessionManager:
         recording_reference: str | None = None,
         event_detail: dict[str, Any] | None = None,
     ) -> TelephonyCallSession:
-        now = occurred_at or datetime.utcnow()
+        now = occurred_at or datetime.now(timezone.utc)
         curr_enum, targ_enum, is_noop = validate_call_state_transition(
             row.status, target_state
         )

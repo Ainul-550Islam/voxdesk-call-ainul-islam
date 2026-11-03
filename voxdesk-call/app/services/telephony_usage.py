@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import math
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
@@ -17,6 +17,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.time import as_utc
 from app.db.telephony_models import TelephonyCallSession, TelephonyUsageLedger
 from app.telephony.idempotency import get_idempotency_lock
 
@@ -29,6 +30,9 @@ def compute_call_duration(
     provider_duration_seconds: int | None = None,
 ) -> tuple[int, int, int]:
     """Return `(duration_ms, billable_seconds, billable_minutes)` from real timestamps."""
+    answered_at = as_utc(answered_at)
+    ended_at = as_utc(ended_at)
+    started_at = as_utc(started_at)
     if answered_at is not None and ended_at is not None and ended_at >= answered_at:
         delta_ms = int(round((ended_at - answered_at).total_seconds() * 1000))
         duration_ms = max(0, delta_ms)
@@ -110,7 +114,7 @@ class TelephonyUsageService:
                     "raw_elapsed_seconds": billable_seconds,
                     "billable": not bool(call_session.is_simulation),
                 },
-                recorded_at=datetime.utcnow(),
+                recorded_at=datetime.now(timezone.utc),
             )
             try:
                 async with self.session.begin_nested():

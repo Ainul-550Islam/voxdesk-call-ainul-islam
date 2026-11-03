@@ -7,7 +7,7 @@ tenant isolation, and health validation.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
@@ -64,7 +64,7 @@ def _serialize_phone_number(row: TelephonyPhoneNumber) -> PhoneNumberResponse:
 
 
 def _serialize_legacy_phone_number(row: PhoneNumber) -> PhoneNumberResponse:
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     return PhoneNumberResponse(
         id=row.id,
         organization_id=row.tenant_id,
@@ -261,7 +261,7 @@ class PhoneNumberService:
             sip_ready=sip_ready,
         )
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         row = TelephonyPhoneNumber(
             id=uuid.uuid4(),
             tenant_id=tenant_id,
@@ -439,7 +439,7 @@ class PhoneNumberService:
                 sip_ready=True if row.sip_connection_id else False,
             ).value
 
-        row.updated_at = datetime.utcnow()
+        row.updated_at = datetime.now(timezone.utc)
         await self.session.flush()
         return _serialize_phone_number(row)
 
@@ -488,7 +488,7 @@ class PhoneNumberService:
             sip_connection_id=row.sip_connection_id,
             sip_ready=True if row.sip_connection_id else False,
         ).value
-        row.updated_at = datetime.utcnow()
+        row.updated_at = datetime.now(timezone.utc)
         await self.session.flush()
         return _serialize_phone_number(row)
 

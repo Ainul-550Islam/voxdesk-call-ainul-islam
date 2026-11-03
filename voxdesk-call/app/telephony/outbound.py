@@ -84,7 +84,7 @@ async def next_callable_leads(
     session: AsyncSession, tenant: Tenant, campaign: Campaign, limit: int = 10
 ) -> list[Lead]:
     """Leads that are due, under the attempt cap, and not on do-not-call."""
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     from app.leads.models import LeadConsent, LeadIdentity
 
     if campaign.environment_id is None:
@@ -404,7 +404,7 @@ async def place_call(
                 "billing_reason": billing_reason,
             }
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     if not await _claim_attempt(session, lead, tenant, now=now):
         return {"ok": False, "reason": "claimed_by_another"}
 
@@ -629,7 +629,7 @@ async def dial_lead(
         lead.phone = to_number
 
     lead.attempts += 1
-    lead.last_attempt_at = datetime.utcnow()
+    lead.last_attempt_at = datetime.now(timezone.utc)
 
     answer_url = f"{settings.public_base_url}/telephony/outbound/answer?lead_id={lead.id}"
     status_url = f"{settings.public_base_url}/telephony/status"
@@ -673,7 +673,7 @@ async def dial_lead(
             lead.next_attempt_at = (
                 retry_dec.next_attempt_at.replace(tzinfo=None)
                 if retry_dec.next_attempt_at
-                else datetime.utcnow()
+                else datetime.now(timezone.utc)
                 + RETRY_BACKOFF[min(lead.attempts - 1, len(RETRY_BACKOFF) - 1)]
             )
             if recipient is not None:

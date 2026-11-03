@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.tenancy.isolation import ValidationFailed
 
@@ -82,5 +82,5 @@ def apply_record(
     environment.deployment_source = validate_source(source)
     environment.deployment_status = validate_status(status)
     environment.health_state = validate_health(health_state)
-    environment.deployed_at = deployed_at or datetime.utcnow()
+    environment.deployed_at = deployed_at or datetime.now(timezone.utc)
     return view_from_environment(environment)

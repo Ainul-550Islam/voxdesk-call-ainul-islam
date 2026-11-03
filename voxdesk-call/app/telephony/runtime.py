@@ -7,7 +7,7 @@ control (hangup, DTMF, transfer), and truthful runtime health reporting.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any as Any
 from uuid import UUID
 
@@ -417,7 +417,7 @@ class TelephonyRuntimeService:
             return serialize_call_session(existing)
 
         call_id = uuid.uuid4()
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         pending_id = f"pending_{call_id.hex}"
         call_session = TelephonyCallSession(
             id=call_id,
@@ -504,7 +504,7 @@ class TelephonyRuntimeService:
             await manager.transition_state(
                 call_session,
                 TelephonyCallState.DIALING,
-                occurred_at=datetime.utcnow(),
+                occurred_at=datetime.now(timezone.utc),
                 event_detail={
                     "provider_call_id": simulated_result.external_id,
                     "execution_kind": "SIMULATION",
@@ -557,7 +557,7 @@ class TelephonyRuntimeService:
                     "provider_outcome": "unknown",
                     "error_category": type(exc).__name__[:64],
                 },
-                occurred_at=datetime.utcnow(),
+                occurred_at=datetime.now(timezone.utc),
             )
             await self.session.commit()
             raise TelephonyRuntimeError(
@@ -577,7 +577,7 @@ class TelephonyRuntimeService:
         await manager.transition_state(
             call_session,
             TelephonyCallState.DIALING,
-            occurred_at=datetime.utcnow(),
+            occurred_at=datetime.now(timezone.utc),
             event_detail={
                 "provider_call_id": external_id,
                 "provider_status": str(provider_result.status or "accepted")[:64],
@@ -610,7 +610,7 @@ class TelephonyRuntimeService:
         if current_state in TERMINAL_CALL_STATES:
             return serialize_call_session(call_session)
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         media_gateway_manager.close_session(call_session.id)
 
         if current_state in {
@@ -636,7 +636,7 @@ class TelephonyRuntimeService:
             await manager.transition_state(
                 call_session,
                 TelephonyCallState.COMPLETED,
-                occurred_at=datetime.utcnow(),
+                occurred_at=datetime.now(timezone.utc),
                 hangup_reason=req.reason,
                 event_detail={"reason": req.reason},
             )
@@ -788,5 +788,5 @@ class TelephonyRuntimeService:
             ready_sip_connections=ready_sip,
             active_calls=active_calls,
             providers=provider_statuses,
-            checked_at=datetime.utcnow(),
+            checked_at=datetime.now(timezone.utc),
         )

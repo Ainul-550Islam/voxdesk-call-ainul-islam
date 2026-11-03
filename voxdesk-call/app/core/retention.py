@@ -43,7 +43,7 @@ RESOURCE_TYPES = ("call", "chat", "recording", "transcript", "pcap", "all")
 
 def _naive_utc(dt: datetime | None = None) -> datetime:
     if dt is None:
-        return datetime.utcnow()
+        return datetime.now(timezone.utc)
     if dt.tzinfo is not None:
         return dt.astimezone(timezone.utc).replace(tzinfo=None)
     return dt

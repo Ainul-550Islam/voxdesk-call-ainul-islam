@@ -68,6 +68,9 @@ async def test_live_s3_jsonl_writes_an_object():
         kms_key_id=os.environ.get("VOXDESK_LIVE_S3_KMS_KEY_ID", ""),
         object_lock_mode=os.environ.get("VOXDESK_LIVE_S3_OBJECT_LOCK_MODE", ""),
         object_lock_days=int(os.environ.get("VOXDESK_LIVE_S3_OBJECT_LOCK_DAYS", "0")),
+        endpoint_url=os.environ.get("VOXDESK_LIVE_S3_ENDPOINT", ""),
+        access_key_id=os.environ.get("AWS_ACCESS_KEY_ID", ""),
+        secret_access_key=os.environ.get("AWS_SECRET_ACCESS_KEY", ""),
     )
     try:
         result = await sink.send_batch([_event()])

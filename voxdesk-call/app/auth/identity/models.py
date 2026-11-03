@@ -66,7 +66,7 @@ def _uuid() -> uuid.UUID:
 
 
 def _utcnow() -> datetime:
-    return datetime.utcnow()
+    return datetime.now(timezone.utc)
 
 
 # ================================================================ vocabulary ===

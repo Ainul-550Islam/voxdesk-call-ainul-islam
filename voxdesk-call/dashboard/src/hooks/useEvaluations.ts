@@ -119,7 +119,7 @@ export function useEvaluations(initialFilters?: {
   }, []);
 
   const rerunEvaluation = useCallback(
-    async (runId: string, allowMockJudge = true): Promise<TestRun | null> => {
+    async (runId: string, allowMockJudge = false): Promise<TestRun | null> => {
       setEvaluating(true);
       setError(null);
       try {

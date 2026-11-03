@@ -2,7 +2,7 @@ import os
 import re
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -711,11 +711,22 @@ def _mount_dashboard_if_built(app: FastAPI, dist_dir: str | None = None) -> None
     if os.path.isdir(assets_dir):
         app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
 
-    @app.get("/{full_path:path}", include_in_schema=False)
-    async def _spa_fallback(full_path: str):
+    # Register every method, not just GET. A GET-only `/{full_path}` makes
+    # Starlette answer POST/PUT/PATCH/DELETE on unknown paths with 405
+    # (the path exists, the method does not) instead of JSON 404. That hid
+    # retired API paths behind "Method Not Allowed" in production too.
+    @app.api_route(
+        "/{full_path:path}",
+        methods=["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        include_in_schema=False,
+    )
+    async def _spa_fallback(request: Request, full_path: str):
         # Never let the SPA shell swallow unknown API/telephony/auth paths -- a
         # typo'd client call must 404 (JSON), not receive an HTML 200.
-        if full_path.startswith(("api/", "auth/", "telephony/", "channels/", "health")):
+        api_prefix = full_path.startswith(
+            ("api/", "auth/", "telephony/", "channels/", "health")
+        )
+        if api_prefix or request.method not in {"GET", "HEAD"}:
             return JSONResponse(status_code=404, content={"detail": "Not found"})
         # API/telephony/auth paths are handled by the routers above; anything
         # else maps to a real file when one exists, otherwise the SPA shell.

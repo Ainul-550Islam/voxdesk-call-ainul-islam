@@ -14,6 +14,11 @@ import type {
   PublicSignupInput,
   PublicSignupResponse,
 } from './types/public-widget';
+import {
+  clearSession,
+  getAccessToken,
+  setSessionAccessToken,
+} from '../lib/session';
 
 export class PublicSiteApiError extends Error {
   status: number;
@@ -167,24 +172,31 @@ export function persistAuthenticatedSession(params: {
     tenant_id: string;
   } | null;
 }): void {
+  // Bearer tokens stay in the memory session store. Account metadata is
+  // restored from GET /auth/me, never from Web Storage.
+  setSessionAccessToken(params.accessToken);
   if (typeof window === 'undefined' || !window.localStorage) return;
-  window.localStorage.setItem('voxdesk_access_token', params.accessToken);
-  if (params.user) {
-    window.localStorage.setItem('voxdesk_user', JSON.stringify(params.user));
-    window.localStorage.setItem('voxdesk_tenant_id', params.user.tenant_id);
+  try {
+    window.localStorage.removeItem('voxdesk_user');
+    window.localStorage.removeItem('voxdesk_tenant_id');
+  } catch {
+    // Disabled Web Storage cannot retain leftover metadata either way.
   }
 }
 
 export function clearAuthenticatedSession(): void {
+  clearSession();
   if (typeof window === 'undefined' || !window.localStorage) return;
-  window.localStorage.removeItem('voxdesk_access_token');
-  window.localStorage.removeItem('voxdesk_user');
-  window.localStorage.removeItem('voxdesk_tenant_id');
+  try {
+    window.localStorage.removeItem('voxdesk_user');
+    window.localStorage.removeItem('voxdesk_tenant_id');
+  } catch {
+    // Disabled Web Storage cannot retain leftover metadata either way.
+  }
 }
 
 export function hasAuthenticatedSessionToken(): boolean {
-  if (typeof window === 'undefined' || !window.localStorage) return false;
-  const token = window.localStorage.getItem('voxdesk_access_token');
+  const token = getAccessToken();
   if (!token || !token.trim()) return false;
   // Never treat a public key or widget token as an authenticated workspace session
   if (token.startsWith('vdpk_') || token.startsWith('vdws_')) {

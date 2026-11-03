@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import hashlib
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import UUID
 
 from sqlalchemy import select
@@ -111,7 +111,7 @@ class SipConnectionService:
             if termination_uri
             else SipConnectionStatus.NOT_CONFIGURED.value
         )
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         row = TelephonySipConnection(
             id=uuid.uuid4(),
             tenant_id=tenant_id,
@@ -185,7 +185,7 @@ class SipConnectionService:
         if req.transport:
             row.transport = req.transport.value
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         row.last_test_at = now
         uri_lower = row.termination_uri.lower()
 

@@ -158,6 +158,9 @@ PUBLIC_ROUTES: dict[str, str] = {
     "/api/v1/public/voice-demo/session/{session_id}": "anonymous product demo, session token",
     "/api/v1/public/voice-demo/session/{session_id}/event": "anonymous product demo, session token",
     "/widget/embed.js": "widget loader script",
+    # Present only when dashboard/dist exists (production image). Extra
+    # allowlist entries are not a failure when the route is unmounted.
+    "/{full_path:path}": "Vite dashboard SPA shell; GET/HEAD serve index.html, other methods 404 JSON",
 }
 
 

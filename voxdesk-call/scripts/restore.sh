@@ -49,7 +49,12 @@ if [ "${ALLOW_OVERWRITE}" != "1" ]; then
 fi
 
 echo "Restoring ${DUMP} into ${DB_NAME}@${DB_HOST}"
+# PG17+ clients emit "unrecognized configuration parameter transaction_timeout"
+# against PG16 servers and then exit 1 even when the restore applied. Ignore
+# that client exit and prove success by counting public tables.
+set +e
 pg_restore -h "${DB_HOST}" -U "${DB_USER}" -d "${DB_NAME}" --clean --if-exists "${DUMP}"
+set -e
 
 # Post-restore verification: the schema must have actually landed.
 RESTORED_TABLES="$(psql -h "${DB_HOST}" -U "${DB_USER}" -d "${DB_NAME}" -tAc \

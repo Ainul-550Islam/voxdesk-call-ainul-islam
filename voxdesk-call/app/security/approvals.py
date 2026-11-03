@@ -4,7 +4,7 @@ from __future__ import annotations
 import hashlib
 import json
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.models import AuditAction, HumanApproval
@@ -42,7 +42,7 @@ async def request(
         subject_ref=subject_ref[:255],
         payload_digest=digest_payload(payload),
         requested_by=requested_by,
-        expires_at=datetime.utcnow() + timedelta(seconds=ttl_seconds),
+        expires_at=datetime.now(timezone.utc) + timedelta(seconds=ttl_seconds),
     )
     session.add(row)
     await session.flush()
@@ -78,7 +78,7 @@ async def decide(
         raise ApprovalError("approval not found")
     if row.status != "pending":
         raise ApprovalError("approval has already been decided")
-    if row.expires_at < datetime.utcnow():
+    if row.expires_at < datetime.now(timezone.utc):
         row.status = "expired"
         raise ApprovalError("approval expired")
     if payload is not None and digest_payload(payload) != row.payload_digest:
@@ -86,7 +86,7 @@ async def decide(
     row.status, row.decided_by, row.decided_at = (
         ("approved" if approved else "rejected"),
         actor_user_id,
-        datetime.utcnow(),
+        datetime.now(timezone.utc),
     )
     await audit_event(
         session,
@@ -112,7 +112,7 @@ async def require_approved(
             )
         )
     ).scalar_one_or_none()
-    if row is None or row.status != "approved" or row.expires_at < datetime.utcnow():
+    if row is None or row.status != "approved" or row.expires_at < datetime.now(timezone.utc):
         raise ApprovalError("a current approved HITL gate is required")
     if payload is not None and digest_payload(payload) != row.payload_digest:
         raise ApprovalError("approval payload does not match")

@@ -14,7 +14,7 @@ const field = {
   border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, boxSizing: 'border-box',
 }
 
-export default function Login({ onSuccess }) {
+export default function Login({ onSuccess, nextPath }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState(null)
@@ -42,6 +42,14 @@ export default function Login({ onSuccess }) {
         <p style={{ color: '#6b7280', marginTop: 4, marginBottom: 24, fontSize: 14 }}>
           Sign in to your workspace
         </p>
+        {nextPath ? (
+          <p
+            data-testid="login-return-path-notice"
+            style={{ color: '#4b5563', marginTop: -12, marginBottom: 20, fontSize: 13 }}
+          >
+            After sign-in you will return to {nextPath}
+          </p>
+        ) : null}
 
         <label style={{ fontSize: 13, fontWeight: 600 }}>
           Email

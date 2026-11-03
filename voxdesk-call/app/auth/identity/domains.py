@@ -45,6 +45,7 @@ from app.auth.identity.models import (
     VerificationStatus,
 )
 from app.core.config import settings
+from app.core.time import as_utc, utc_now
 from app.db.models import AuditAction, User
 
 log = structlog.get_logger()
@@ -65,7 +66,7 @@ MAX_ATTEMPTS = 20
 
 
 def _now() -> datetime:
-    return datetime.now(timezone.utc).replace(tzinfo=None)
+    return utc_now()
 
 
 def normalize_domain(raw: str) -> str:
@@ -318,7 +319,7 @@ async def check_challenge(
         raise DomainError("There is no pending verification for this domain. Start a new one.")
 
     now = _now()
-    if verification.expires_at <= now:
+    if as_utc(verification.expires_at) <= now:
         verification.status = VerificationStatus.EXPIRED.value
         if commit:
             await session.commit()

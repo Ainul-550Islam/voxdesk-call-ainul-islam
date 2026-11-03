@@ -9,7 +9,7 @@ from __future__ import annotations
 import base64
 from collections import deque
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
@@ -48,8 +48,8 @@ class MediaGatewaySession:
     barge_in_count: int = 0
     inbound_buffer: deque[AudioFrame] = field(default_factory=lambda: deque(maxlen=256))
     outbound_queue: deque[AudioFrame] = field(default_factory=lambda: deque(maxlen=256))
-    connected_at: datetime = field(default_factory=datetime.utcnow)
-    last_activity_at: datetime = field(default_factory=datetime.utcnow)
+    connected_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    last_activity_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     closed_at: datetime | None = None
 
     def snapshot(self) -> dict[str, Any]:
@@ -139,7 +139,7 @@ class MediaGatewayManager:
 
         session.inbound_frames_received += 1
         session.inbound_bytes_received += len(raw_bytes)
-        session.last_activity_at = datetime.utcnow()
+        session.last_activity_at = datetime.now(timezone.utc)
         if session.state not in {MediaSessionState.SPEAKING, MediaSessionState.INTERRUPTED}:
             session.state = MediaSessionState.LISTENING
 
@@ -171,7 +171,7 @@ class MediaGatewayManager:
         session.outbound_frames_sent += 1
         session.outbound_bytes_sent += len(raw_bytes)
         session.state = MediaSessionState.SPEAKING
-        session.last_activity_at = datetime.utcnow()
+        session.last_activity_at = datetime.now(timezone.utc)
 
         frame = AudioFrame(
             sequence=session.outbound_frames_sent,
@@ -195,7 +195,7 @@ class MediaGatewayManager:
         session.outbound_queue.clear()
         session.barge_in_count += 1
         session.state = MediaSessionState.INTERRUPTED
-        session.last_activity_at = datetime.utcnow()
+        session.last_activity_at = datetime.now(timezone.utc)
         return {
             "call_id": str(call_id),
             "barge_in_triggered": True,
@@ -212,7 +212,7 @@ class MediaGatewayManager:
         session.outbound_queue.clear()
         session.inbound_buffer.clear()
         session.state = MediaSessionState.DISCONNECTED
-        session.closed_at = datetime.utcnow()
+        session.closed_at = datetime.now(timezone.utc)
         return session.snapshot()
 
     def _require_active_session(self, call_id: UUID) -> MediaGatewaySession:

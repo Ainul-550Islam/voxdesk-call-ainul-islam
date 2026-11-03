@@ -14,7 +14,7 @@ import json
 import time
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Callable, Protocol
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -327,7 +327,7 @@ async def validate_connector(session: AsyncSession, row: Connector) -> Connector
             "voxdesk.connector.validate", tenant_id=str(row.tenant_id), provider=row.provider
         ):
             await registration.factory(context).validate_credentials(context)
-        row.status, row.health_message, row.last_health_at = "healthy", None, datetime.utcnow()
+        row.status, row.health_message, row.last_health_at = "healthy", None, datetime.now(timezone.utc)
         await _audit()(
             session,
             AuditAction.INTEGRATION_TESTED,
@@ -339,7 +339,7 @@ async def validate_connector(session: AsyncSession, row: Connector) -> Connector
         row.status, row.health_message, row.last_health_at = (
             "unhealthy",
             type(exc).__name__,
-            datetime.utcnow(),
+            datetime.now(timezone.utc),
         )
         await _audit()(
             session,

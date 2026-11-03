@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -72,7 +72,7 @@ async def change_task(
             raise InvalidTransition(f"Cannot move a task from {row.status} to {target}")
         row.status = target
         if target == "completed":
-            row.completed_at = datetime.utcnow()
-    row.updated_at = datetime.utcnow()
+            row.completed_at = datetime.now(timezone.utc)
+    row.updated_at = datetime.now(timezone.utc)
     await session.flush()
     return row

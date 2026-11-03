@@ -8,7 +8,7 @@ import time
 import uuid
 import wave
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Protocol
 
 import httpx
@@ -246,7 +246,7 @@ async def process_clone_job(session, job: VoiceCloneJob, *, provider: CloneProvi
     started = time.perf_counter()
     try:
         provider = provider or _provider_for(job.provider)
-        job.status, job.progress, job.last_heartbeat_at = VALIDATING, 10, datetime.utcnow()
+        job.status, job.progress, job.last_heartbeat_at = VALIDATING, 10, datetime.now(timezone.utc)
         await session.flush()
         if len(job.input_object_reference) > 1000:
             raise ValueError("clone object reference is invalid")
@@ -255,14 +255,14 @@ async def process_clone_job(session, job: VoiceCloneJob, *, provider: CloneProvi
             raise ValueError("clone audio exceeds the upload limit")
         file_format, _duration = _validate_audio(audio, job.input_object_reference)
         job.status, job.progress = UPLOADING, 30
-        job.last_heartbeat_at = datetime.utcnow()
+        job.last_heartbeat_at = datetime.now(timezone.utc)
         await session.flush()
         job.status, job.progress = PROVIDER_PROCESSING, 60
         await session.flush()
         submission = None
         for attempt in range(max(0, min(settings.voice_clone_max_retries, 3)) + 1):
             job.attempt_count += 1
-            job.last_heartbeat_at = datetime.utcnow()
+            job.last_heartbeat_at = datetime.now(timezone.utc)
             await session.flush()
             try:
                 submission = await provider.submit(
@@ -303,7 +303,7 @@ async def process_clone_job(session, job: VoiceCloneJob, *, provider: CloneProvi
             status="active",
         )
         job.voice_profile_id = profile.id
-        job.status, job.progress, job.completed_at = READY, 100, datetime.utcnow()
+        job.status, job.progress, job.completed_at = READY, 100, datetime.now(timezone.utc)
         job.error_code, job.error_message_redacted = None, None
         await session.flush()
         log.info(
@@ -320,7 +320,7 @@ async def process_clone_job(session, job: VoiceCloneJob, *, provider: CloneProvi
             exc, "category", "validation_error" if isinstance(exc, ValueError) else "provider_error"
         )
         job.error_message_redacted = getattr(exc, "safe_message", "voice clone job failed")[:500]
-        job.last_heartbeat_at = datetime.utcnow()
+        job.last_heartbeat_at = datetime.now(timezone.utc)
         if isinstance(exc, ProviderError):
             record_provider_error(exc.provider, exc.category)
         log.warning(
@@ -349,7 +349,7 @@ async def cancel_clone_job(session, job: VoiceCloneJob) -> VoiceCloneJob:
     if job.provider_job_id:
         await _provider_for(job.provider).cancel(job.provider_job_id)
     job.status = CANCELLED
-    job.completed_at = datetime.utcnow()
+    job.completed_at = datetime.now(timezone.utc)
     await session.flush()
     return job
 
@@ -357,7 +357,7 @@ async def cancel_clone_job(session, job: VoiceCloneJob) -> VoiceCloneJob:
 async def recover_stale_jobs(session, *, older_than_seconds: int | None = None) -> int:
     from sqlalchemy import select
 
-    cutoff = datetime.utcnow() - timedelta(seconds=older_than_seconds or settings.voice_clone_job_timeout_seconds)
+    cutoff = datetime.now(timezone.utc) - timedelta(seconds=older_than_seconds or settings.voice_clone_job_timeout_seconds)
     rows = (
         await session.execute(
             select(VoiceCloneJob).where(

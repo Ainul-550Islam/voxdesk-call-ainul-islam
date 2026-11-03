@@ -1,0 +1,155 @@
+{"Time":"2026-11-01T14:44:02.310719157Z","Action":"start","Package":"github.com/voxdesk/signal-go/cmd/signal-server"}
+{"Time":"2026-11-01T14:44:02.31080316Z","Action":"output","Package":"github.com/voxdesk/signal-go/cmd/signal-server","Output":"?   \tgithub.com/voxdesk/signal-go/cmd/signal-server\t[no test files]\n"}
+{"Time":"2026-11-01T14:44:02.310825401Z","Action":"skip","Package":"github.com/voxdesk/signal-go/cmd/signal-server","Elapsed":0}
+{"Time":"2026-11-01T14:44:04.440630353Z","Action":"start","Package":"github.com/voxdesk/signal-go/internal/signal"}
+{"Time":"2026-11-01T14:44:04.450257931Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestWelcomeIsFirstFrame"}
+{"Time":"2026-11-01T14:44:04.450332989Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestWelcomeIsFirstFrame","Output":"=== RUN   TestWelcomeIsFirstFrame\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:04.452180313Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestWelcomeIsFirstFrame","Output":"--- PASS: TestWelcomeIsFirstFrame (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:04.452209114Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestWelcomeIsFirstFrame","Elapsed":0}
+{"Time":"2026-11-01T14:44:04.452237661Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestSubscribeRequiresHello"}
+{"Time":"2026-11-01T14:44:04.452240921Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestSubscribeRequiresHello","Output":"=== RUN   TestSubscribeRequiresHello\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:04.453433719Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestSubscribeRequiresHello","Output":"--- PASS: TestSubscribeRequiresHello (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:04.453452672Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestSubscribeRequiresHello","Elapsed":0}
+{"Time":"2026-11-01T14:44:04.453460819Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestPublishRequiresHello"}
+{"Time":"2026-11-01T14:44:04.453463833Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestPublishRequiresHello","Output":"=== RUN   TestPublishRequiresHello\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:04.454556503Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestPublishRequiresHello","Output":"--- PASS: TestPublishRequiresHello (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:04.454572068Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestPublishRequiresHello","Elapsed":0}
+{"Time":"2026-11-01T14:44:04.454577751Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestHelloExactlyOnce"}
+{"Time":"2026-11-01T14:44:04.454581038Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestHelloExactlyOnce","Output":"=== RUN   TestHelloExactlyOnce\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:04.456584593Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestHelloExactlyOnce","Output":"--- PASS: TestHelloExactlyOnce (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:04.456615112Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestHelloExactlyOnce","Elapsed":0}
+{"Time":"2026-11-01T14:44:04.456619935Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestPublishDeliversToPeersNotSender"}
+{"Time":"2026-11-01T14:44:04.456622579Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestPublishDeliversToPeersNotSender","Output":"=== RUN   TestPublishDeliversToPeersNotSender\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:04.859773554Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestPublishDeliversToPeersNotSender","Output":"--- PASS: TestPublishDeliversToPeersNotSender (0.40s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:04.85982673Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestPublishDeliversToPeersNotSender","Elapsed":0.4}
+{"Time":"2026-11-01T14:44:04.859834934Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestTenantIsolation"}
+{"Time":"2026-11-01T14:44:04.859838087Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestTenantIsolation","Output":"=== RUN   TestTenantIsolation\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:05.663313417Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestTenantIsolation","Output":"--- PASS: TestTenantIsolation (0.80s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:05.663435961Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestTenantIsolation","Elapsed":0.8}
+{"Time":"2026-11-01T14:44:05.663472837Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestUnsubscribeStopsDelivery"}
+{"Time":"2026-11-01T14:44:05.663476801Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestUnsubscribeStopsDelivery","Output":"=== RUN   TestUnsubscribeStopsDelivery\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:06.06678797Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestUnsubscribeStopsDelivery","Output":"--- PASS: TestUnsubscribeStopsDelivery (0.40s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:06.066862555Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestUnsubscribeStopsDelivery","Elapsed":0.4}
+{"Time":"2026-11-01T14:44:06.066896106Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestBadMessageResponses"}
+{"Time":"2026-11-01T14:44:06.066902824Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestBadMessageResponses","Output":"=== RUN   TestBadMessageResponses\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:06.068609946Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestBadMessageResponses","Output":"--- PASS: TestBadMessageResponses (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:06.068635361Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestBadMessageResponses","Elapsed":0}
+{"Time":"2026-11-01T14:44:06.068641231Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestPingPong"}
+{"Time":"2026-11-01T14:44:06.068644208Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestPingPong","Output":"=== RUN   TestPingPong\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:06.069759226Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestPingPong","Output":"--- PASS: TestPingPong (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:06.069777326Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestPingPong","Elapsed":0}
+{"Time":"2026-11-01T14:44:06.069785908Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDisconnectCleansUpRoom"}
+{"Time":"2026-11-01T14:44:06.069788616Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDisconnectCleansUpRoom","Output":"=== RUN   TestDisconnectCleansUpRoom\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:06.081987943Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDisconnectCleansUpRoom","Output":"--- PASS: TestDisconnectCleansUpRoom (0.01s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:06.082089775Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDisconnectCleansUpRoom","Elapsed":0.01}
+{"Time":"2026-11-01T14:44:06.082101102Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestIdleReap"}
+{"Time":"2026-11-01T14:44:06.082134139Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestIdleReap","Output":"=== RUN   TestIdleReap\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:06.233941588Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestIdleReap","Output":"--- PASS: TestIdleReap (0.15s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:06.233984125Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestIdleReap","Elapsed":0.15}
+{"Time":"2026-11-01T14:44:06.233993015Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestBackpressureDropsWhenBufferFull"}
+{"Time":"2026-11-01T14:44:06.233995765Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestBackpressureDropsWhenBufferFull","Output":"=== RUN   TestBackpressureDropsWhenBufferFull\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:06.234124761Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestBackpressureDropsWhenBufferFull","Output":"--- PASS: TestBackpressureDropsWhenBufferFull (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:06.234164448Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestBackpressureDropsWhenBufferFull","Elapsed":0}
+{"Time":"2026-11-01T14:44:06.23419892Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestPublishCountsDeliveries"}
+{"Time":"2026-11-01T14:44:06.234202765Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestPublishCountsDeliveries","Output":"=== RUN   TestPublishCountsDeliveries\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:06.234328907Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestPublishCountsDeliveries","Output":"--- PASS: TestPublishCountsDeliveries (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:06.234333434Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestPublishCountsDeliveries","Elapsed":0}
+{"Time":"2026-11-01T14:44:06.23434Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestConcurrentPublishTenantIsolation"}
+{"Time":"2026-11-01T14:44:06.234342769Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestConcurrentPublishTenantIsolation","Output":"=== RUN   TestConcurrentPublishTenantIsolation\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.251069405Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestConcurrentPublishTenantIsolation","Output":"--- PASS: TestConcurrentPublishTenantIsolation (3.02s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.251259345Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestConcurrentPublishTenantIsolation","Elapsed":3.02}
+{"Time":"2026-11-01T14:44:09.251572689Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestIdempotencyFirstApplyWins"}
+{"Time":"2026-11-01T14:44:09.251579491Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestIdempotencyFirstApplyWins","Output":"=== RUN   TestIdempotencyFirstApplyWins\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.251586345Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestIdempotencyFirstApplyWins","Output":"--- PASS: TestIdempotencyFirstApplyWins (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.251595389Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestIdempotencyFirstApplyWins","Elapsed":0}
+{"Time":"2026-11-01T14:44:09.251598724Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestIdempotencySameKeyDifferentTenantIsIndependent"}
+{"Time":"2026-11-01T14:44:09.251601544Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestIdempotencySameKeyDifferentTenantIsIndependent","Output":"=== RUN   TestIdempotencySameKeyDifferentTenantIsIndependent\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.251613771Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestIdempotencySameKeyDifferentTenantIsIndependent","Output":"--- PASS: TestIdempotencySameKeyDifferentTenantIsIndependent (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.251617115Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestIdempotencySameKeyDifferentTenantIsIndependent","Elapsed":0}
+{"Time":"2026-11-01T14:44:09.251620483Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestIdempotencyEmpty"}
+{"Time":"2026-11-01T14:44:09.251623134Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestIdempotencyEmpty","Output":"=== RUN   TestIdempotencyEmpty\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.251626898Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestIdempotencyEmpty","Output":"--- PASS: TestIdempotencyEmpty (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.251629479Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestIdempotencyEmpty","Elapsed":0}
+{"Time":"2026-11-01T14:44:09.25163187Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestIdempotencyConcurrentSameKeyWinsExactlyOnce"}
+{"Time":"2026-11-01T14:44:09.251634569Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestIdempotencyConcurrentSameKeyWinsExactlyOnce","Output":"=== RUN   TestIdempotencyConcurrentSameKeyWinsExactlyOnce\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.25170805Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestIdempotencyConcurrentSameKeyWinsExactlyOnce","Output":"--- PASS: TestIdempotencyConcurrentSameKeyWinsExactlyOnce (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.251712201Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestIdempotencyConcurrentSameKeyWinsExactlyOnce","Elapsed":0}
+{"Time":"2026-11-01T14:44:09.251715121Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestMarshalWelcomeShape"}
+{"Time":"2026-11-01T14:44:09.251717641Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestMarshalWelcomeShape","Output":"=== RUN   TestMarshalWelcomeShape\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.251720866Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestMarshalWelcomeShape","Output":"--- PASS: TestMarshalWelcomeShape (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.251723753Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestMarshalWelcomeShape","Elapsed":0}
+{"Time":"2026-11-01T14:44:09.251726487Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestMarshalSubscribedCarriesPeers"}
+{"Time":"2026-11-01T14:44:09.25172873Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestMarshalSubscribedCarriesPeers","Output":"=== RUN   TestMarshalSubscribedCarriesPeers\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.251731935Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestMarshalSubscribedCarriesPeers","Output":"--- PASS: TestMarshalSubscribedCarriesPeers (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.251734929Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestMarshalSubscribedCarriesPeers","Elapsed":0}
+{"Time":"2026-11-01T14:44:09.251737618Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDeliveryEchoesPayloadSemantically"}
+{"Time":"2026-11-01T14:44:09.251742016Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDeliveryEchoesPayloadSemantically","Output":"=== RUN   TestDeliveryEchoesPayloadSemantically\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.251752354Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDeliveryEchoesPayloadSemantically","Output":"--- PASS: TestDeliveryEchoesPayloadSemantically (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.25175894Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDeliveryEchoesPayloadSemantically","Elapsed":0}
+{"Time":"2026-11-01T14:44:09.25176254Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDecodeHello"}
+{"Time":"2026-11-01T14:44:09.251765114Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDecodeHello","Output":"=== RUN   TestDecodeHello\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.251806131Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDecodeHello","Output":"--- PASS: TestDecodeHello (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.25186935Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDecodeHello","Elapsed":0}
+{"Time":"2026-11-01T14:44:09.251872601Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDecodePublish"}
+{"Time":"2026-11-01T14:44:09.251875151Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDecodePublish","Output":"=== RUN   TestDecodePublish\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.251987509Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDecodePublish","Output":"--- PASS: TestDecodePublish (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.251991954Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDecodePublish","Elapsed":0}
+{"Time":"2026-11-01T14:44:09.25199688Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDecodeRejectsUnknownType"}
+{"Time":"2026-11-01T14:44:09.251999255Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDecodeRejectsUnknownType","Output":"=== RUN   TestDecodeRejectsUnknownType\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.252054905Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDecodeRejectsUnknownType","Output":"--- PASS: TestDecodeRejectsUnknownType (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.252088799Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDecodeRejectsUnknownType","Elapsed":0}
+{"Time":"2026-11-01T14:44:09.252110443Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDecodeRejectsMissingType"}
+{"Time":"2026-11-01T14:44:09.252113069Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDecodeRejectsMissingType","Output":"=== RUN   TestDecodeRejectsMissingType\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.25215396Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDecodeRejectsMissingType","Output":"--- PASS: TestDecodeRejectsMissingType (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.252170475Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDecodeRejectsMissingType","Elapsed":0}
+{"Time":"2026-11-01T14:44:09.252174631Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDecodeRejectsMissingRequiredFields"}
+{"Time":"2026-11-01T14:44:09.252177261Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDecodeRejectsMissingRequiredFields","Output":"=== RUN   TestDecodeRejectsMissingRequiredFields\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.252366836Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDecodeRejectsMissingRequiredFields","Output":"--- PASS: TestDecodeRejectsMissingRequiredFields (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.252374212Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDecodeRejectsMissingRequiredFields","Elapsed":0}
+{"Time":"2026-11-01T14:44:09.252390232Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDecodeRejectsMalformedJSON"}
+{"Time":"2026-11-01T14:44:09.252393275Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDecodeRejectsMalformedJSON","Output":"=== RUN   TestDecodeRejectsMalformedJSON\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.252441877Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDecodeRejectsMalformedJSON","Output":"--- PASS: TestDecodeRejectsMalformedJSON (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.252510563Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDecodeRejectsMalformedJSON","Elapsed":0}
+{"Time":"2026-11-01T14:44:09.252513843Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDecodeAcceptsPingWithoutFields"}
+{"Time":"2026-11-01T14:44:09.252516297Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDecodeAcceptsPingWithoutFields","Output":"=== RUN   TestDecodeAcceptsPingWithoutFields\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.252520264Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDecodeAcceptsPingWithoutFields","Output":"--- PASS: TestDecodeAcceptsPingWithoutFields (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.252523696Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestDecodeAcceptsPingWithoutFields","Elapsed":0}
+{"Time":"2026-11-01T14:44:09.252548524Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestErrorCodeConstantsMatchRust"}
+{"Time":"2026-11-01T14:44:09.252551416Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestErrorCodeConstantsMatchRust","Output":"=== RUN   TestErrorCodeConstantsMatchRust\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.252591535Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestErrorCodeConstantsMatchRust","Output":"--- PASS: TestErrorCodeConstantsMatchRust (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.25259609Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestErrorCodeConstantsMatchRust","Elapsed":0}
+{"Time":"2026-11-01T14:44:09.25262011Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestTokenBucketStartsFullAndPermitsBurst"}
+{"Time":"2026-11-01T14:44:09.252623244Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestTokenBucketStartsFullAndPermitsBurst","Output":"=== RUN   TestTokenBucketStartsFullAndPermitsBurst\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.252673088Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestTokenBucketStartsFullAndPermitsBurst","Output":"--- PASS: TestTokenBucketStartsFullAndPermitsBurst (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.252677083Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestTokenBucketStartsFullAndPermitsBurst","Elapsed":0}
+{"Time":"2026-11-01T14:44:09.252681817Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestTokenBucketRefillsAtDeclaredRate"}
+{"Time":"2026-11-01T14:44:09.252684233Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestTokenBucketRefillsAtDeclaredRate","Output":"=== RUN   TestTokenBucketRefillsAtDeclaredRate\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.252718909Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestTokenBucketRefillsAtDeclaredRate","Output":"--- PASS: TestTokenBucketRefillsAtDeclaredRate (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.252725329Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestTokenBucketRefillsAtDeclaredRate","Elapsed":0}
+{"Time":"2026-11-01T14:44:09.252746124Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestTokenBucketNeverRefillsBeyondCapacity"}
+{"Time":"2026-11-01T14:44:09.252749135Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestTokenBucketNeverRefillsBeyondCapacity","Output":"=== RUN   TestTokenBucketNeverRefillsBeyondCapacity\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.252827926Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestTokenBucketNeverRefillsBeyondCapacity","Output":"--- PASS: TestTokenBucketNeverRefillsBeyondCapacity (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.252831398Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestTokenBucketNeverRefillsBeyondCapacity","Elapsed":0}
+{"Time":"2026-11-01T14:44:09.252834405Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestTokenBucketClockGoingBackwardsDoesNotRefill"}
+{"Time":"2026-11-01T14:44:09.252837101Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestTokenBucketClockGoingBackwardsDoesNotRefill","Output":"=== RUN   TestTokenBucketClockGoingBackwardsDoesNotRefill\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.252841351Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestTokenBucketClockGoingBackwardsDoesNotRefill","Output":"--- PASS: TestTokenBucketClockGoingBackwardsDoesNotRefill (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.252856972Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestTokenBucketClockGoingBackwardsDoesNotRefill","Elapsed":0}
+{"Time":"2026-11-01T14:44:09.252860823Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestTokenBucketZeroCostAlwaysSucceeds"}
+{"Time":"2026-11-01T14:44:09.25286388Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestTokenBucketZeroCostAlwaysSucceeds","Output":"=== RUN   TestTokenBucketZeroCostAlwaysSucceeds\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.252896251Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestTokenBucketZeroCostAlwaysSucceeds","Output":"--- PASS: TestTokenBucketZeroCostAlwaysSucceeds (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.252900521Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestTokenBucketZeroCostAlwaysSucceeds","Elapsed":0}
+{"Time":"2026-11-01T14:44:09.252923423Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestTokenBucketConcurrentAcquireIsExact"}
+{"Time":"2026-11-01T14:44:09.252926542Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestTokenBucketConcurrentAcquireIsExact","Output":"=== RUN   TestTokenBucketConcurrentAcquireIsExact\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.257216553Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestTokenBucketConcurrentAcquireIsExact","Output":"--- PASS: TestTokenBucketConcurrentAcquireIsExact (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.257246261Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestTokenBucketConcurrentAcquireIsExact","Elapsed":0}
+{"Time":"2026-11-01T14:44:09.257251689Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestUUIDv4FormatAndVersion"}
+{"Time":"2026-11-01T14:44:09.257254925Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestUUIDv4FormatAndVersion","Output":"=== RUN   TestUUIDv4FormatAndVersion\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.261289792Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestUUIDv4FormatAndVersion","Output":"--- PASS: TestUUIDv4FormatAndVersion (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.261320232Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestUUIDv4FormatAndVersion","Elapsed":0}
+{"Time":"2026-11-01T14:44:09.261325591Z","Action":"run","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestUUIDv4Uniqueness"}
+{"Time":"2026-11-01T14:44:09.261328712Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestUUIDv4Uniqueness","Output":"=== RUN   TestUUIDv4Uniqueness\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.301706506Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestUUIDv4Uniqueness","Output":"--- PASS: TestUUIDv4Uniqueness (0.04s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:09.301785983Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Test":"TestUUIDv4Uniqueness","Elapsed":0.04}
+{"Time":"2026-11-01T14:44:09.301826133Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:10.304323496Z","Action":"output","Package":"github.com/voxdesk/signal-go/internal/signal","Output":"ok  \tgithub.com/voxdesk/signal-go/internal/signal\t5.863s\n"}
+{"Time":"2026-11-01T14:44:10.304369419Z","Action":"pass","Package":"github.com/voxdesk/signal-go/internal/signal","Elapsed":5.864}

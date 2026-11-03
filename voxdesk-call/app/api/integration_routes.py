@@ -25,7 +25,7 @@ out here, not because it happened to be on the row.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -431,7 +431,7 @@ async def upsert_integration(
     integration.field_mappings = mappings
     integration.subscribed_events = events
     integration.share_transcripts = body.share_transcripts
-    integration.updated_at = datetime.utcnow()
+    integration.updated_at = datetime.now(timezone.utc)
 
     credentials = _credentials_for(provider_type, body, creating)
     if credentials is not None:
@@ -524,7 +524,7 @@ def _store_credentials(
 
     integration.credentials_encrypted = envelope
     integration.credentials_key_id = key_id
-    integration.credentials_updated_at = datetime.utcnow()
+    integration.credentials_updated_at = datetime.now(timezone.utc)
 
 
 def _validated_config(

@@ -325,7 +325,7 @@ async def _upsert_connection_and_integration(
             key_ring=key_ring,
         )
 
-    now_naive = datetime.utcnow()
+    now_naive = datetime.now(timezone.utc)
     now_utc = _now()
 
     integration = (

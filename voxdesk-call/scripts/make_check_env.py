@@ -60,7 +60,7 @@ def _ensure_git_exclude(repo_root: Path, pattern: str) -> None:
             fh.write(f"{pattern}\n")
 
 
-def generate_check_env(out_path: Path, *, seed_companion_env_files: bool = True) -> dict[str, str]:
+def generate_check_env(out_path: Path, *, seed_companion_env_files: bool = False) -> dict[str, str]:
     pg_password = secrets.token_hex(16)
     secret_key = secrets.token_hex(32)
     jwt_secret = secrets.token_hex(32)
@@ -98,6 +98,7 @@ def generate_check_env(out_path: Path, *, seed_companion_env_files: bool = True)
         "MEDIA_ENGINE_TIMEOUT_SECONDS": "1.5",
         "MEDIA_ENGINE_STEER": "off",
         "CONDUCTOR_WEBHOOK_SECRET": conductor_secret,
+        "TELEPHONY_WEBHOOK_SECRET": secrets.token_hex(24),
         "GRAFANA_ADMIN_USER": "admin",
         "GRAFANA_ADMIN_PASSWORD": grafana_password,
         "METRICS_ENABLED": "true",
@@ -187,9 +188,14 @@ def main(argv: list[str] | None = None) -> int:
         help="Output path for generated env file (default: .env.check).",
     )
     parser.add_argument(
+        "--companion",
+        action="store_true",
+        help="Also write .env and .env.staging. Off by default: those files are loaded by pydantic-settings and break pytest.",
+    )
+    parser.add_argument(
         "--no-companion",
         action="store_true",
-        help="Do not create fallback .env / .env.staging when absent.",
+        help="Deprecated no-op; companions are off by default.",
     )
     args = parser.parse_args(argv)
     out_path = Path(args.out)
@@ -197,7 +203,7 @@ def main(argv: list[str] | None = None) -> int:
         out_path = REPO_ROOT / out_path
     values = generate_check_env(
         out_path,
-        seed_companion_env_files=not args.no_companion,
+        seed_companion_env_files=bool(args.companion) and not args.no_companion,
     )
     mode_oct = oct(out_path.stat().st_mode & 0o777)
     print(

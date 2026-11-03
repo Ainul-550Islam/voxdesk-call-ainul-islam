@@ -123,7 +123,7 @@ async def find_or_create_thread(
         return thread
     call = Call(
         tenant_id=tenant.id,
-        call_sid=f"inbox-{int(datetime.utcnow().timestamp()*1000)}",
+        call_sid=f"inbox-{int(datetime.now(timezone.utc).timestamp()*1000)}",
         from_number=customer,
         to_number=tenant.twilio_number,
         status=CallStatus.IN_PROGRESS,

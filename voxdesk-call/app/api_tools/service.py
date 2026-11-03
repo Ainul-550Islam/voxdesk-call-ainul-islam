@@ -261,7 +261,7 @@ async def execute(
         row.status, row.result_metadata, row.completed_at = (
             "succeeded",
             {"status_code": response.status_code, "data": safe_data},
-            __import__("datetime").datetime.utcnow(),
+            __import__("datetime").datetime.now(__import__("datetime").timezone.utc),
         )
         await audit_event(
             session,

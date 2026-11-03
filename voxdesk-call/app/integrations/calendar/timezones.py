@@ -286,7 +286,7 @@ def now_utc() -> datetime:
     """
     The current instant, aware.
 
-    Exists so that no scheduling code ever calls `datetime.utcnow()`, which
+    Exists so that no scheduling code ever calls `datetime.now(timezone.utc)`, which
     returns a *naive* value that then compares wrongly against aware ones. The
     pre-STEP-6 reminder scheduler did exactly that and silently dropped every
     reminder due within five hours.

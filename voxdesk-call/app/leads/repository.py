@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -269,7 +269,7 @@ async def get_task(
 
 
 def touch(identity: LeadIdentity, moment: datetime | None = None) -> None:
-    identity.updated_at = moment or datetime.utcnow()
+    identity.updated_at = moment or datetime.now(timezone.utc)
 
 
 async def latest_score(

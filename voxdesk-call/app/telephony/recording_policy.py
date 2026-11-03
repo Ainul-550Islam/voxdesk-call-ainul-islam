@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import html
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, select
@@ -66,7 +66,7 @@ class RecordingPolicy(Base):
         JSON, default=lambda: ["owner", "admin"], nullable=False
     )
     redact_pii: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     def as_dict(self) -> dict[str, Any]:
         agent_id = None
@@ -287,7 +287,7 @@ async def save(
     row.legal_hold = bool(legal_hold)
     row.raw_access_roles = [r for r in (raw_access_roles or ["owner", "admin"]) if isinstance(r, str)]
     row.redact_pii = bool(redact_pii)
-    row.updated_at = datetime.utcnow()
+    row.updated_at = datetime.now(timezone.utc)
     await session.flush()
 
     if not row.redact_pii:
@@ -319,7 +319,7 @@ async def get_owned(
 
 
 def deadline_from(days: int, *, now: datetime | None = None) -> datetime:
-    base = now or datetime.utcnow()
+    base = now or datetime.now(timezone.utc)
     return base + timedelta(days=max(1, int(days)))
 
 

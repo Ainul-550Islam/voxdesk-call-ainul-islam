@@ -50,7 +50,7 @@ def is_expired(
 
 def _as_utc(value: datetime) -> datetime:
     if value.tzinfo is None:
-        # Naive datetimes in this codebase are UTC (datetime.utcnow).
+        # Naive datetimes in this codebase are UTC (datetime.now(timezone.utc)).
         return value.replace(tzinfo=timezone.utc)
     return value.astimezone(timezone.utc)
 

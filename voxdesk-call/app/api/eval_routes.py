@@ -8,7 +8,7 @@ Results omit prompt and model text.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field
@@ -145,7 +145,7 @@ async def create_run(
             actor_user_id=ctx.user_id,
             result=result,
             case_limit=MAX_CASES,
-            finished_at=datetime.utcnow(),
+            finished_at=datetime.now(timezone.utc),
         )
         session.add(run)
         await emit(
@@ -203,7 +203,7 @@ async def cancel_run(
             raise GovernanceError("A completed evaluation cannot be cancelled")
         run.cancel_requested = True
         run.status = "cancelled"
-        run.finished_at = datetime.utcnow()
+        run.finished_at = datetime.now(timezone.utc)
         await session.commit()
     except HierarchyError as exc:
         raise to_http(exc) from None

@@ -20,6 +20,7 @@ import {
   isPublicPath,
   resolveRouteBoundary,
 } from '../../../app/router';
+import { getAccessToken, clearSession } from '../../../lib/session';
 import { ContactSalesPage } from '../../../pages/public/ContactSalesPage';
 import { LoginPage } from '../../../pages/public/LoginPage';
 import { PublicWidget } from '../PublicWidget';
@@ -40,6 +41,7 @@ const clinicAppearance = {
 describe('Prompt 5 — Public Website + Auth Boundary + Public Key + Web Widget', () => {
   beforeEach(() => {
     window.localStorage.clear();
+    clearSession();
   });
 
   it('enforces public vs protected route boundaries and prevents open redirects', () => {
@@ -456,9 +458,8 @@ describe('Prompt 5 — Public Website + Auth Boundary + Public Key + Web Widget'
     await waitFor(() => {
       expect(onLoginSuccess).toHaveBeenCalledWith('/dashboard/agents');
     });
-    expect(window.localStorage.getItem('voxdesk_access_token')).toBe(
-      'jwt_real_token_123',
-    );
+    expect(getAccessToken()).toBe('jwt_real_token_123');
+    expect(window.localStorage.getItem('voxdesk_access_token')).toBeNull();
 
     unmount();
 

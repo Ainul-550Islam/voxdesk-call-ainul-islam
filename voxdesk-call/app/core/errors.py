@@ -273,7 +273,12 @@ async def _invalid_request_value_handler(request: Request, exc: Exception) -> JS
     server errors, and they must carry a request id like every other refusal.
     """
     rid = request_id_from(request)
-    log.warning("invalid_request_value", request_id=rid, error=type(exc).__name__)
+    log.warning(
+        "invalid_request_value",
+        request_id=rid,
+        error=type(exc).__name__,
+        message=str(exc)[:240],
+    )
     return _error_response(422, "invalid_request_value", "Invalid request value", rid)
 
 

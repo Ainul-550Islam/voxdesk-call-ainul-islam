@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import structlog
 from sqlalchemy import delete, func, select, update
@@ -224,7 +224,7 @@ async def process_document(
     """
     tenant_id = document.tenant_id
     document.status = DocumentStatus.PROCESSING
-    document.processing_started_at = datetime.utcnow()
+    document.processing_started_at = datetime.now(timezone.utc)
     document.error_message = None
     if bump_version:
         # A new version means the old chunks are superseded. Retrieval filters
@@ -324,7 +324,7 @@ async def process_document(
     document.token_estimate = total_tokens
     document.embedding_model = embedder.model
     document.embedding_dimensions = embedder.dimensions
-    document.ingested_at = datetime.utcnow()
+    document.ingested_at = datetime.now(timezone.utc)
     document.processing_started_at = None
     document.doc_metadata = {
         **(document.doc_metadata or {}),
@@ -444,7 +444,7 @@ async def reap_stuck_documents(
     PROCESSING forever" is violated by any deploy that restarts a pod at the
     wrong moment.
     """
-    cutoff = datetime.utcnow() - timedelta(seconds=older_than_seconds)
+    cutoff = datetime.now(timezone.utc) - timedelta(seconds=older_than_seconds)
     # A single conditional UPDATE rather than load-modify-commit: a stale copy
     # of the row in the session's identity map would make the mutation a no-op
     # (the same class of bug the reminder reaper had). The UPDATE writes the
@@ -500,7 +500,7 @@ async def claim_uploaded_document(
     twice. A single conditional UPDATE arbitrates the race, so exactly one
     worker embeds each version.
     """
-    now = now or datetime.utcnow()
+    now = now or datetime.now(timezone.utc)
     result = await session.execute(
         update(KnowledgeDocument)
         .where(

@@ -7,7 +7,7 @@ import hashlib
 import io
 import json
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -120,5 +120,5 @@ async def begin_import_job(
 
 def finish_job(job: DurableJob, result: dict) -> None:
     job.status = "completed"
-    job.completed_at = datetime.utcnow()
+    job.completed_at = datetime.now(timezone.utc)
     job.payload = {"status": "completed", "result": result}

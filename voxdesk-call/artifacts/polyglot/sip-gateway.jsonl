@@ -1,0 +1,265 @@
+{"Time":"2026-11-01T14:44:20.782960756Z","Action":"start","Package":"voxdesk/sip-gateway/cmd/sip-gateway"}
+{"Time":"2026-11-01T14:44:20.797236084Z","Action":"run","Package":"voxdesk/sip-gateway/cmd/sip-gateway","Test":"TestRunHealthcheckReportsALiveGateway"}
+{"Time":"2026-11-01T14:44:20.797296478Z","Action":"output","Package":"voxdesk/sip-gateway/cmd/sip-gateway","Test":"TestRunHealthcheckReportsALiveGateway","Output":"=== RUN   TestRunHealthcheckReportsALiveGateway\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:20.798622717Z","Action":"output","Package":"voxdesk/sip-gateway/cmd/sip-gateway","Test":"TestRunHealthcheckReportsALiveGateway","Output":"--- PASS: TestRunHealthcheckReportsALiveGateway (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:20.798696759Z","Action":"pass","Package":"voxdesk/sip-gateway/cmd/sip-gateway","Test":"TestRunHealthcheckReportsALiveGateway","Elapsed":0}
+{"Time":"2026-11-01T14:44:20.798731588Z","Action":"run","Package":"voxdesk/sip-gateway/cmd/sip-gateway","Test":"TestRunHealthcheckReportsADeadGateway"}
+{"Time":"2026-11-01T14:44:20.798735519Z","Action":"output","Package":"voxdesk/sip-gateway/cmd/sip-gateway","Test":"TestRunHealthcheckReportsADeadGateway","Output":"=== RUN   TestRunHealthcheckReportsADeadGateway\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:20.79940701Z","Action":"output","Package":"voxdesk/sip-gateway/cmd/sip-gateway","Test":"TestRunHealthcheckReportsADeadGateway","Output":"the health check got 503 Service Unavailable from http://127.0.0.1:34129/healthz\n"}
+{"Time":"2026-11-01T14:44:20.799554442Z","Action":"output","Package":"voxdesk/sip-gateway/cmd/sip-gateway","Test":"TestRunHealthcheckReportsADeadGateway","Output":"--- PASS: TestRunHealthcheckReportsADeadGateway (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:20.799582667Z","Action":"pass","Package":"voxdesk/sip-gateway/cmd/sip-gateway","Test":"TestRunHealthcheckReportsADeadGateway","Elapsed":0}
+{"Time":"2026-11-01T14:44:20.799669082Z","Action":"run","Package":"voxdesk/sip-gateway/cmd/sip-gateway","Test":"TestRunHealthcheckReportsAnUnreachableGateway"}
+{"Time":"2026-11-01T14:44:20.799674358Z","Action":"output","Package":"voxdesk/sip-gateway/cmd/sip-gateway","Test":"TestRunHealthcheckReportsAnUnreachableGateway","Output":"=== RUN   TestRunHealthcheckReportsAnUnreachableGateway\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:20.799989104Z","Action":"output","Package":"voxdesk/sip-gateway/cmd/sip-gateway","Test":"TestRunHealthcheckReportsAnUnreachableGateway","Output":"the health check could not reach http://127.0.0.1:1/healthz: Get \"http://127.0.0.1:1/healthz\": dial tcp 127.0.0.1:1: connect: connection refused\n"}
+{"Time":"2026-11-01T14:44:20.800062784Z","Action":"output","Package":"voxdesk/sip-gateway/cmd/sip-gateway","Test":"TestRunHealthcheckReportsAnUnreachableGateway","Output":"--- PASS: TestRunHealthcheckReportsAnUnreachableGateway (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:20.800088042Z","Action":"pass","Package":"voxdesk/sip-gateway/cmd/sip-gateway","Test":"TestRunHealthcheckReportsAnUnreachableGateway","Elapsed":0}
+{"Time":"2026-11-01T14:44:20.800177494Z","Action":"run","Package":"voxdesk/sip-gateway/cmd/sip-gateway","Test":"TestRunHealthcheckAcceptsAnAddressWithoutAScheme"}
+{"Time":"2026-11-01T14:44:20.800185214Z","Action":"output","Package":"voxdesk/sip-gateway/cmd/sip-gateway","Test":"TestRunHealthcheckAcceptsAnAddressWithoutAScheme","Output":"=== RUN   TestRunHealthcheckAcceptsAnAddressWithoutAScheme\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:20.801489422Z","Action":"output","Package":"voxdesk/sip-gateway/cmd/sip-gateway","Test":"TestRunHealthcheckAcceptsAnAddressWithoutAScheme","Output":"--- PASS: TestRunHealthcheckAcceptsAnAddressWithoutAScheme (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:20.801557867Z","Action":"pass","Package":"voxdesk/sip-gateway/cmd/sip-gateway","Test":"TestRunHealthcheckAcceptsAnAddressWithoutAScheme","Elapsed":0}
+{"Time":"2026-11-01T14:44:20.801642958Z","Action":"output","Package":"voxdesk/sip-gateway/cmd/sip-gateway","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:21.090472903Z","Action":"start","Package":"voxdesk/sip-gateway/internal/api"}
+{"Time":"2026-11-01T14:44:21.104084041Z","Action":"run","Package":"voxdesk/sip-gateway/internal/api","Test":"TestRoutesRequireTheBearerToken"}
+{"Time":"2026-11-01T14:44:21.104158353Z","Action":"output","Package":"voxdesk/sip-gateway/internal/api","Test":"TestRoutesRequireTheBearerToken","Output":"=== RUN   TestRoutesRequireTheBearerToken\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:21.104609826Z","Action":"output","Package":"voxdesk/sip-gateway/internal/api","Test":"TestRoutesRequireTheBearerToken","Output":"--- PASS: TestRoutesRequireTheBearerToken (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:21.10462845Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/api","Test":"TestRoutesRequireTheBearerToken","Elapsed":0}
+{"Time":"2026-11-01T14:44:21.104636924Z","Action":"run","Package":"voxdesk/sip-gateway/internal/api","Test":"TestProbesAreOpen"}
+{"Time":"2026-11-01T14:44:21.104640517Z","Action":"output","Package":"voxdesk/sip-gateway/internal/api","Test":"TestProbesAreOpen","Output":"=== RUN   TestProbesAreOpen\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:21.104869043Z","Action":"output","Package":"voxdesk/sip-gateway/internal/api","Test":"TestProbesAreOpen","Output":"--- PASS: TestProbesAreOpen (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:21.104874971Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/api","Test":"TestProbesAreOpen","Elapsed":0}
+{"Time":"2026-11-01T14:44:21.104910141Z","Action":"run","Package":"voxdesk/sip-gateway/internal/api","Test":"TestReadyReportsNotReady"}
+{"Time":"2026-11-01T14:44:21.1049139Z","Action":"output","Package":"voxdesk/sip-gateway/internal/api","Test":"TestReadyReportsNotReady","Output":"=== RUN   TestReadyReportsNotReady\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:21.10510482Z","Action":"output","Package":"voxdesk/sip-gateway/internal/api","Test":"TestReadyReportsNotReady","Output":"--- PASS: TestReadyReportsNotReady (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:21.105110912Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/api","Test":"TestReadyReportsNotReady","Elapsed":0}
+{"Time":"2026-11-01T14:44:21.105129468Z","Action":"run","Package":"voxdesk/sip-gateway/internal/api","Test":"TestOriginateRequiresADestination"}
+{"Time":"2026-11-01T14:44:21.105133486Z","Action":"output","Package":"voxdesk/sip-gateway/internal/api","Test":"TestOriginateRequiresADestination","Output":"=== RUN   TestOriginateRequiresADestination\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:21.105424622Z","Action":"output","Package":"voxdesk/sip-gateway/internal/api","Test":"TestOriginateRequiresADestination","Output":"--- PASS: TestOriginateRequiresADestination (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:21.105430657Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/api","Test":"TestOriginateRequiresADestination","Elapsed":0}
+{"Time":"2026-11-01T14:44:21.105435676Z","Action":"run","Package":"voxdesk/sip-gateway/internal/api","Test":"TestUnknownCallIsNotFound"}
+{"Time":"2026-11-01T14:44:21.105438834Z","Action":"output","Package":"voxdesk/sip-gateway/internal/api","Test":"TestUnknownCallIsNotFound","Output":"=== RUN   TestUnknownCallIsNotFound\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:21.105594851Z","Action":"output","Package":"voxdesk/sip-gateway/internal/api","Test":"TestUnknownCallIsNotFound","Output":"--- PASS: TestUnknownCallIsNotFound (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:21.10561744Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/api","Test":"TestUnknownCallIsNotFound","Elapsed":0}
+{"Time":"2026-11-01T14:44:21.105622108Z","Action":"run","Package":"voxdesk/sip-gateway/internal/api","Test":"TestMethodNotAllowed"}
+{"Time":"2026-11-01T14:44:21.105624863Z","Action":"output","Package":"voxdesk/sip-gateway/internal/api","Test":"TestMethodNotAllowed","Output":"=== RUN   TestMethodNotAllowed\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:21.105771389Z","Action":"output","Package":"voxdesk/sip-gateway/internal/api","Test":"TestMethodNotAllowed","Output":"--- PASS: TestMethodNotAllowed (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:21.10578607Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/api","Test":"TestMethodNotAllowed","Elapsed":0}
+{"Time":"2026-11-01T14:44:21.105806512Z","Action":"output","Package":"voxdesk/sip-gateway/internal/api","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:21.803383021Z","Action":"output","Package":"voxdesk/sip-gateway/cmd/sip-gateway","Output":"ok  \tvoxdesk/sip-gateway/cmd/sip-gateway\t1.020s\n"}
+{"Time":"2026-11-01T14:44:21.803429349Z","Action":"pass","Package":"voxdesk/sip-gateway/cmd/sip-gateway","Elapsed":1.02}
+{"Time":"2026-11-01T14:44:22.107394326Z","Action":"output","Package":"voxdesk/sip-gateway/internal/api","Output":"ok  \tvoxdesk/sip-gateway/internal/api\t1.017s\n"}
+{"Time":"2026-11-01T14:44:22.1074387Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/api","Elapsed":1.017}
+{"Time":"2026-11-01T14:44:22.31700081Z","Action":"start","Package":"voxdesk/sip-gateway/internal/bridge"}
+{"Time":"2026-11-01T14:44:22.331225108Z","Action":"run","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestSessionForwardsMediaToThePeer"}
+{"Time":"2026-11-01T14:44:22.331284718Z","Action":"output","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestSessionForwardsMediaToThePeer","Output":"=== RUN   TestSessionForwardsMediaToThePeer\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:22.336624726Z","Action":"output","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestSessionForwardsMediaToThePeer","Output":"--- PASS: TestSessionForwardsMediaToThePeer (0.01s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:22.336650659Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestSessionForwardsMediaToThePeer","Elapsed":0.01}
+{"Time":"2026-11-01T14:44:22.336657482Z","Action":"run","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestSessionForwardsDTMFToThePeer"}
+{"Time":"2026-11-01T14:44:22.336660291Z","Action":"output","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestSessionForwardsDTMFToThePeer","Output":"=== RUN   TestSessionForwardsDTMFToThePeer\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:22.344353285Z","Action":"output","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestSessionForwardsDTMFToThePeer","Output":"--- PASS: TestSessionForwardsDTMFToThePeer (0.01s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:22.344377736Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestSessionForwardsDTMFToThePeer","Elapsed":0.01}
+{"Time":"2026-11-01T14:44:22.344383031Z","Action":"run","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestSessionForwardsInboundDTMF"}
+{"Time":"2026-11-01T14:44:22.34438654Z","Action":"output","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestSessionForwardsInboundDTMF","Output":"=== RUN   TestSessionForwardsInboundDTMF\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:22.344396423Z","Action":"output","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestSessionForwardsInboundDTMF","Output":"--- PASS: TestSessionForwardsInboundDTMF (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:22.34439964Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestSessionForwardsInboundDTMF","Elapsed":0}
+{"Time":"2026-11-01T14:44:22.34440282Z","Action":"run","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestSessionIgnoresAnEmptyDigit"}
+{"Time":"2026-11-01T14:44:22.344405221Z","Action":"output","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestSessionIgnoresAnEmptyDigit","Output":"=== RUN   TestSessionIgnoresAnEmptyDigit\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:22.344432932Z","Action":"output","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestSessionIgnoresAnEmptyDigit","Output":"--- PASS: TestSessionIgnoresAnEmptyDigit (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:22.34443583Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestSessionIgnoresAnEmptyDigit","Elapsed":0}
+{"Time":"2026-11-01T14:44:22.344446072Z","Action":"run","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestSessionForwardsInboundAudio"}
+{"Time":"2026-11-01T14:44:22.344448934Z","Action":"output","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestSessionForwardsInboundAudio","Output":"=== RUN   TestSessionForwardsInboundAudio\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:22.344454493Z","Action":"output","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestSessionForwardsInboundAudio","Output":"--- PASS: TestSessionForwardsInboundAudio (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:22.344457822Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestSessionForwardsInboundAudio","Elapsed":0}
+{"Time":"2026-11-01T14:44:22.344461188Z","Action":"run","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestSessionCloseIsIdempotent"}
+{"Time":"2026-11-01T14:44:22.344537376Z","Action":"output","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestSessionCloseIsIdempotent","Output":"=== RUN   TestSessionCloseIsIdempotent\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:22.34454548Z","Action":"output","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestSessionCloseIsIdempotent","Output":"--- PASS: TestSessionCloseIsIdempotent (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:22.344549306Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestSessionCloseIsIdempotent","Elapsed":0}
+{"Time":"2026-11-01T14:44:22.344552644Z","Action":"run","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestWSBridgeSendsTheStartMessage"}
+{"Time":"2026-11-01T14:44:22.344555511Z","Action":"output","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestWSBridgeSendsTheStartMessage","Output":"=== RUN   TestWSBridgeSendsTheStartMessage\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:22.344559285Z","Action":"output","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestWSBridgeSendsTheStartMessage","Output":"--- PASS: TestWSBridgeSendsTheStartMessage (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:22.344562186Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestWSBridgeSendsTheStartMessage","Elapsed":0}
+{"Time":"2026-11-01T14:44:22.344564868Z","Action":"run","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestWSBridgeSendsMediaAndDTMF"}
+{"Time":"2026-11-01T14:44:22.344570921Z","Action":"output","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestWSBridgeSendsMediaAndDTMF","Output":"=== RUN   TestWSBridgeSendsMediaAndDTMF\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:22.35012316Z","Action":"output","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestWSBridgeSendsMediaAndDTMF","Output":"--- PASS: TestWSBridgeSendsMediaAndDTMF (0.01s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:22.350228374Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestWSBridgeSendsMediaAndDTMF","Elapsed":0.01}
+{"Time":"2026-11-01T14:44:22.350239301Z","Action":"run","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestWSBridgeReceivesMedia"}
+{"Time":"2026-11-01T14:44:22.35024426Z","Action":"output","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestWSBridgeReceivesMedia","Output":"=== RUN   TestWSBridgeReceivesMedia\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:22.350970694Z","Action":"output","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestWSBridgeReceivesMedia","Output":"--- PASS: TestWSBridgeReceivesMedia (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:22.350993942Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestWSBridgeReceivesMedia","Elapsed":0}
+{"Time":"2026-11-01T14:44:22.35100041Z","Action":"run","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestSessionTokenIsDeterministicAndBoundToTheCall"}
+{"Time":"2026-11-01T14:44:22.351004296Z","Action":"output","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestSessionTokenIsDeterministicAndBoundToTheCall","Output":"=== RUN   TestSessionTokenIsDeterministicAndBoundToTheCall\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:22.351016265Z","Action":"output","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestSessionTokenIsDeterministicAndBoundToTheCall","Output":"--- PASS: TestSessionTokenIsDeterministicAndBoundToTheCall (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:22.351019922Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/bridge","Test":"TestSessionTokenIsDeterministicAndBoundToTheCall","Elapsed":0}
+{"Time":"2026-11-01T14:44:22.351032803Z","Action":"output","Package":"voxdesk/sip-gateway/internal/bridge","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:22.561857918Z","Action":"start","Package":"voxdesk/sip-gateway/internal/config"}
+{"Time":"2026-11-01T14:44:22.56189599Z","Action":"output","Package":"voxdesk/sip-gateway/internal/config","Output":"?   \tvoxdesk/sip-gateway/internal/config\t[no test files]\n"}
+{"Time":"2026-11-01T14:44:22.561905101Z","Action":"skip","Package":"voxdesk/sip-gateway/internal/config","Elapsed":0}
+{"Time":"2026-11-01T14:44:22.581928813Z","Action":"start","Package":"voxdesk/sip-gateway/internal/metrics"}
+{"Time":"2026-11-01T14:44:22.596423205Z","Action":"run","Package":"voxdesk/sip-gateway/internal/metrics","Test":"TestRegistryRendersTheExposition"}
+{"Time":"2026-11-01T14:44:22.596463325Z","Action":"output","Package":"voxdesk/sip-gateway/internal/metrics","Test":"TestRegistryRendersTheExposition","Output":"=== RUN   TestRegistryRendersTheExposition\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:22.596949521Z","Action":"output","Package":"voxdesk/sip-gateway/internal/metrics","Test":"TestRegistryRendersTheExposition","Output":"--- PASS: TestRegistryRendersTheExposition (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:22.596978101Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/metrics","Test":"TestRegistryRendersTheExposition","Elapsed":0}
+{"Time":"2026-11-01T14:44:22.597006279Z","Action":"run","Package":"voxdesk/sip-gateway/internal/metrics","Test":"TestRegistryGaugeAndCounterSemantics"}
+{"Time":"2026-11-01T14:44:22.597010323Z","Action":"output","Package":"voxdesk/sip-gateway/internal/metrics","Test":"TestRegistryGaugeAndCounterSemantics","Output":"=== RUN   TestRegistryGaugeAndCounterSemantics\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:22.597555758Z","Action":"output","Package":"voxdesk/sip-gateway/internal/metrics","Test":"TestRegistryGaugeAndCounterSemantics","Output":"--- PASS: TestRegistryGaugeAndCounterSemantics (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:22.597595094Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/metrics","Test":"TestRegistryGaugeAndCounterSemantics","Elapsed":0}
+{"Time":"2026-11-01T14:44:22.597626362Z","Action":"run","Package":"voxdesk/sip-gateway/internal/metrics","Test":"TestRegistriesAreIndependent"}
+{"Time":"2026-11-01T14:44:22.59763106Z","Action":"output","Package":"voxdesk/sip-gateway/internal/metrics","Test":"TestRegistriesAreIndependent","Output":"=== RUN   TestRegistriesAreIndependent\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:22.597821859Z","Action":"output","Package":"voxdesk/sip-gateway/internal/metrics","Test":"TestRegistriesAreIndependent","Output":"--- PASS: TestRegistriesAreIndependent (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:22.597843249Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/metrics","Test":"TestRegistriesAreIndependent","Elapsed":0}
+{"Time":"2026-11-01T14:44:22.597850442Z","Action":"output","Package":"voxdesk/sip-gateway/internal/metrics","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:23.352412153Z","Action":"output","Package":"voxdesk/sip-gateway/internal/bridge","Output":"ok  \tvoxdesk/sip-gateway/internal/bridge\t1.035s\n"}
+{"Time":"2026-11-01T14:44:23.352457149Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/bridge","Elapsed":1.035}
+{"Time":"2026-11-01T14:44:23.353628534Z","Action":"start","Package":"voxdesk/sip-gateway/internal/rtp"}
+{"Time":"2026-11-01T14:44:23.363517863Z","Action":"run","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestSessionSendsAndReceivesRTP"}
+{"Time":"2026-11-01T14:44:23.363555872Z","Action":"output","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestSessionSendsAndReceivesRTP","Output":"=== RUN   TestSessionSendsAndReceivesRTP\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:23.36416122Z","Action":"output","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestSessionSendsAndReceivesRTP","Output":"--- PASS: TestSessionSendsAndReceivesRTP (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:23.364198953Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestSessionSendsAndReceivesRTP","Elapsed":0}
+{"Time":"2026-11-01T14:44:23.36420586Z","Action":"run","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestSessionDeliversAndReceivesDTMF"}
+{"Time":"2026-11-01T14:44:23.364210929Z","Action":"output","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestSessionDeliversAndReceivesDTMF","Output":"=== RUN   TestSessionDeliversAndReceivesDTMF\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:23.395653236Z","Action":"output","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestSessionDeliversAndReceivesDTMF","Output":"--- PASS: TestSessionDeliversAndReceivesDTMF (0.03s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:23.395679969Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestSessionDeliversAndReceivesDTMF","Elapsed":0.03}
+{"Time":"2026-11-01T14:44:23.395754275Z","Action":"run","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestSessionRefusesANonPrintableDigit"}
+{"Time":"2026-11-01T14:44:23.395758233Z","Action":"output","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestSessionRefusesANonPrintableDigit","Output":"=== RUN   TestSessionRefusesANonPrintableDigit\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:23.395943471Z","Action":"output","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestSessionRefusesANonPrintableDigit","Output":"--- PASS: TestSessionRefusesANonPrintableDigit (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:23.395997303Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestSessionRefusesANonPrintableDigit","Elapsed":0}
+{"Time":"2026-11-01T14:44:23.396004443Z","Action":"run","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestSessionPutsLatePacketsBackInOrder"}
+{"Time":"2026-11-01T14:44:23.396007614Z","Action":"output","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestSessionPutsLatePacketsBackInOrder","Output":"=== RUN   TestSessionPutsLatePacketsBackInOrder\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:23.396171976Z","Action":"output","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestSessionPutsLatePacketsBackInOrder","Output":"--- PASS: TestSessionPutsLatePacketsBackInOrder (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:23.396179856Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestSessionPutsLatePacketsBackInOrder","Elapsed":0}
+{"Time":"2026-11-01T14:44:23.396184705Z","Action":"run","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestJitterBufferHoldsAnEarlyPacketUntilTheGapIsFilled"}
+{"Time":"2026-11-01T14:44:23.396188159Z","Action":"output","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestJitterBufferHoldsAnEarlyPacketUntilTheGapIsFilled","Output":"=== RUN   TestJitterBufferHoldsAnEarlyPacketUntilTheGapIsFilled\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:23.3961939Z","Action":"output","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestJitterBufferHoldsAnEarlyPacketUntilTheGapIsFilled","Output":"--- PASS: TestJitterBufferHoldsAnEarlyPacketUntilTheGapIsFilled (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:23.396198118Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestJitterBufferHoldsAnEarlyPacketUntilTheGapIsFilled","Elapsed":0}
+{"Time":"2026-11-01T14:44:23.396204Z","Action":"run","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestJitterBufferReleasesTheOldestPacketWhenTheHoldTimeIsOver"}
+{"Time":"2026-11-01T14:44:23.39621712Z","Action":"output","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestJitterBufferReleasesTheOldestPacketWhenTheHoldTimeIsOver","Output":"=== RUN   TestJitterBufferReleasesTheOldestPacketWhenTheHoldTimeIsOver\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:23.396222738Z","Action":"output","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestJitterBufferReleasesTheOldestPacketWhenTheHoldTimeIsOver","Output":"--- PASS: TestJitterBufferReleasesTheOldestPacketWhenTheHoldTimeIsOver (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:23.396227272Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestJitterBufferReleasesTheOldestPacketWhenTheHoldTimeIsOver","Elapsed":0}
+{"Time":"2026-11-01T14:44:23.396234029Z","Action":"run","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestPortPoolLeasesAndReleasesPorts"}
+{"Time":"2026-11-01T14:44:23.396237813Z","Action":"output","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestPortPoolLeasesAndReleasesPorts","Output":"=== RUN   TestPortPoolLeasesAndReleasesPorts\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:23.396300202Z","Action":"output","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestPortPoolLeasesAndReleasesPorts","Output":"--- PASS: TestPortPoolLeasesAndReleasesPorts (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:23.396305126Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestPortPoolLeasesAndReleasesPorts","Elapsed":0}
+{"Time":"2026-11-01T14:44:23.396353954Z","Action":"run","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestPortPoolRefusesAnEmptyRange"}
+{"Time":"2026-11-01T14:44:23.396357695Z","Action":"output","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestPortPoolRefusesAnEmptyRange","Output":"=== RUN   TestPortPoolRefusesAnEmptyRange\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:23.396379062Z","Action":"output","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestPortPoolRefusesAnEmptyRange","Output":"--- PASS: TestPortPoolRefusesAnEmptyRange (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:23.396384045Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestPortPoolRefusesAnEmptyRange","Elapsed":0}
+{"Time":"2026-11-01T14:44:23.396397083Z","Action":"run","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestSessionTakesItsPortFromThePool"}
+{"Time":"2026-11-01T14:44:23.396399951Z","Action":"output","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestSessionTakesItsPortFromThePool","Output":"=== RUN   TestSessionTakesItsPortFromThePool\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:23.396566098Z","Action":"output","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestSessionTakesItsPortFromThePool","Output":"--- PASS: TestSessionTakesItsPortFromThePool (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:23.396586335Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/rtp","Test":"TestSessionTakesItsPortFromThePool","Elapsed":0}
+{"Time":"2026-11-01T14:44:23.396590655Z","Action":"output","Package":"voxdesk/sip-gateway/internal/rtp","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:23.599483071Z","Action":"output","Package":"voxdesk/sip-gateway/internal/metrics","Output":"ok  \tvoxdesk/sip-gateway/internal/metrics\t1.017s\n"}
+{"Time":"2026-11-01T14:44:23.599530158Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/metrics","Elapsed":1.018}
+{"Time":"2026-11-01T14:44:23.60051154Z","Action":"start","Package":"voxdesk/sip-gateway/internal/sdp"}
+{"Time":"2026-11-01T14:44:23.609777206Z","Action":"run","Package":"voxdesk/sip-gateway/internal/sdp","Test":"TestParseReadsMediaAndFormats"}
+{"Time":"2026-11-01T14:44:23.609815464Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sdp","Test":"TestParseReadsMediaAndFormats","Output":"=== RUN   TestParseReadsMediaAndFormats\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:23.609862303Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sdp","Test":"TestParseReadsMediaAndFormats","Output":"--- PASS: TestParseReadsMediaAndFormats (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:23.609896393Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/sdp","Test":"TestParseReadsMediaAndFormats","Elapsed":0}
+{"Time":"2026-11-01T14:44:23.610000668Z","Action":"run","Package":"voxdesk/sip-gateway/internal/sdp","Test":"TestParseRejectsGarbage"}
+{"Time":"2026-11-01T14:44:23.610004541Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sdp","Test":"TestParseRejectsGarbage","Output":"=== RUN   TestParseRejectsGarbage\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:23.610187449Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sdp","Test":"TestParseRejectsGarbage","Output":"--- PASS: TestParseRejectsGarbage (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:23.610213814Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/sdp","Test":"TestParseRejectsGarbage","Elapsed":0}
+{"Time":"2026-11-01T14:44:23.610217997Z","Action":"run","Package":"voxdesk/sip-gateway/internal/sdp","Test":"TestParseKeepsUnknownLines"}
+{"Time":"2026-11-01T14:44:23.610220595Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sdp","Test":"TestParseKeepsUnknownLines","Output":"=== RUN   TestParseKeepsUnknownLines\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:23.610331143Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sdp","Test":"TestParseKeepsUnknownLines","Output":"--- PASS: TestParseKeepsUnknownLines (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:23.610344213Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/sdp","Test":"TestParseKeepsUnknownLines","Elapsed":0}
+{"Time":"2026-11-01T14:44:23.610365286Z","Action":"run","Package":"voxdesk/sip-gateway/internal/sdp","Test":"TestBuildRendersNegotiatedAnswer"}
+{"Time":"2026-11-01T14:44:23.610368616Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sdp","Test":"TestBuildRendersNegotiatedAnswer","Output":"=== RUN   TestBuildRendersNegotiatedAnswer\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:23.610448849Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sdp","Test":"TestBuildRendersNegotiatedAnswer","Output":"--- PASS: TestBuildRendersNegotiatedAnswer (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:23.610453374Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/sdp","Test":"TestBuildRendersNegotiatedAnswer","Elapsed":0}
+{"Time":"2026-11-01T14:44:23.610551106Z","Action":"run","Package":"voxdesk/sip-gateway/internal/sdp","Test":"TestPayloadTypeForCodec"}
+{"Time":"2026-11-01T14:44:23.610554467Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sdp","Test":"TestPayloadTypeForCodec","Output":"=== RUN   TestPayloadTypeForCodec\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:23.610558253Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sdp","Test":"TestPayloadTypeForCodec","Output":"--- PASS: TestPayloadTypeForCodec (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:23.61056082Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/sdp","Test":"TestPayloadTypeForCodec","Elapsed":0}
+{"Time":"2026-11-01T14:44:23.610563413Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sdp","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.397680485Z","Action":"output","Package":"voxdesk/sip-gateway/internal/rtp","Output":"ok  \tvoxdesk/sip-gateway/internal/rtp\t1.044s\n"}
+{"Time":"2026-11-01T14:44:24.397738001Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/rtp","Elapsed":1.044}
+{"Time":"2026-11-01T14:44:24.612191019Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sdp","Output":"ok  \tvoxdesk/sip-gateway/internal/sdp\t1.012s\n"}
+{"Time":"2026-11-01T14:44:24.612248254Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/sdp","Elapsed":1.012}
+{"Time":"2026-11-01T14:44:24.76099367Z","Action":"start","Package":"voxdesk/sip-gateway/internal/sipua"}
+{"Time":"2026-11-01T14:44:24.770675567Z","Action":"run","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestParseRequest"}
+{"Time":"2026-11-01T14:44:24.770722538Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestParseRequest","Output":"=== RUN   TestParseRequest\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.770738987Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestParseRequest","Output":"--- PASS: TestParseRequest (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.770756769Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestParseRequest","Elapsed":0}
+{"Time":"2026-11-01T14:44:24.770763308Z","Action":"run","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestParseResponse"}
+{"Time":"2026-11-01T14:44:24.77076652Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestParseResponse","Output":"=== RUN   TestParseResponse\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.770826405Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestParseResponse","Output":"--- PASS: TestParseResponse (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.770869402Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestParseResponse","Elapsed":0}
+{"Time":"2026-11-01T14:44:24.770872832Z","Action":"run","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestParseRejectsGarbage"}
+{"Time":"2026-11-01T14:44:24.770875415Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestParseRejectsGarbage","Output":"=== RUN   TestParseRejectsGarbage\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.770895549Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestParseRejectsGarbage","Output":"--- PASS: TestParseRejectsGarbage (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.770900839Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestParseRejectsGarbage","Elapsed":0}
+{"Time":"2026-11-01T14:44:24.770928203Z","Action":"run","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestBuildRequestProducesParsableMessage"}
+{"Time":"2026-11-01T14:44:24.770931353Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestBuildRequestProducesParsableMessage","Output":"=== RUN   TestBuildRequestProducesParsableMessage\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.771077765Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestBuildRequestProducesParsableMessage","Output":"--- PASS: TestBuildRequestProducesParsableMessage (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.771084078Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestBuildRequestProducesParsableMessage","Elapsed":0}
+{"Time":"2026-11-01T14:44:24.771112406Z","Action":"run","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestBuildResponseCopiesHeadersAndAddsTag"}
+{"Time":"2026-11-01T14:44:24.771116136Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestBuildResponseCopiesHeadersAndAddsTag","Output":"=== RUN   TestBuildResponseCopiesHeadersAndAddsTag\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.771203168Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestBuildResponseCopiesHeadersAndAddsTag","Output":"--- PASS: TestBuildResponseCopiesHeadersAndAddsTag (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.771281036Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestBuildResponseCopiesHeadersAndAddsTag","Elapsed":0}
+{"Time":"2026-11-01T14:44:24.771284707Z","Action":"run","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestParseDigestAndAuthorization"}
+{"Time":"2026-11-01T14:44:24.771287665Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestParseDigestAndAuthorization","Output":"=== RUN   TestParseDigestAndAuthorization\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.771396583Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestParseDigestAndAuthorization","Output":"--- PASS: TestParseDigestAndAuthorization (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.771404339Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestParseDigestAndAuthorization","Elapsed":0}
+{"Time":"2026-11-01T14:44:24.771407215Z","Action":"run","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestDigestRejectsUnknownAlgorithm"}
+{"Time":"2026-11-01T14:44:24.771409847Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestDigestRejectsUnknownAlgorithm","Output":"=== RUN   TestDigestRejectsUnknownAlgorithm\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.771438878Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestDigestRejectsUnknownAlgorithm","Output":"--- PASS: TestDigestRejectsUnknownAlgorithm (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.771508611Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestDigestRejectsUnknownAlgorithm","Elapsed":0}
+{"Time":"2026-11-01T14:44:24.771559143Z","Action":"run","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestClientExchangesWithAPeer"}
+{"Time":"2026-11-01T14:44:24.771562511Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestClientExchangesWithAPeer","Output":"=== RUN   TestClientExchangesWithAPeer\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.772249784Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestClientExchangesWithAPeer","Output":"--- PASS: TestClientExchangesWithAPeer (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.772325205Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestClientExchangesWithAPeer","Elapsed":0}
+{"Time":"2026-11-01T14:44:24.772378763Z","Action":"run","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestParseTarget"}
+{"Time":"2026-11-01T14:44:24.772382408Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestParseTarget","Output":"=== RUN   TestParseTarget\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.772478794Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestParseTarget","Output":"--- PASS: TestParseTarget (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.772524786Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestParseTarget","Elapsed":0}
+{"Time":"2026-11-01T14:44:24.772547525Z","Action":"run","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestACLChecksThePeerNetwork"}
+{"Time":"2026-11-01T14:44:24.772550515Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestACLChecksThePeerNetwork","Output":"=== RUN   TestACLChecksThePeerNetwork\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.772627747Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestACLChecksThePeerNetwork","Output":"--- PASS: TestACLChecksThePeerNetwork (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.772647053Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestACLChecksThePeerNetwork","Elapsed":0}
+{"Time":"2026-11-01T14:44:24.772651107Z","Action":"run","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestAnEmptyACLAllowsEverything"}
+{"Time":"2026-11-01T14:44:24.772653538Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestAnEmptyACLAllowsEverything","Output":"=== RUN   TestAnEmptyACLAllowsEverything\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.772699836Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestAnEmptyACLAllowsEverything","Output":"--- PASS: TestAnEmptyACLAllowsEverything (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.772741593Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestAnEmptyACLAllowsEverything","Elapsed":0}
+{"Time":"2026-11-01T14:44:24.772745395Z","Action":"run","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestACLRejectsAnInvalidNetwork"}
+{"Time":"2026-11-01T14:44:24.772748068Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestACLRejectsAnInvalidNetwork","Output":"=== RUN   TestACLRejectsAnInvalidNetwork\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.772798349Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestACLRejectsAnInvalidNetwork","Output":"--- PASS: TestACLRejectsAnInvalidNetwork (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.772842612Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestACLRejectsAnInvalidNetwork","Elapsed":0}
+{"Time":"2026-11-01T14:44:24.772909511Z","Action":"run","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestConfigCacheReadsTheApplicationOnce"}
+{"Time":"2026-11-01T14:44:24.772912385Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestConfigCacheReadsTheApplicationOnce","Output":"=== RUN   TestConfigCacheReadsTheApplicationOnce\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.774933098Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestConfigCacheReadsTheApplicationOnce","Output":"--- PASS: TestConfigCacheReadsTheApplicationOnce (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.774957828Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestConfigCacheReadsTheApplicationOnce","Elapsed":0}
+{"Time":"2026-11-01T14:44:24.774964058Z","Action":"run","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestConfigCacheWithoutAnApplicationIsEmpty"}
+{"Time":"2026-11-01T14:44:24.774986403Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestConfigCacheWithoutAnApplicationIsEmpty","Output":"=== RUN   TestConfigCacheWithoutAnApplicationIsEmpty\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.77499473Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestConfigCacheWithoutAnApplicationIsEmpty","Output":"--- PASS: TestConfigCacheWithoutAnApplicationIsEmpty (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.77500168Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestConfigCacheWithoutAnApplicationIsEmpty","Elapsed":0}
+{"Time":"2026-11-01T14:44:24.775038904Z","Action":"run","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestConfigCacheReportsAFailingApplication"}
+{"Time":"2026-11-01T14:44:24.775042093Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestConfigCacheReportsAFailingApplication","Output":"=== RUN   TestConfigCacheReportsAFailingApplication\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.776129792Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestConfigCacheReportsAFailingApplication","Output":"--- PASS: TestConfigCacheReportsAFailingApplication (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.776177135Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestConfigCacheReportsAFailingApplication","Elapsed":0}
+{"Time":"2026-11-01T14:44:24.776183512Z","Action":"run","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestInviteTransactionFlow"}
+{"Time":"2026-11-01T14:44:24.776187368Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestInviteTransactionFlow","Output":"=== RUN   TestInviteTransactionFlow\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.776191568Z","Action":"run","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestInviteTransactionFlow/an_invite_is_answered_with_200"}
+{"Time":"2026-11-01T14:44:24.776195341Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestInviteTransactionFlow/an_invite_is_answered_with_200","Output":"=== RUN   TestInviteTransactionFlow/an_invite_is_answered_with_200\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.776699785Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestInviteTransactionFlow/an_invite_is_answered_with_200","Output":"--- PASS: TestInviteTransactionFlow/an_invite_is_answered_with_200 (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.776713931Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestInviteTransactionFlow/an_invite_is_answered_with_200","Elapsed":0}
+{"Time":"2026-11-01T14:44:24.776764749Z","Action":"run","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestInviteTransactionFlow/a_401_challenge_is_answered_with_the_credentials"}
+{"Time":"2026-11-01T14:44:24.776783974Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestInviteTransactionFlow/a_401_challenge_is_answered_with_the_credentials","Output":"=== RUN   TestInviteTransactionFlow/a_401_challenge_is_answered_with_the_credentials\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.777326106Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestInviteTransactionFlow/a_401_challenge_is_answered_with_the_credentials","Output":"--- PASS: TestInviteTransactionFlow/a_401_challenge_is_answered_with_the_credentials (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.777332503Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestInviteTransactionFlow/a_401_challenge_is_answered_with_the_credentials","Elapsed":0}
+{"Time":"2026-11-01T14:44:24.777337907Z","Action":"run","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestInviteTransactionFlow/a_403_rejection_is_the_final_answer"}
+{"Time":"2026-11-01T14:44:24.777341188Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestInviteTransactionFlow/a_403_rejection_is_the_final_answer","Output":"=== RUN   TestInviteTransactionFlow/a_403_rejection_is_the_final_answer\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.77783219Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestInviteTransactionFlow/a_403_rejection_is_the_final_answer","Output":"--- PASS: TestInviteTransactionFlow/a_403_rejection_is_the_final_answer (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.777871923Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestInviteTransactionFlow/a_403_rejection_is_the_final_answer","Elapsed":0}
+{"Time":"2026-11-01T14:44:24.777900091Z","Action":"run","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestInviteTransactionFlow/a_cancel_is_accepted"}
+{"Time":"2026-11-01T14:44:24.777903618Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestInviteTransactionFlow/a_cancel_is_accepted","Output":"=== RUN   TestInviteTransactionFlow/a_cancel_is_accepted\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.778385846Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestInviteTransactionFlow/a_cancel_is_accepted","Output":"--- PASS: TestInviteTransactionFlow/a_cancel_is_accepted (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.778398712Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestInviteTransactionFlow/a_cancel_is_accepted","Elapsed":0}
+{"Time":"2026-11-01T14:44:24.778418985Z","Action":"run","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestInviteTransactionFlow/a_bye_ends_the_call"}
+{"Time":"2026-11-01T14:44:24.778424078Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestInviteTransactionFlow/a_bye_ends_the_call","Output":"=== RUN   TestInviteTransactionFlow/a_bye_ends_the_call\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.778816641Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestInviteTransactionFlow/a_bye_ends_the_call","Output":"--- PASS: TestInviteTransactionFlow/a_bye_ends_the_call (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.778851845Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestInviteTransactionFlow/a_bye_ends_the_call","Elapsed":0}
+{"Time":"2026-11-01T14:44:24.778857362Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestInviteTransactionFlow","Output":"--- PASS: TestInviteTransactionFlow (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:24.778860847Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/sipua","Test":"TestInviteTransactionFlow","Elapsed":0}
+{"Time":"2026-11-01T14:44:24.778869499Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-11-01T14:44:25.780848229Z","Action":"output","Package":"voxdesk/sip-gateway/internal/sipua","Output":"ok  \tvoxdesk/sip-gateway/internal/sipua\t1.020s\n"}
+{"Time":"2026-11-01T14:44:25.780892027Z","Action":"pass","Package":"voxdesk/sip-gateway/internal/sipua","Elapsed":1.02}

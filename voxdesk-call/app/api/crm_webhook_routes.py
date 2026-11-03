@@ -301,11 +301,11 @@ async def prune_receipts(session: AsyncSession, *, older_than_days: int = 30) ->
     plausibly redeliver. Keeping receipts forever turns a defence into an
     unbounded table.
     """
-    from datetime import datetime, timedelta
+    from datetime import datetime, timedelta, timezone
 
     from sqlalchemy import delete
 
-    cutoff = datetime.utcnow() - timedelta(days=older_than_days)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=older_than_days)
     result = await session.execute(
         delete(CrmWebhookReceipt)
         .where(CrmWebhookReceipt.received_at < cutoff)

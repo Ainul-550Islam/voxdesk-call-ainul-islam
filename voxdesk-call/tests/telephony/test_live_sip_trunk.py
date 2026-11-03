@@ -57,7 +57,7 @@ async def test_the_control_api_refuses_a_request_without_a_token() -> None:
     import httpx
 
     async with httpx.AsyncClient(timeout=10.0) as client:
-        response = await client.get(f"{url.rstrip('/')}/calls/not-a-real-call")
+        response = await client.get(f"{url.rstrip('/')}/v1/calls/not-a-real-call")
     assert response.status_code in {401, 403}, response.text[:300]
 
 

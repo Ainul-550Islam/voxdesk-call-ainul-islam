@@ -243,10 +243,32 @@ if require_tool docker "install Docker Engine or Docker Desktop"; then
       record "compose:config:$compose" "FAIL" "file missing"
       continue
     fi
-    if out=$(docker compose -f "$compose" config -q 2>&1); then
+    # Interpolation uses `.env.check` (generated, gitignored). Compose
+    # services also `env_file: .env` / `.env.staging`; those paths must
+    # exist for `config`. A real companion `.env` is loaded by
+    # pydantic-settings and poisons pytest, so only a temporary symlink
+    # to `.env.check` is created for this check and then removed.
+    env_file=".env.check"
+    if [ ! -f "$env_file" ]; then
+      record "compose:config:$compose" "FAIL" "missing $env_file; run: python3 scripts/make_check_env.py"
+      continue
+    fi
+    companion=".env"
+    case "$compose" in
+      *staging*) companion=".env.staging" ;;
+    esac
+    created_link=0
+    if [ ! -e "$companion" ]; then
+      ln -s "$env_file" "$companion"
+      created_link=1
+    fi
+    if out=$(docker compose --env-file "$env_file" -f "$compose" config -q 2>&1); then
       record "compose:config:$compose" "PASS" "config is valid"
     else
       record "compose:config:$compose" "FAIL" "$(printf '%s' "$out" | tr '\n' ' ' | cut -c1-300)"
+    fi
+    if [ "$created_link" -eq 1 ]; then
+      rm -f "$companion"
     fi
   done
 fi

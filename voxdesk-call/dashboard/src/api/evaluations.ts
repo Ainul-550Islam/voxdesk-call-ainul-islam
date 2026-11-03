@@ -71,7 +71,7 @@ export async function rerunEvaluationOnly(
 ): Promise<TestRun> {
   return apiClient.post<TestRun>(
     `/api/v1/evaluations/runs/${encodeURIComponent(runId)}/rerun`,
-    { allow_mock_judge: options?.allow_mock_judge ?? true }
+    { allow_mock_judge: options?.allow_mock_judge ?? false }
   );
 }
 

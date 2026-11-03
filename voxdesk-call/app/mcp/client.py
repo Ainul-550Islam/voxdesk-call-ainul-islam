@@ -127,7 +127,7 @@ async def discover(session: AsyncSession, server: McpServer) -> list[McpTool]:
     server.status, server.server_info, server.last_health_at = (
         "healthy",
         {"tool_count": len(rows)},
-        __import__("datetime").datetime.utcnow(),
+        __import__("datetime").datetime.now(__import__("datetime").timezone.utc),
     )
     await audit_event(
         session,

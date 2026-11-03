@@ -39,12 +39,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.identity import tokens as identity_tokens
 from app.auth.identity.exceptions import EmailDeliveryError
 from app.core.config import settings
+from app.core.time import as_utc, utc_now
 
 log = structlog.get_logger()
 
 
 def _now() -> datetime:
-    return datetime.now(timezone.utc).replace(tzinfo=None)
+    return utc_now()
 
 
 @dataclass(frozen=True)
@@ -385,7 +386,7 @@ async def consume_password_reset_token(
     ).scalar_one_or_none()
     if row is None:
         raise TokenError("That reset link is not valid.")
-    if row.expires_at <= _now():
+    if as_utc(row.expires_at) <= utc_now():
         raise TokenError("That reset link has expired.")
     if tenant_id_hint is not None and row.tenant_id != tenant_id_hint:
         raise TokenError("That reset link is not valid.")
@@ -451,7 +452,7 @@ async def consume_verification_token(session: AsyncSession, *, plaintext: str) -
     ).scalar_one_or_none()
     if row is None:
         raise TokenError("That verification link is not valid.")
-    if row.expires_at <= _now():
+    if as_utc(row.expires_at) <= utc_now():
         raise TokenError("That verification link has expired.")
 
     result = await session.execute(

@@ -34,7 +34,7 @@ import json
 import hashlib
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from sqlalchemy import select, update
@@ -42,6 +42,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import log
+from app.core.time import as_utc
 from app.core.metrics import record_side_effect
 from app.db.models import (
     CrmContactLink,
@@ -195,7 +196,7 @@ async def _remember_contact(
 
     if existing is not None:
         existing.external_contact_id = external_id
-        existing.last_seen_at = datetime.utcnow()
+        existing.last_seen_at = datetime.now(timezone.utc)
         if lead_id and not existing.lead_id:
             existing.lead_id = lead_id
         return
@@ -265,13 +266,13 @@ async def process_sync(session: AsyncSession, sync: CrmSync) -> SyncOutcome:
         except RuntimeError:
             return await _mark_permanent(session, sync, code="not_configured", message="Redis is required for analysis delivery", started=started)
         if not allowed:
-            sync.next_attempt_at = datetime.utcnow() + timedelta(seconds=60)
+            sync.next_attempt_at = datetime.now(timezone.utc) + timedelta(seconds=60)
             await session.commit()
             return SyncOutcome(sync_id=sync.id, status=sync.status, skipped_reason="distributed_rate_limit")
     if not strict_analysis and not limiter.allow(str(sync.tenant_id), sync.provider.value):
         # Not a failure: reschedule and let another tenant's work through.
         delay = limiter.retry_after(str(sync.tenant_id), sync.provider.value)
-        sync.next_attempt_at = datetime.utcnow() + timedelta(seconds=max(delay, 1.0))
+        sync.next_attempt_at = datetime.now(timezone.utc) + timedelta(seconds=max(delay, 1.0))
         sync.status = CrmSyncStatus.PENDING
         await session.commit()
         return SyncOutcome(
@@ -292,7 +293,7 @@ async def process_sync(session: AsyncSession, sync: CrmSync) -> SyncOutcome:
     # a single conditional UPDATE lets exactly one win. All the pre-checks
     # above (integration, rate limit, event) already ran, so a lost claim here
     # simply means another worker owns the row.
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     claimed = await session.execute(
         update(CrmSync)
         .where(
@@ -622,7 +623,7 @@ async def _mark_synced(
     """
     sync.status = CrmSyncStatus.SYNCED
     sync.external_id = result.external_id
-    sync.synced_at = datetime.utcnow()
+    sync.synced_at = datetime.now(timezone.utc)
     sync.next_attempt_at = None
     sync.last_error = None
     sync.last_error_code = None
@@ -658,7 +659,7 @@ async def _handle_error(
     if policy.should_retry(error, attempt):
         delay = policy.delay_for(attempt, error=error)
         sync.status = CrmSyncStatus.FAILED
-        sync.next_attempt_at = datetime.utcnow() + timedelta(seconds=delay)
+        sync.next_attempt_at = datetime.now(timezone.utc) + timedelta(seconds=delay)
         sync.last_error = message
         sync.last_error_code = error.code
         await session.commit()
@@ -747,7 +748,7 @@ async def check_health(
             safe_message=f"unexpected error ({type(exc).__name__})",
         )
 
-    integration.last_health_check_at = datetime.utcnow()
+    integration.last_health_check_at = datetime.now(timezone.utc)
     integration.last_health_ok = result.connected
     integration.last_error = None if result.connected else result.safe_message[:500]
     await session.commit()
@@ -774,7 +775,7 @@ async def claim_due_syncs(
     first failures. `next_attempt_at IS NULL` covers freshly-created PENDING
     rows, which have no schedule yet.
     """
-    moment = now or datetime.utcnow()
+    moment = now or datetime.now(timezone.utc)
     rows = (
         (
             await session.execute(
@@ -805,22 +806,28 @@ async def reap_stuck_syncs(
     a state no query will ever pick up. Returned to FAILED rather than PENDING
     so the attempt that was already spent still counts against the bound.
     """
-    cutoff = datetime.utcnow() - timedelta(minutes=older_than_minutes)
-    result = await session.execute(
-        update(CrmSync)
-        .where(
-            CrmSync.status == CrmSyncStatus.PROCESSING,
-            CrmSync.last_attempt_at < cutoff,
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=older_than_minutes)
+    now = datetime.now(timezone.utc)
+    rows = (
+        (
+            await session.execute(
+                select(CrmSync).where(CrmSync.status == CrmSyncStatus.PROCESSING)
+            )
         )
-        .values(
-            status=CrmSyncStatus.FAILED,
-            last_error="worker did not finish; recovered by the reaper",
-            last_error_code="stuck",
-            next_attempt_at=datetime.utcnow(),
-        )
+        .scalars()
+        .all()
     )
+    count = 0
+    for sync in rows:
+        last = as_utc(sync.last_attempt_at)
+        if last is None or last >= cutoff:
+            continue
+        sync.status = CrmSyncStatus.FAILED
+        sync.last_error = "worker did not finish; recovered by the reaper"
+        sync.last_error_code = "stuck"
+        sync.next_attempt_at = now
+        count += 1
     await session.commit()
-    count = result.rowcount or 0
     if count:
         log.warning("crm.reaped_stuck_syncs", count=count)
     return count
@@ -860,4 +867,4 @@ def _parse_dt(value: Any) -> datetime:
             return datetime.fromisoformat(value.replace("Z", "+00:00"))
         except ValueError:
             pass
-    return datetime.utcnow()
+    return datetime.now(timezone.utc)

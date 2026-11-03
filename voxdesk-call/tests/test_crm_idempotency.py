@@ -16,7 +16,9 @@ with only the HTTP transport faked.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+
+from app.core.time import as_utc, utc_now
 
 import httpx
 import pytest
@@ -297,7 +299,7 @@ async def test_a_worker_restart_mid_flight_is_safe(db, tenant_a, ghl, monkeypatc
     # Simulate the crash: claimed, never finished.
     sync.status = CrmSyncStatus.PROCESSING
     sync.attempt_count = 1
-    sync.last_attempt_at = datetime.utcnow() - timedelta(hours=1)
+    sync.last_attempt_at = datetime.now(timezone.utc) - timedelta(hours=1)
     await db.commit()
 
     assert await service.claim_due_syncs(db) == []          # invisible while stuck
@@ -495,12 +497,12 @@ async def test_a_429_reads_retry_after(db, tenant_a, ghl, monkeypatch):
     await _emit_call(db, tenant_a)
     sync = (await _syncs_for(db, tenant_a))[0]
 
-    before = datetime.utcnow()
+    before = utc_now()
     outcome = await service.process_sync(db, sync)
 
     assert outcome.error_code == "rate_limited"
     await db.refresh(sync)
-    assert sync.next_attempt_at >= before + timedelta(seconds=44)
+    assert as_utc(sync.next_attempt_at) >= before + timedelta(seconds=44)
 
 
 async def test_an_absurd_retry_after_is_capped(db, tenant_a, ghl, monkeypatch):
@@ -509,11 +511,11 @@ async def test_an_absurd_retry_after_is_capped(db, tenant_a, ghl, monkeypatch):
     await _emit_call(db, tenant_a)
     sync = (await _syncs_for(db, tenant_a))[0]
 
-    before = datetime.utcnow()
+    before = utc_now()
     await service.process_sync(db, sync)
 
     await db.refresh(sync)
-    assert sync.next_attempt_at < before + timedelta(seconds=1000)
+    assert as_utc(sync.next_attempt_at) < before + timedelta(seconds=1000)
 
 
 async def test_a_garbage_retry_after_falls_back_to_our_own_backoff(

@@ -5,7 +5,7 @@ light up. Never let a CRM failure break a call: everything is best-effort.
 """
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 import httpx
@@ -38,7 +38,7 @@ def build_payload(
     return {
         "source": "VoxDesk",
         "event": "call.completed",
-        "occurred_at": datetime.utcnow().isoformat() + "Z",
+        "occurred_at": datetime.now(timezone.utc).isoformat() + "Z",
         "business": tenant_name,
         "call_id": call_id,
         "direction": direction,

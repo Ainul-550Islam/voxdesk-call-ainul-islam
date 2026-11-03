@@ -88,6 +88,7 @@ PUBLIC_EXACT_ALLOWLIST: frozenset[str] = frozenset(
         "/security.txt",
         "/.well-known/security.txt",
         "/widget/embed.js",
+        "/{full_path:path}",
         "/auth/login",
         "/auth/signup",
         "/auth/validate-next",

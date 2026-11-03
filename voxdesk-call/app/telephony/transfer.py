@@ -8,7 +8,7 @@ and deterministic fallback behavior (`RETURN_TO_AGENT`, `RETRY`, `HANGUP`).
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
@@ -275,7 +275,7 @@ class CallTransferService:
             if existing is not None:
                 return _serialize_transfer_record(existing)
 
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             source_agent_id = call_session.agent_id
 
             # Build full preserved conversation and caller context snapshot
@@ -342,7 +342,7 @@ class CallTransferService:
                     await manager.transition_state(
                         call_session,
                         TelephonyCallState.IN_PROGRESS,
-                        occurred_at=datetime.utcnow(),
+                        occurred_at=datetime.now(timezone.utc),
                         event_detail={
                             "fallback_action": fallback.value,
                             "failure_reason": failure_msg,
@@ -360,7 +360,7 @@ class CallTransferService:
                     await manager.transition_state(
                         call_session,
                         TelephonyCallState.IN_PROGRESS,
-                        occurred_at=datetime.utcnow(),
+                        occurred_at=datetime.now(timezone.utc),
                         event_detail={
                             "fallback_action": fallback.value,
                             "failure_reason": failure_msg,
@@ -373,7 +373,7 @@ class CallTransferService:
                     await manager.transition_state(
                         call_session,
                         TelephonyCallState.FAILED,
-                        occurred_at=datetime.utcnow(),
+                        occurred_at=datetime.now(timezone.utc),
                         hangup_reason="transfer_target_failed_hangup",
                         event_detail={
                             "fallback_action": fallback.value,
@@ -398,11 +398,11 @@ class CallTransferService:
                     failure_reason=failure_msg,
                     context_snapshot=context_snapshot,
                     requested_at=now,
-                    completed_at=datetime.utcnow(),
+                    completed_at=datetime.now(timezone.utc),
                 )
             else:
                 # Successful transfer completion
-                completed_at = datetime.utcnow()
+                completed_at = datetime.now(timezone.utc)
                 call_session.transfer_state = TransferLifecycleState.COMPLETED.value
                 if payload.mode == TransferMode.AGENT_TO_AGENT and resolved_target_agent_id:
                     call_session.transferred_to_agent_id = resolved_target_agent_id

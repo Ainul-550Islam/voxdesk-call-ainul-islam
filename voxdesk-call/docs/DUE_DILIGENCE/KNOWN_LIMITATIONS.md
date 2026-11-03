@@ -82,12 +82,12 @@ checkout. Neither is presented as a pass.
 
 | Evidence | Required | Artifact | Status | Age (days) | Generated (UTC) |
 |---|---|---|---|---|---|
-| `test` | yes | `reports/TEST_EVIDENCE_SUMMARY.json` | **PRESENT** | 0.01 | 2026-10-30T05:47:28Z |
-| `polyglot` | yes | `reports/POLYGLOT_EVIDENCE_SUMMARY.json` | **PRESENT** | 0.0 | 2026-10-30T05:54:23Z |
-| `security` | yes | `reports/SECURITY_EVIDENCE_SUMMARY.json` | **PRESENT** | 0.64 | 2026-10-29T14:30:10Z |
-| `deploy-assets` | yes | `reports/deploy_asset_validation.json` | **PRESENT** | 0.0 | 2026-10-30T05:56:29Z |
+| `test` | yes | `reports/TEST_EVIDENCE_SUMMARY.json` | **PRESENT** | 3.44 | 2026-10-30T05:47:28Z |
+| `polyglot` | yes | `reports/POLYGLOT_EVIDENCE_SUMMARY.json` | **PRESENT** | 1.07 | 2026-11-01T14:45:59Z |
+| `security` | yes | `reports/SECURITY_EVIDENCE_SUMMARY.json` | **PRESENT** | 4.08 | 2026-10-29T14:30:10Z |
+| `deploy-assets` | yes | `reports/deploy_asset_validation.json` | **PRESENT** | 3.44 | 2026-10-30T05:56:29Z |
 | `staging` | yes | `evidence/staging` | **MISSING** | — | — |
-| `live` | no (opt-in) | `evidence/live/aws_kms-kms-aws-kms-20261029T185017Z.json` | **PRESENT** | 0.46 | 2026-10-29T18:50:17Z |
+| `live` | no (opt-in) | `evidence/live/vonage-vonage-control-plane-20261101T142529Z.json` | **PRESENT** | 1.08 | 2026-11-01T14:25:29Z |
 
 Regenerate with: `python scripts/pytest_chunks.py` then
 `python scripts/reconcile_validation_results.py --ci` (test),
