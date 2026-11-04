@@ -344,7 +344,7 @@ production.
 | `python3 -m pytest tests/test_identity_migrations.py -q` | migration ↔ model ↔ enum parity, read out of the migration files |
 | `python3 -m pytest tests/test_identity_pg_enum.py -q` | that the live **PostgreSQL** `auditaction` accepts every `AuditAction` — the one failure mode SQLite cannot show. Skips with a printed reason when `DATABASE_URL` is not PostgreSQL |
 | `python3 -m pytest tests/test_enum_consistency.py -q` | every enum member has a migration |
-| `python3 -m pytest tests -q` | the whole regression suite |
+| `bash scripts/run_full_tests.sh` | the whole regression suite, chunked, with a JUnit and a verdict per chunk (see `docs/TESTING.md`) |
 | `python3 scripts/check_identity_route_contracts.py` | the route contract across the identity modules |
 | `ruff check app/ tests/ alembic/` | lint gate |
 

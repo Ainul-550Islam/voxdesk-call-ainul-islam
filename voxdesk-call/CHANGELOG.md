@@ -7,6 +7,76 @@ unverified provider connections or third-party compliance certifications.
 
 ---
 
+## [Unreleased] — 2026-11-04 (Build repair, frontend/backend contract fixes, chunked test runner)
+
+### Fixed
+- **`dashboard-next` could not be built by Turbopack at all.** `app/dashboard/agents/[id]/test-call/page.tsx`
+  imported the browser SDK with `../../../../../../sdk/web/src/index`, which climbs out of the Next.js
+  project root; `npx next build` (Turbopack) failed with `Module not found` before any page compiled, so
+  the shadow dashboard had no verified production build. `sdk/web` is now consumed as a real dependency
+  (`"@voxdesk/web-sdk": "file:../sdk/web"`, import specifier `@voxdesk/web-sdk/src`), the SDK publishes a
+  `./src` subpath export for bundlers that compile sources, and `dashboard-next/next.config.mjs` sets
+  `transpilePackages`, `turbopack.root` and `outputFileTracingRoot` to the repository root, because Next
+  refuses to compile a module whose real path escapes the root it inferred. `npx next build` and
+  `npm run build` (webpack) now both succeed: 67 routes prerendered, `tsc --noEmit` clean.
+- **Route-registry fixture drifted silently from the router.** `dashboard/src/__tests__/fixtures/route-registry.json`
+  is asserted against `ROUTES` by `no-generated-tails.test.ts`, but had no generator, so any route change
+  either failed the guard with no documented fix or invited a hand edit. Added
+  `dashboard/scripts/write-route-registry.mjs` (`npm run routes:registry`, plus `routes:registry:check` for
+  CI), which loads the router through Vite's SSR loader — the same compiler the app uses — and rewrites the
+  fixture. Regenerated it for the console pages (`/dashboard/billing`, `/dashboard/campaigns`,
+  `/dashboard/settings`, …): 116 routes, `vitest run` 62 files / 633 tests green, `vite build` green.
+
+- **Three tests failed only when the suite ran the way it is documented to run.**
+  `tests/api/test_frontend_backend_contract.py` rejected `dashboard/src/api/*.ts`
+  paths built as `` `/api/campaigns/${id}/kpis${envQuery(env)}` `` because the
+  scanner reads the template literally; those call sites now concatenate
+  (`` `/api/campaigns/${id}/kpis` + envQuery(env) ``), so the path is a literal the
+  contract check can match. `tests/integrations_v2/test_http_client_ratelimit.py`
+  patched `socket.getaddrinfo` process-wide with a two-argument fake, so the first
+  unrelated caller (the Redis connection, which passes four positional arguments)
+  raised `TypeError` instead of the assertion under test; the fake now answers only
+  for the vendor host and delegates every other lookup. `tests/test_config.py`
+  asserted that `Settings(_env_file=None).redis_url == ""`, i.e. that the defaults
+  hold — but `_env_file=None` does not remove an exported `REDIS_URL`, which the
+  suite is documented to set, so the variable is now cleared with `monkeypatch`
+  first. All three are verified in the chunk that contains them.
+- **Chunk runner defects found by running it.** A chunk target that is a glob
+  (`tests/*.py`) was passed to pytest quoted and failed with "file or directory not
+  found"; globs are expanded and run one file per process. The root chunk now
+  selects `tests/test_*.py` only, since `tests/` also contains helper modules that
+  collect nothing, and pytest's exit code `5` ("no tests collected") no longer
+  counts as a chunk failure — an empty chunk is reported as `EMPTY` in the summary
+  instead. `auth` joined `truth` in `PER_FILE_CHUNKS`: as one process it was
+  OOM-killed on a 2 GB machine (exit 137, no summary).
+
+- **`scripts/verify_deploy_assets.sh` passed a check that validated nothing.** The
+  Helm render was written to a bare `mktemp` file, and kubeconform only reads names
+  ending in `.yaml`/`.yml`/`.json`; for anything else it prints
+  `Summary: 0 resource found in 0 file` and exits `0`. The script recorded that as
+  `[PASS]`, so both kubeconform checks had never inspected a manifest. The render
+  now goes to a `*.yaml` temp file and the summary line `0 resource found` is
+  treated as a failure, as is a chart that renders zero objects. With the fix the
+  checks report **22 resources found in 1 file — Valid: 22, Invalid: 0** for both
+  the prod and staging values, and the whole script passes: helm lint/template,
+  terraform fmt/validate (13 directories) + tflint, three Caddy configs, and
+  `docker compose config` for prod and staging.
+- **The chunk runner under-reported skips.** Its summary parser matched only
+  "passed"/"failed", so a test file whose entire output was `16 skipped in 0.5s`
+  contributed zero to the chunk total: `root` reported `0 skipped` while its own
+  JUnit XML held 16, and the run total said 64 instead of 80. Every outcome word is
+  now in the pattern. The corrected numbers are cross-checked against the JUnit XML
+  rather than trusted from the summary line.
+
+### Added
+- **`scripts/run_full_tests.sh` — the supported way to run the whole backend suite.** 48 chunks, one pytest
+  process per chunk so peak memory stays bounded, prerequisites checked by real TCP connects (exit 2 when
+  Redis is missing, and when PostgreSQL is missing without `--no-db`), the database created and moved to
+  `alembic upgrade head` first, a per-chunk timeout, JUnit XML under `reports/junit/`, per-chunk logs under
+  `/tmp/run_full_tests_<chunk>.log`, and a reason-aware summary table. Chunks listed in `PER_FILE_CHUNKS`
+  (default `truth`) additionally run one test file per process: the truth chunk imports the whole FastAPI
+  app in nearly every module and was OOM-killed (exit 137) when run as one process on a 2 GB machine.
+
 ## [Unreleased] — 2026-10-29 (Final verification & runtime gap-fill)
 
 ### Added

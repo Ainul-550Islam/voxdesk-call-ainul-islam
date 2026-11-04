@@ -38,8 +38,18 @@ def test_ssrf_and_vendor_allowlist_blocks_unsafe_destinations(bad_url: str):
 
 @pytest.mark.asyncio
 async def test_dns_rebinding_to_private_ip_is_blocked(monkeypatch):
-    def fake_getaddrinfo(host, port, type=0):
-        return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("169.254.169.254", port))]
+    # The patch is process-wide, so it also sees the lookups of unrelated clients
+    # (the Redis connection resolves its host through this same function and calls
+    # it with four positional arguments). Only the vendor host answers with the
+    # link-local address; everything else goes to the real resolver, otherwise this
+    # test fails with a TypeError from whichever library happens to resolve first
+    # instead of asserting that the rebinding answer is rejected.
+    real_getaddrinfo = socket.getaddrinfo
+
+    def fake_getaddrinfo(host, port, *args, **kwargs):
+        if host == "acme.zendesk.com":
+            return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("169.254.169.254", port))]
+        return real_getaddrinfo(host, port, *args, **kwargs)
 
     monkeypatch.setattr(socket, "getaddrinfo", fake_getaddrinfo)
     client = Int2HttpClient(

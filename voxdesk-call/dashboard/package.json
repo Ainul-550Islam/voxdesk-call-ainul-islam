@@ -12,7 +12,9 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "routes:registry": "node scripts/write-route-registry.mjs",
+    "routes:registry:check": "node scripts/write-route-registry.mjs --check"
   },
   "dependencies": {
     "@tanstack/react-query": "5.62.11",

@@ -26,6 +26,12 @@ import { CreateAgentPage } from '../pages/agents/CreateAgentPage';
 import { BlogPage } from '../pages/blog/BlogPage';
 import { BlogPost } from '../pages/blog/BlogPost';
 import { ChatAgentsPage } from '../pages/chat/ChatAgentsPage';
+import { AnalyticsConsolePage } from '../pages/analytics/AnalyticsConsolePage';
+import { AuditLogPage } from '../pages/audit/AuditLogPage';
+import { BillingPage } from '../pages/billing/BillingPage';
+import { CampaignDetailPage } from '../pages/campaigns/CampaignDetailPage';
+import { CampaignsPage } from '../pages/campaigns/CampaignsPage';
+
 import { AboutPage } from '../pages/company/AboutPage';
 import { CareersPage } from '../pages/company/CareersPage';
 import { TeamPage } from '../pages/company/TeamPage';
@@ -40,6 +46,13 @@ import { IndustriesPage } from '../pages/industries/IndustriesPage';
 import { IndustryDetailPage } from '../pages/industries/IndustryDetailPage';
 import { IntegrationDetailPage } from '../pages/integrations/IntegrationDetailPage';
 import { IntegrationsPage } from '../pages/integrations/IntegrationsPage';
+import { IntegrationsConsolePage } from '../pages/integrations/IntegrationsConsolePage';
+import { KnowledgeConsolePage } from '../pages/knowledge/KnowledgeConsolePage';
+import { IdentitySettingsPage } from '../pages/settings/IdentitySettingsPage';
+import { WorkspaceSettingsPage } from '../pages/settings/WorkspaceSettingsPage';
+import { TeamConsolePage } from '../pages/team/TeamConsolePage';
+import { WebhooksPage } from '../pages/webhooks/WebhooksPage';
+
 import { DPA } from '../pages/legal/DPA';
 import { PrivacyPage } from '../pages/legal/PrivacyPage';
 import { SLA } from '../pages/legal/SLA';
@@ -239,12 +252,36 @@ export function App() {
       return <FinalParityPage />;
     case 'WorkflowsPage':
       return <WorkflowsPage />;
+    case 'CampaignsPage':
+      return <CampaignsPage />;
+    case 'CampaignDetailPage':
+      return <CampaignDetailPage campaignId={id} />;
+    case 'BillingPage':
+      return <BillingPage />;
+    case 'TeamConsolePage':
+      return <TeamConsolePage />;
+    case 'WebhooksPage':
+      return <WebhooksPage />;
+    case 'AuditLogPage':
+      return <AuditLogPage />;
+    case 'KnowledgeConsolePage':
+      return <KnowledgeConsolePage />;
+    case 'IntegrationsConsolePage':
+      return <IntegrationsConsolePage />;
+    case 'AnalyticsConsolePage':
+      return <AnalyticsConsolePage />;
+    case 'WorkspaceSettingsPage':
+      return <WorkspaceSettingsPage />;
+    case 'IdentitySettingsPage':
+      return <IdentitySettingsPage />;
+    // The three legacy bridge component names stay resolvable: older saved links
+    // and third-party integrations reference the component id, not the path.
     case 'LegacyCampaignsPage':
-      return <LegacyConsoleLoading title="Campaigns" />;
+      return <CampaignsPage />;
     case 'LegacySettingsPage':
-      return <LegacyConsoleLoading title="Security & settings" />;
+      return <WorkspaceSettingsPage />;
     case 'LegacyBillingPage':
-      return <LegacyConsoleLoading title="Billing" />;
+      return <BillingPage />;
     case 'CallLogConsole':
       return <OperatorConsoleApp />;
     case 'VoiceCloningPage':

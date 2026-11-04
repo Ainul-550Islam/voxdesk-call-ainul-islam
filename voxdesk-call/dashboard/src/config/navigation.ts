@@ -13,3 +13,25 @@ export const footerNavigation: Record<string,NavItem[]>={
   company:[{id:'about',label:'About',href:'/about'},{id:'careers',label:'Careers',href:'/careers'},{id:'contact',label:'Contact',href:'/contact'}],
 };
 export const ctaNavigation={ login:{label:'Login',href:'/login'}, startBuilding:{label:'Start Building',href:'/signup'}, bookDemo:{label:'Book Demo',href:'/demo'}, };
+
+/**
+ * Authenticated operator-console navigation.
+ *
+ * Rendered by `components/layout/ConsoleNav.tsx`, which additionally filters each
+ * item against the permission list returned by `GET /auth/me`. The `permission`
+ * field here must stay in sync with that filter — hiding a link is convenience,
+ * the server still enforces every one of these.
+ */
+export const consoleNavigation: NavItem[] = [
+  { id:'console-overview', label:'Overview', href:'/app/overview' },
+  { id:'console-campaigns', label:'Campaigns', href:'/dashboard/campaigns' },
+  { id:'console-analytics', label:'Analytics', href:'/dashboard/analytics-console' },
+  { id:'console-knowledge', label:'Knowledge base', href:'/dashboard/knowledge-base' },
+  { id:'console-integrations', label:'Integrations', href:'/dashboard/integrations-console' },
+  { id:'console-team', label:'Team', href:'/dashboard/team' },
+  { id:'console-billing', label:'Billing', href:'/dashboard/billing' },
+  { id:'console-webhooks', label:'Webhooks', href:'/dashboard/webhooks' },
+  { id:'console-audit', label:'Audit log', href:'/dashboard/audit-log' },
+  { id:'console-workspace-settings', label:'Workspace settings', href:'/dashboard/settings' },
+  { id:'console-identity-settings', label:'Identity settings', href:'/dashboard/settings/identity' },
+];

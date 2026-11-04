@@ -1,23 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api, ApiError } from "@/lib/api";
+import type { BacktestResult, ForecastProjection, ForecastResult } from "@/lib/api";
 
-// GAP-P1: Forecasting Agent — Full Workspace E2E (projections, confidence intervals, scenarios, backtesting)
-// Backend: app/forecasting/service.py analyze(), app/analytics/forecast.py project_usage(), forecast_routes.py 2 routes
+/**
+ * Forecasting console.
+ *
+ * Every projection, interval and error metric on this page comes from the
+ * backend: `POST /api/forecast` (app/api/forecast_routes.py ->
+ * app/forecasting/service.py -> app/analytics/forecast.py) and
+ * `POST /api/forecast/backtest`. Nothing is generated in the browser: an
+ * earlier revision synthesised projections with pseudorandom noise and showed
+ * them next to a real chart, which made a produced-by-nobody number look like a
+ * backend result. That code is gone.
+ *
+ * The route requires `environment_id` and `model_version_id` (both UUIDs) and an
+ * `idempotency_key` of at least 8 characters, so the form collects them
+ * explicitly and the page renders a NOT_CONFIGURED state until they are given.
+ */
 
 interface UsagePoint {
   period: string;
   value: number;
-}
-
-interface Projection {
-  step: number;
-  period: string;
-  value: number;
-  lower: number | null;
-  upper: number | null;
-  interval_status: string;
 }
 
 interface Scenario {
@@ -28,10 +33,36 @@ interface Scenario {
   window: number;
   alpha: number;
   points: UsagePoint[];
-  projections: Projection[];
-  interval_method: string;
-  data_quality: string;
-  review_required: boolean;
+  result: ForecastResult;
+}
+
+const METHODS: Array<{ value: string; label: string }> = [
+  { value: "linear", label: "linear — trend with residual interval spread" },
+  { value: "moving_average", label: "moving_average — trailing window" },
+  { value: "exponential_smoothing", label: "exponential_smoothing — alpha" },
+];
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isUuid(value: string): boolean {
+  return UUID_RE.test(value.trim());
+}
+
+function nextPeriodLabel(last: string): string {
+  const parsed = new Date(last);
+  if (Number.isNaN(parsed.getTime())) return last;
+  parsed.setUTCDate(parsed.getUTCDate() + 1);
+  return parsed.toISOString().slice(0, 10);
+}
+
+function idempotencyKey(prefix: string): string {
+  // `crypto.randomUUID` is an RFC 4122 identifier, not a data value: it only
+  // keys the request so a retry cannot create a second execution record.
+  const suffix =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}`;
+  return `${prefix}-${suffix}`.slice(0, 200);
 }
 
 export default function ForecastingPage() {
@@ -48,108 +79,139 @@ export default function ForecastingPage() {
   const [horizon, setHorizon] = useState(7);
   const [windowSize, setWindowSize] = useState(3);
   const [alpha, setAlpha] = useState(0.5);
-  const [projections, setProjections] = useState<Projection[]>([]);
+  const [environmentId, setEnvironmentId] = useState("");
+  const [modelVersionId, setModelVersionId] = useState("");
+  const [seriesReference, setSeriesReference] = useState("");
+
+  const [result, setResult] = useState<ForecastResult | null>(null);
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(null);
-  const [backtestResult, setBacktestResult] = useState<{ mape: number; rmse: number; method: string; points: number } | null>(null);
+  const [backtest, setBacktest] = useState<BacktestResult | null>(null);
+  const [running, setRunning] = useState<null | "forecast" | "backtest">(null);
   const [error, setError] = useState<string | null>(null);
+  const [notConfigured, setNotConfigured] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [dataQuality, setDataQuality] = useState<string>("VERIFIED");
-  const [intervalMethod, setIntervalMethod] = useState<string>("existing analytics forecast spread");
 
-  const selectedScenario = scenarios.find((s) => s.id === selectedScenarioId);
+  const configured = isUuid(environmentId) && isUuid(modelVersionId);
+  const projections: ForecastProjection[] = result?.projections ?? [];
+  const selectedScenario = scenarios.find((s) => s.id === selectedScenarioId) ?? null;
 
+  // Probe the forecasting surface once so an unauthenticated / unprovisioned
+  // workspace sees a clear state instead of an empty chart.
   useEffect(() => {
     let cancelled = false;
-    api.specializedAgents()
+    api
+      .specializedAgents()
       .then((agents) => {
         if (cancelled) return;
-        const forecasting = agents.find((a: any) => a.type === "forecasting");
-        if (!forecasting) {
-          setError("Forecasting agent not found in registry — check app/specialized_agents/registry.py");
-        }
+        const forecasting = agents.find((a) => a.type === "forecasting");
+        setNotConfigured(!forecasting);
       })
       .catch((err) => {
-        if (!cancelled) setError(err instanceof ApiError ? err.message : "Failed to load forecasting");
+        if (cancelled) return;
+        if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+          setError("Your session cannot read the specialized-agent registry. Sign in again or ask an administrator for analytics access.");
+          return;
+        }
+        setError(err instanceof ApiError ? err.message : "Failed to load the forecasting agent registry");
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  function generateProjections() {
-    // Simulate backend ForecastingService.analyze() + project_usage() logic
-    // Real backend: delegates to app/analytics/forecast.py linear_trend, moving_average, exponential_smoothing
-    const lastValue = points[points.length - 1]?.value || 100;
-    const trend = method === "linear" ? 5 : method === "moving_average" ? 0 : 2;
-    const enoughData = points.length >= (method === "linear" ? 2 : Math.max(1, method === "moving_average" ? windowSize : 2));
-    const residualAvailable = method === "linear" && points.length >= 3;
-    const intervalAvailable = residualAvailable;
-    
-    const newProjections: Projection[] = [];
-    for (let i = 1; i <= horizon; i++) {
-      let value: number;
-      if (method === "linear") {
-        value = lastValue + trend * i + (Math.random() - 0.5) * 10;
-      } else if (method === "moving_average") {
-        const windowVals = points.slice(-windowSize).map((p) => p.value);
-        const avg = windowVals.reduce((a, b) => a + b, 0) / windowVals.length;
-        value = avg + (Math.random() - 0.5) * 8;
-      } else {
-        // exponential_smoothing
-        value = lastValue * (1 - alpha) + (lastValue + trend) * alpha + (Math.random() - 0.5) * 6;
-      }
-      const spread = residualAvailable ? 15 + i * 2 : 0;
-      newProjections.push({
-        step: i,
-        period: `2026-09-${String(7 + i).padStart(2, "0")}`,
-        value: Math.round(value * 10) / 10,
-        lower: intervalAvailable ? Math.round((value - spread) * 10) / 10 : null,
-        upper: intervalAvailable ? Math.round((value + spread) * 10) / 10 : null,
-        interval_status: intervalAvailable ? "available" : "NOT_AVAILABLE",
-      });
+  const series = useMemo(
+    () => points.filter((p) => p.period.trim() !== "" && Number.isFinite(p.value)),
+    [points],
+  );
+
+  async function runForecast() {
+    if (!configured) {
+      setError("Enter the environment UUID and the model-version UUID first.");
+      return;
     }
-    setProjections(newProjections);
-    setDataQuality(enoughData ? "VERIFIED" : "NOT_AVAILABLE");
-    setIntervalMethod(intervalAvailable ? "existing analytics forecast spread" : "NOT_AVAILABLE");
+    if (series.length < 1) {
+      setError("Add at least one observation before projecting.");
+      return;
+    }
+    setError(null);
+    setRunning("forecast");
+    try {
+      const response = await api.forecast({
+        environment_id: environmentId.trim(),
+        model_version_id: modelVersionId.trim(),
+        idempotency_key: idempotencyKey("forecast"),
+        series_reference: seriesReference.trim() || undefined,
+        series,
+        method,
+        configuration: { window: windowSize, alpha },
+        horizon,
+      });
+      setResult(response);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        if (err.status === 403) setError("You do not have analytics permission for forecasting.");
+        else if (err.code === "NOT_CONFIGURED") setNotConfigured(true);
+        else setError(err.message);
+      } else {
+        setError("Forecast request failed.");
+      }
+    } finally {
+      setRunning(null);
+    }
+  }
+
+  async function runBacktest() {
+    if (!configured) {
+      setError("Enter the environment UUID and the model-version UUID first.");
+      return;
+    }
+    if (series.length < 3) {
+      setError("A backtest needs at least three observations so a test window remains after the train split.");
+      return;
+    }
+    setError(null);
+    setRunning("backtest");
+    try {
+      const response = await api.backtestForecast({
+        environment_id: environmentId.trim(),
+        model_version_id: modelVersionId.trim(),
+        idempotency_key: idempotencyKey("backtest"),
+        series_reference: seriesReference.trim() || undefined,
+        series,
+        method,
+        configuration: { window: windowSize, alpha },
+        test_size: Math.min(2, series.length - 1),
+      });
+      setBacktest(response);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Backtest request failed.");
+    } finally {
+      setRunning(null);
+    }
   }
 
   function saveScenario() {
-    const id = `scenario-${Date.now()}`;
-    const scenario: Scenario = {
-      id,
-      name: `Scenario ${scenarios.length + 1} — ${method} h=${horizon}`,
-      method,
-      horizon,
-      window: windowSize,
-      alpha,
-      points: [...points],
-      projections: [...projections],
-      interval_method: intervalMethod,
-      data_quality: dataQuality,
-      review_required: dataQuality !== "VERIFIED",
-    };
-    setScenarios((prev) => [...prev, scenario]);
+    if (!result) return;
+    const id = result.execution_id;
+    setScenarios((prev) => [
+      ...prev.filter((s) => s.id !== id),
+      { id, name: `${method} · h=${horizon}`, method, horizon, window: windowSize, alpha, points: [...series], result },
+    ]);
     setSelectedScenarioId(id);
   }
 
-  function runBacktest() {
-    // Simulate backtesting: split points into train/test, forecast, compare
-    if (points.length < 4) { setError("Need at least 4 points for backtest"); return; }
-    const train = points.slice(0, -2);
-    const test = points.slice(-2);
-    // Simulate forecast error
-    const mape = Math.round((Math.random() * 10 + 5) * 10) / 10; // 5-15%
-    const rmse = Math.round((Math.random() * 20 + 10) * 10) / 10;
-    setBacktestResult({ mape, rmse, method, points: train.length });
-  }
-
   function addPoint() {
-    const lastDate = points.length > 0 ? new Date(points[points.length - 1].period) : new Date();
-    lastDate.setDate(lastDate.getDate() + 1);
-    const period = lastDate.toISOString().split("T")[0];
-    setPoints((prev) => [...prev, { period, value: Math.round(100 + Math.random() * 50) }]);
+    const last = points[points.length - 1];
+    // No generated value: the new row carries the last observation forward and
+    // stays editable, so the operator types what actually happened.
+    setPoints([
+      ...points,
+      { period: last ? nextPeriodLabel(last.period) : new Date().toISOString().slice(0, 10), value: last ? last.value : 0 },
+    ]);
   }
 
   if (loading) return <div className="loading">Loading forecasting agent…</div>;
@@ -157,162 +219,293 @@ export default function ForecastingPage() {
   return (
     <>
       <header className="page-head">
-        <h1>Forecasting Agent — Scenarios, Confidence Intervals, Backtesting (P1) Full Workspace</h1>
-        <p className="muted">Backend: app/forecasting/service.py analyze() validates non-empty unique periods, strictly increasing dates, 1-100k points, finite values, delegates to app/analytics/forecast.py project_usage() linear_trend/moving_average/exponential_smoothing, 2 routes</p>
-        <p className="muted">LuMay: Forecasting, confidence intervals, scenarios, backtesting — demo at /us/explore-ai-services</p>
+        <h1>Forecasting — projections, confidence intervals, backtests</h1>
+        <p className="muted">
+          Backend: <code>POST /api/forecast</code> and <code>POST /api/forecast/backtest</code> →
+          app/forecasting/service.py → app/analytics/forecast.py (linear, moving_average,
+          exponential_smoothing). Every number below is returned by that service.
+        </p>
       </header>
 
-      {error && <div className="error-banner">{error} <button onClick={() => setError(null)} style={{ marginLeft: 8 }}>×</button></div>}
+      {notConfigured && (
+        <div className="error-banner" role="status">
+          NOT_CONFIGURED — the forecasting agent is not registered in
+          app/specialized_agents/registry.py, so this surface cannot produce a projection.
+          Nothing is substituted locally.
+        </div>
+      )}
+
+      {error && (
+        <div className="error-banner" role="alert">
+          {error}{" "}
+          <button onClick={() => setError(null)} style={{ marginLeft: 8 }}>
+            ×
+          </button>
+        </div>
+      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "320px 1fr 320px", gap: 12 }}>
-        {/* Left: Series Input + Methods */}
         <section className="card" style={{ padding: 12 }}>
-          <h3>Series Input — UsagePoint</h3>
-          <p style={{ fontSize: 11, color: "#666" }}>Validation: non-empty unique periods, strictly increasing dates, 1-100k points, finite values — per service.py</p>
+          <h3>Scope</h3>
+          <label style={{ fontSize: 11 }}>Environment ID (UUID)</label>
+          <input
+            type="text"
+            data-testid="forecast-environment-id"
+            value={environmentId}
+            onChange={(e) => setEnvironmentId(e.target.value)}
+            placeholder="00000000-0000-0000-0000-000000000000"
+            style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }}
+          />
+          <label style={{ fontSize: 11, display: "block", marginTop: 6 }}>Model version ID (UUID)</label>
+          <input
+            type="text"
+            data-testid="forecast-model-version-id"
+            value={modelVersionId}
+            onChange={(e) => setModelVersionId(e.target.value)}
+            placeholder="00000000-0000-0000-0000-000000000000"
+            style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }}
+          />
+          <label style={{ fontSize: 11, display: "block", marginTop: 6 }}>Series reference (optional)</label>
+          <input
+            type="text"
+            value={seriesReference}
+            onChange={(e) => setSeriesReference(e.target.value)}
+            placeholder="usage:voice_minutes:2026-Q3"
+            style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }}
+          />
+
+          <h3 style={{ marginTop: 16 }}>Series input — UsagePoint</h3>
+          <p style={{ fontSize: 11, color: "#666" }}>
+            Validated by the service: unique periods, strictly increasing dates, finite values.
+          </p>
           <div style={{ maxHeight: 200, overflowY: "auto", border: "1px solid #e5e7eb", borderRadius: 6, padding: 6, marginTop: 8 }}>
             {points.map((p, i) => (
               <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 60px 24px", gap: 4, marginBottom: 4 }}>
-                <input value={p.period} onChange={(e) => { const pts = [...points]; pts[i]={...pts[i], period: e.target.value}; setPoints(pts); }} style={{ padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }} />
-                <input type="number" value={p.value} onChange={(e) => { const pts = [...points]; pts[i]={...pts[i], value: parseFloat(e.target.value)||0}; setPoints(pts); }} style={{ padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }} />
-                <button onClick={() => setPoints(points.filter((_, idx) => idx!==i))} style={{ padding: 2, borderRadius: 4, border: "1px solid #ccc", background: "#fff", cursor: "pointer", fontSize: 10 }}>×</button>
+                <input
+                  value={p.period}
+                  onChange={(e) => {
+                    const next = [...points];
+                    next[i] = { ...next[i], period: e.target.value };
+                    setPoints(next);
+                  }}
+                  style={{ padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }}
+                />
+                <input
+                  type="number"
+                  value={p.value}
+                  onChange={(e) => {
+                    const next = [...points];
+                    next[i] = { ...next[i], value: e.target.value === "" ? Number.NaN : parseFloat(e.target.value) };
+                    setPoints(next);
+                  }}
+                  style={{ padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }}
+                />
+                <button
+                  onClick={() => setPoints(points.filter((_, idx) => idx !== i))}
+                  aria-label={`Remove point ${p.period}`}
+                  style={{ padding: 2, borderRadius: 4, border: "1px solid #ccc", background: "#fff", cursor: "pointer", fontSize: 10 }}
+                >
+                  ×
+                </button>
               </div>
             ))}
           </div>
-          <button onClick={addPoint} style={{ width: "100%", marginTop: 8, padding: "6px", borderRadius: 6, border: "1px solid #ccc", background: "#fff", cursor: "pointer", fontSize: 12 }}>+ Add Point</button>
+          <button onClick={addPoint} style={{ width: "100%", marginTop: 8, padding: 6, borderRadius: 6, border: "1px solid #ccc", background: "#fff", cursor: "pointer", fontSize: 12 }}>
+            + Add point
+          </button>
 
           <div style={{ marginTop: 16 }}>
-            <h4>Methods — FORECAST_METHODS</h4>
+            <h4>Method</h4>
             <select value={method} onChange={(e) => setMethod(e.target.value)} style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc" }}>
-              <option value="linear">linear — linear trend with residual error spread for intervals</option>
-              <option value="moving_average">moving_average — trailing window</option>
-              <option value="exponential_smoothing">exponential_smoothing — alpha</option>
+              {METHODS.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {m.label}
+                </option>
+              ))}
             </select>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginTop: 8 }}>
-              <div><label style={{ fontSize: 11 }}>Horizon (1-365)</label><input type="number" min={1} max={365} value={horizon} onChange={(e) => setHorizon(parseInt(e.target.value)||1)} style={{ width: "100%", padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }} /></div>
-              <div><label style={{ fontSize: 11 }}>Window (MA)</label><input type="number" min={1} max={20} value={windowSize} onChange={(e) => setWindowSize(parseInt(e.target.value)||1)} style={{ width: "100%", padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }} /></div>
-              <div><label style={{ fontSize: 11 }}>Alpha (Exp)</label><input type="number" min={0} max={1} step={0.1} value={alpha} onChange={(e) => setAlpha(parseFloat(e.target.value)||0.5)} style={{ width: "100%", padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }} /></div>
+              <div>
+                <label style={{ fontSize: 11 }}>Horizon</label>
+                <input type="number" min={1} max={365} value={horizon} onChange={(e) => setHorizon(parseInt(e.target.value, 10) || 1)} style={{ width: "100%", padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 11 }}>Window</label>
+                <input type="number" min={1} max={100} value={windowSize} onChange={(e) => setWindowSize(parseInt(e.target.value, 10) || 1)} style={{ width: "100%", padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 11 }}>Alpha</label>
+                <input type="number" min={0} max={1} step={0.1} value={alpha} onChange={(e) => setAlpha(parseFloat(e.target.value) || 0)} style={{ width: "100%", padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }} />
+              </div>
             </div>
-            <button onClick={generateProjections} style={{ width: "100%", marginTop: 12, padding: "8px", background: "#10b981", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer" }}>▶ Generate Projections (project_usage)</button>
-            <div style={{ marginTop: 8, fontSize: 11, padding: 8, background: "#f9fafb", borderRadius: 4 }}>
-              <div>Data Quality: {dataQuality} — {dataQuality==="VERIFIED" ? "enough_data ≥2 for linear, ≥window for MA" : "NOT_AVAILABLE — review_required"}</div>
-              <div>Interval: {intervalMethod} — available only when method=linear AND points≥3 (residual_error)</div>
-              <div>Review: {dataQuality!=="VERIFIED" ? "REQUIRED" : "NOT_REQUIRED"} — quality != VERIFIED</div>
-            </div>
+            <button
+              onClick={runForecast}
+              disabled={running !== null || !configured}
+              data-testid="run-forecast"
+              style={{ width: "100%", marginTop: 12, padding: 8, background: configured ? "#10b981" : "#9ca3af", color: "#fff", border: "none", borderRadius: 6, cursor: configured ? "pointer" : "not-allowed" }}
+            >
+              {running === "forecast" ? "Projecting…" : "▶ Run projection"}
+            </button>
+            {!configured && (
+              <p style={{ fontSize: 11, color: "#92400e" }}>
+                NOT_CONFIGURED — both UUIDs are required by the route schema; the button stays disabled until they parse.
+              </p>
+            )}
           </div>
         </section>
 
-        {/* Center: Projections + Confidence Visualization */}
         <section className="card" style={{ padding: 12 }}>
-          <h3>Projections ({projections.length}) + Confidence Intervals</h3>
-          {projections.length === 0 ? <p style={{ fontSize: 12, color: "#888" }}>Generate projections to see confidence visualization. Backend: project_usage() returns step, period label, value, lower, upper, interval_status</p> : (
+          <h3>Projections ({projections.length})</h3>
+          {!result ? (
+            <p style={{ fontSize: 12, color: "#888" }}>
+              No projection yet. Run one: the response carries step, period, value, lower,
+              upper and interval_status exactly as project_usage() computed them.
+            </p>
+          ) : (
             <>
-              <div style={{ height: 200, position: "relative", border: "1px solid #e5e7eb", borderRadius: 6, padding: 10, background: "#fff", overflow: "hidden" }}>
-                {/* Simple confidence visualization */}
-                <svg width="100%" height="100%" viewBox="0 0 400 160" style={{ overflow: "visible" }}>
-                  {/* Grid */}
-                  {[0,1,2,3,4].map((i) => <line key={i} x1={0} y1={i*40} x2={400} y2={i*40} stroke="#f3f4f6" strokeWidth={1} />)}
-                  {/* Confidence band */}
-                  {projections.filter(p=>p.lower!==null).length > 0 && (
-                    <path d={`M ${projections.map((p,i)=>`${(i/(projections.length-1))*380+10} ${160 - ((p.upper||0)-80)*1.2}`).join(" L ")} L ${projections.map((p,i)=>`${((projections.length-1-i)/(projections.length-1))*380+10} ${160 - ((p.lower||0)-80)*1.2}`).reverse().join(" L ")} Z`} fill="#dbeafe" fillOpacity={0.5} stroke="#93c5fd" strokeWidth={1} />
-                  )}
-                  {/* Points line */}
-                  <polyline points={points.map((p,i)=>`${(i/(points.length-1))*200} ${160 - (p.value-80)*1.2}`).join(",")} fill="none" stroke="#6b7280" strokeWidth={2} strokeDasharray="4 2" />
-                  {/* Projections line */}
-                  <polyline points={projections.map((p,i)=>`${200 + (i/(projections.length-1))*180+10} ${160 - (p.value-80)*1.2}`).join(",")} fill="none" stroke="#3b82f6" strokeWidth={2} />
-                  {/* Dots */}
-                  {points.map((p,i)=><circle key={i} cx={(i/(points.length-1))*200} cy={160 - (p.value-80)*1.2} r={3} fill="#6b7280" />)}
-                  {projections.map((p,i)=><circle key={i} cx={200 + (i/(projections.length-1))*180+10} cy={160 - (p.value-80)*1.2} r={4} fill="#3b82f6" />)}
-                </svg>
-                <div style={{ position: "absolute", bottom: 4, left: 8, fontSize: 10, color: "#666" }}>Historical (dashed) → Forecast (blue) | Confidence band (light blue) = lower/upper when interval_status available</div>
+              <div style={{ fontSize: 11, padding: 8, background: "#f9fafb", borderRadius: 4 }}>
+                <div>Execution: {result.execution_id} · status {result.status}</div>
+                <div>Method: {result.method} · horizon {result.horizon} · quality {result.data_quality}</div>
+                <div>Interval: {result.interval_method ?? "not reported"} · review {result.review_state}</div>
+                {result.disclaimer && <div style={{ marginTop: 4 }}>{result.disclaimer}</div>}
               </div>
-              <div className="table-wrap" style={{ marginTop: 12, maxHeight: 250, overflowY: "auto" }}>
+
+              <div style={{ height: 220, position: "relative", border: "1px solid #e5e7eb", borderRadius: 6, padding: 10, background: "#fff", marginTop: 10, overflow: "hidden" }}>
+                <svg width="100%" height="100%" viewBox="0 0 400 180" preserveAspectRatio="none" role="img" aria-label="Historical series and forecast projections">
+                  {[0, 1, 2, 3, 4].map((i) => (
+                    <line key={i} x1={0} y1={i * 45} x2={400} y2={i * 45} stroke="#f3f4f6" strokeWidth={1} />
+                  ))}
+                  <polyline
+                    points={series.map((p, i) => `${20 + (i / Math.max(1, series.length - 1)) * 150},${170 - p.value}`).join(" ")}
+                    fill="none"
+                    stroke="#6b7280"
+                    strokeWidth={2}
+                    strokeDasharray="4 2"
+                  />
+                  <polyline
+                    points={projections.map((p, i) => `${190 + (i / Math.max(1, projections.length - 1)) * 190},${170 - p.value}`).join(" ")}
+                    fill="none"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                  />
+                  {projections
+                    .filter((p) => p.lower !== null && p.upper !== null)
+                    .map((p, i) => (
+                      <line
+                        key={`ci-${p.step}`}
+                        x1={190 + (i / Math.max(1, projections.length - 1)) * 190}
+                        x2={190 + (i / Math.max(1, projections.length - 1)) * 190}
+                        y1={170 - (p.upper ?? 0)}
+                        y2={170 - (p.lower ?? 0)}
+                        stroke="#93c5fd"
+                        strokeWidth={6}
+                        strokeLinecap="round"
+                        opacity={0.6}
+                      />
+                    ))}
+                </svg>
+                <div style={{ position: "absolute", bottom: 4, left: 8, fontSize: 10, color: "#666" }}>
+                  Historical (dashed) → forecast (blue) · vertical bars = lower/upper when interval_status says available
+                </div>
+              </div>
+
+              <div className="table-wrap" style={{ marginTop: 12, maxHeight: 260, overflowY: "auto" }}>
                 <table>
-                  <thead><tr><th>Step</th><th>Period</th><th>Value</th><th>Lower</th><th>Upper</th><th>Interval</th></tr></thead>
+                  <thead>
+                    <tr>
+                      <th>Step</th>
+                      <th>Period</th>
+                      <th>Value</th>
+                      <th>Lower</th>
+                      <th>Upper</th>
+                      <th>Interval</th>
+                    </tr>
+                  </thead>
                   <tbody>
                     {projections.map((p) => (
-                      <tr key={p.step}><td>{p.step}</td><td>{p.period}</td><td>{p.value}</td><td>{p.lower ?? "null"}</td><td>{p.upper ?? "null"}</td><td><span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 4, background: p.interval_status==="available" ? "#d1fae5" : "#fef3c7" }}>{p.interval_status}</span></td></tr>
+                      <tr key={p.step}>
+                        <td>{p.step}</td>
+                        <td>{p.period}</td>
+                        <td>{p.value}</td>
+                        <td>{p.lower ?? "—"}</td>
+                        <td>{p.upper ?? "—"}</td>
+                        <td>
+                          <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 4, background: p.interval_status === "available" ? "#d1fae5" : "#fef3c7" }}>
+                            {p.interval_status}
+                          </span>
+                        </td>
+                      </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
+
               <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
-                <button onClick={saveScenario} style={{ padding: "6px 12px", background: "#8b5cf6", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12 }}>💾 Save as Scenario</button>
-                <button onClick={runBacktest} style={{ padding: "6px 12px", background: "#f59e0b", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12 }}>🧪 Run Backtest</button>
+                <button onClick={saveScenario} style={{ padding: "6px 12px", background: "#8b5cf6", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12 }}>
+                  💾 Keep in comparison
+                </button>
+                <button onClick={runBacktest} disabled={running !== null} style={{ padding: "6px 12px", background: "#f59e0b", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12 }}>
+                  {running === "backtest" ? "Backtesting…" : "🧪 Run backtest"}
+                </button>
               </div>
             </>
           )}
         </section>
 
-        {/* Right: Scenarios + Backtesting */}
         <section className="card" style={{ padding: 12 }}>
-          <h3>Scenarios ({scenarios.length}) — Comparison</h3>
-          <div style={{ maxHeight: 200, overflowY: "auto", border: "1px solid #e5e7eb", borderRadius: 6, padding: 6 }}>
-            {scenarios.length === 0 ? <p style={{ fontSize: 11, color: "#888" }}>No scenarios yet. Generate projections and save as scenario. LuMay: scenarios, backtesting, confidence intervals</p> : scenarios.map((s) => (
-              <button key={s.id} onClick={() => setSelectedScenarioId(s.id)} style={{ width: "100%", textAlign: "left", padding: "8px", borderRadius: 6, border: selectedScenarioId===s.id ? "2px solid #000" : "1px solid #e5e7eb", background: "#fff", marginBottom: 6, cursor: "pointer" }}>
+          <h3>Comparison ({scenarios.length})</h3>
+          {scenarios.length === 0 ? (
+            <p style={{ fontSize: 11, color: "#888" }}>
+              Each saved entry is a real backend response kept in memory for side-by-side
+              comparison. Nothing is stored server-side.
+            </p>
+          ) : (
+            scenarios.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => setSelectedScenarioId(s.id)}
+                style={{ width: "100%", textAlign: "left", padding: 8, borderRadius: 6, border: selectedScenarioId === s.id ? "2px solid #000" : "1px solid #e5e7eb", background: "#fff", marginBottom: 6, cursor: "pointer" }}
+              >
                 <div style={{ fontSize: 12, fontWeight: 600 }}>{s.name}</div>
-                <div style={{ fontSize: 10, color: "#666" }}>{s.method} | h={s.horizon} | {s.projections.length} proj | {s.data_quality} | review {s.review_required ? "REQUIRED" : "NOT"}</div>
-                <div style={{ fontSize: 10, color: "#888" }}>Interval: {s.interval_method.slice(0,30)}</div>
+                <div style={{ fontSize: 10, color: "#666" }}>
+                  {s.method} · h={s.horizon} · {s.result.projections.length} projections · quality {s.result.data_quality}
+                </div>
               </button>
-            ))}
-          </div>
+            ))
+          )}
 
           {selectedScenario && (
             <div style={{ marginTop: 12, padding: 8, background: "#f5f3ff", borderRadius: 6, fontSize: 11 }}>
               <div style={{ fontWeight: 600 }}>{selectedScenario.name}</div>
-              <div>Method: {selectedScenario.method}, Horizon: {selectedScenario.horizon}, Window: {selectedScenario.window}, Alpha: {selectedScenario.alpha}</div>
-              <div>Points: {selectedScenario.points.length}, Projections: {selectedScenario.projections.length}</div>
-              <div>Quality: {selectedScenario.data_quality}, Interval: {selectedScenario.interval_method}</div>
-              <div style={{ marginTop: 6 }}>Projections: {selectedScenario.projections.map(p=>p.value).join(", ").slice(0,80)}...</div>
+              <div>Execution: {selectedScenario.result.execution_id}</div>
+              <div>Values: {selectedScenario.result.projections.map((p) => p.value).join(", ")}</div>
             </div>
           )}
 
           <div style={{ marginTop: 16 }}>
-            <h4>Backtesting — Honest Evaluation</h4>
-            <p style={{ fontSize: 11, color: "#666" }}>Split series into train/test, forecast, compare. Backend would use existing analytics forecast spread for residual error</p>
-            <button onClick={runBacktest} style={{ width: "100%", padding: "8px", background: "#f59e0b", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12, marginTop: 8 }}>Run Backtest (train/test split)</button>
-            {backtestResult && (
+            <h4>Backtest — honest evaluation</h4>
+            {!backtest ? (
+              <p style={{ fontSize: 11, color: "#666" }}>
+                Splits the supplied series, forecasts the tail and reports the backend's own
+                MAPE/RMSE with its mape_status.
+              </p>
+            ) : (
               <div style={{ marginTop: 8, padding: 8, background: "#fef3c7", borderRadius: 6, fontSize: 11 }}>
-                <div style={{ fontWeight: 600 }}>Backtest Result — {backtestResult.method}</div>
-                <div>Train points: {backtestResult.points} | MAPE: {backtestResult.mape}% | RMSE: {backtestResult.rmse}</div>
-                <div>Method metadata: implementation app.analytics.forecast.project_usage, version existing</div>
-                <div>Disclaimer: Forecasts are estimates from supplied series and do not guarantee future outcomes</div>
+                <div style={{ fontWeight: 600 }}>Backtest — {backtest.method}</div>
+                <div>
+                  Train {backtest.train_points} · test {backtest.test_points}
+                </div>
+                <div>
+                  MAPE {backtest.mape === null ? `— (${backtest.mape_status})` : `${backtest.mape}%`} · RMSE {backtest.rmse}
+                </div>
+                <div style={{ marginTop: 4 }}>
+                  {backtest.comparisons.map((c) => `${c.period}: actual ${c.actual} / predicted ${c.predicted}`).join(" · ")}
+                </div>
+                {backtest.disclaimer && <div style={{ marginTop: 4 }}>{backtest.disclaimer}</div>}
               </div>
             )}
           </div>
-
-          <div style={{ marginTop: 16 }}>
-            <h4>Example Payload</h4>
-            <pre style={{ fontSize: 10, background: "#f9fafb", padding: 8, borderRadius: 4, overflowX: "auto" }}>
-{`POST /api/specialized-agents/forecasting/execute
-{
-  "environment_id": "uuid",
-  "payload": {
-    "points": [{"period": "2026-01-01", "value": 100}],
-    "method": "linear",
-    "horizon": 7,
-    "window": 3,
-    "alpha": 0.5
-  }
-}
-Response: method, projections[], interval_method, data_quality, review_required, disclaimer`}
-            </pre>
-          </div>
         </section>
       </div>
-
-      <section className="card">
-        <h2>Gap Closure Notes (P1) — Full Workspace E2E</h2>
-        <ul>
-          <li>✅ Series input: UsagePoint period (ISO date) + value (finite), validation non-empty unique periods, strictly increasing dates, 1-100k points — per service.py</li>
-          <li>✅ Methods: linear (trend + residual spread), moving_average (window), exponential_smoothing (alpha) — FORECAST_METHODS from analytics/forecast.py</li>
-          <li>✅ Confidence intervals: lower/upper available only when method=linear AND points≥3 (residual_error), otherwise null + interval_status NOT_AVAILABLE honest, interval_method existing analytics forecast spread</li>
-          <li>✅ Visualization: SVG confidence band (light blue) + historical dashed + forecast blue line, lower/upper band when available</li>
-          <li>✅ Scenarios: save projections as scenario with method/horizon/window/alpha/points/projections/quality/review, comparison list, selected detail</li>
-          <li>✅ Backtesting: train/test split, MAPE/RMSE, method metadata, disclaimer "Forecasts are estimates..."</li>
-          <li>✅ Quality: VERIFIED if enough data (≥2 for linear, ≥window for MA), else NOT_AVAILABLE, review_required when quality != VERIFIED</li>
-          <li>Build: Next build passes</li>
-        </ul>
-      </section>
     </>
   );
 }

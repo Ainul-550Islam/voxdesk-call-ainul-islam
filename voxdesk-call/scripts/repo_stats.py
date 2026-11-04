@@ -203,6 +203,7 @@ secret, and E2E mode off. Those checks are enforced by
 
 | Command | What it produces |
 |---|---|
+| `bash scripts/run_full_tests.sh` | checks Postgres and Redis, migrates to head, runs every chunk with JUnit and a summary table (`docs/TESTING.md`) |
 | `python scripts/pytest_chunks.py` | runs the whole population in chunks, JUnit per chunk |
 | `python scripts/reconcile_validation_results.py --ci` | fails when collected != recorded; writes `reports/TEST_EVIDENCE_SUMMARY.json` |
 | `make staging-proof` | `evidence/staging/<date>/staging_proof.json` from a real `docker compose up --build` |

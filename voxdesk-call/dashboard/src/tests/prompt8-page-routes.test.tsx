@@ -13,10 +13,10 @@ describe('Prompt 8 direct product and console route mappings', () => {
   })
 
   it.each([
-    ['/campaigns', 'LegacyCampaignsPage', '/campaigns'],
-    ['/settings', 'LegacySettingsPage', '/security-settings'],
-    ['/billing', 'LegacyBillingPage', '/billing'],
-  ])('%s bridges to its operator-console hash route', (path, component, legacyPath) => {
+    ['/campaigns', 'CampaignsPage', '/campaigns'],
+    ['/settings', 'WorkspaceSettingsPage', '/security-settings'],
+    ['/billing', 'BillingPage', '/billing'],
+  ])('%s resolves to its real console page while keeping the legacy alias', (path, component, legacyPath) => {
     const match = matchRoute(path)
     expect(match?.route.component).toBe(component)
     expect(match?.route.legacyPath).toBe(legacyPath)

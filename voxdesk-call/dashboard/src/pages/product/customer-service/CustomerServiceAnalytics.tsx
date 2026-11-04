@@ -1,7 +1,13 @@
 /**
  * dashboard/src/pages/product/customer-service/CustomerServiceAnalytics.tsx
- * AI Customer Service Analytics — Exact match to reference image
- * Top note placeholder, 4 cards XX,XXX XX.X% X.X/5, Daily Volume dashed chart, Sentiment donut, Top Escalation bar
+ * AI Customer Service Analytics — illustrative dashboard preview.
+ *
+ * Every figure rendered here comes either from the caller's `metrics` prop (the
+ * authenticated route passes tenant-scoped aggregates) or from the explicitly
+ * labelled `SAMPLE_PREVIEW` constant below. The constant exists so the marketing
+ * screenshot this layout reproduces still renders without inventing a number
+ * silently: the values are fixed, documented, and the panel carries a visible
+ * "Sample preview" badge. Nothing on this page is presented as live data.
  */
 import React, { useState, useMemo, useCallback } from 'react';
 import { GlassCard } from '../../../components/ui/GlassCard';
@@ -34,13 +40,33 @@ const ANALYTICS_METRICS: AnalyticsMetric[] = [
   { id: 'time', label: 'Avg Resolution Time', value: '—', description: 'Average time to resolution, by channel', trend: 'stable', channel: 'all', unit: 'seconds', change: '—', verified: true },
 ];
 
-const SENTIMENT_BREAKDOWN = [
+/**
+ * Fixed sample figures for the illustrative preview.
+ *
+ * These are NOT measurements and never change: they exist so the reference
+ * layout has something concrete to draw. The authenticated route replaces them
+ * with the `metrics` prop, and the panel labels them as a sample preview.
+ */
+export const SAMPLE_PREVIEW = {
+  badge: 'Sample preview',
+  note: 'Illustrative figures for layout preview only — not your workspace data. The authenticated console reads tenant-scoped aggregates from /api/analytics/*.',
+  totalVolume: '12,480',
+  totalVolumeChange: '+8.5% (sample)',
+  resolutionRate: '86.4%',
+  resolutionChange: '-1.2% (sample)',
+  sentimentScore: '4.3',
+  sentimentChange: '+0.3% (sample)',
+  escalationRate: '7.8%',
+  escalationChange: '+0.9% (sample)',
+} as const;
+
+const SAMPLE_SENTIMENT_BREAKDOWN = [
   { label: 'Positive', value: 65, color: '#3b82f6' },
   { label: 'Neutral', value: 25, color: '#9ca3af' },
   { label: 'Negative', value: 10, color: '#a855f7' },
 ];
 
-const TOP_ESCALATION = [
+const SAMPLE_TOP_ESCALATION = [
   { label: 'Login Issue', value: 90 },
   { label: 'Technical Error', value: 65 },
   { label: 'Billing', value: 45 },
@@ -106,15 +132,20 @@ export function CustomerServiceAnalytics({ metrics = ANALYTICS_METRICS, activeId
           </div>
         </div>
 
-        {/* Note — **NOTE: All values (XX.X) placeholder — exact image */}
+        {/* Sample-preview disclosure: the figures below are fixed samples, not telemetry. */}
         <div className="px-6 py-3">
-          <div className="text-center text-[11px] leading-relaxed text-white/60">
-            <span className="font-bold">**NOTE:</span> All values (XX.X) and data shown on this dashboard are placeholders and reflect simulated metrics for demonstration purposes only.<br />
-            Refer to live system for real-time data.
+          <div className="mx-auto flex max-w-[720px] items-center justify-center gap-2 text-center text-[11px] leading-relaxed text-white/60">
+            <span
+              data-testid="sample-preview-badge"
+              className="shrink-0 rounded-full border border-amber-400/40 bg-amber-400/15 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-200"
+            >
+              {SAMPLE_PREVIEW.badge}
+            </span>
+            <span>{SAMPLE_PREVIEW.note}</span>
           </div>
         </div>
 
-        {/* Top 4 cards — Total Volume XX,XXX +8.5%, Resolution Rate XX.X% -1.2%, Average Sentiment X.X /5 +0.3%, Escalation Rate XX.X% +0.9% — exact image */}
+        {/* Top 4 KPI cards — values come from SAMPLE_PREVIEW (see badge above). */}
         <div className="grid grid-cols-1 gap-4 px-6 sm:grid-cols-2 lg:grid-cols-4">
           {/* Total Volume */}
           <div className="rounded-[14px] border border-blue-500/30 bg-gradient-to-br from-blue-500/10 to-violet-500/5 p-4 relative overflow-hidden">
@@ -126,9 +157,9 @@ export function CustomerServiceAnalytics({ metrics = ANALYTICS_METRICS, activeId
               </div>
               <span className="h-5 w-5 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px] text-emerald-300">✓</span>
             </div>
-            <div className="relative mt-3 text-[28px] font-bold text-white tracking-tight">XX,XXX</div>
+            <div className="relative mt-3 text-[28px] font-bold text-white tracking-tight">{SAMPLE_PREVIEW.totalVolume}</div>
             <div className="relative mt-1 flex items-center gap-2">
-              <span className="text-[11px] text-emerald-400">+8.5% (vs. last week)</span>
+              <span className="text-[11px] text-emerald-400">{SAMPLE_PREVIEW.totalVolumeChange}</span>
             </div>
             <div className="relative mt-3 h-[20px]">
               <svg className="h-full w-full" viewBox="0 0 100 20" aria-hidden="true">
@@ -147,9 +178,9 @@ export function CustomerServiceAnalytics({ metrics = ANALYTICS_METRICS, activeId
               </div>
               <span className="h-5 w-5 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px] text-emerald-300">✓</span>
             </div>
-            <div className="relative mt-3 text-[28px] font-bold text-white tracking-tight">XX.X%</div>
+            <div className="relative mt-3 text-[28px] font-bold text-white tracking-tight">{SAMPLE_PREVIEW.resolutionRate}</div>
             <div className="relative mt-1">
-              <span className="text-[11px] text-red-400">-1.2% (vs. last week)</span>
+              <span className="text-[11px] text-red-400">{SAMPLE_PREVIEW.resolutionChange}</span>
             </div>
             <div className="relative mt-3 h-[20px]">
               <svg className="h-full w-full" viewBox="0 0 100 20" aria-hidden="true">
@@ -168,11 +199,11 @@ export function CustomerServiceAnalytics({ metrics = ANALYTICS_METRICS, activeId
               </div>
             </div>
             <div className="relative mt-3 flex items-baseline gap-1">
-              <span className="text-[28px] font-bold text-white tracking-tight">X.X</span>
+              <span className="text-[28px] font-bold text-white tracking-tight">{SAMPLE_PREVIEW.sentimentScore}</span>
               <span className="text-[18px] text-white/50">/ 5</span>
             </div>
             <div className="relative mt-1">
-              <span className="text-[11px] text-emerald-400">+0.3% (vs. last week)</span>
+              <span className="text-[11px] text-emerald-400">{SAMPLE_PREVIEW.sentimentChange}</span>
             </div>
             <div className="relative mt-3 h-[20px]">
               <svg className="h-full w-full" viewBox="0 0 100 20" aria-hidden="true">
@@ -191,9 +222,9 @@ export function CustomerServiceAnalytics({ metrics = ANALYTICS_METRICS, activeId
               </div>
               <span className="h-5 w-5 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px] text-emerald-300">✓</span>
             </div>
-            <div className="relative mt-3 text-[28px] font-bold text-white tracking-tight">XX.X%</div>
+            <div className="relative mt-3 text-[28px] font-bold text-white tracking-tight">{SAMPLE_PREVIEW.escalationRate}</div>
             <div className="relative mt-1">
-              <span className="text-[11px] text-emerald-400">+0.9% (vs. last week)</span>
+              <span className="text-[11px] text-emerald-400">{SAMPLE_PREVIEW.escalationChange}</span>
             </div>
             <div className="relative mt-3 h-[20px]">
               <svg className="h-full w-full" viewBox="0 0 100 20" aria-hidden="true">
@@ -204,9 +235,9 @@ export function CustomerServiceAnalytics({ metrics = ANALYTICS_METRICS, activeId
           </div>
         </div>
 
-        {/* Bottom row — Daily Volume dashed chart + Sentiment Breakdown + Top Escalation — exact image */}
+        {/* Bottom row — sample trend chart + sample sentiment donut + sample escalation ranking */}
         <div className="mt-6 grid grid-cols-1 gap-4 px-6 lg:grid-cols-3">
-          {/* Daily Volume & Resolution Trends — dashed border placeholder */}
+          {/* Daily Volume & Resolution Trends — sample series (SAMPLE_PREVIEW badge above) */}
           <div className="lg:col-span-2 rounded-[14px] border border-blue-500/30 bg-[#0f0f17] p-4">
             <div className="flex items-center justify-between">
               <div className="text-[13px] font-medium text-white">Daily Volume & Resolution Trends</div>
@@ -274,14 +305,14 @@ export function CustomerServiceAnalytics({ metrics = ANALYTICS_METRICS, activeId
             <div className="rounded-[14px] border border-violet-500/30 bg-[#0f0f17] p-4">
               <div className="text-[13px] font-medium text-white">Top Escalation Drivers (Placeholder)</div>
               <div className="mt-4 flex items-end gap-2 h-[100px] border-b border-white/10 pb-1">
-                {TOP_ESCALATION.map((item, idx) => (
+                {SAMPLE_TOP_ESCALATION.map((item, idx) => (
                   <div key={item.label} className="flex-1 flex flex-col items-center gap-1">
                     <div className="w-full rounded-t-[4px] bg-gradient-to-t from-violet-600 to-blue-400" style={{ height: `${item.value}px` }} />
                   </div>
                 ))}
               </div>
               <div className="mt-2 flex gap-2 text-[8px] text-white/40">
-                {TOP_ESCALATION.map((item) => (
+                {SAMPLE_TOP_ESCALATION.map((item) => (
                   <div key={item.label} className="flex-1 text-center rotate-[-45deg] origin-left translate-y-2 whitespace-nowrap">
                     {item.label}
                   </div>
@@ -305,7 +336,7 @@ export default CustomerServiceAnalytics;
 
 export function getMetricById(id: string): AnalyticsMetric | undefined { return ANALYTICS_METRICS.find(m => m.id === id); }
 export function getAllMetrics(): AnalyticsMetric[] { return ANALYTICS_METRICS; }
-export function getSentimentBreakdown() { return SENTIMENT_BREAKDOWN; }
-export function getTopEscalation() { return TOP_ESCALATION; }
-export function isPlaceholderValue(value: string): boolean { return value === '—' || value.includes('XX'); }
+export function getSentimentBreakdown() { return SAMPLE_SENTIMENT_BREAKDOWN; }
+export function getTopEscalation() { return SAMPLE_TOP_ESCALATION; }
+export function isPlaceholderValue(value: string): boolean { return value.trim() === '' || value === '—'; }
 export function formatChange(change: string): string { return change; }

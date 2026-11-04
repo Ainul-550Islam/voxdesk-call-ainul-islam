@@ -126,11 +126,19 @@ if require_tool helm "install https://helm.sh/docs/intro/install/"; then
       record "helm:lint:$short" "FAIL" "$(printf '%s' "$out" | tr '\n' ' ' | cut -c1-300)"
     fi
 
-    rendered="$(mktemp)"
+    # The suffix matters: kubeconform only reads files whose name ends in .yaml,
+    # .yml or .json, and silently reports "0 resource found in 0 file" for anything
+    # else — a PASS that validated nothing. A plain `mktemp` produced exactly that,
+    # so the render target is created with an explicit .yaml name.
+    rendered="$(mktemp /tmp/voxdesk-helm-render.XXXXXX.yaml)"
     if out=$(helm template voxdesk "$HELM_CHART" -f "$HELM_CHART/values.yaml" -f "$values" 2>&1); then
       printf '%s\n' "$out" > "$rendered"
       kinds="$(grep -c '^kind:' "$rendered" || true)"
-      record "helm:template:$short" "PASS" "rendered $kinds object(s)"
+      if [ "${kinds:-0}" -eq 0 ]; then
+        record "helm:template:$short" "FAIL" "chart rendered 0 objects; an empty render proves nothing"
+      else
+        record "helm:template:$short" "PASS" "rendered $kinds object(s)"
+      fi
     else
       printf '%s\n' "$out" > "$rendered"
       record "helm:template:$short" "FAIL" "$(printf '%s' "$out" | tr '\n' ' ' | cut -c1-300)"
@@ -139,7 +147,14 @@ if require_tool helm "install https://helm.sh/docs/intro/install/"; then
     if [ "$SKIP_KUBECONFORM" -eq 0 ]; then
       if require_tool kubeconform "install https://github.com/yannh/kubeconform"; then
         if out=$(kubeconform -strict -summary -ignore-missing-schemas "$rendered" 2>&1); then
-          record "kubeconform:$short" "PASS" "$(printf '%s' "$out" | tail -1)"
+          summary_line="$(printf '%s' "$out" | tail -1)"
+          # "0 resource found" means the input was not read at all; kubeconform exits
+          # 0 for that, so it has to be caught here or the check is decorative.
+          if printf '%s' "$summary_line" | grep -q '^Summary: 0 resource'; then
+            record "kubeconform:$short" "FAIL" "no resources were validated: $summary_line"
+          else
+            record "kubeconform:$short" "PASS" "$summary_line"
+          fi
         else
           record "kubeconform:$short" "FAIL" "$(printf '%s' "$out" | tr '\n' ' ' | cut -c1-300)"
         fi

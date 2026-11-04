@@ -1,323 +1,450 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiError } from "@/lib/api";
 
-// GAP-P1: Anomaly Detection — Full Workspace E2E (real-time, tunable sensitivity, explained routing, live dashboard)
-// Backend: app/anomaly/detectors.py z_score_detect(), persistence.py AnomalyRunRecord, alerting.py publish_alerts, schemas.py, service.py analyze(), 2 routes + specialized agent
+/**
+ * Anomaly detection console.
+ *
+ * Every detection shown here is produced by `POST /api/anomaly/analyze`
+ * (app/api/anomaly_routes.py → app/anomaly/service.py → detectors.py) and read
+ * back through `GET /api/anomaly/{execution_id}`. An earlier revision invented
+ * observations, confidences and explanations in the browser with pseudorandom
+ * numbers while the copy around them pointed at the real detector — that
+ * simulation is removed. The "Live" toggle now means "re-read the persisted
+ * execution", not "make up a new reading".
+ */
 
 interface Observation {
   timestamp: string;
   value: number;
 }
 
+/** Shape of one entry in `results[]` of the analyze response (app/anomaly/schemas.py). */
+interface DetectorResult {
+  metric?: string;
+  anomalous?: boolean;
+  confidence?: number;
+  severity?: string;
+  observed_value?: number;
+  expected_range?: [number, number] | number[];
+  explanation?: string;
+  quality_state?: string;
+  review_required?: boolean;
+  z_score?: number;
+  threshold?: number;
+}
+
 interface Detection {
   id: string;
   metric: string;
-  result: string;
+  anomalous: boolean;
   confidence: number;
   severity: string;
-  observed_value: number;
-  expected_range: [number, number];
-  created_at: string;
-  config: { method: string; sensitivity: number; window: number };
+  observedValue: number | null;
+  expectedRange: [number, number] | null;
   explanation: string;
-  routing: string;
+  qualityState: string;
+  reviewRequired: boolean;
+}
+
+interface AnalysisResponse {
+  execution_id?: string;
+  metric?: string;
+  detector?: string;
+  quality_state?: string;
+  review_required?: boolean;
+  review_state?: string;
+  methodology?: string;
+  results?: DetectorResult[];
+  alert_ids?: string[];
+  review_case_id?: string | null;
+}
+
+const DETECTORS = ["z_score", "median_mad", "rolling_baseline", "sudden_change"] as const;
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isUuid(value: string): boolean {
+  return UUID_RE.test(value.trim());
+}
+
+function toDetection(executionId: string, index: number, raw: DetectorResult, fallbackMetric: string): Detection {
+  const range = Array.isArray(raw.expected_range) && raw.expected_range.length >= 2
+    ? ([Number(raw.expected_range[0]), Number(raw.expected_range[1])] as [number, number])
+    : null;
+  return {
+    id: `${executionId}-${index}`,
+    metric: String(raw.metric ?? fallbackMetric),
+    anomalous: Boolean(raw.anomalous),
+    confidence: Number(raw.confidence ?? 0),
+    severity: String(raw.severity ?? "unknown"),
+    observedValue: raw.observed_value === undefined ? null : Number(raw.observed_value),
+    expectedRange: range,
+    explanation: String(raw.explanation ?? ""),
+    qualityState: String(raw.quality_state ?? "unknown"),
+    reviewRequired: Boolean(raw.review_required),
+  };
 }
 
 export default function AnomalyPage() {
-  const [detections, setDetections] = useState<Detection[]>([]);
   const [observations, setObservations] = useState<Observation[]>([
-    { timestamp: new Date(Date.now() - 1000*60*60*3).toISOString(), value: 110 },
-    { timestamp: new Date(Date.now() - 1000*60*60*2).toISOString(), value: 120 },
-    { timestamp: new Date(Date.now() - 1000*60*60*1).toISOString(), value: 115 },
-    { timestamp: new Date(Date.now() - 1000*60*30).toISOString(), value: 130 },
-    { timestamp: new Date(Date.now() - 1000*60*15).toISOString(), value: 250 },
-    { timestamp: new Date(Date.now() - 1000*60*5).toISOString(), value: 185 },
+    { timestamp: "2026-09-29T00:00:00.000Z", value: 110 },
+    { timestamp: "2026-09-29T01:00:00.000Z", value: 120 },
+    { timestamp: "2026-09-29T02:00:00.000Z", value: 115 },
+    { timestamp: "2026-09-29T03:00:00.000Z", value: 130 },
+    { timestamp: "2026-09-29T04:00:00.000Z", value: 250 },
+    { timestamp: "2026-09-29T05:00:00.000Z", value: 185 },
   ]);
   const [metric, setMetric] = useState("call_volume");
-  const [sensitivity, setSensitivity] = useState(0.9);
+  const [detector, setDetector] = useState<string>("z_score");
+  const [threshold, setThreshold] = useState(2.5);
   const [windowSize, setWindowSize] = useState(10);
-  const [method, setMethod] = useState("z_score");
-  const [live, setLive] = useState(false);
   const [environmentId, setEnvironmentId] = useState("");
   const [modelVersionId, setModelVersionId] = useState("");
+
+  const [executionId, setExecutionId] = useState<string | null>(null);
+  const [analysis, setAnalysis] = useState<AnalysisResponse | null>(null);
+  const [detections, setDetections] = useState<Detection[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [notConfigured, setNotConfigured] = useState(false);
+  const [live, setLive] = useState(false);
+  const [lastRefreshed, setLastRefreshed] = useState<string | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Detections are produced by `Run Detection`, which submits the current
-  // observations to the real analysis route. Nothing is seeded here: a
-  // pre-filled list would be a number nobody's backend produced.
-  useEffect(() => {
-    setLoading(false);
+  const configured = isUuid(environmentId) && isUuid(modelVersionId);
+
+  const applyResponse = useCallback((response: AnalysisResponse, fallbackMetric: string) => {
+    const id = String(response.execution_id ?? "");
+    setAnalysis(response);
+    setExecutionId(id || null);
+    setDetections(
+      (Array.isArray(response.results) ? response.results : []).map((raw, index) =>
+        toDetection(id || "run", index, raw, fallbackMetric),
+      ),
+    );
+    setLastRefreshed(new Date().toISOString());
   }, []);
 
-  useEffect(() => {
-    if (live) {
-      intervalRef.current = setInterval(() => {
-        const newObs: Observation = { timestamp: new Date().toISOString(), value: Math.round(100 + Math.random() * 100 + (Math.random() > 0.85 ? 150 : 0)) };
-        setObservations((prev) => [...prev.slice(-19), newObs]);
-        // Simulate detection
-        if (newObs.value > 200) {
-          const det: Detection = {
-            id: `det-${Date.now()}`,
-            metric,
-            result: "anomaly",
-            confidence: 0.8 + Math.random()*0.15,
-            severity: newObs.value > 250 ? "critical" : "high",
-            observed_value: newObs.value,
-            expected_range: [100, 150],
-            created_at: new Date().toISOString(),
-            config: { method, sensitivity, window: windowSize },
-            explanation: `z_score ${(2.5 + Math.random()*1.5).toFixed(1)} > threshold ${(2.0 + (1-sensitivity)).toFixed(1)}, value ${newObs.value} exceeds expected 100-150, residual ${newObs.value-125}`,
-            routing: `alert → ${newObs.value > 250 ? "critical_team → immediate review" : "ops_team → review_required"} — publish_alerts, reconcile_alert_delivery per alerting.py`,
-          };
-          setDetections((prev) => [det, ...prev].slice(0, 50));
-        }
-      }, 2000);
-    } else {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+  const refreshExecution = useCallback(async () => {
+    if (!executionId || !isUuid(environmentId)) return;
+    try {
+      const response = (await api.anomalyExecution(executionId, environmentId.trim())) as AnalysisResponse;
+      applyResponse(response, metric);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Could not refresh the persisted analysis.");
+      setLive(false);
     }
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [live, metric, method, sensitivity, windowSize]);
+  }, [applyResponse, environmentId, executionId, metric]);
 
-  function runDetection() {
-    // Submits to `POST /api/anomaly/analyze`. Everything below is the real
-    // response mapped onto the `Detection` shape; nothing is simulated.
-    const values = observations.map((o) => o.value);
-    if (values.length === 0) {
-      setError("No observations to analyze.");
+  useEffect(() => {
+    if (!live || !executionId) {
+      if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = null;
       return;
     }
-    const mean = values.reduce((a, b) => a + b, 0) / values.length;
-    const variance =
-      values.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / values.length;
-    const std = Math.sqrt(variance) || 1;
-    const threshold = 2.0 + (1 - sensitivity);
+    timerRef.current = setInterval(() => {
+      void refreshExecution();
+    }, 5000);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = null;
+    };
+  }, [live, executionId, refreshExecution]);
 
-    setError(null);
-    setSubmitting(true);
+  // One probe so a workspace without the anomaly agent says so instead of
+  // rendering an empty detector panel.
+  useEffect(() => {
+    let cancelled = false;
     api
-      .anomalyAnalyze({
-        environment_id: environmentId.trim(),
-        model_version_id: modelVersionId.trim(),
-        idempotency_key: `anomaly-${metric}-${Date.now()}`,
-        metric,
-        observations: observations.map((o) => ({
-          metric,
-          observed_at: o.timestamp,
-          value: o.value,
-        })),
-        configuration: {
-          detector: method === "z_score" ? "z_score" : "z_score",
-          threshold,
-          minimum_history: Math.max(2, Math.min(windowSize, values.length)),
-          rolling_window: Math.max(2, Math.min(windowSize, values.length - 1)),
-        },
-      })
-      .then((response) => {
-        const results = Array.isArray(response.results)
-          ? (response.results as Array<Record<string, unknown>>)
-          : [];
-        const mapped: Detection[] = results.map((r, index) => ({
-          id: `${String(response.execution_id ?? "run")}-${index}`,
-          metric: String(r.metric ?? metric),
-          result: r.anomalous ? "anomaly" : "normal",
-          confidence: Number(r.confidence ?? 0),
-          severity: String(r.severity ?? "low"),
-          observed_value: Number(r.observed_value ?? values[values.length - 1]),
-          expected_range: [
-            Math.round(mean - std * 2),
-            Math.round(mean + std * 2),
-          ] as [number, number],
-          created_at: new Date().toISOString(),
-          config: { method, sensitivity, window: windowSize },
-          explanation: String(r.explanation ?? ""),
-          routing: r.review_required
-            ? `review_required — quality_state ${String(r.quality_state ?? "unknown")}`
-            : "no_alert — normal",
-        }));
-        setDetections(mapped);
+      .specializedAgents()
+      .then((agents) => {
+        if (!cancelled) setNotConfigured(!agents.some((a) => a.type === "anomaly"));
       })
       .catch((err) => {
-        setError(err instanceof ApiError ? err.message : "Anomaly analysis failed");
-      })
-      .finally(() => setSubmitting(false));
+        if (cancelled) return;
+        if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+          setError("Your session cannot read the specialized-agent registry. Sign in again or ask for analytics access.");
+          return;
+        }
+        setError(err instanceof ApiError ? err.message : "Failed to load the anomaly agent registry");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function runDetection() {
+    if (!configured) {
+      setError("Enter the environment UUID and the model-version UUID first.");
+      return;
+    }
+    const usable = observations.filter((o) => Number.isFinite(o.value) && o.timestamp.trim() !== "");
+    if (usable.length === 0) {
+      setError("Add at least one observation.");
+      return;
+    }
+    setError(null);
+    setSubmitting(true);
+    try {
+      const response = (await api.anomalyAnalyze({
+        environment_id: environmentId.trim(),
+        model_version_id: modelVersionId.trim(),
+        // Request key only; it never becomes a data value.
+        idempotency_key:
+          typeof crypto !== "undefined" && "randomUUID" in crypto
+            ? `anomaly-${crypto.randomUUID()}`
+            : `anomaly-${Date.now()}`,
+        metric,
+        observations: usable.map((o) => ({ metric, observed_at: o.timestamp, value: o.value })),
+        configuration: {
+          detector: detector as (typeof DETECTORS)[number],
+          threshold,
+          minimum_history: Math.max(2, Math.min(windowSize, usable.length)),
+          rolling_window: Math.max(2, Math.min(windowSize, Math.max(2, usable.length - 1))),
+        },
+      })) as AnalysisResponse;
+      applyResponse(response, metric);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        if (err.status === 403) setError("You do not have analytics permission for anomaly analysis.");
+        else if (err.code === "NOT_CONFIGURED") setNotConfigured(true);
+        else setError(err.message);
+      } else {
+        setError("Anomaly analysis failed.");
+      }
+    } finally {
+      setSubmitting(false);
+    }
   }
 
-  if (loading) return <div className="loading">Loading anomaly detection…</div>;
+  function updateObservation(index: number, patch: Partial<Observation>) {
+    setObservations((prev) => prev.map((o, i) => (i === index ? { ...o, ...patch } : o)));
+  }
 
   return (
     <>
       <header className="page-head">
-        <h1>Anomaly Detection — Real-time, Tunable Sensitivity, Explained Routing (P1) Full Workspace</h1>
-        <p className="muted">Backend: app/anomaly/detectors.py z_score_detect() with _validate_order, _confidence, _severity, _metric_observations, _result, persistence.py AnomalyRunRecord/ResultRecord/AlertRecord persist_anomaly, alerting.py publish_alerts/reconcile_alert_delivery, schemas.py AnomalyModel/Observation/DetectorConfig/AnomalyResult, service.py AnomalyService analyze(), 2 routes + specialized agent</p>
-        <p className="muted">LuMay: Real-time anomaly detection, tunable sensitivity, explained routing — demo</p>
+        <h1>Anomaly detection — detectors, sensitivity, explained routing</h1>
+        <p className="muted">
+          Backend: <code>POST /api/anomaly/analyze</code> → app/anomaly/service.py → detectors.py
+          (z_score, median_mad, rolling_baseline, sudden_change), persisted by persistence.py and
+          alerted by alerting.py. <code>GET /api/anomaly/&#123;execution_id&#125;</code> re-reads a run.
+        </p>
       </header>
 
-      {error && <div className="error-banner">{error} <button onClick={() => setError(null)} style={{ marginLeft: 8 }}>×</button></div>}
+      {notConfigured && (
+        <div className="error-banner" role="status">
+          NOT_CONFIGURED — no anomaly agent is registered in app/specialized_agents/registry.py.
+          No detector output is fabricated in its place.
+        </div>
+      )}
+
+      {error && (
+        <div className="error-banner" role="alert">
+          {error}{" "}
+          <button onClick={() => setError(null)} style={{ marginLeft: 8 }}>
+            ×
+          </button>
+        </div>
+      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "340px 1fr 340px", gap: 12 }}>
-        {/* Left: Live Metrics + Sensitivity Tuning */}
         <section className="card" style={{ padding: 12 }}>
-          <h3>Live Metrics — Real-time Dashboard</h3>
-          <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+          <h3>Scope &amp; observations</h3>
+          <label style={{ fontSize: 11 }}>Environment ID (UUID)</label>
+          <input
+            type="text"
+            placeholder="uuid"
+            data-testid="anomaly-environment-id"
+            value={environmentId}
+            onChange={(e) => setEnvironmentId(e.target.value)}
+            style={{ width: "100%", padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }}
+          />
+          <label style={{ fontSize: 11, display: "block", marginTop: 6 }}>Model version ID (UUID)</label>
+          <input
+            type="text"
+            placeholder="uuid"
+            data-testid="anomaly-model-version-id"
+            value={modelVersionId}
+            onChange={(e) => setModelVersionId(e.target.value)}
+            style={{ width: "100%", padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }}
+          />
+
+          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
             <select value={metric} onChange={(e) => setMetric(e.target.value)} style={{ flex: 1, padding: 6, borderRadius: 4, border: "1px solid #ccc", fontSize: 12 }}>
-              <option value="call_volume">call_volume</option><option value="avg_handle_time">avg_handle_time</option><option value="conversion_rate">conversion_rate</option><option value="error_rate">error_rate</option>
+              <option value="call_volume">call_volume</option>
+              <option value="avg_handle_time">avg_handle_time</option>
+              <option value="conversion_rate">conversion_rate</option>
+              <option value="error_rate">error_rate</option>
             </select>
-            <button onClick={() => setLive(!live)} style={{ padding: "6px 12px", borderRadius: 6, border: "none", background: live ? "#ef4444" : "#10b981", color: "#fff", cursor: "pointer", fontSize: 12 }}>{live ? "⏸ Stop Live" : "▶ Start Live"}</button>
-          </div>
-          <div style={{ height: 180, border: "1px solid #e5e7eb", borderRadius: 6, padding: 8, background: "#fff", position: "relative" }}>
-            <svg width="100%" height="100%" viewBox="0 0 300 140">
-              {[0,1,2,3,4].map((i) => <line key={i} x1={0} y1={i*35} x2={300} y2={i*35} stroke="#f3f4f6" strokeWidth={1} />)}
-              <polyline points={observations.map((o,i)=>`${(i/(observations.length-1))*280+10} ${140 - (o.value-50)*0.5}`).join(",")} fill="none" stroke="#3b82f6" strokeWidth={2} />
-              {observations.map((o,i)=><circle key={i} cx={(i/(observations.length-1))*280+10} cy={140 - (o.value-50)*0.5} r={o.value>200?5:3} fill={o.value>200?"#ef4444":"#3b82f6"} />)}
-            </svg>
-            <div style={{ position: "absolute", bottom: 4, left: 8, fontSize: 10, color: "#666" }}>Live: {live ? "ON (2s interval)" : "OFF"} | {observations.length} observations | last {observations[observations.length-1]?.value}</div>
-          </div>
-          <div style={{ marginTop: 12, maxHeight: 150, overflowY: "auto", border: "1px solid #e5e7eb", borderRadius: 6, padding: 6 }}>
-            {observations.slice(-10).reverse().map((o,i)=><div key={i} style={{ fontSize: 11, display: "flex", justifyContent: "space-between", padding: "2px 0", borderBottom: "1px solid #f3f4f6" }}><span>{new Date(o.timestamp).toLocaleTimeString()}</span><span style={{ fontWeight: o.value>200 ? 700 : 400, color: o.value>200 ? "#ef4444" : "#000" }}>{o.value}</span></div>)}
           </div>
 
-          <div style={{ marginTop: 16 }}>
-            <h4>Tunable Sensitivity — DetectorConfig</h4>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              <div><label style={{ fontSize: 11 }}>Method</label><select value={method} onChange={(e) => setMethod(e.target.value)} style={{ width: "100%", padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }}><option value="z_score">z_score</option><option value="iqr">iqr (roadmap)</option><option value="isolation_forest">isolation_forest (roadmap)</option></select></div>
-              <div><label style={{ fontSize: 11 }}>Window</label><input type="number" min={1} max={100} value={windowSize} onChange={(e) => setWindowSize(parseInt(e.target.value)||10)} style={{ width: "100%", padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }} /></div>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 8 }}>
-              <div>
-                <label style={{ fontSize: 11 }}>Environment ID</label>
+          <div style={{ maxHeight: 210, overflowY: "auto", border: "1px solid #e5e7eb", borderRadius: 6, padding: 6, marginTop: 8 }}>
+            {observations.map((o, i) => (
+              <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 62px 24px", gap: 4, marginBottom: 4 }}>
                 <input
-                  type="text"
-                  placeholder="uuid"
-                  data-testid="anomaly-environment-id"
-                  value={environmentId}
-                  onChange={(e) => setEnvironmentId(e.target.value)}
-                  style={{ width: "100%", padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }}
+                  value={o.timestamp}
+                  aria-label={`Observation ${i + 1} timestamp`}
+                  onChange={(e) => updateObservation(i, { timestamp: e.target.value })}
+                  style={{ padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 10 }}
                 />
-              </div>
-              <div>
-                <label style={{ fontSize: 11 }}>Model Version ID</label>
                 <input
-                  type="text"
-                  placeholder="uuid"
-                  data-testid="anomaly-model-version-id"
-                  value={modelVersionId}
-                  onChange={(e) => setModelVersionId(e.target.value)}
-                  style={{ width: "100%", padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }}
+                  type="number"
+                  aria-label={`Observation ${i + 1} value`}
+                  value={Number.isFinite(o.value) ? o.value : ""}
+                  onChange={(e) => updateObservation(i, { value: e.target.value === "" ? Number.NaN : parseFloat(e.target.value) })}
+                  style={{ padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }}
                 />
-              </div>
-            </div>
-            <div style={{ marginTop: 8 }}>
-              <label style={{ fontSize: 11 }}>Sensitivity: {sensitivity} — threshold { (2.0 + (1-sensitivity)).toFixed(2) } (lower sensitivity = higher threshold)</label>
-              <input type="range" min={0.1} max={1} step={0.1} value={sensitivity} onChange={(e) => setSensitivity(parseFloat(e.target.value))} style={{ width: "100%" }} />
-              <div style={{ fontSize: 10, color: "#666" }}>Backend: DetectorConfig sensitivity, window — per schemas.py, _validate_order checks observation order, _confidence calculates confidence, _severity maps to low/medium/high/critical</div>
-            </div>
-            <button onClick={runDetection}
-              disabled={submitting || !environmentId.trim() || !modelVersionId.trim()} style={{ width: "100%", marginTop: 12, padding: "8px", background: "#8b5cf6", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer" }}>{submitting ? "Analyzing…" : "▶ Run Detection (analyze)"}</button>
-          </div>
-        </section>
-
-        {/* Center: Detections + Explained Routing */}
-        <section className="card" style={{ padding: 12 }}>
-          <h3>Detections ({detections.length}) — Explained Routing</h3>
-          <div style={{ maxHeight: 600, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
-            {detections.map((det) => (
-              <div key={det.id} style={{ padding: 12, borderRadius: 8, border: `2px solid ${det.result==="anomaly" ? (det.severity==="critical" ? "#ef4444" : det.severity==="high" ? "#f59e0b" : "#fbbf24") : "#10b981"}`, background: det.result==="anomaly" ? "#fef3c7" : "#ecfdf5" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: 12, fontWeight: 700 }}>{det.metric} — {det.result.toUpperCase()}</span>
-                  <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 4, background: det.severity==="critical" ? "#ef4444" : det.severity==="high" ? "#f59e0b" : det.severity==="medium" ? "#fbbf24" : "#10b981", color: "#fff" }}>{det.severity} | conf {det.confidence.toFixed(2)}</span>
-                </div>
-                <div style={{ fontSize: 11, marginTop: 6 }}>Observed {det.observed_value} vs Expected {det.expected_range[0]}-{det.expected_range[1]} — {det.explanation.slice(0,150)}...</div>
-                <div style={{ fontSize: 11, marginTop: 6, padding: 6, background: "#fff", borderRadius: 4, border: "1px solid #e5e7eb" }}>
-                  <div style={{ fontWeight: 600 }}>Explained Routing — LuMay Parity</div>
-                  <div>{det.routing}</div>
-                  <div style={{ marginTop: 4, fontSize: 10, color: "#666" }}>Backend: alerting.py publish_alerts, reconcile_alert_delivery — routes based on severity, confidence, metric, tenant config</div>
-                </div>
-                <div style={{ fontSize: 10, color: "#666", marginTop: 6, display: "flex", justifyContent: "space-between" }}>
-                  <span>{new Date(det.created_at).toLocaleString()} | {det.config.method} sens={det.config.sensitivity} win={det.config.window}</span>
-                  <span>ID {det.id.slice(0,12)}</span>
-                </div>
+                <button
+                  onClick={() => setObservations((prev) => prev.filter((_, idx) => idx !== i))}
+                  aria-label={`Remove observation ${i + 1}`}
+                  style={{ padding: 2, borderRadius: 4, border: "1px solid #ccc", background: "#fff", cursor: "pointer", fontSize: 10 }}
+                >
+                  ×
+                </button>
               </div>
             ))}
           </div>
+          <button
+            onClick={() =>
+              setObservations((prev) => {
+                const last = prev[prev.length - 1];
+                const nextTime = last ? new Date(new Date(last.timestamp).getTime() + 60 * 60 * 1000) : new Date();
+                // Carries the previous value forward as an editable row: a new
+                // observation is something an operator measures, not something
+                // this page invents.
+                return [...prev, { timestamp: nextTime.toISOString(), value: last ? last.value : 0 }];
+              })
+            }
+            style={{ width: "100%", marginTop: 8, padding: 6, borderRadius: 6, border: "1px solid #ccc", background: "#fff", cursor: "pointer", fontSize: 12 }}
+          >
+            + Add observation
+          </button>
+
+          <div style={{ marginTop: 16 }}>
+            <h4>Detector configuration</h4>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <div>
+                <label style={{ fontSize: 11 }}>Detector</label>
+                <select value={detector} onChange={(e) => setDetector(e.target.value)} style={{ width: "100%", padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }}>
+                  {DETECTORS.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: 11 }}>Window</label>
+                <input type="number" min={2} max={100} value={windowSize} onChange={(e) => setWindowSize(parseInt(e.target.value, 10) || 2)} style={{ width: "100%", padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }} />
+              </div>
+            </div>
+            <label style={{ fontSize: 11, display: "block", marginTop: 8 }}>Threshold: {threshold.toFixed(2)}</label>
+            <input type="range" min={0.5} max={6} step={0.1} value={threshold} onChange={(e) => setThreshold(parseFloat(e.target.value))} style={{ width: "100%" }} />
+            <button
+              onClick={runDetection}
+              disabled={submitting || !configured}
+              data-testid="run-anomaly"
+              style={{ width: "100%", marginTop: 12, padding: 8, background: configured ? "#8b5cf6" : "#9ca3af", color: "#fff", border: "none", borderRadius: 6, cursor: configured ? "pointer" : "not-allowed" }}
+            >
+              {submitting ? "Analyzing…" : "▶ Run detection"}
+            </button>
+            {!configured && (
+              <p style={{ fontSize: 11, color: "#92400e" }}>
+                NOT_CONFIGURED — the route requires environment and model-version UUIDs.
+              </p>
+            )}
+          </div>
         </section>
 
-        {/* Right: Persistence + Alerting + Example */}
         <section className="card" style={{ padding: 12 }}>
-          <h3>Persistence & Alerting — Backend</h3>
-          <div style={{ fontSize: 11, background: "#f9fafb", padding: 8, borderRadius: 4, fontFamily: "monospace" }}>
-            <div>AnomalyRunRecord: id, tenant_id, metric, status, created_at</div>
-            <div>AnomalyResultRecord: run_id, result, confidence, severity, observed_value, expected_range, explanation</div>
-            <div>AnomalyAlertRecord: result_id, channel, status, routed_to, delivered_at</div>
-            <div>persist_anomaly() with tenant isolation — per persistence.py</div>
-            <div>publish_alerts() + reconcile_alert_delivery() — per alerting.py</div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <h3>Detections ({detections.length})</h3>
+            <button
+              onClick={() => setLive((v) => !v)}
+              disabled={!executionId}
+              style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: live ? "#ef4444" : "#10b981", color: "#fff", cursor: executionId ? "pointer" : "not-allowed", fontSize: 11 }}
+            >
+              {live ? "⏸ Stop re-reading" : "▶ Re-read every 5s"}
+            </button>
           </div>
+          <p style={{ fontSize: 11, color: "#666" }}>
+            “Re-read” polls <code>GET /api/anomaly/&#123;execution_id&#125;</code> for this run. It does not
+            invent new observations{lastRefreshed ? ` · last read ${new Date(lastRefreshed).toLocaleTimeString()}` : ""}.
+          </p>
 
-          <div style={{ marginTop: 16 }}>
-            <h4>Threshold Editor — Tunable Sensitivity UI</h4>
-            <div style={{ fontSize: 11 }}>
-              <div>Sensitivity slider 0.1-1.0 maps to threshold 2.0+(1-sensitivity) — lower sensitivity = higher threshold = fewer alerts</div>
-              <div>Window: trailing observations for mean/std calculation — per DetectorConfig</div>
-              <div>Method: z_score (current), iqr/isolation_forest roadmap — per schemas.py</div>
-              <div>Order validation: _validate_order checks timestamp order, raises if out-of-order</div>
-              <div>Confidence: _confidence() based on z_score distance from threshold</div>
-              <div>Severity: _severity() low/medium/high/critical based on z_score</div>
+          {detections.length === 0 ? (
+            <p style={{ fontSize: 12, color: "#888" }}>
+              Nothing analyzed yet. Run a detection: the results below come from the persisted
+              execution, never from local arithmetic.
+            </p>
+          ) : (
+            <div style={{ maxHeight: 560, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
+              {detections.map((det) => (
+                <div
+                  key={det.id}
+                  style={{
+                    padding: 12,
+                    borderRadius: 8,
+                    border: `2px solid ${det.anomalous ? (det.severity === "critical" ? "#ef4444" : "#f59e0b") : "#10b981"}`,
+                    background: det.anomalous ? "#fef3c7" : "#ecfdf5",
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: 12, fontWeight: 700 }}>
+                      {det.metric} — {det.anomalous ? "ANOMALY" : "NORMAL"}
+                    </span>
+                    <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 4, background: "#111", color: "#fff" }}>
+                      {det.severity} · confidence {det.confidence.toFixed(2)}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 11, marginTop: 6 }}>
+                    Observed {det.observedValue ?? "—"}
+                    {det.expectedRange ? ` vs expected ${det.expectedRange[0]}–${det.expectedRange[1]}` : ""}
+                    {det.explanation ? ` — ${det.explanation}` : ""}
+                  </div>
+                  <div style={{ fontSize: 10, color: "#666", marginTop: 6 }}>
+                    quality {det.qualityState} · review {det.reviewRequired ? "REQUIRED" : "NOT_REQUIRED"} · id {det.id}
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
+          )}
+        </section>
 
-          <div style={{ marginTop: 16 }}>
-            <h4>Example Payload</h4>
-            <pre style={{ fontSize: 10, background: "#f9fafb", padding: 8, borderRadius: 4, overflowX: "auto" }}>
-{`POST /api/specialized-agents/anomaly/execute
-{
-  "environment_id": "uuid",
-  "payload": {
-    "metric": "call_volume",
-    "observations": [
-      {"timestamp": "2026-09-29T00:00:00Z", "value": 100},
-      {"timestamp": "2026-09-29T01:00:00Z", "value": 150}
-    ],
-    "configuration": {
-      "method": "z_score",
-      "sensitivity": 0.9,
-      "window": 10
-    }
-  }
-}
-Response: metric, observations, configuration, results with confidence/severity, quality_state, review logic`}
-            </pre>
-          </div>
+        <section className="card" style={{ padding: 12 }}>
+          <h3>Run metadata</h3>
+          {!analysis ? (
+            <p style={{ fontSize: 11, color: "#888" }}>No execution yet.</p>
+          ) : (
+            <div style={{ fontSize: 11, background: "#f9fafb", padding: 8, borderRadius: 4, fontFamily: "monospace", wordBreak: "break-all" }}>
+              <div>execution_id: {analysis.execution_id ?? "—"}</div>
+              <div>detector: {analysis.detector ?? detector}</div>
+              <div>metric: {analysis.metric ?? metric}</div>
+              <div>quality_state: {analysis.quality_state ?? "—"}</div>
+              <div>review_state: {analysis.review_state ?? "—"}</div>
+              <div>alerts: {(analysis.alert_ids ?? []).join(", ") || "none"}</div>
+              <div>review_case_id: {analysis.review_case_id ?? "none"}</div>
+            </div>
+          )}
 
-          <div style={{ marginTop: 16 }}>
-            <h4>Live Anomaly Operations Dashboard — Gap Closure</h4>
-            <ul style={{ fontSize: 11 }}>
-              <li>✅ Live metrics: real-time chart, observations list, live toggle 2s interval, auto-detection when value &gt;200</li>
-              <li>✅ Tunable sensitivity UI: method select, window input, sensitivity slider 0.1-1.0 → threshold mapping, run detection button</li>
-              <li>✅ Explained routing: per detection, routing string with alert → team → review_required, severity-based, publish_alerts + reconcile_alert_delivery notes</li>
-              <li>✅ Persistence: AnomalyRunRecord/ResultRecord/AlertRecord, tenant isolation, per persistence.py</li>
-              <li>✅ No fake anomaly counts — real detection via z_score, confidence, severity, honest</li>
-              <li>Build: Next build passes</li>
-            </ul>
+          {analysis?.methodology && (
+            <div style={{ marginTop: 12, fontSize: 11 }}>
+              <h4>Methodology</h4>
+              <p>{analysis.methodology}</p>
+            </div>
+          )}
+
+          <div style={{ marginTop: 16, fontSize: 11, color: "#666" }}>
+            <h4 style={{ color: "#111" }}>Persistence</h4>
+            <div>AnomalyRunRecord / AnomalyResultRecord / AnomalyAlertRecord — persistence.py</div>
+            <div>publish_alerts + reconcile_alert_delivery — alerting.py</div>
+            <div>Order validation: _validate_order rejects out-of-order timestamps.</div>
           </div>
         </section>
       </div>
-
-      <section className="card">
-        <h2>Gap Closure Notes (P1) — Full Workspace E2E</h2>
-        <ul>
-          <li>✅ Detectors: z_score_detect with _validate_order, _confidence, _severity, _metric_observations, _result — per detectors.py</li>
-          <li>✅ Persistence: AnomalyRunRecord, ResultRecord, AlertRecord, persist_anomaly with tenant isolation — per persistence.py</li>
-          <li>✅ Alerting: publish_alerts, reconcile_alert_delivery, explained routing per LuMay — per alerting.py</li>
-          <li>✅ Service: AnomalyService analyze() metric, observations, configuration — per service.py</li>
-          <li>✅ Live dashboard: real-time metrics chart, observations, live toggle, auto-detection, threshold editor, sensitivity tuning, explained routing visualization</li>
-          <li>✅ API: /api/anomaly/* 2 routes + specialized agent path</li>
-          <li>✅ No fake counts — real backend, honest</li>
-        </ul>
-      </section>
     </>
   );
 }

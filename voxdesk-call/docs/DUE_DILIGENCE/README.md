@@ -1,16 +1,16 @@
 # VoxDesk — Technical Due-Diligence Evidence Index
 
 This directory (`docs/DUE_DILIGENCE/`) and the generated archive
-`dist/due-diligence-2026-11-02.zip` provide a self-contained, cryptographically checksummed
+`dist/due-diligence-2026-11-04.zip` provide a self-contained, cryptographically checksummed
 evidence package for technical due-diligence reviewers.
 
 ---
 
 ## 1. Repository & Runtime Snapshot (`scripts/repo_stats.py`)
 
-- **Source Files (`app/`, `services/`, `dashboard/src/`, `dashboard-next/`, `sdk/`)**: `2090`
-- **Physical Source Lines**: `425,786`
-- **Registered FastAPI Routes (`app.main:app`)**: `1526` (`1252` OpenAPI paths / `1499` HTTP operations)
+- **Source Files (`app/`, `services/`, `dashboard/src/`, `dashboard-next/`, `sdk/`)**: `2124`
+- **Physical Source Lines**: `435,492`
+- **Registered FastAPI Routes (`app.main:app`)**: `1528` (`1252` OpenAPI paths / `1499` HTTP operations)
 - **Collected Pytest Nodes**: `6,752` (collection count, not an execution count)
 - **Alembic Migration Head**: `0069_voice_demo_sessions` (`323` registered tables)
 - **Fake-Success Allowlist (`scripts/fake_success_allowlist.txt`)**: `0` bytes (`0` entries)
@@ -35,7 +35,7 @@ evidence package for technical due-diligence reviewers.
 | **Capacity Model & Load Test** | [`docs/CAPACITY_MODEL.md`](../CAPACITY_MODEL.md), `evidence/loadtest/` | Single-worker concurrency ramp (`10 -> 60` calls), CPU/RSS/FD telemetry, and cost-per-minute model. |
 | **Disaster Recovery Drill** | [`docs/DR_RUNBOOK.md`](../DR_RUNBOOK.md), `evidence/dr/dr_drill_report.json` | Automated PostgreSQL dump/drop/restore/audit-chain verification (`RPO = 0.35s`, `RTO = 2.23s`). |
 | **Demo Script & Recordings** | [`docs/DEMO/SCRIPT.md`](../DEMO/SCRIPT.md), `evidence/demo/` | 10-minute walkthrough script and 8 captured execution traces + WAV audio artifacts (`manifest.json`). |
-| **CycloneDX SBOMs** | `sbom/*.cdx.json` | CycloneDX 1.5 SBOMs for Python (`52`), Node (`25`), Go (`24`), and Rust (`159`). |
+| **CycloneDX SBOMs** | `sbom/*.cdx.json` | CycloneDX 1.5 SBOMs for Python (`52`), Node (`26`), Go (`24`), and Rust (`159`). |
 | **Third-Party Licenses** | [`THIRD_PARTY_LICENSES.md`](../../THIRD_PARTY_LICENSES.md) | Dependency license table + CC0 synthesized ambient WAV provenance. |
 | **Governance & Security** | [`LICENSE`](../../LICENSE), [`NOTICE`](../../NOTICE), [`SECURITY.md`](../../SECURITY.md), [`CHANGELOG.md`](../../CHANGELOG.md) | Commercial license templates, attribution, vulnerability policy, and release history. |
 
@@ -46,11 +46,11 @@ evidence package for technical due-diligence reviewers.
 | Evidence | Status | Artifact | Generated (UTC) |
 |---|---|---|---|
 | `test` | **PRESENT** | `reports/TEST_EVIDENCE_SUMMARY.json` | 2026-10-30T05:47:28Z |
-| `polyglot` | **PRESENT** | `reports/POLYGLOT_EVIDENCE_SUMMARY.json` | 2026-11-01T14:45:59Z |
+| `polyglot` | **PRESENT** | `reports/POLYGLOT_EVIDENCE_SUMMARY.json` | 2026-10-30T05:54:23Z |
 | `security` | **PRESENT** | `reports/SECURITY_EVIDENCE_SUMMARY.json` | 2026-10-29T14:30:10Z |
 | `deploy-assets` | **PRESENT** | `reports/deploy_asset_validation.json` | 2026-10-30T05:56:29Z |
 | `staging` | **MISSING** | `evidence/staging` | — |
-| `live` | **PRESENT** | `evidence/live/vonage-vonage-control-plane-20261101T142529Z.json` | 2026-11-01T14:25:29Z |
+| `live` | **MISSING** | `evidence/live` | — |
 
 A status other than `PRESENT` is stated, not hidden: see
 [`KNOWN_LIMITATIONS.md`](KNOWN_LIMITATIONS.md) for the same table with

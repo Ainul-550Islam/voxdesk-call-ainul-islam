@@ -70,8 +70,8 @@ exclude generated/vendor/build trees; collected tests are not passed tests.
 
 ```json
 {
-  "source_files": 2090,
-  "source_physical_lines": 425783,
+  "source_files": 2124,
+  "source_physical_lines": 435492,
   "registered_routes": 1528,
   "collected_pytest_nodes": 6752,
   "passed_tests": "not measured by collection"
@@ -111,6 +111,7 @@ secret, and E2E mode off. Those checks are enforced by
 
 | Command | What it produces |
 |---|---|
+| `bash scripts/run_full_tests.sh` | checks Postgres and Redis, migrates to head, runs every chunk with JUnit and a summary table (`docs/TESTING.md`) |
 | `python scripts/pytest_chunks.py` | runs the whole population in chunks, JUnit per chunk |
 | `python scripts/reconcile_validation_results.py --ci` | fails when collected != recorded; writes `reports/TEST_EVIDENCE_SUMMARY.json` |
 | `make staging-proof` | `evidence/staging/<date>/staging_proof.json` from a real `docker compose up --build` |

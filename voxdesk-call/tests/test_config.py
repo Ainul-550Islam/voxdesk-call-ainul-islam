@@ -49,7 +49,14 @@ def _valid_prod(monkeypatch, **overrides) -> Settings:
     return Settings(_env_file=None, **values)
 
 
-def test_default_development_settings_load():
+def test_default_development_settings_load(monkeypatch):
+    # `_env_file=None` only skips the .env file: pydantic-settings still reads the
+    # process environment. The suite is documented to run with REDIS_URL exported
+    # (the rate limiter and the outbox worker need it), so the variable has to be
+    # cleared explicitly for "the defaults" to actually be defaults.
+    monkeypatch.delenv("REDIS_URL", raising=False)
+    monkeypatch.delenv("APP_ENV", raising=False)
+    monkeypatch.delenv("RATE_LIMIT_ENABLED", raising=False)
     s = Settings(_env_file=None)
     assert s.app_env == "development"
     assert not s.is_production

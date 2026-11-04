@@ -5,7 +5,7 @@ from the repository dependency manifests (`requirements.txt`, `package.json`,
 `go.mod`, `Cargo.lock`) and `assets/ambient/*.wav`.
 
 - **Python Backend Components**: 52 (`sbom/python-backend.cdx.json`)
-- **Node.js / TypeScript Components**: 25 (`sbom/node-dashboard.cdx.json`)
+- **Node.js / TypeScript Components**: 26 (`sbom/node-dashboard.cdx.json`)
 - **Go Module Components**: 24 (`sbom/go-services.cdx.json`)
 - **Rust Crate Components**: 159 (`sbom/rust-services.cdx.json`)
 - **Bundled Ambient Audio Beds**: 5 (`assets/ambient/*.wav`)
@@ -111,6 +111,7 @@ and resonator synthesis (`numpy`). No third-party copyrighted recordings are bun
 | `@types/react` | `18.3.31` | MIT / Apache-2.0 | `dashboard-next/package.json` |
 | `@types/react-dom` | `18.3.0` | MIT / Apache-2.0 | `dashboard-next/package.json` |
 | `@vitejs/plugin-react` | `4.3.4` | MIT / Apache-2.0 | `dashboard/package.json` |
+| `@voxdesk/web-sdk` | `file:../sdk/web` | MIT / Apache-2.0 | `dashboard-next/package.json` |
 | `@xyflow/react` | `12.3.5` | MIT / Apache-2.0 | `dashboard-next/package.json` |
 | `dagre` | `0.8.5` | MIT / Apache-2.0 | `dashboard-next/package.json` |
 | `jsdom` | `24.1.3` | MIT / Apache-2.0 | `dashboard-next/package.json` |

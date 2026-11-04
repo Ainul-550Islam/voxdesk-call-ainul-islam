@@ -98,16 +98,16 @@ describe('Prompt 8 direct routes and workflow UI', () => {
   });
 
   it.each([
-    ['/campaigns', 'LegacyCampaignsPage'],
-    ['/dashboard/campaigns', 'LegacyCampaignsPage'],
+    ['/campaigns', 'CampaignsPage'],
+    ['/dashboard/campaigns', 'CampaignsPage'],
     ['/workflows', 'WorkflowsPage'],
     ['/dashboard/workflows', 'WorkflowsPage'],
     ['/dashboard/customer-service/analytics', 'CustomerServiceAnalytics'],
     ['/app/customer-service/analytics', 'CustomerServiceAnalytics'],
-    ['/settings', 'LegacySettingsPage'],
-    ['/dashboard/settings', 'LegacySettingsPage'],
-    ['/billing', 'LegacyBillingPage'],
-    ['/dashboard/billing', 'LegacyBillingPage'],
+    ['/settings', 'WorkspaceSettingsPage'],
+    ['/dashboard/settings', 'WorkspaceSettingsPage'],
+    ['/billing', 'BillingPage'],
+    ['/dashboard/billing', 'BillingPage'],
   ])('maps %s to a real protected page', (path, component) => {
     const match = matchRoute(path);
     expect(match?.route.component).toBe(component);

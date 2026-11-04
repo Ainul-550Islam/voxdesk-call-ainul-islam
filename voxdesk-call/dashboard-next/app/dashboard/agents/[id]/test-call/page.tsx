@@ -10,11 +10,15 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
+// `@voxdesk/web-sdk` is a real dependency (file:../sdk/web) compiled by Next via
+// transpilePackages. A relative path that climbs out of this project root cannot
+// be resolved by Turbopack, so the package boundary — not the path — is what makes
+// this importable.
 import {
   LatencyEventPayload,
   TranscriptEventPayload,
   VoxDeskWebClient,
-} from "../../../../../../sdk/web/src/index";
+} from "@voxdesk/web-sdk/src";
 
 interface WebCallBootstrapResponse {
   call_id: string;
