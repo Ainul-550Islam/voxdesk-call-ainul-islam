@@ -46,11 +46,6 @@ ROUTE_PACKAGE = "app/api"
 #: Shrink-only: adding a key here is the change this guard exists to stop, so CI
 #: compares the set against the frozen baseline below.
 ALLOWLIST: dict[str, str] = {
-    "app.api.pcap_routes": (
-        "packet-capture surface is retained for audit history but is not mounted: the "
-        "capture artifact table was dropped in 0062_drop_pcap_artifacts, so every route in "
-        "it would answer 501; deletion is scheduled with the Batch 07 hardening pass"
-    ),
     "app.api.machine_routes": (
         "machine-credential administration is superseded by app/api/service_account_routes.py, "
         "which is mounted and covers the same operations; deletion is scheduled with the "

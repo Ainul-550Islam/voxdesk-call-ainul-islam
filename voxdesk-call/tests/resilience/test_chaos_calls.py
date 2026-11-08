@@ -327,3 +327,80 @@ async def test_graceful_drain_finishes_in_flight_calls_while_rejecting_new_calls
     assert flush_summary["flushed"] is True
     assert flush_summary["outbox_scheduled"] >= 0
     assert flush_summary["jobs_executed"] >= 0
+
+
+def test_toxiproxy_compose_defines_stt_llm_tts_proxies():
+    """Verify `infra/chaos/docker-compose.toxiproxy.yml` defines Toxiproxy in front of STT, LLM, and TTS."""
+    from pathlib import Path
+    import yaml
+
+    compose_path = Path(__file__).resolve().parents[2] / "infra" / "chaos" / "docker-compose.toxiproxy.yml"
+    assert compose_path.is_file()
+    raw = compose_path.read_text(encoding="utf-8")
+    parsed = yaml.safe_load(raw)
+    assert "toxiproxy" in parsed["services"]
+    for proxy_name in ("stt_deepgram", "llm_openai", "tts_elevenlabs"):
+        assert proxy_name in raw
+
+
+@pytest.mark.docker
+@pytest.mark.asyncio
+async def test_toxiproxy_stack_stage_stt_latency_and_llm_reset_failover(chaos_db_factory):
+    """Opt-in stack chaos stage: inject network latency/reset via Toxiproxy API and verify failover."""
+    import os
+    import httpx
+
+    if (os.environ.get("VOXDESK_CHAOS_STACK") or "").strip() not in {"1", "true", "yes"}:
+        pytest.skip("Opt-in Toxiproxy stack stage; set VOXDESK_CHAOS_STACK=1 and boot infra/chaos/docker-compose.toxiproxy.yml")
+
+    toxiproxy_api = (os.environ.get("TOXIPROXY_URL") or "http://127.0.0.1:8474").rstrip("/")
+    factory, tenant_id, pcm16_audio = chaos_db_factory
+
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        proxies_resp = await client.get(f"{toxiproxy_api}/proxies")
+        assert proxies_resp.status_code == 200, proxies_resp.text
+        proxies = proxies_resp.json()
+        for expected in ("stt_deepgram", "llm_openai", "tts_elevenlabs"):
+            assert expected in proxies, f"Missing Toxiproxy upstream {expected!r}"
+
+        try:
+            tox_stt = await client.post(
+                f"{toxiproxy_api}/proxies/stt_deepgram/toxics",
+                json={
+                    "name": "stt_latency_spike",
+                    "type": "latency",
+                    "stream": "downstream",
+                    "toxicity": 1.0,
+                    "attributes": {"latency": 2200, "jitter": 150},
+                },
+            )
+            assert tox_stt.status_code in (200, 201), tox_stt.text
+
+            tox_llm = await client.post(
+                f"{toxiproxy_api}/proxies/llm_openai/toxics",
+                json={
+                    "name": "llm_peer_reset",
+                    "type": "reset_peer",
+                    "stream": "downstream",
+                    "toxicity": 1.0,
+                    "attributes": {"timeout": 100},
+                },
+            )
+            assert tox_llm.status_code in (200, 201), tox_llm.text
+
+            # Verify call failover survives upstream fault injection without crashing worker
+            res = await run_synthetic_ws_call(
+                host="http://localhost:8000",
+                turns=2,
+                chunks_per_turn=4,
+                seed=99,
+                denoise_enabled=False,
+                session_factory=factory,
+                tenant_id=tenant_id,
+                pcm16_audio=pcm16_audio,
+            )
+            assert res["turns"] == 2
+        finally:
+            await client.delete(f"{toxiproxy_api}/proxies/stt_deepgram/toxics/stt_latency_spike")
+            await client.delete(f"{toxiproxy_api}/proxies/llm_openai/toxics/llm_peer_reset")
+

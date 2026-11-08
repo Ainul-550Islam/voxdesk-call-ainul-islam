@@ -2,37 +2,51 @@
 
 This document defines the three commercial acquisition / licensing bands (**Band A**,
 **Band B**, and **Band C**) for the VoxDesk Voice AI Platform (`voxdesk-call`),
-mapped strictly to the verified **Sell Gates (`G0`–`G9`)** and the verified
-feature rows in [`docs/SALES/FEATURE_MATRIX_VERIFIED.md`](FEATURE_MATRIX_VERIFIED.md).
+mapped strictly to the verified **Sell Gates (`G0`–`G9`)**, the single-source
+metrics in [`docs/STATS.json`](../STATS.json), and the verified feature rows in
+[`docs/SALES/FEATURE_MATRIX_VERIFIED.md`](FEATURE_MATRIX_VERIFIED.md).
 
 > **Governance Note**: The dollar bands below represent the repository owner's
 > target valuation ranges (`$30K–$60K`). Gates define **which technical claims
 > are truthful and backed by passing test evidence**. No capability outside the
 > verified `LIVE` rows of `FEATURE_MATRIX_VERIFIED.md` is included or implied.
 
+<!-- >>> voxdesk:repo-stats >>> -->
+## Verified Repository Snapshot (`docs/STATS.json`)
+
+- **Source files**: `2123` (`435,242` physical lines)
+- **Registered FastAPI routes**: `1526` registered routes
+- **Collected pytest nodes**: `6781` collected tests (`1,329` passed JUnit executions across `evidence/junit/feature_evidence.xml` and `evidence/batch07/`)
+- **Alembic migration head**: `0069_voice_demo_sessions`
+- **Verified Feature Matrix**: `38` `LIVE` / `41` total (`1` `API_ONLY`, `1` `NOT_CONFIGURED`, `1` `PLANNED`)
+<!-- <<< voxdesk:repo-stats <<< -->
+
 ---
 
-## 1. Gate-to-Evidence Mapping (`G0`–`G9`)
+## 1. Gate-to-Evidence Mapping (`G0`–`G9` from `docs/STATS.json`)
 
-| Gate | Scope Summary | Closed By | Verification Evidence in Repository | Gate Status |
+Gate statuses below mirror `gates.G0`–`gates.G9` in [`docs/STATS.json`](../STATS.json)
+(computed from recorded JUnit evidence and zero-failure truth guards, never hard-coded).
+
+| Gate | Scope Summary | Closed By | Verification Evidence in Repository | Measured Status (`docs/STATS.json`) |
 |---|---|---|---|---|
-| **G0: Truth** | Zero filler, clones, facades, padding, or fake success; shrink-only allowlist empty (`0` bytes); CI truth guards. | PART 0 | `make verify-truth` (`61 passed`); `reports/PART_0_REPORT.md` | **GREEN** |
-| **G1: Evented Platform** | Signed call lifecycle webhooks (`12` event types) via transactional outbox + DLQ redrive; automatic post-call analysis; automated QA review; TTL retention + PII redaction. | PART 1A, 1C, 1D, 1E | Matrix `#25`, `#26`, `#27`, `#36`; `reports/PART_1_REPORT.md` | **GREEN** |
-| **G2: Outbound** | Batch/power dialer with E.164 validation, DNC suppression, recipient timezone windows, Redis CPS pacing, AMD voicemail handling, and `SKIP LOCKED` single-dial guarantee. | PART 1B | Matrix `#17`, `#21`; `tests/campaign/test_batch_dialing.py`, `tests/campaign/test_concurrency.py` | **GREEN** |
-| **G3: Runtime Proof** | Per-turn `LatencyObserver`, smart turn-taking & backchannels, STT/LLM/TTS circuit-breaker failover, DTMF/end-call/transfer/IVR tools, ambient audio/denoise, and number->agent version binding. | PART 2 | Matrix `#1`, `#2`, `#4`–`#7`, `#9`–`#17`; `docs/LATENCY_BENCHMARK.md`; `reports/PART_2_REPORT.md` | **GREEN** |
-| **G4: Web Calling** | Browser web-call WebSocket media transport, single-use ephemeral token minting, origin-allowlisted Shadow DOM widget, and Web/Node/Python SDKs. | PART 3 | Matrix `#22`, `#37`; `tests/telephony/test_web_call_flow.py`; `reports/PART_3_REPORT.md` | **GREEN** |
-| **G5: Live Ops** | Zero-overhead `MonitorBus` live listen WebSocket, supervisor whisper-to-AI guidance injection, and live Twilio REST call takeover with rollback. | PART 4 | Matrix `#31`; `tests/telephony/test_takeover.py`, `tests/api/test_live_monitoring_authz.py`; `reports/PART_4_REPORT.md` | **GREEN** |
-| **G6: Flow Builder** | Visual 6-node conversation-flow builder (`conversation`, `function`, `transfer`, `press_digit`, `branch`, `end`), structural validator, `FlowRunner`, and Pipecat `FlowProcessor`. | PART 5 | Matrix `#8`; `tests/builder/test_flow_runner.py`; `reports/PART_5_REPORT.md` | **GREEN** |
-| **G7: Quality Loop** | Multi-turn `SimulatedCaller`, one-click regression test creation from failed calls, live inbound A/B traffic splitting with z-test winner promotion, and custom analytics dashboards. | PART 1G, 6 | Matrix `#28`, `#29`, `#30`, `#32`; `reports/PART_6_REPORT.md` | **GREEN** |
-| **G8: Integrations** | Real Salesforce OAuth 2.0 + PKCE + SOQL + Task/Case/Opportunity writeback, HubSpot/GHL/Jobber adapters, calendar booking, durable automation connectors, and SDKs. | PART 1F, 3, 6 | Matrix `#33`, `#34`, `#37`, `#38`; `tests/integrations/test_salesforce_provider.py` | **GREEN** |
-| **G9: Enterprise & Scale** | OIDC + PKCE and SAML 2.0 SSO (verified against Keycloak), SCIM 2.0 provisioning + session revocation, number trust profiles, single-worker capacity model, chaos tests, DR drill, and due-diligence pack. | PART 7, 8, 9 | Matrix `#18`, `#20`, `#36`, `#39`; `docs/CAPACITY_MODEL.md`, `evidence/dr/dr_drill_report.json`, `dist/due-diligence-*.zip` | **GREEN** |
+| **G0: Truth** | Zero filler, clones, facades, padding, or fake success; shrink-only allowlist empty (`0` bytes); CI truth guards. | PART 0, 10 | `make verify-truth`; `reports/PART_0_REPORT.md`, `reports/PART_10_REPORT.md` | `VERIFIED` |
+| **G1: Evented Platform** | Signed call lifecycle webhooks (`12` event types) via transactional outbox + DLQ redrive; automatic post-call analysis; automated QA review; TTL retention + PII redaction. | PART 1A, 1C, 1D, 1E | Matrix `#25`, `#26`, `#27`, `#36`; `reports/PART_1_REPORT.md` | `VERIFIED` |
+| **G2: Outbound** | Batch/power dialer with E.164 validation, DNC suppression, recipient timezone windows, Redis CPS pacing, AMD voicemail handling, and `SKIP LOCKED` single-dial guarantee. | PART 1B | Matrix `#17`, `#21`; `tests/campaign/test_batch_dialing.py`, `tests/campaign/test_concurrency.py` | `VERIFIED` |
+| **G3: Runtime Proof** | Per-turn `LatencyObserver`, smart turn-taking & backchannels, STT/LLM/TTS circuit-breaker failover, DTMF/end-call/transfer/IVR tools, ambient audio/denoise, and number->agent version binding. | PART 2 | Matrix `#1`, `#2`, `#4`–`#7`, `#9`–`#17`; `docs/LATENCY_BENCHMARK.md`; `reports/PART_2_REPORT.md` | `VERIFIED` |
+| **G4: Web Calling** | Browser web-call WebSocket media transport, single-use ephemeral token minting, origin-allowlisted Shadow DOM voice widget, and Web/Node/Python SDKs. | PART 3 | Matrix `#22`, `#37`; `tests/telephony/test_web_call_flow.py`; `reports/PART_3_REPORT.md` | `VERIFIED` |
+| **G5: Live Ops** | Zero-overhead `MonitorBus` live listen WebSocket, supervisor whisper-to-AI guidance injection, and live Twilio REST call takeover with rollback. | PART 4 | Matrix `#31`; `tests/telephony/test_takeover.py`, `tests/api/test_live_monitoring_authz.py`; `reports/PART_4_REPORT.md` | `VERIFIED` |
+| **G6: Flow Builder** | Visual 6-node conversation-flow builder (`conversation`, `function`, `transfer`, `press_digit`, `branch`, `end`), structural validator, `FlowRunner`, and Pipecat `FlowProcessor`. | PART 5 | Matrix `#8`; `tests/builder/test_flow_runner.py`; `reports/PART_5_REPORT.md` | `VERIFIED` |
+| **G7: Quality Loop** | Multi-turn `SimulatedCaller`, one-click regression test creation from failed calls, live inbound A/B traffic splitting with z-test winner promotion, and custom analytics dashboards. | PART 1G, 6 | Matrix `#28`, `#29`, `#30`, `#32`; `reports/PART_6_REPORT.md` | `VERIFIED` |
+| **G8: Integrations** | Real Salesforce OAuth 2.0 + PKCE + SOQL + Task/Case/Opportunity writeback, HubSpot/GHL/Jobber adapters, calendar booking, durable automation connectors, and SDKs. | PART 1F, 3, 6 | Matrix `#33`, `#34`, `#37`, `#38`; `tests/integrations/test_salesforce_provider.py` | `VERIFIED` |
+| **G9: Enterprise & Scale** | OIDC + PKCE and SAML 2.0 SSO (verified against `infra/idp-test/`), SCIM 2.0 provisioning + session revocation, number trust profiles, single-worker capacity model, chaos tests, DR drill, and due-diligence pack. | PART 7, 8, 9 | Matrix `#18`, `#20`, `#36`, `#39`; `docs/CAPACITY_MODEL.md`, `docs/DR_RUNBOOK.md`, `evidence/dr/dr_drill_report.json` | `VERIFIED` |
 
 ---
 
 ## 2. Commercial Tier Definitions (`Band A`, `Band B`, `Band C`)
 
 ### Band A — Core Multi-Tenant Voice Platform (`≈ $30,000`)
-- **Required Gates**: `G0 + G1 + G2 + G3` (all green)
+- **Required Gates**: `G0 + G1 + G2 + G3` (`VERIFIED` in `docs/STATS.json`)
 - **Included Verified Capabilities (`FEATURE_MATRIX_VERIFIED.md` IDs)**:
   - **Telephony & Voice Pipeline**: `#1` End-to-end latency instrumentation, `#2` Smart turn-taking & interruption controls, `#4` Multi-provider STT/TTS failover, `#5` Voice catalog & cloning, `#6` Voice controls (speed, volume, pronunciation, boosted keywords, ambient sound, denoise), `#7` Multilingual routing, `#9` Immutable agent versions & rollback, `#10` Phone-number-to-agent binding.
   - **Mid-Call Tools & Call Control**: `#11` Custom HTTP tools (SSRF-guarded), `#12` MCP tools, `#13` Cold/warm transfer + whisper briefing, `#14` Agent-to-agent handoff, `#15` IVR navigation, `#16` DTMF, `#17` Voicemail detection, `#18` Number provisioning & SIP trunking, `#23` SMS/chat agents, `#24` Knowledge base (RAG), `#34` Calendar booking, `#40` Billing & metering, `#41` Contact memory.
@@ -40,19 +54,19 @@ feature rows in [`docs/SALES/FEATURE_MATRIX_VERIFIED.md`](FEATURE_MATRIX_VERIFIE
 - **License Model**: Commercial Source License (`LICENSE` Option B) for single-organization deployment.
 
 ### Band B — Omnichannel Web, Live Supervisor Ops & Quality Loop (`≈ $45,000`)
-- **Required Gates**: `Band A + G4 + G5 + G7` (all green)
+- **Required Gates**: `Band A + G4 + G5 + G7` (`VERIFIED` in `docs/STATS.json`)
 - **Everything in Band A, plus**:
-  - **Browser Web Calls & SDKs (`G4`)**: `#22` Browser web-call WebSocket media transport & embeddable Shadow DOM widget (`/widget/v1/embed.js`), `#37` `@voxdesk/web-sdk`, `@voxdesk/node-sdk`, and `voxdesk` Python SDK.
+  - **Browser Web Calls & SDKs (`G4`)**: `#22` Browser web-call WebSocket media transport & embeddable Shadow DOM voice widget (`/widget/embed.js`), `#37` `@voxdesk/web-sdk`, `@voxdesk/node-sdk`, and `voxdesk` Python SDK.
   - **Live Supervisor Operations (`G5`)**: `#31` Real-time supervisor live listen (`MonitorBus`), whisper-to-AI guidance injection, and live human takeover with automatic rollback.
   - **Quality & Experimentation Loop (`G7`)**: `#28` Multi-turn LLM `SimulatedCaller` & one-click PII-redacted regression test creation from production calls, `#29` Live inbound A/B traffic splitting & statistical winner promotion, `#30` Custom analytics dashboards & scheduled CSV reports, `#32` Conductor AI copilot.
 - **License Model**: Commercial Source License (`LICENSE` Option B) with SaaS sublicensing rights.
 
 ### Band C — Full Enterprise Suite, Visual Flow Builder & Exclusive/Full Due-Diligence Pack (`≈ $60,000`)
-- **Required Gates**: `Band B + G6 + G8 + G9` (all green)
+- **Required Gates**: `Band B + G6 + G8 + G9` (`VERIFIED` in `docs/STATS.json`)
 - **Everything in Band B, plus**:
   - **Visual Conversation-Flow Builder (`G6`)**: `#8` Full 6-node visual conversation-flow builder (React Flow UI + `FlowRunner` + Pipecat `FlowProcessor`).
   - **Enterprise CRM & Automation Suite (`G8`)**: `#33` Real Salesforce OAuth 2.0 + PKCE + SOQL + Contact/Lead/Task/Case/Opportunity writeback and HubSpot/GHL/Jobber adapters, `#38` Durable automation connectors.
-  - **Enterprise Identity, Scale & Due-Diligence Proof (`G9`)**: `#20` STIR/SHAKEN number trust profiles & KYC registration, `#36` OIDC + PKCE and SAML 2.0 SSO + SCIM 2.0 user/group provisioning (`infra/keycloak/`), `#39` Production Helm chart (`infra/helm/voxdesk/`) with HPA/PDB, graceful drain (`app/core/graceful_shutdown.py`), chaos test suite (`tests/resilience/test_chaos_calls.py`), measured capacity model (`docs/CAPACITY_MODEL.md`), scripted DR drill (`scripts/dr_drill.sh`), CycloneDX SBOMs (`sbom/`), and signed due-diligence archive (`dist/due-diligence-<date>.zip`).
+  - **Enterprise Identity, Scale & Due-Diligence Proof (`G9`)**: `#20` STIR/SHAKEN number trust profiles & KYC registration, `#36` OIDC + PKCE and SAML 2.0 SSO + SCIM 2.0 user/group provisioning (`infra/idp-test/`), `#39` Production Helm chart (`infra/helm/voxdesk/`) with HPA/PDB (`infra/helm/voxdesk/templates/api.yaml`), graceful drain (`app/core/graceful_shutdown.py`), chaos test suite (`tests/resilience/test_chaos_calls.py`), measured capacity model (`docs/CAPACITY_MODEL.md`), scripted DR drill (`scripts/dr_drill.sh`, `docs/DR_RUNBOOK.md`), CycloneDX SBOMs (`sbom/`), and signed due-diligence archive (`scripts/make_due_diligence_pack.py`).
 - **License Model**: Buyer's choice of Perpetual Commercial Source License or Exclusive IP Assignment (`LICENSE` Option A) under an Asset Purchase Agreement.
 
 ---
@@ -60,12 +74,12 @@ feature rows in [`docs/SALES/FEATURE_MATRIX_VERIFIED.md`](FEATURE_MATRIX_VERIFIE
 ## 3. Handoff, Escrow & Support Terms
 
 1. **Pre-Closing Verification**: Buyer receives read access to the due-diligence
-   pack (`dist/due-diligence-<date>.zip`) and may execute `make verify-sale` on a
+   pack (`scripts/make_due_diligence_pack.py`) and may execute `make verify-sale` on a
    clean runner to independently verify all test suites, truth guards, migrations,
    SBOMs, and SHA-256 checksums before releasing escrow funds.
 2. **Deliverables at Closing**:
-   - Full git repository (`voxdesk-call`) at head migration `0069_voice_demo_sessions`.
-   - Signed due-diligence bundle (`dist/due-diligence-<date>.zip` + `dist/SHA256SUMS`).
+   - Full git repository (`voxdesk-call`) at migration head `0069_voice_demo_sessions`.
+   - Signed due-diligence bundle (`scripts/make_due_diligence_pack.py` + `evidence/pack/SHA256SUMS`).
    - Static OpenAPI 3.1 reference (`docs/api/`), CycloneDX SBOMs (`sbom/*.cdx.json`),
      and third-party license ledger (`THIRD_PARTY_LICENSES.md`).
 3. **Included Handoff Support**:

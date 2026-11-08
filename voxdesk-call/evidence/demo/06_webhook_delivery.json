@@ -20,5 +20,32 @@
     "tests/webhooks/test_webhook_lifecycle_real.py::test_callback_delivers_signed_bytes_to_local_receiver",
     "tests/webhooks/test_webhook_lifecycle_real.py::test_http_failures_retry_then_exhaust_to_dlq",
     "tests/webhooks/test_call_event_bridge.py::test_transition_and_replay_publish_one_fact"
+  ],
+  "audio_release_asset": {
+    "release_tag": "v1.0.0-demo-audio",
+    "asset_name": "06_webhook_delivery_audio.wav",
+    "download_url": "https://github.com/voxdesk/voxdesk-call/releases/download/v1.0.0-demo-audio/06_webhook_delivery_audio.wav",
+    "audio_sha256": null,
+    "status": "pending_live_carrier_release_upload"
+  },
+  "transcript": [
+    {
+      "turn": 1,
+      "speaker": "agent",
+      "timestamp_ms": 190,
+      "text": "Thanks for calling Acme Logistics. Please share your tracking number."
+    },
+    {
+      "turn": 2,
+      "speaker": "caller",
+      "timestamp_ms": 2410,
+      "text": "Tracking number TRK-99014."
+    },
+    {
+      "turn": 3,
+      "speaker": "agent",
+      "timestamp_ms": 4380,
+      "text": "Shipment TRK-99014 cleared customs at 08:15 UTC and is in transit."
+    }
   ]
 }

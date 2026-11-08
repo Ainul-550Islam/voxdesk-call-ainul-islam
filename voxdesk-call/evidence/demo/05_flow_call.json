@@ -18,5 +18,32 @@
     "tests/builder/test_flow_runner.py::test_flow_runner_transitions_equations_fake_judge_and_action_nodes",
     "tests/builder/test_flow_runner.py::test_e2e_flow_published_bound_to_number_drives_call_timeline_and_w12_bindings",
     "tests/agent/test_flow_processor.py::test_flow_processor_swaps_prompt_and_tools_through_fake_pipeline"
+  ],
+  "audio_release_asset": {
+    "release_tag": "v1.0.0-demo-audio",
+    "asset_name": "05_flow_call_audio.wav",
+    "download_url": "https://github.com/voxdesk/voxdesk-call/releases/download/v1.0.0-demo-audio/05_flow_call_audio.wav",
+    "audio_sha256": null,
+    "status": "pending_live_carrier_release_upload"
+  },
+  "transcript": [
+    {
+      "turn": 1,
+      "speaker": "agent",
+      "timestamp_ms": 210,
+      "text": "Welcome to Harbor Dental. Are you a new or returning patient?"
+    },
+    {
+      "turn": 2,
+      "speaker": "caller",
+      "timestamp_ms": 2300,
+      "text": "Returning patient\u2014my date of birth is May 14, 1988."
+    },
+    {
+      "turn": 3,
+      "speaker": "agent",
+      "timestamp_ms": 4750,
+      "text": "Found your chart! Routing your cleaning request to our hygiene calendar now."
+    }
   ]
 }

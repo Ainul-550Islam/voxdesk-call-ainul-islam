@@ -30,7 +30,7 @@ from __future__ import annotations
 import time as _time
 import uuid
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import select

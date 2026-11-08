@@ -38,7 +38,7 @@ from app.telephony.transcription import CallTranscriptJob
 log = structlog.get_logger()
 
 WEBHOOK_RECEIPT_RETENTION_DAYS = 30
-RESOURCE_TYPES = ("call", "chat", "recording", "transcript", "pcap", "all")
+RESOURCE_TYPES = ("call", "chat", "recording", "transcript", "all")
 
 
 def _naive_utc(dt: datetime | None = None) -> datetime:
@@ -110,11 +110,10 @@ async def _execute_resource_purge(
         "purged_recordings": 0,
         "purged_transcripts": 0,
         "purged_chats": 0,
-        "purged_pcaps": 0,
     }
 
     target_types = (
-        ["recording", "transcript", "pcap", "chat", "call"]
+        ["recording", "transcript", "chat", "call"]
         if resource_type == "all"
         else [resource_type]
     )
@@ -207,10 +206,6 @@ async def _execute_resource_purge(
                     counts["purged_turns"] += turn_count
                     counts["purged_transcripts"] += turn_count + len(job_rows)
 
-        elif rtype == "pcap":
-            # PCAP artifact table retired in 0062_drop_pcap_artifacts (W-10).
-            counts["purged_pcaps"] += 0
-
         elif rtype == "chat":
             chat_stmt = select(ChatSession.id).where(
                 ChatSession.tenant_id == tenant_id,
@@ -297,7 +292,7 @@ async def purge_expired_calls(
     2. Skips any tenant/agent/resource where ``RetentionPolicy.legal_hold`` or
        ``RecordingPolicy.legal_hold`` is True.
     3. Purges expired records and storage objects for ``call``, ``chat``,
-       ``recording``, ``transcript``, ``pcap``, or ``all``.
+       ``recording``, ``transcript``, or ``all``.
     4. Updates ``RetentionPolicy.last_purge_at`` and ``next_purge_at`` and emits
        one ``AuditLog`` row per policy executed with the real deleted counts.
     """
@@ -311,7 +306,6 @@ async def purge_expired_calls(
         "purged_recordings": 0,
         "purged_transcripts": 0,
         "purged_chats": 0,
-        "purged_pcaps": 0,
         "skipped_legal_hold": 0,
         "policies_evaluated": 0,
         "dry_run": bool(dry_run),
@@ -515,7 +509,6 @@ async def purge_expired_calls(
         + summary["purged_recordings"]
         + summary["purged_transcripts"]
         + summary["purged_chats"]
-        + summary["purged_pcaps"]
     )
     if total_purged:
         log.info("retention.purged", **summary)

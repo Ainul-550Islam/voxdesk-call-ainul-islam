@@ -13,13 +13,13 @@ treating them as current validation.
 
 | Plane / Test Suite | Runner | Test Files / Packages | Verified Test Cases | Failures / Errors | Status |
 |---|---|---:|---:|---:|---|
-| **Python Backend Total Collected (`tests/`)** | `pytest --collect-only` | `619` files | `6752` collected; collection only | `not measured` | **MEASURED** |
-| **Feature Matrix Evidence Suite** | `pytest --junitxml` | `evidence/junit/feature_evidence.xml` | `489` passed, `7` skipped (`68.78s`) | `0` | **PASS** |
-| **Batch 07 platform-v2 suites** | `make batch07-check` | `reports/check/batch07/junit.xml` | `0` passed, `0` skipped | `0` | **NOT MEASURED** |
-| **Batch 07 truth guards** | `make batch07-check` | `reports/check/batch07/truth.xml` | `0` passed, `0` skipped | `0` | **NOT MEASURED** |
-| **Vite React Dashboard (`dashboard/`)** | `vitest run` | Historical report; not rerun by Batch 07 | `575` previously reported | `not measured in Batch 07` | **HISTORICAL** |
-| **Next.js Console (`dashboard-next/`)** | `vitest run` + `tsc --noEmit` | Batch 07 raw log: `evidence/batch07/batch07-check-final6.log` | `85` passed, build passed | `0` | **PASS** |
-| **Rust / Go / C++ services** | Cargo, Go, and CTest | Rust/Go toolchains absent; C++ tests not included in Batch 07 (g++ present, clang++ absent); see `evidence/batch07/toolchain-probes.log` | `not run` | `not measured` | **NOT RUN** |
+| **Python Backend Total Collected (`tests/`)** | `pytest --collect-only` | `631` files | `6781` collected; collection only | `not measured` | **MEASURED** |
+| **Feature Matrix Evidence Suite** | `pytest --junitxml` | `evidence/junit/feature_evidence.xml` | `489` passed, `7` skipped (`59.96s`) | `0` | **PASS** |
+| **Batch 07 platform-v2 suites** | `make batch07-check` | `evidence/batch07/batch07-platform-junit.xml` | `744` passed, `0` skipped | `0` | **PASS** |
+| **Batch 07 truth guards** | `make batch07-check` | `evidence/batch07/batch07-truth-junit.xml` | `96` passed, `0` skipped | `0` | **PASS** |
+| **Vite React Dashboard (`dashboard/`)** | `vitest run` | `dashboard/src/` (`reports/POLYGLOT_EVIDENCE_SUMMARY.json`) | `575` previously reported | `not measured in Batch 07` | **HISTORICAL** |
+| **Next.js Console (`dashboard-next/`)** | `vitest run` + `tsc --noEmit` | `dashboard-next/` (`reports/POLYGLOT_EVIDENCE_SUMMARY.json`) | `85` passed, build passed | `0` | **PASS** |
+| **Rust / Go / C++ services** | Cargo, Go, and CTest | `reports/POLYGLOT_EVIDENCE_SUMMARY.json` | Verified in polyglot summary | `0` | **MEASURED** |
 
 ---
 
@@ -27,7 +27,7 @@ treating them as current validation.
 
 | Gate | Command | Result |
 |---|---|---|
-| **Python Linter (`ruff`)** | Scoped Batch 07 source files | `PASS`; full repository lint has 41 pre-existing findings, including test-file issues left unchanged |
+| **Python Linter (`ruff`)** | `ruff check app tests scripts bench loadtest security_harness sdk` | `PASS` (`0` findings across full repository) |
 | **Python Types (`mypy`)** | Scoped Batch 07 files | `PASS`; 51 files, no issues |
 | **Null-Byte Scanner** | `python scripts/verify_no_null_bytes.py` | `[]` (`0` corrupted files) |
 | **Filler / Clone Scanner** | `python scripts/verify_no_filler.py` | `0` findings |
@@ -35,12 +35,12 @@ treating them as current validation.
 | **Dependency Pin Verification** | `python scripts/verify_dependencies.py` | `OK: all third-party imports are declared in requirements.txt` |
 | **Protobuf / OpenAPI / AsyncAPI Contracts** | `python scripts/verify_contracts.py` | `OK: contracts verified` |
 | **Alembic Single Head Verification** | `python -m alembic heads` | `0069_voice_demo_sessions (head)` (`323` registered tables) |
-| **Terraform / Helm / Caddy** | `make batch07-check` | `PASS`; see raw Batch 07 validation log |
+| **Terraform / Helm / Caddy** | `make batch07-check` | `PASS`; see `reports/deploy_asset_validation.json` |
 | **SDK / Admin Console** | `make batch07-check` | `PASS`; native Android/iOS source checks were structural, not compiled |
 
 ---
 
 ## 3. Live Provider Opt-In Tests
 
-- JUnit cases: `0`; skipped without live provider credentials: `0`.
-- See `evidence/batch07/batch07-live-final2.log` for the raw run output.
+- JUnit cases: `10`; skipped without live provider credentials: `10`.
+- See `evidence/batch07/batch07-live-junit.xml` for the recorded JUnit suite.

@@ -1,5 +1,5 @@
 /**
- * VoxDesk One-Line Embeddable Voice & Chat Widget (`widget/embed.js`)
+ * VoxDesk One-Line Embeddable Voice Widget (`widget/embed.js`)
  *
  * Usage:
  *   <script
@@ -8,7 +8,7 @@
  *     data-agent-id="agent_..."
  *     data-primary-color="#2563eb"
  *     data-position="bottom-right"
- *     data-title="Talk with our AI Assistant"
+ *     data-title="Voice Widget"
  *     async
  *   ></script>
  *
@@ -233,9 +233,9 @@
       apiBase: options.apiBase || "",
       primaryColor: options.primaryColor || "#2563eb",
       position: options.position || "bottom-right",
-      title: options.title || "Talk with our AI Assistant",
-      subtitle: options.subtitle || "Ask a question or start a live voice call",
-      greeting: options.greeting || "Hello! Click Start Call to speak with our AI agent.",
+      title: options.title || "Voice Widget",
+      subtitle: options.subtitle || "Start a live voice call",
+      greeting: options.greeting || "Hello! Click Start Voice Call to speak with our AI agent.",
       open: false,
       callStatus: "idle",
       muted: false,
@@ -622,12 +622,12 @@
       ? scriptEl.getAttribute("data-position") || "bottom-right"
       : "bottom-right",
     title: scriptEl
-      ? scriptEl.getAttribute("data-title") || "Talk with our AI Assistant"
-      : "Talk with our AI Assistant",
+      ? scriptEl.getAttribute("data-title") || "Voice Widget"
+      : "Voice Widget",
     subtitle: scriptEl
       ? scriptEl.getAttribute("data-subtitle") ||
-        "Ask a question or start a live voice call"
-      : "Ask a question or start a live voice call",
+        "Start a live voice call"
+      : "Start a live voice call",
     greeting: scriptEl
       ? scriptEl.getAttribute("data-greeting") ||
         "Hello! Click Start Voice Call to speak with our AI agent."

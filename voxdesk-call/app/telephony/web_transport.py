@@ -1,14 +1,18 @@
-"""Browser audio transport for VoxDesk web calls (PART 3 — Gate G4).
+"""Browser audio transport for VoxDesk web calls (PART 3 — Gate G4 & P11-10 Decision).
 
-Provides:
-1. MVP WebSocket transport at `/telephony/web/ws`:
+Transport architecture decision (P11-10):
+1. Canonical Browser Transport (`/telephony/web/ws` — `ws-protobuf`):
    - `FastAPIWebsocketTransport` + `ProtobufFrameSerializer` (PCM16 mono 16 kHz)
    - Single-use JWT verification + Origin binding (`consume_web_call_token`)
    - Wires `LatencyObserver`, `TurnTrackingObserver`, `UsageTracker`, `GovernedHearing`,
      `GovernedSpeech`, `Turn` persistence, `CallLatencyStat` persistence, and billing usage hooks
-2. Phase-2 WebRTC signaling endpoint at `/telephony/web/offer`:
-   - Uses `pipecat.transports.smallwebrtc.transport.SmallWebRTCTransport` when `aiortc` is installed
-   - Returns honest `501 UNSUPPORTED_CAPABILITY` when `aiortc` is not installed (Rule R3)
+   - Ships zero-extra-native-dep in the standard Python API container (`Dockerfile`), while
+     high-density UDP DTLS-SRTP WebRTC SFU media is handled by `services/realtime/media-engine-rs`.
+2. Optional Python SmallWebRTC SDP Signaling (`/telephony/web/offer`):
+   - Uses `pipecat.transports.smallwebrtc.transport.SmallWebRTCTransport` when optional `aiortc`
+     (`libav*` / `libopus`) is explicitly installed by an operator
+   - Returns `503 UNSUPPORTED_CAPABILITY` with `fallback_transport: "ws-protobuf"` when `aiortc`
+     is absent (`tests/telephony/test_webrtc_dependency.py`)
 """
 
 from __future__ import annotations
@@ -923,6 +927,9 @@ async def web_call_websocket_endpoint(
             media_gateway_manager.close_session(call.id)
 
 
+# P11-10 WebRTC Decision: Canonical browser audio uses `/telephony/web/ws` (`ws-protobuf`),
+# while `/telephony/web/offer` returns HTTP `503 UNSUPPORTED_CAPABILITY` with
+# `fallback_transport: "ws-protobuf"` whenever optional `aiortc` is absent.
 @router.post("/telephony/web/offer")
 async def web_call_webrtc_offer_endpoint(
     payload: WebRTCOfferRequest,

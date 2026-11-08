@@ -89,6 +89,7 @@ TRANSITIVE_ALLOWLIST: frozenset[str] = frozenset({
 # The project's own top-level packages — never treated as third-party.
 LOCAL_PACKAGES: frozenset[str] = frozenset({
     "app",
+    "bench",
     "tests",
     "scripts",
     "loadtest",

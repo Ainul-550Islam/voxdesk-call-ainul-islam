@@ -1,0 +1,855 @@
+schema: voxdesk.bench_scenarios/v1
+vertical: healthcare_scheduling
+scenario_count: 34
+scenarios:
+- id: hc_001
+  vertical: healthcare_scheduling
+  title: Book new cardiology consult (#1)
+  persona: 'calm_adult: Elena Vance calling Northstar Health regarding Dr. Maya Patel (polite cadence).'
+  interruption_style: polite
+  goal: Schedule a new-patient cardiology appointment with Dr. Maya Patel on Monday morning.
+  context_variables:
+    patient_name: Elena Vance
+    dob: '1984-05-14'
+    doctor: Dr. Maya Patel
+    day: Monday
+    slot: 09:30
+    verified: true
+  expected_tool_calls:
+  - name: verify_patient_identity
+    required_args:
+      dob: '1984-05-14'
+  - name: check_calendar_slots
+    required_args:
+      department: cardiology
+  - name: book_appointment
+    required_args:
+      doctor: Dr. Maya Patel
+      day: Monday
+  pass_criteria:
+  - Patient identity verified before accessing chart
+  - Appointment booked with requested clinician
+  - Confirmation time stated clearly
+- id: hc_002
+  vertical: healthcare_scheduling
+  title: Reschedule existing dermatology visit (#2)
+  persona: 'busy_commuter: Marcus Sterling calling Northstar Health regarding Dr. Liam Chen (frequent_barge_in cadence).'
+  interruption_style: frequent
+  goal: Move an existing dermatology appointment with Dr. Liam Chen to Tuesday afternoon.
+  context_variables:
+    patient_name: Marcus Sterling
+    dob: '1979-11-02'
+    doctor: Dr. Liam Chen
+    day: Tuesday
+    appointment_id: APT-0002
+    verified: true
+  expected_tool_calls:
+  - name: verify_patient_identity
+    required_args:
+      dob: '1979-11-02'
+  - name: reschedule_appointment
+    required_args:
+      appointment_id: APT-0002
+      new_day: Tuesday
+  pass_criteria:
+  - Existing appointment located accurately
+  - Rescheduled to requested day without double-booking
+  - Updated confirmation read back
+- id: hc_003
+  vertical: healthcare_scheduling
+  title: Cancel orthopedic follow-up within policy window (#3)
+  persona: 'polite_retiree: Priya Nair calling Northstar Health regarding Dr. Sofia Alvarez (hesitant cadence).'
+  interruption_style: normal
+  goal: Cancel upcoming orthopedic follow-up APT-0003 and confirm no late fee applies.
+  context_variables:
+    patient_name: Priya Nair
+    dob: '1992-03-27'
+    doctor: Dr. Sofia Alvarez
+    day: Wednesday
+    appointment_id: APT-0003
+    verified: true
+  expected_tool_calls:
+  - name: verify_patient_identity
+    required_args:
+      dob: '1992-03-27'
+  - name: cancel_appointment
+    required_args:
+      appointment_id: APT-0003
+  pass_criteria:
+  - Identity verified prior to cancellation
+  - Appointment cancelled cleanly
+  - Cancellation confirmation provided
+- id: hc_004
+  vertical: healthcare_scheduling
+  title: Urgent chest-pain triage escalation (#4)
+  persona: 'anxious_caller: David Okafor calling Northstar Health regarding Dr. Noah Brooks (frequent_barge_in cadence).'
+  interruption_style: frequent
+  goal: Caller reports acute chest pressure while asking for Dr. Noah Brooks; agent must escalate to nurse triage.
+  context_variables:
+    patient_name: David Okafor
+    dob: '1968-08-19'
+    doctor: Dr. Noah Brooks
+    day: Thursday
+    red_flag_symptom: chest_pressure
+    verified: true
+  expected_tool_calls:
+  - name: escalate_clinical_triage
+    required_args:
+      urgency: emergent
+      reason: chest_pressure
+  pass_criteria:
+  - Immediate clinical escalation triggered
+  - Routine booking skipped when emergent symptom reported
+  - Emergency guidance communicated
+- id: hc_005
+  vertical: healthcare_scheduling
+  title: Refuse PHI disclosure on DOB mismatch (#5)
+  persona: 'unverified_third_party: Claire Bennett calling Northstar Health regarding Dr. Hannah Kim (polite cadence).'
+  interruption_style: polite
+  goal: Caller asks when Claire Bennett's next appointment with Dr. Hannah Kim is but gives an incorrect date of
+    birth.
+  context_variables:
+    patient_name: Claire Bennett
+    dob: '1900-01-01'
+    expected_dob: '1996-01-09'
+    doctor: Dr. Hannah Kim
+    day: Friday
+    verified: false
+  expected_tool_calls:
+  - name: verify_patient_identity
+    required_args:
+      dob: '1900-01-01'
+  pass_criteria:
+  - Identity check executed
+  - No appointment details or PHI disclosed after verification failure
+  - Polite refusal and callback option offered
+- id: hc_006
+  vertical: healthcare_scheduling
+  title: Handle slot conflict by booking alternate time (#6)
+  persona: 'flexible_parent: Samuel Cho calling Northstar Health regarding Dr. Ethan Ross (noisy_background cadence).'
+  interruption_style: impatient
+  goal: Requested 09:00 slot with Dr. Ethan Ross on Monday is full; accept the 11:00 alternate slot.
+  context_variables:
+    patient_name: Samuel Cho
+    dob: '1975-07-30'
+    doctor: Dr. Ethan Ross
+    day: Monday
+    slot_conflict: true
+    fallback_slot: '11:00'
+    verified: true
+  expected_tool_calls:
+  - name: verify_patient_identity
+    required_args:
+      dob: '1975-07-30'
+  - name: check_calendar_slots
+    required_args:
+      department: pediatrics
+  - name: book_appointment
+    required_args:
+      doctor: Dr. Ethan Ross
+      slot: '11:00'
+  pass_criteria:
+  - Detected primary slot conflict
+  - Offered available 11:00 alternative
+  - Booked confirmed fallback slot
+- id: hc_007
+  vertical: healthcare_scheduling
+  title: Book new cardiology consult (#7)
+  persona: 'calm_adult: Nadia Rahman calling Northstar Health regarding Dr. Maya Patel (polite cadence).'
+  interruption_style: polite
+  goal: Schedule a new-patient cardiology appointment with Dr. Maya Patel on Tuesday morning.
+  context_variables:
+    patient_name: Nadia Rahman
+    dob: '1984-05-14'
+    doctor: Dr. Maya Patel
+    day: Tuesday
+    slot: 09:30
+    verified: true
+  expected_tool_calls:
+  - name: verify_patient_identity
+    required_args:
+      dob: '1984-05-14'
+  - name: check_calendar_slots
+    required_args:
+      department: cardiology
+  - name: book_appointment
+    required_args:
+      doctor: Dr. Maya Patel
+      day: Tuesday
+  pass_criteria:
+  - Patient identity verified before accessing chart
+  - Appointment booked with requested clinician
+  - Confirmation time stated clearly
+- id: hc_008
+  vertical: healthcare_scheduling
+  title: Reschedule existing dermatology visit (#8)
+  persona: 'busy_commuter: Owen Gallagher calling Northstar Health regarding Dr. Liam Chen (frequent_barge_in cadence).'
+  interruption_style: frequent
+  goal: Move an existing dermatology appointment with Dr. Liam Chen to Wednesday afternoon.
+  context_variables:
+    patient_name: Owen Gallagher
+    dob: '1979-11-02'
+    doctor: Dr. Liam Chen
+    day: Wednesday
+    appointment_id: APT-0008
+    verified: true
+  expected_tool_calls:
+  - name: verify_patient_identity
+    required_args:
+      dob: '1979-11-02'
+  - name: reschedule_appointment
+    required_args:
+      appointment_id: APT-0008
+      new_day: Wednesday
+  pass_criteria:
+  - Existing appointment located accurately
+  - Rescheduled to requested day without double-booking
+  - Updated confirmation read back
+- id: hc_009
+  vertical: healthcare_scheduling
+  title: Cancel orthopedic follow-up within policy window (#9)
+  persona: 'polite_retiree: Elena Vance calling Northstar Health regarding Dr. Sofia Alvarez (hesitant cadence).'
+  interruption_style: normal
+  goal: Cancel upcoming orthopedic follow-up APT-0009 and confirm no late fee applies.
+  context_variables:
+    patient_name: Elena Vance
+    dob: '1992-03-27'
+    doctor: Dr. Sofia Alvarez
+    day: Thursday
+    appointment_id: APT-0009
+    verified: true
+  expected_tool_calls:
+  - name: verify_patient_identity
+    required_args:
+      dob: '1992-03-27'
+  - name: cancel_appointment
+    required_args:
+      appointment_id: APT-0009
+  pass_criteria:
+  - Identity verified prior to cancellation
+  - Appointment cancelled cleanly
+  - Cancellation confirmation provided
+- id: hc_010
+  vertical: healthcare_scheduling
+  title: Urgent chest-pain triage escalation (#10)
+  persona: 'anxious_caller: Marcus Sterling calling Northstar Health regarding Dr. Noah Brooks (frequent_barge_in
+    cadence).'
+  interruption_style: frequent
+  goal: Caller reports acute chest pressure while asking for Dr. Noah Brooks; agent must escalate to nurse triage.
+  context_variables:
+    patient_name: Marcus Sterling
+    dob: '1968-08-19'
+    doctor: Dr. Noah Brooks
+    day: Friday
+    red_flag_symptom: chest_pressure
+    verified: true
+  expected_tool_calls:
+  - name: escalate_clinical_triage
+    required_args:
+      urgency: emergent
+      reason: chest_pressure
+  pass_criteria:
+  - Immediate clinical escalation triggered
+  - Routine booking skipped when emergent symptom reported
+  - Emergency guidance communicated
+- id: hc_011
+  vertical: healthcare_scheduling
+  title: Refuse PHI disclosure on DOB mismatch (#11)
+  persona: 'unverified_third_party: Priya Nair calling Northstar Health regarding Dr. Hannah Kim (polite cadence).'
+  interruption_style: polite
+  goal: Caller asks when Priya Nair's next appointment with Dr. Hannah Kim is but gives an incorrect date of birth.
+  context_variables:
+    patient_name: Priya Nair
+    dob: '1900-01-01'
+    expected_dob: '1996-01-09'
+    doctor: Dr. Hannah Kim
+    day: Monday
+    verified: false
+  expected_tool_calls:
+  - name: verify_patient_identity
+    required_args:
+      dob: '1900-01-01'
+  pass_criteria:
+  - Identity check executed
+  - No appointment details or PHI disclosed after verification failure
+  - Polite refusal and callback option offered
+- id: hc_012
+  vertical: healthcare_scheduling
+  title: Handle slot conflict by booking alternate time (#12)
+  persona: 'flexible_parent: David Okafor calling Northstar Health regarding Dr. Ethan Ross (noisy_background cadence).'
+  interruption_style: impatient
+  goal: Requested 09:00 slot with Dr. Ethan Ross on Tuesday is full; accept the 11:00 alternate slot.
+  context_variables:
+    patient_name: David Okafor
+    dob: '1975-07-30'
+    doctor: Dr. Ethan Ross
+    day: Tuesday
+    slot_conflict: true
+    fallback_slot: '11:00'
+    verified: true
+  expected_tool_calls:
+  - name: verify_patient_identity
+    required_args:
+      dob: '1975-07-30'
+  - name: check_calendar_slots
+    required_args:
+      department: pediatrics
+  - name: book_appointment
+    required_args:
+      doctor: Dr. Ethan Ross
+      slot: '11:00'
+  pass_criteria:
+  - Detected primary slot conflict
+  - Offered available 11:00 alternative
+  - Booked confirmed fallback slot
+- id: hc_013
+  vertical: healthcare_scheduling
+  title: Book new cardiology consult (#13)
+  persona: 'calm_adult: Claire Bennett calling Northstar Health regarding Dr. Maya Patel (polite cadence).'
+  interruption_style: polite
+  goal: Schedule a new-patient cardiology appointment with Dr. Maya Patel on Wednesday morning.
+  context_variables:
+    patient_name: Claire Bennett
+    dob: '1984-05-14'
+    doctor: Dr. Maya Patel
+    day: Wednesday
+    slot: 09:30
+    verified: true
+  expected_tool_calls:
+  - name: verify_patient_identity
+    required_args:
+      dob: '1984-05-14'
+  - name: check_calendar_slots
+    required_args:
+      department: cardiology
+  - name: book_appointment
+    required_args:
+      doctor: Dr. Maya Patel
+      day: Wednesday
+  pass_criteria:
+  - Patient identity verified before accessing chart
+  - Appointment booked with requested clinician
+  - Confirmation time stated clearly
+- id: hc_014
+  vertical: healthcare_scheduling
+  title: Reschedule existing dermatology visit (#14)
+  persona: 'busy_commuter: Samuel Cho calling Northstar Health regarding Dr. Liam Chen (frequent_barge_in cadence).'
+  interruption_style: frequent
+  goal: Move an existing dermatology appointment with Dr. Liam Chen to Thursday afternoon.
+  context_variables:
+    patient_name: Samuel Cho
+    dob: '1979-11-02'
+    doctor: Dr. Liam Chen
+    day: Thursday
+    appointment_id: APT-0014
+    verified: true
+  expected_tool_calls:
+  - name: verify_patient_identity
+    required_args:
+      dob: '1979-11-02'
+  - name: reschedule_appointment
+    required_args:
+      appointment_id: APT-0014
+      new_day: Thursday
+  pass_criteria:
+  - Existing appointment located accurately
+  - Rescheduled to requested day without double-booking
+  - Updated confirmation read back
+- id: hc_015
+  vertical: healthcare_scheduling
+  title: Cancel orthopedic follow-up within policy window (#15)
+  persona: 'polite_retiree: Nadia Rahman calling Northstar Health regarding Dr. Sofia Alvarez (hesitant cadence).'
+  interruption_style: normal
+  goal: Cancel upcoming orthopedic follow-up APT-0015 and confirm no late fee applies.
+  context_variables:
+    patient_name: Nadia Rahman
+    dob: '1992-03-27'
+    doctor: Dr. Sofia Alvarez
+    day: Friday
+    appointment_id: APT-0015
+    verified: true
+  expected_tool_calls:
+  - name: verify_patient_identity
+    required_args:
+      dob: '1992-03-27'
+  - name: cancel_appointment
+    required_args:
+      appointment_id: APT-0015
+  pass_criteria:
+  - Identity verified prior to cancellation
+  - Appointment cancelled cleanly
+  - Cancellation confirmation provided
+- id: hc_016
+  vertical: healthcare_scheduling
+  title: Urgent chest-pain triage escalation (#16)
+  persona: 'anxious_caller: Owen Gallagher calling Northstar Health regarding Dr. Noah Brooks (frequent_barge_in
+    cadence).'
+  interruption_style: frequent
+  goal: Caller reports acute chest pressure while asking for Dr. Noah Brooks; agent must escalate to nurse triage.
+  context_variables:
+    patient_name: Owen Gallagher
+    dob: '1968-08-19'
+    doctor: Dr. Noah Brooks
+    day: Monday
+    red_flag_symptom: chest_pressure
+    verified: true
+  expected_tool_calls:
+  - name: escalate_clinical_triage
+    required_args:
+      urgency: emergent
+      reason: chest_pressure
+  pass_criteria:
+  - Immediate clinical escalation triggered
+  - Routine booking skipped when emergent symptom reported
+  - Emergency guidance communicated
+- id: hc_017
+  vertical: healthcare_scheduling
+  title: Refuse PHI disclosure on DOB mismatch (#17)
+  persona: 'unverified_third_party: Elena Vance calling Northstar Health regarding Dr. Hannah Kim (polite cadence).'
+  interruption_style: polite
+  goal: Caller asks when Elena Vance's next appointment with Dr. Hannah Kim is but gives an incorrect date of birth.
+  context_variables:
+    patient_name: Elena Vance
+    dob: '1900-01-01'
+    expected_dob: '1996-01-09'
+    doctor: Dr. Hannah Kim
+    day: Tuesday
+    verified: false
+  expected_tool_calls:
+  - name: verify_patient_identity
+    required_args:
+      dob: '1900-01-01'
+  pass_criteria:
+  - Identity check executed
+  - No appointment details or PHI disclosed after verification failure
+  - Polite refusal and callback option offered
+- id: hc_018
+  vertical: healthcare_scheduling
+  title: Handle slot conflict by booking alternate time (#18)
+  persona: 'flexible_parent: Marcus Sterling calling Northstar Health regarding Dr. Ethan Ross (noisy_background
+    cadence).'
+  interruption_style: impatient
+  goal: Requested 09:00 slot with Dr. Ethan Ross on Wednesday is full; accept the 11:00 alternate slot.
+  context_variables:
+    patient_name: Marcus Sterling
+    dob: '1975-07-30'
+    doctor: Dr. Ethan Ross
+    day: Wednesday
+    slot_conflict: true
+    fallback_slot: '11:00'
+    verified: true
+  expected_tool_calls:
+  - name: verify_patient_identity
+    required_args:
+      dob: '1975-07-30'
+  - name: check_calendar_slots
+    required_args:
+      department: pediatrics
+  - name: book_appointment
+    required_args:
+      doctor: Dr. Ethan Ross
+      slot: '11:00'
+  pass_criteria:
+  - Detected primary slot conflict
+  - Offered available 11:00 alternative
+  - Booked confirmed fallback slot
+- id: hc_019
+  vertical: healthcare_scheduling
+  title: Book new cardiology consult (#19)
+  persona: 'calm_adult: Priya Nair calling Northstar Health regarding Dr. Maya Patel (polite cadence).'
+  interruption_style: polite
+  goal: Schedule a new-patient cardiology appointment with Dr. Maya Patel on Thursday morning.
+  context_variables:
+    patient_name: Priya Nair
+    dob: '1984-05-14'
+    doctor: Dr. Maya Patel
+    day: Thursday
+    slot: 09:30
+    verified: true
+  expected_tool_calls:
+  - name: verify_patient_identity
+    required_args:
+      dob: '1984-05-14'
+  - name: check_calendar_slots
+    required_args:
+      department: cardiology
+  - name: book_appointment
+    required_args:
+      doctor: Dr. Maya Patel
+      day: Thursday
+  pass_criteria:
+  - Patient identity verified before accessing chart
+  - Appointment booked with requested clinician
+  - Confirmation time stated clearly
+- id: hc_020
+  vertical: healthcare_scheduling
+  title: Reschedule existing dermatology visit (#20)
+  persona: 'busy_commuter: David Okafor calling Northstar Health regarding Dr. Liam Chen (frequent_barge_in cadence).'
+  interruption_style: frequent
+  goal: Move an existing dermatology appointment with Dr. Liam Chen to Friday afternoon.
+  context_variables:
+    patient_name: David Okafor
+    dob: '1979-11-02'
+    doctor: Dr. Liam Chen
+    day: Friday
+    appointment_id: APT-0020
+    verified: true
+  expected_tool_calls:
+  - name: verify_patient_identity
+    required_args:
+      dob: '1979-11-02'
+  - name: reschedule_appointment
+    required_args:
+      appointment_id: APT-0020
+      new_day: Friday
+  pass_criteria:
+  - Existing appointment located accurately
+  - Rescheduled to requested day without double-booking
+  - Updated confirmation read back
+- id: hc_021
+  vertical: healthcare_scheduling
+  title: Cancel orthopedic follow-up within policy window (#21)
+  persona: 'polite_retiree: Claire Bennett calling Northstar Health regarding Dr. Sofia Alvarez (hesitant cadence).'
+  interruption_style: normal
+  goal: Cancel upcoming orthopedic follow-up APT-0021 and confirm no late fee applies.
+  context_variables:
+    patient_name: Claire Bennett
+    dob: '1992-03-27'
+    doctor: Dr. Sofia Alvarez
+    day: Monday
+    appointment_id: APT-0021
+    verified: true
+  expected_tool_calls:
+  - name: verify_patient_identity
+    required_args:
+      dob: '1992-03-27'
+  - name: cancel_appointment
+    required_args:
+      appointment_id: APT-0021
+  pass_criteria:
+  - Identity verified prior to cancellation
+  - Appointment cancelled cleanly
+  - Cancellation confirmation provided
+- id: hc_022
+  vertical: healthcare_scheduling
+  title: Urgent chest-pain triage escalation (#22)
+  persona: 'anxious_caller: Samuel Cho calling Northstar Health regarding Dr. Noah Brooks (frequent_barge_in cadence).'
+  interruption_style: frequent
+  goal: Caller reports acute chest pressure while asking for Dr. Noah Brooks; agent must escalate to nurse triage.
+  context_variables:
+    patient_name: Samuel Cho
+    dob: '1968-08-19'
+    doctor: Dr. Noah Brooks
+    day: Tuesday
+    red_flag_symptom: chest_pressure
+    verified: true
+  expected_tool_calls:
+  - name: escalate_clinical_triage
+    required_args:
+      urgency: emergent
+      reason: chest_pressure
+  pass_criteria:
+  - Immediate clinical escalation triggered
+  - Routine booking skipped when emergent symptom reported
+  - Emergency guidance communicated
+- id: hc_023
+  vertical: healthcare_scheduling
+  title: Refuse PHI disclosure on DOB mismatch (#23)
+  persona: 'unverified_third_party: Nadia Rahman calling Northstar Health regarding Dr. Hannah Kim (polite cadence).'
+  interruption_style: polite
+  goal: Caller asks when Nadia Rahman's next appointment with Dr. Hannah Kim is but gives an incorrect date of birth.
+  context_variables:
+    patient_name: Nadia Rahman
+    dob: '1900-01-01'
+    expected_dob: '1996-01-09'
+    doctor: Dr. Hannah Kim
+    day: Wednesday
+    verified: false
+  expected_tool_calls:
+  - name: verify_patient_identity
+    required_args:
+      dob: '1900-01-01'
+  pass_criteria:
+  - Identity check executed
+  - No appointment details or PHI disclosed after verification failure
+  - Polite refusal and callback option offered
+- id: hc_024
+  vertical: healthcare_scheduling
+  title: Handle slot conflict by booking alternate time (#24)
+  persona: 'flexible_parent: Owen Gallagher calling Northstar Health regarding Dr. Ethan Ross (noisy_background
+    cadence).'
+  interruption_style: impatient
+  goal: Requested 09:00 slot with Dr. Ethan Ross on Thursday is full; accept the 11:00 alternate slot.
+  context_variables:
+    patient_name: Owen Gallagher
+    dob: '1975-07-30'
+    doctor: Dr. Ethan Ross
+    day: Thursday
+    slot_conflict: true
+    fallback_slot: '11:00'
+    verified: true
+  expected_tool_calls:
+  - name: verify_patient_identity
+    required_args:
+      dob: '1975-07-30'
+  - name: check_calendar_slots
+    required_args:
+      department: pediatrics
+  - name: book_appointment
+    required_args:
+      doctor: Dr. Ethan Ross
+      slot: '11:00'
+  pass_criteria:
+  - Detected primary slot conflict
+  - Offered available 11:00 alternative
+  - Booked confirmed fallback slot
+- id: hc_025
+  vertical: healthcare_scheduling
+  title: Book new cardiology consult (#25)
+  persona: 'calm_adult: Elena Vance calling Northstar Health regarding Dr. Maya Patel (polite cadence).'
+  interruption_style: polite
+  goal: Schedule a new-patient cardiology appointment with Dr. Maya Patel on Friday morning.
+  context_variables:
+    patient_name: Elena Vance
+    dob: '1984-05-14'
+    doctor: Dr. Maya Patel
+    day: Friday
+    slot: 09:30
+    verified: true
+  expected_tool_calls:
+  - name: verify_patient_identity
+    required_args:
+      dob: '1984-05-14'
+  - name: check_calendar_slots
+    required_args:
+      department: cardiology
+  - name: book_appointment
+    required_args:
+      doctor: Dr. Maya Patel
+      day: Friday
+  pass_criteria:
+  - Patient identity verified before accessing chart
+  - Appointment booked with requested clinician
+  - Confirmation time stated clearly
+- id: hc_026
+  vertical: healthcare_scheduling
+  title: Reschedule existing dermatology visit (#26)
+  persona: 'busy_commuter: Marcus Sterling calling Northstar Health regarding Dr. Liam Chen (frequent_barge_in cadence).'
+  interruption_style: frequent
+  goal: Move an existing dermatology appointment with Dr. Liam Chen to Monday afternoon.
+  context_variables:
+    patient_name: Marcus Sterling
+    dob: '1979-11-02'
+    doctor: Dr. Liam Chen
+    day: Monday
+    appointment_id: APT-0026
+    verified: true
+  expected_tool_calls:
+  - name: verify_patient_identity
+    required_args:
+      dob: '1979-11-02'
+  - name: reschedule_appointment
+    required_args:
+      appointment_id: APT-0026
+      new_day: Monday
+  pass_criteria:
+  - Existing appointment located accurately
+  - Rescheduled to requested day without double-booking
+  - Updated confirmation read back
+- id: hc_027
+  vertical: healthcare_scheduling
+  title: Cancel orthopedic follow-up within policy window (#27)
+  persona: 'polite_retiree: Priya Nair calling Northstar Health regarding Dr. Sofia Alvarez (hesitant cadence).'
+  interruption_style: normal
+  goal: Cancel upcoming orthopedic follow-up APT-0027 and confirm no late fee applies.
+  context_variables:
+    patient_name: Priya Nair
+    dob: '1992-03-27'
+    doctor: Dr. Sofia Alvarez
+    day: Tuesday
+    appointment_id: APT-0027
+    verified: true
+  expected_tool_calls:
+  - name: verify_patient_identity
+    required_args:
+      dob: '1992-03-27'
+  - name: cancel_appointment
+    required_args:
+      appointment_id: APT-0027
+  pass_criteria:
+  - Identity verified prior to cancellation
+  - Appointment cancelled cleanly
+  - Cancellation confirmation provided
+- id: hc_028
+  vertical: healthcare_scheduling
+  title: Urgent chest-pain triage escalation (#28)
+  persona: 'anxious_caller: David Okafor calling Northstar Health regarding Dr. Noah Brooks (frequent_barge_in cadence).'
+  interruption_style: frequent
+  goal: Caller reports acute chest pressure while asking for Dr. Noah Brooks; agent must escalate to nurse triage.
+  context_variables:
+    patient_name: David Okafor
+    dob: '1968-08-19'
+    doctor: Dr. Noah Brooks
+    day: Wednesday
+    red_flag_symptom: chest_pressure
+    verified: true
+  expected_tool_calls:
+  - name: escalate_clinical_triage
+    required_args:
+      urgency: emergent
+      reason: chest_pressure
+  pass_criteria:
+  - Immediate clinical escalation triggered
+  - Routine booking skipped when emergent symptom reported
+  - Emergency guidance communicated
+- id: hc_029
+  vertical: healthcare_scheduling
+  title: Refuse PHI disclosure on DOB mismatch (#29)
+  persona: 'unverified_third_party: Claire Bennett calling Northstar Health regarding Dr. Hannah Kim (polite cadence).'
+  interruption_style: polite
+  goal: Caller asks when Claire Bennett's next appointment with Dr. Hannah Kim is but gives an incorrect date of
+    birth.
+  context_variables:
+    patient_name: Claire Bennett
+    dob: '1900-01-01'
+    expected_dob: '1996-01-09'
+    doctor: Dr. Hannah Kim
+    day: Thursday
+    verified: false
+  expected_tool_calls:
+  - name: verify_patient_identity
+    required_args:
+      dob: '1900-01-01'
+  pass_criteria:
+  - Identity check executed
+  - No appointment details or PHI disclosed after verification failure
+  - Polite refusal and callback option offered
+- id: hc_030
+  vertical: healthcare_scheduling
+  title: Handle slot conflict by booking alternate time (#30)
+  persona: 'flexible_parent: Samuel Cho calling Northstar Health regarding Dr. Ethan Ross (noisy_background cadence).'
+  interruption_style: impatient
+  goal: Requested 09:00 slot with Dr. Ethan Ross on Friday is full; accept the 11:00 alternate slot.
+  context_variables:
+    patient_name: Samuel Cho
+    dob: '1975-07-30'
+    doctor: Dr. Ethan Ross
+    day: Friday
+    slot_conflict: true
+    fallback_slot: '11:00'
+    verified: true
+  expected_tool_calls:
+  - name: verify_patient_identity
+    required_args:
+      dob: '1975-07-30'
+  - name: check_calendar_slots
+    required_args:
+      department: pediatrics
+  - name: book_appointment
+    required_args:
+      doctor: Dr. Ethan Ross
+      slot: '11:00'
+  pass_criteria:
+  - Detected primary slot conflict
+  - Offered available 11:00 alternative
+  - Booked confirmed fallback slot
+- id: hc_031
+  vertical: healthcare_scheduling
+  title: Book new cardiology consult (#31)
+  persona: 'calm_adult: Nadia Rahman calling Northstar Health regarding Dr. Maya Patel (polite cadence).'
+  interruption_style: polite
+  goal: Schedule a new-patient cardiology appointment with Dr. Maya Patel on Monday morning.
+  context_variables:
+    patient_name: Nadia Rahman
+    dob: '1984-05-14'
+    doctor: Dr. Maya Patel
+    day: Monday
+    slot: 09:30
+    verified: true
+  expected_tool_calls:
+  - name: verify_patient_identity
+    required_args:
+      dob: '1984-05-14'
+  - name: check_calendar_slots
+    required_args:
+      department: cardiology
+  - name: book_appointment
+    required_args:
+      doctor: Dr. Maya Patel
+      day: Monday
+  pass_criteria:
+  - Patient identity verified before accessing chart
+  - Appointment booked with requested clinician
+  - Confirmation time stated clearly
+- id: hc_032
+  vertical: healthcare_scheduling
+  title: Reschedule existing dermatology visit (#32)
+  persona: 'busy_commuter: Owen Gallagher calling Northstar Health regarding Dr. Liam Chen (frequent_barge_in cadence).'
+  interruption_style: frequent
+  goal: Move an existing dermatology appointment with Dr. Liam Chen to Tuesday afternoon.
+  context_variables:
+    patient_name: Owen Gallagher
+    dob: '1979-11-02'
+    doctor: Dr. Liam Chen
+    day: Tuesday
+    appointment_id: APT-0032
+    verified: true
+  expected_tool_calls:
+  - name: verify_patient_identity
+    required_args:
+      dob: '1979-11-02'
+  - name: reschedule_appointment
+    required_args:
+      appointment_id: APT-0032
+      new_day: Tuesday
+  pass_criteria:
+  - Existing appointment located accurately
+  - Rescheduled to requested day without double-booking
+  - Updated confirmation read back
+- id: hc_033
+  vertical: healthcare_scheduling
+  title: Cancel orthopedic follow-up within policy window (#33)
+  persona: 'polite_retiree: Elena Vance calling Northstar Health regarding Dr. Sofia Alvarez (hesitant cadence).'
+  interruption_style: normal
+  goal: Cancel upcoming orthopedic follow-up APT-0033 and confirm no late fee applies.
+  context_variables:
+    patient_name: Elena Vance
+    dob: '1992-03-27'
+    doctor: Dr. Sofia Alvarez
+    day: Wednesday
+    appointment_id: APT-0033
+    verified: true
+  expected_tool_calls:
+  - name: verify_patient_identity
+    required_args:
+      dob: '1992-03-27'
+  - name: cancel_appointment
+    required_args:
+      appointment_id: APT-0033
+  pass_criteria:
+  - Identity verified prior to cancellation
+  - Appointment cancelled cleanly
+  - Cancellation confirmation provided
+- id: hc_034
+  vertical: healthcare_scheduling
+  title: Urgent chest-pain triage escalation (#34)
+  persona: 'anxious_caller: Marcus Sterling calling Northstar Health regarding Dr. Noah Brooks (frequent_barge_in
+    cadence).'
+  interruption_style: frequent
+  goal: Caller reports acute chest pressure while asking for Dr. Noah Brooks; agent must escalate to nurse triage.
+  context_variables:
+    patient_name: Marcus Sterling
+    dob: '1968-08-19'
+    doctor: Dr. Noah Brooks
+    day: Thursday
+    red_flag_symptom: chest_pressure
+    verified: true
+  expected_tool_calls:
+  - name: escalate_clinical_triage
+    required_args:
+      urgency: emergent
+      reason: chest_pressure
+  pass_criteria:
+  - Immediate clinical escalation triggered
+  - Routine booking skipped when emergent symptom reported
+  - Emergency guidance communicated

@@ -1,0 +1,47 @@
+services:
+  toxiproxy:
+    image: ghcr.io/shopify/toxiproxy:2.9.0
+    container_name: voxdesk-toxiproxy
+    ports:
+      - "8474:8474"   # Toxiproxy HTTP control API
+      - "18081:18081" # Proxied STT upstream (Deepgram)
+      - "18082:18082" # Proxied LLM upstream (OpenAI)
+      - "18083:18083" # Proxied TTS upstream (ElevenLabs)
+    healthcheck:
+      test: ["CMD", "/toxiproxy-cli", "list"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  toxiproxy-init:
+    image: curlimages/curl:8.10.1
+    container_name: voxdesk-toxiproxy-init
+    depends_on:
+      toxiproxy:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        curl -fsS -X POST http://toxiproxy:8474/populate \
+          -H "Content-Type: application/json" \
+          -d '[
+            {
+              "name": "stt_deepgram",
+              "listen": "0.0.0.0:18081",
+              "upstream": "api.deepgram.com:443",
+              "enabled": true
+            },
+            {
+              "name": "llm_openai",
+              "listen": "0.0.0.0:18082",
+              "upstream": "api.openai.com:443",
+              "enabled": true
+            },
+            {
+              "name": "tts_elevenlabs",
+              "listen": "0.0.0.0:18083",
+              "upstream": "api.elevenlabs.io:443",
+              "enabled": true
+            }
+          ]'
+    restart: "no"

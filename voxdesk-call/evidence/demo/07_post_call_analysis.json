@@ -15,5 +15,32 @@
     "tests/telephony/test_post_call_pipeline.py::test_real_worker_governed_http_persists_output_and_usage",
     "tests/telephony/test_custom_analysis.py::test_api_versions_and_tenant_isolation",
     "tests/qa/test_post_call_runtime.py::test_terminal_pipeline_admits_once_then_http_worker_suggests_only"
+  ],
+  "audio_release_asset": {
+    "release_tag": "v1.0.0-demo-audio",
+    "asset_name": "07_post_call_analysis_audio.wav",
+    "download_url": "https://github.com/voxdesk/voxdesk-call/releases/download/v1.0.0-demo-audio/07_post_call_analysis_audio.wav",
+    "audio_sha256": null,
+    "status": "pending_live_carrier_release_upload"
+  },
+  "transcript": [
+    {
+      "turn": 1,
+      "speaker": "caller",
+      "timestamp_ms": 800,
+      "text": "My card ending in 4412 was lost at the airport\u2014please freeze it."
+    },
+    {
+      "turn": 2,
+      "speaker": "agent",
+      "timestamp_ms": 2650,
+      "text": "I have frozen card ending in 4412 and ordered a replacement to your verified address."
+    },
+    {
+      "turn": 3,
+      "speaker": "caller",
+      "timestamp_ms": 5100,
+      "text": "Thank you so much for resolving that quickly."
+    }
   ]
 }

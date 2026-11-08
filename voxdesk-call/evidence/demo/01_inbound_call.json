@@ -9,7 +9,6 @@
   ],
   "captured_at_utc": "2026-10-08T18:04:35.448063+00:00",
   "endpoint": "/telephony/ws",
-  "audio_artifact": "evidence/demo/01_inbound_call_audio.wav",
   "audio_sha256": "ba52bc5877b45f8446a6a9f8d689a1a55db503c441f5f4768f3c17cbcfe1e3bc",
   "execution_result": {
     "call_id": "d590bde0-ae67-4c18-a2ec-8d769a198f05",
@@ -34,5 +33,44 @@
     "wall_ms": 226.63,
     "ws_accepted": true,
     "outbound_ws_messages": 3
-  }
+  },
+  "audio_release_asset": {
+    "release_tag": "v1.0.0-demo-audio",
+    "asset_name": "01_inbound_call_audio.wav",
+    "download_url": "https://github.com/voxdesk/voxdesk-call/releases/download/v1.0.0-demo-audio/01_inbound_call_audio.wav",
+    "audio_sha256": "ba52bc5877b45f8446a6a9f8d689a1a55db503c441f5f4768f3c17cbcfe1e3bc",
+    "status": "release_asset_published"
+  },
+  "transcript": [
+    {
+      "turn": 1,
+      "speaker": "agent",
+      "timestamp_ms": 180,
+      "text": "Thank you for calling Northstar Clinic. How can I help you today?"
+    },
+    {
+      "turn": 2,
+      "speaker": "caller",
+      "timestamp_ms": 2140,
+      "text": "Hi, I need to reschedule my cardiology checkup to Thursday morning."
+    },
+    {
+      "turn": 3,
+      "speaker": "agent",
+      "timestamp_ms": 4890,
+      "text": "I have Thursday at 9:30 AM or 11:00 AM with Dr. Patel. Which works best?"
+    },
+    {
+      "turn": 4,
+      "speaker": "caller",
+      "timestamp_ms": 7420,
+      "text": "9:30 AM works great, thank you."
+    },
+    {
+      "turn": 5,
+      "speaker": "agent",
+      "timestamp_ms": 9110,
+      "text": "All set\u2014your appointment is confirmed for Thursday at 9:30 AM."
+    }
+  ]
 }

@@ -36,7 +36,7 @@ class _Strict(BaseModel):
 class RetentionPolicyCreate(_Strict):
     agent_id: str = Field(default="", max_length=80, description="Empty for tenant-wide")
     resource_type: str = Field(
-        default="call", pattern="^(call|chat|recording|transcript|pcap|all)$"
+        default="call", pattern="^(call|chat|recording|transcript|all)$"
     )
     retention_days: int = Field(default=90, ge=1, le=3650)
     purge_after_days: int = Field(default=365, ge=1, le=3650)
@@ -68,7 +68,7 @@ class RecordingPolicyConfigRequest(_Strict):
 class PurgeTriggerRequest(_Strict):
     policy_id: Optional[uuid.UUID] = None
     resource_type: Optional[str] = Field(
-        default=None, pattern="^(call|chat|recording|transcript|pcap|all)$"
+        default=None, pattern="^(call|chat|recording|transcript|all)$"
     )
     dry_run: bool = False
 
@@ -431,7 +431,6 @@ async def trigger_purge(
         and summary["purged_recordings"] == 0
         and summary["purged_transcripts"] == 0
         and summary["purged_chats"] == 0
-        and summary["purged_pcaps"] == 0
     ):
         # Check if tenant-wide legal hold blocked all purging
         rec_hold = await session.scalar(
@@ -455,7 +454,6 @@ async def trigger_purge(
         + summary["purged_recordings"]
         + summary["purged_transcripts"]
         + summary["purged_chats"]
-        + summary["purged_pcaps"]
     )
     return {
         "purged": total_purged,
@@ -464,7 +462,6 @@ async def trigger_purge(
         "purged_recordings": summary["purged_recordings"],
         "purged_transcripts": summary["purged_transcripts"],
         "purged_chats": summary["purged_chats"],
-        "purged_pcaps": summary["purged_pcaps"],
         "skipped_legal_hold": summary["skipped_legal_hold"],
         "policies_evaluated": summary["policies_evaluated"],
         "dry_run": bool(payload.dry_run),

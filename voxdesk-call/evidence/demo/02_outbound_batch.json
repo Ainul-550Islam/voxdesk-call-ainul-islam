@@ -19,5 +19,32 @@
     "dnc_suppression": true,
     "skip_locked_no_double_dial": true,
     "redis_token_bucket_cps_pacing": true
-  }
+  },
+  "audio_release_asset": {
+    "release_tag": "v1.0.0-demo-audio",
+    "asset_name": "02_outbound_batch_audio.wav",
+    "download_url": "https://github.com/voxdesk/voxdesk-call/releases/download/v1.0.0-demo-audio/02_outbound_batch_audio.wav",
+    "audio_sha256": null,
+    "status": "pending_live_carrier_release_upload"
+  },
+  "transcript": [
+    {
+      "turn": 1,
+      "speaker": "agent",
+      "timestamp_ms": 320,
+      "text": "Hello Jordan, this is Northstar Clinic confirming your appointment tomorrow at 2:00 PM."
+    },
+    {
+      "turn": 2,
+      "speaker": "caller",
+      "timestamp_ms": 3650,
+      "text": "Yes, I will be there at two o'clock."
+    },
+    {
+      "turn": 3,
+      "speaker": "agent",
+      "timestamp_ms": 5210,
+      "text": "Thank you\u2014we have marked your visit confirmed. Have a great afternoon."
+    }
+  ]
 }

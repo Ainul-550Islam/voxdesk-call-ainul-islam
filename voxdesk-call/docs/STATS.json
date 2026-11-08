@@ -1,0 +1,61 @@
+{
+  "schema": "voxdesk.repo_stats/v1",
+  "generated_date": "2026-11-07",
+  "source_files": 2123,
+  "source_physical_lines": 435242,
+  "registered_routes": 1526,
+  "collected_pytest_nodes": 6781,
+  "junit_passed_tests": 1329,
+  "junit_failed_tests": 0,
+  "junit_skipped_tests": 17,
+  "junit_suites": {
+    "feature_evidence": {
+      "tests": 496,
+      "passed": 489,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 7
+    },
+    "batch07_platform": {
+      "tests": 744,
+      "passed": 744,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "batch07_truth": {
+      "tests": 96,
+      "passed": 96,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "batch07_live": {
+      "tests": 10,
+      "passed": 0,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 10
+    }
+  },
+  "alembic_head": "0069_voice_demo_sessions",
+  "feature_matrix": {
+    "total": 41,
+    "LIVE": 38,
+    "API_ONLY": 1,
+    "NOT_CONFIGURED": 1,
+    "PLANNED": 1
+  },
+  "gates": {
+    "G0": "VERIFIED",
+    "G1": "VERIFIED",
+    "G2": "VERIFIED",
+    "G3": "VERIFIED",
+    "G4": "VERIFIED",
+    "G5": "VERIFIED",
+    "G6": "VERIFIED",
+    "G7": "VERIFIED",
+    "G8": "VERIFIED",
+    "G9": "VERIFIED"
+  }
+}

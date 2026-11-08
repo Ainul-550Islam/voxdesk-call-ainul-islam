@@ -10,11 +10,37 @@
     "WS /api/v1/telephony/web-calls/{call_id}/ws",
     "GET /widget/v1/embed.js"
   ],
-  "audio_artifact": "evidence/demo/03_web_call_audio.wav",
   "audio_sha256": "262d2db245dcac1d23b1e04b61f7db3e2c97b5c464ff6f8f56776733cdf8ab1e",
   "verified_by_tests": [
     "tests/telephony/test_web_call_flow.py::test_web_call_create_ws_protobuf_roundtrip_and_usage_persistence",
     "tests/telephony/test_web_call_security.py::test_origin_mismatch_rejected_on_public_web_call_and_websocket",
     "tests/telephony/test_web_call_security.py::test_single_use_jwt_cannot_be_replayed"
+  ],
+  "audio_release_asset": {
+    "release_tag": "v1.0.0-demo-audio",
+    "asset_name": "03_web_call_audio.wav",
+    "download_url": "https://github.com/voxdesk/voxdesk-call/releases/download/v1.0.0-demo-audio/03_web_call_audio.wav",
+    "audio_sha256": "262d2db245dcac1d23b1e04b61f7db3e2c97b5c464ff6f8f56776733cdf8ab1e",
+    "status": "release_asset_published"
+  },
+  "transcript": [
+    {
+      "turn": 1,
+      "speaker": "agent",
+      "timestamp_ms": 150,
+      "text": "Welcome to VoxDesk Web Support. How can I help with your order?"
+    },
+    {
+      "turn": 2,
+      "speaker": "caller",
+      "timestamp_ms": 1980,
+      "text": "Can you check the delivery status for order ORD-4821?"
+    },
+    {
+      "turn": 3,
+      "speaker": "agent",
+      "timestamp_ms": 4120,
+      "text": "Order ORD-4821 is out for delivery via UPS and arrives by 5:00 PM today."
+    }
   ]
 }

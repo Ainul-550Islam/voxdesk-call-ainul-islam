@@ -26189,7 +26189,7 @@
           "resource_type": {
             "anyOf": [
               {
-                "pattern": "^(call|chat|recording|transcript|pcap|all)$",
+                "pattern": "^(call|chat|recording|transcript|all)$",
                 "type": "string"
               },
               {
@@ -27798,7 +27798,7 @@
           },
           "resource_type": {
             "default": "call",
-            "pattern": "^(call|chat|recording|transcript|pcap|all)$",
+            "pattern": "^(call|chat|recording|transcript|all)$",
             "title": "Resource Type",
             "type": "string"
           },

@@ -419,13 +419,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--write-evidence",
         action="store_true",
-        help="Write JSON + CSV artifacts under evidence/latency/<date>/",
+        help="Write synthetic mock JSON + CSV artifacts under evidence/mock/",
     )
     parser.add_argument(
         "--evidence-dir",
         type=str,
         default="",
-        help="Custom evidence directory (defaults to evidence/latency/<YYYY-MM-DD>)",
+        help="Custom mock evidence directory (defaults to evidence/mock)",
     )
     args = parser.parse_args(argv)
 
@@ -437,12 +437,14 @@ def main(argv: list[str] | None = None) -> int:
             concurrency=max(1, args.concurrency),
         )
     )
+    result["provider_fakes"] = True
+    result["not_product_performance"] = True
 
     if args.write_evidence or args.evidence_dir:
         ev_dir = (
             Path(args.evidence_dir)
             if args.evidence_dir
-            else (ROOT / "evidence" / "latency" / date.today().isoformat())
+            else (ROOT / "evidence" / "mock")
         )
         json_p, csv_p = _write_evidence_artifacts(result, ev_dir)
         result["evidence_json"] = str(json_p.relative_to(ROOT) if json_p.is_relative_to(ROOT) else json_p)

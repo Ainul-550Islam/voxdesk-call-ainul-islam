@@ -10,13 +10,12 @@ Two modes, both honest about what they can prove:
     failure, because an unrun test is not a passing test. On success it writes
     the small committed summary ``reports/TEST_EVIDENCE_SUMMARY.json`` carrying
     the counts, the SHA-256 of the two large artifacts, the commit SHA and a UTC
-    timestamp — never the artifacts themselves, which are far too big to commit
-    and are uploaded as workflow artifacts instead.
+    timestamp — never the artifacts themselves, which live in gitignored
+    ``artifacts/`` and are uploaded as workflow artifacts instead.
 
 no arguments (the historical path)
     Merges the complete backend run with newer regression evidence by exact node
-    ID, exactly as it always has. Kept because older runs and the
-    ``.prompt8b`` evidence tree still depend on it.
+    ID under ``artifacts/prompt8b/``, writing ``artifacts/FINAL_TEST_RESULTS.json``.
 """
 from __future__ import annotations
 
@@ -29,7 +28,8 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-EVIDENCE = ROOT / ".prompt8b"
+ARTIFACTS = ROOT / "artifacts"
+EVIDENCE = ARTIFACTS / "prompt8b"
 
 #: Statuses pytest can report for a node that was collected and executed. Every
 #: other value means the node has no trustworthy outcome.
@@ -46,11 +46,7 @@ def sha256_of(path: Path) -> str:
 
 
 def commit_sha() -> str:
-    """The checked-out commit, or ``unknown`` outside a git work tree.
-
-    An unresolvable commit is reported as a value, never as a fabricated hash:
-    a summary that claims a commit it cannot name is worthless to a buyer.
-    """
+    """The checked-out commit, or ``unknown`` outside a git work tree."""
     try:
         proc = subprocess.run(
             ["git", "rev-parse", "HEAD"],
@@ -87,11 +83,7 @@ def load_results(path: Path) -> dict[str, Any]:
 
 
 def reconcile(results: dict[str, Any]) -> dict[str, Any]:
-    """Compare the collected population with the recorded outcomes.
-
-    Returns a findings dict. ``problems`` is empty only when every collected
-    node has exactly one recorded outcome.
-    """
+    """Compare the collected population with the recorded outcomes."""
     nodes = list(results.get("nodes") or [])
     population = int(results.get("population") or len(nodes))
     statuses: dict[str, int] = collections.Counter()
@@ -161,11 +153,7 @@ def write_summary(
     findings: dict[str, Any],
     results: dict[str, Any],
 ) -> dict[str, Any]:
-    """Write the small committed evidence summary.
-
-    Only digests and counts are committed. The artifacts they describe are
-    workflow artifacts: an 8 MB results file has no business in git history.
-    """
+    """Write the small committed evidence summary."""
     artifacts: list[dict[str, Any]] = [
         {
             "path": str(_relative(results_path)),
@@ -222,23 +210,35 @@ def _relative(path: Path) -> Path:
 
 
 def legacy_merge() -> None:
-    """Merge the complete backend run with newer regression evidence by node ID."""
-    final_path = ROOT / "FINAL_TEST_RESULTS.json"
+    """Merge the complete backend run with newer regression evidence under artifacts/."""
+    ARTIFACTS.mkdir(parents=True, exist_ok=True)
+    EVIDENCE.mkdir(parents=True, exist_ok=True)
+    final_path = ARTIFACTS / "FINAL_TEST_RESULTS.json"
+    manifest_path = ARTIFACTS / "tests_manifest.txt"
     baseline_path = EVIDENCE / "BASE_FULL_RESULTS.json"
     if not baseline_path.exists():
         baseline_path.write_bytes(final_path.read_bytes())
-    baseline = json.loads(baseline_path.read_text())
-    nodes = (ROOT / "tests_manifest.txt").read_text().splitlines()
+    baseline = json.loads(baseline_path.read_text(encoding="utf-8"))
+    nodes = manifest_path.read_text(encoding="utf-8").splitlines()
     assert len(nodes) == len(set(nodes))
     results = {r["nodeid"]: r for r in baseline["tests"]}
     for node in nodes:
-        results.setdefault(node, {"nodeid": node, "status": "not_run", "duration": 0,
-                                  "chunk": None, "attempts": [], "failure": None,
-                                  "error_class": "NOT_EXECUTED"})
-    regression_chunks = json.loads((EVIDENCE / "regression" / "summary.json").read_text())
+        results.setdefault(
+            node,
+            {
+                "nodeid": node,
+                "status": "not_run",
+                "duration": 0,
+                "chunk": None,
+                "attempts": [],
+                "failure": None,
+                "error_class": "NOT_EXECUTED",
+            },
+        )
+    regression_chunks = json.loads((EVIDENCE / "regression" / "summary.json").read_text(encoding="utf-8"))
     summaries = {row["label"]: row for row in regression_chunks}
     for path in sorted((EVIDENCE / "regression").glob("regression-*.jsonl")):
-        events = [json.loads(line) for line in path.read_text().splitlines()]
+        events = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
         collection = next(row["nodeids"] for row in events if row["kind"] == "collection")
         sessions = [e for e in events if e["kind"] == "session"]
         by_node = collections.defaultdict(list)
@@ -265,29 +265,42 @@ def legacy_merge() -> None:
             if any(p["wasxfail"] for p in phases):
                 status = "xfailed" if skips else "xpassed"
                 error = "EXPECTED_FAILURE_MARKER"
-            attempt = {"chunk": path.stem, "status": status,
-                       "duration": sum(p["duration"] for p in phases),
-                       "exit_code": summaries[path.stem]["exit_code"],
-                       "session_finished": bool(sessions), "phases": phases}
+            attempt = {
+                "chunk": path.stem,
+                "status": status,
+                "duration": sum(p["duration"] for p in phases),
+                "exit_code": summaries[path.stem]["exit_code"],
+                "session_finished": bool(sessions),
+                "phases": phases,
+            }
             result = results[node]
             result["attempts"].append(attempt)
-            result.update(status=status, duration=attempt["duration"], chunk=path.stem,
-                          failure=failure, error_class=error)
+            result.update(
+                status=status,
+                duration=attempt["duration"],
+                chunk=path.stem,
+                failure=failure,
+                error_class=error,
+            )
     current = [results[node] for node in nodes]
     for result in current:
         result["attempt_count"] = len(result["attempts"])
     counts = {key: 0 for key in ("passed", "failed", "error", "skipped", "xfailed", "xpassed", "not_run")}
     counts.update(collections.Counter(r["status"] for r in current))
-    output = {"population": len(nodes), "collection_stable": True,
-              "counts": counts, "unique_accounted": len(current),
-              "scope": "Current exact-node collection; full-population run plus changed-contract regression. Earlier interrupted exploratory runs are retained separately, not counted as passes.",
-              "chunks": baseline["chunks"] + regression_chunks,
-              "tests": current}
-    final_path.write_text(json.dumps(output, indent=2))
-    groups = collections.defaultdict(collections.Counter)
+    output = {
+        "population": len(nodes),
+        "collection_stable": True,
+        "counts": counts,
+        "unique_accounted": len(current),
+        "scope": "Current exact-node collection; full-population run plus changed-contract regression. Earlier interrupted exploratory runs are retained separately, not counted as passes.",
+        "chunks": baseline["chunks"] + regression_chunks,
+        "tests": current,
+    }
+    final_path.write_text(json.dumps(output, indent=2), encoding="utf-8")
+    groups: dict[str, dict[str, int]] = collections.defaultdict(collections.Counter)
     for result in current:
         groups[result["nodeid"].split("::")[0]][result["status"]] += 1
-    (EVIDENCE / "test-file-accounting.json").write_text(json.dumps(groups, indent=2))
+    (EVIDENCE / "test-file-accounting.json").write_text(json.dumps(groups, indent=2), encoding="utf-8")
     print(json.dumps({"population": len(nodes), "counts": counts}, indent=2))
     assert counts["not_run"] == 0, "Unrun nodes cannot be hidden"
 
@@ -318,6 +331,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--strict",
+        "--ci",
+        dest="strict",
         action="store_true",
         help="also fail when any node failed or errored (not only when unaccounted)",
     )
@@ -329,8 +344,12 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.results is None:
-        legacy_merge()
-        return 0
+        default_results = ARTIFACTS / "pytest_chunks_results.json"
+        if args.strict and default_results.is_file():
+            args.results = default_results
+        else:
+            legacy_merge()
+            return 0
 
     results_path = args.results.resolve()
     junit_path = args.junit.resolve() if args.junit else None

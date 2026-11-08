@@ -1,5 +1,11 @@
-"""Remove non-executable padding and sales banners; --check never writes."""
+"""Remove non-executable padding and sales banners; --check never writes.
+
+Corrupt or unparseable source files (NUL bytes, invalid UTF-8, invalid Python
+syntax) are reported as structured findings in the JSON output and exit nonzero
+instead of raising an unhandled traceback.
+"""
 from __future__ import annotations
+
 import argparse
 import ast
 import json
@@ -16,16 +22,20 @@ PADDING = re.compile(
 )
 
 
-def sources(root=ROOT):
+def sources(root: Path = ROOT):
+    root = Path(root)
     for name in ROOTS:
-        for path in sorted((root / name).rglob('*')):
+        base = root / name
+        if not base.exists():
+            continue
+        for path in sorted(base.rglob('*')):
             if path.is_file() and path.suffix in SUFFIXES and not SKIP.intersection(path.relative_to(root).parts):
                 yield path
 
 
-def cleaned(text, suffix):
+def cleaned(text: str, suffix: str) -> tuple[str, int]:
     lines = text.splitlines(keepends=True)
-    drop = set()
+    drop: set[int] = set()
     for i, line in enumerate(lines):
         if line.lstrip().startswith('/*') and '*/' in line and BANNER.search(line):
             drop.add(i)
@@ -36,9 +46,10 @@ def cleaned(text, suffix):
         for node in ast.walk(tree):
             if isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
                 if BANNER.search(node.value.value):
-                    for i in range(node.lineno - 1, node.end_lineno):
+                    end_lineno = getattr(node, 'end_lineno', node.lineno) or node.lineno
+                    for i in range(node.lineno - 1, end_lineno):
                         if BANNER.search(lines[i]):
-                            if node.lineno == node.end_lineno or not any(q in lines[i] for q in ('\"\"\"', "'''")):
+                            if node.lineno == end_lineno or not any(q in lines[i] for q in ('"""', "'''")):
                                 drop.add(i)
                             else:
                                 lines[i] = BANNER.sub('', lines[i])
@@ -48,20 +59,47 @@ def cleaned(text, suffix):
     return result, len(drop)
 
 
-def main():
+def scan(root: Path = ROOT, *, check: bool = True) -> dict[str, object]:
+    root = Path(root)
+    changed: dict[str, object] = {}
+    for path in sources(root):
+        rel = path.relative_to(root).as_posix()
+        try:
+            raw = path.read_bytes()
+        except OSError as exc:
+            changed[rel] = {'error': f'unreadable file: {exc}'}
+            continue
+        if b'\x00' in raw:
+            changed[rel] = {'error': 'null byte in source'}
+            continue
+        try:
+            text = raw.decode('utf-8')
+        except UnicodeDecodeError as exc:
+            changed[rel] = {'error': f'invalid UTF-8: {exc.reason}'}
+            continue
+        try:
+            new, count = cleaned(text, path.suffix)
+        except (SyntaxError, ValueError) as exc:
+            lineno = getattr(exc, 'lineno', 1) or 1
+            msg = getattr(exc, 'msg', str(exc))
+            changed[rel] = {'error': f'unparseable source at line {lineno}: {type(exc).__name__}: {msg}'}
+            continue
+        if count:
+            changed[rel] = count
+            if not check:
+                path.write_text(new, encoding='utf-8')
+    return changed
+
+
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--check', action='store_true')
-    args = parser.parse_args()
-    changed = {}
-    for path in sources():
-        text = path.read_text()
-        new, count = cleaned(text, path.suffix)
-        if count:
-            changed[str(path.relative_to(ROOT))] = count
-            if not args.check:
-                path.write_text(new)
+    parser.add_argument('--root', type=Path, default=ROOT, help='directory to scan (default: repo root)')
+    args = parser.parse_args(argv)
+    changed = scan(args.root, check=args.check)
     print(json.dumps(changed, indent=2))
-    return int(bool(changed) and args.check)
+    has_errors = any(isinstance(val, dict) and 'error' in val for val in changed.values())
+    return int(has_errors or (bool(changed) and args.check))
 
 
 if __name__ == '__main__':

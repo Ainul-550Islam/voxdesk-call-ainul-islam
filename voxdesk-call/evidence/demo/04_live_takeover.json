@@ -14,5 +14,38 @@
     "tests/telephony/test_takeover.py::test_takeover_sends_twiml_replacement_to_provider_fake",
     "tests/telephony/test_monitor_bus.py::test_monitor_tap_zero_overhead_when_inactive_and_injects_guidance",
     "tests/api/test_live_monitoring_authz.py::test_live_monitoring_rbac_enforces_calls_monitor_and_audits_denial"
+  ],
+  "audio_release_asset": {
+    "release_tag": "v1.0.0-demo-audio",
+    "asset_name": "04_live_takeover_audio.wav",
+    "download_url": "https://github.com/voxdesk/voxdesk-call/releases/download/v1.0.0-demo-audio/04_live_takeover_audio.wav",
+    "audio_sha256": null,
+    "status": "pending_live_carrier_release_upload"
+  },
+  "transcript": [
+    {
+      "turn": 1,
+      "speaker": "caller",
+      "timestamp_ms": 940,
+      "text": "I see an unexpected charge on my statement and want to speak with billing."
+    },
+    {
+      "turn": 2,
+      "speaker": "supervisor_whisper",
+      "timestamp_ms": 2800,
+      "text": "Offer immediate fee waiver up to $35 before transferring."
+    },
+    {
+      "turn": 3,
+      "speaker": "agent",
+      "timestamp_ms": 3950,
+      "text": "I can waive that $25 fee right now, and I am connecting my supervisor to confirm."
+    },
+    {
+      "turn": 4,
+      "speaker": "supervisor",
+      "timestamp_ms": 6200,
+      "text": "Hi, this is Alex from Billing Supervision\u2014I have taken over the call and applied the credit."
+    }
   ]
 }

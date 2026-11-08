@@ -95,40 +95,47 @@ def test_sales_and_due_diligence_docs_exist_and_obey_truth_rules() -> None:
 
 @pytest.mark.timeout(90)
 def test_due_diligence_zip_and_sha256sums_verify() -> None:
+    import shutil
+
     dist_dir = ROOT / "dist"
     zips = sorted(dist_dir.glob("due-diligence-*.zip"))
-    if not zips:
-        # Run generator if dist/ was cleaned
-        import subprocess
-        import sys
+    created_on_fly = not zips
+    try:
+        if created_on_fly:
+            # Run generator if dist/ was cleaned
+            import subprocess
+            import sys
 
-        # --allow-missing: this test proves the pack is well formed and its
-        # SHA256SUMS verify, not that every evidence artifact is present. The
-        # evidence gate is exercised on its own by
-        # tests/truth/test_due_diligence_pack_evidence_gate.py, and a refusal
-        # here would be testing the wrong thing badly.
-        subprocess.run(
-            [sys.executable, str(ROOT / "scripts" / "make_due_diligence_pack.py"), "--allow-missing"],
-            cwd=ROOT,
-            check=True,
-        )
-        zips = sorted(dist_dir.glob("due-diligence-*.zip"))
+            # --allow-missing: this test proves the pack is well formed and its
+            # SHA256SUMS verify, not that every evidence artifact is present. The
+            # evidence gate is exercised on its own by
+            # tests/truth/test_due_diligence_pack_evidence_gate.py, and a refusal
+            # here would be testing the wrong thing badly.
+            subprocess.run(
+                [sys.executable, str(ROOT / "scripts" / "make_due_diligence_pack.py"), "--allow-missing"],
+                cwd=ROOT,
+                check=True,
+            )
+            zips = sorted(dist_dir.glob("due-diligence-*.zip"))
 
-    assert len(zips) >= 1
-    zip_path = zips[-1]
-    sha_file = dist_dir / "SHA256SUMS"
-    assert sha_file.exists()
+        assert len(zips) >= 1
+        zip_path = zips[-1]
+        sha_file = dist_dir / "SHA256SUMS"
+        assert sha_file.exists()
 
-    lines = [ln.strip() for ln in sha_file.read_text(encoding="utf-8").splitlines() if ln.strip()]
-    assert len(lines) >= 20
-    first_digest, first_name = lines[0].split(None, 1)
-    assert first_name == zip_path.name
-    assert first_digest == _sha256(zip_path)
+        lines = [ln.strip() for ln in sha_file.read_text(encoding="utf-8").splitlines() if ln.strip()]
+        assert len(lines) >= 20
+        first_digest, first_name = lines[0].split(None, 1)
+        assert first_name == zip_path.name
+        assert first_digest == _sha256(zip_path)
 
-    with zipfile.ZipFile(zip_path, "r") as zf:
-        names = set(zf.namelist())
-        assert "SHA256SUMS" in names
-        assert "PACK_MANIFEST.json" in names
-        assert "docs/SALES/FEATURE_MATRIX_VERIFIED.md" in names
-        assert "docs/DUE_DILIGENCE/README.md" in names
-        assert "sbom/python-backend.cdx.json" in names
+        with zipfile.ZipFile(zip_path, "r") as zf:
+            names = set(zf.namelist())
+            assert "SHA256SUMS" in names
+            assert "PACK_MANIFEST.json" in names
+            assert "docs/SALES/FEATURE_MATRIX_VERIFIED.md" in names
+            assert "docs/DUE_DILIGENCE/README.md" in names
+            assert "sbom/python-backend.cdx.json" in names
+    finally:
+        if created_on_fly:
+            shutil.rmtree(dist_dir, ignore_errors=True)

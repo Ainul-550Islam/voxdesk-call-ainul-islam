@@ -29,7 +29,7 @@ import smtplib
 import ssl
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from email.message import EmailMessage
 
 import structlog
