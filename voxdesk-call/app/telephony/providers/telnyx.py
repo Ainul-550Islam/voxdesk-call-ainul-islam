@@ -7,11 +7,10 @@ WhatsApp is not implemented.
 Batch 01 additions, all in the same adapter so there is one Telnyx credential
 surface to review:
 
-* :attr:`TelnyxAdapter.supports_ai_media_stream` -- the capability flag. It is
-  true only when the API key, the webhook public key *and* the connection id are
-  present. Anything less keeps it false and every media-stream entry point
-  answers ``501 UNSUPPORTED_CAPABILITY``; a half-configured carrier streaming
-  silence to a real caller is the failure mode this flag exists to prevent.
+* :attr:`TelnyxAdapter.supports_ai_media_stream` is false until a real test
+  verifies authenticated, bidirectional media reaches the application pipeline.
+  Credentials alone keep the state ``UNVERIFIED`` and media entry points fail
+  closed rather than answering a caller into an unobserved stream.
 * Call Control v2 commands (:meth:`answer`, :meth:`transfer_call`,
   :meth:`hangup_call`, :meth:`send_dtmf`) with bounded retries on 5xx/timeout,
   **no** retry on 4xx, and a stable ``Idempotency-Key`` reused across attempts so
@@ -53,6 +52,11 @@ from app.telephony.providers.base import (
 )
 from app.telephony.providers.webhook_verifier import verify as verify_provider_webhook
 
+# Credential presence proves that a stream can be requested, not that a real
+# Telnyx call has delivered authenticated media frames into our pipeline. Flip
+# this only in the change that adds passing, recorded live-media evidence.
+TELNYX_MEDIA_STREAM_LIVE_VERIFIED = False
+
 
 class TelnyxAdapter(TelephonyAdapter):
     name = "telnyx"
@@ -93,40 +97,43 @@ class TelnyxAdapter(TelephonyAdapter):
 
     @property
     def supports_ai_media_stream(self) -> bool:
-        """True only when the whole media-stream credential set is configured.
+        """Whether this deployment has *verified* live Telnyx media streaming.
 
-        Deliberately not a vendor claim: Telnyx does stream AI media, but this
-        deployment can only do it when it holds the key that controls the call,
-        the public key that proves a webhook came from Telnyx, and the connection
-        id the stream is attached to.
+        Credentials alone are not evidence that the carrier actually opened a
+        bidirectional stream or that media reached the voice pipeline. Keep the
+        claim disabled until a real test records those observations.
         """
-        return not self.missing_media_stream_settings
+        return not self.missing_media_stream_settings and TELNYX_MEDIA_STREAM_LIVE_VERIFIED
 
     def media_stream_capability(self) -> dict:
-        """Machine-readable capability row. ``state`` is READY or NOT_CONFIGURED."""
+        """Machine-readable, evidence-gated capability row."""
         missing = self.missing_media_stream_settings
+        verified = not missing and TELNYX_MEDIA_STREAM_LIVE_VERIFIED
+        state = "NOT_CONFIGURED" if missing else ("READY" if verified else "UNVERIFIED")
         return {
             "provider": self.name,
-            "supports_ai_media_stream": not missing,
-            "state": "NOT_CONFIGURED" if missing else "READY",
+            "supports_ai_media_stream": verified,
+            "state": state,
             "missing": list(missing),
-            "serializer": "TelnyxMediaStream",
-            "encodings": ["PCMU", "PCMA", "L16"],
-            "sample_rates": [8000],
-            "pipeline_sample_rate": 16000,
-            "stream_endpoint": "/telephony/telnyx/ws",
+            "evidence_required": not verified,
+            "serializer": "TelnyxMediaStream" if verified else None,
+            "encodings": ["PCMU", "PCMA", "L16"] if verified else [],
+            "sample_rates": [8000] if verified else [],
+            "pipeline_sample_rate": 16000 if verified else None,
+            "stream_endpoint": "/telephony/telnyx/ws" if verified else None,
             "call_control_api": "v2",
         }
 
     def require_ai_media_stream(self) -> None:
-        """Raise ``UnsupportedCapability`` (UNSUPPORTED_CAPABILITY) when absent."""
+        """Raise ``UnsupportedCapability`` until config and live evidence exist."""
         missing = self.missing_media_stream_settings
         if missing:
-            raise UnsupportedCapability(
-                "Telnyx AI media streaming is not configured; missing "
-                + ", ".join(missing),
-                provider=self.name,
-            )
+            reason = "Telnyx AI media streaming is not configured; missing " + ", ".join(missing)
+        elif not TELNYX_MEDIA_STREAM_LIVE_VERIFIED:
+            reason = "Telnyx AI media streaming is not live-verified for this deployment"
+        else:
+            return
+        raise UnsupportedCapability(reason, provider=self.name)
 
     # ------------------------------------------------- Telnyx Call Control v2 --
 
@@ -266,7 +273,12 @@ class TelnyxAdapter(TelephonyAdapter):
         return await self.call_control("streaming_start", external_id, payload)
 
     async def create_outbound(
-        self, *, to_number: str, from_number: str, answer_url: str = ""
+        self,
+        *,
+        to_number: str,
+        from_number: str,
+        answer_url: str = "",
+        status_callback_url: str = "",
     ) -> CallResult:
         self.require_configured()
         connection = (settings.telnyx_connection_id or "").strip()

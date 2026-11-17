@@ -9,6 +9,14 @@ from sqlalchemy import pool
 from app.core.config import settings
 from app.db.models import Base
 from app.db.migration_compatibility import normalize_legacy_revision_aliases
+# Register every mapped model module so autogenerate sees the full live schema.
+# These modules own tables created by migrations 0071, 0077, 0081, 0086-0088.
+import app.db.agency_models  # noqa: F401
+import app.db.channel_models  # noqa: F401
+import app.db.component_models  # noqa: F401
+import app.db.demo_models  # noqa: F401
+import app.db.monitoring_models  # noqa: F401
+import app.db.role_models  # noqa: F401
 import app.ai.models  # noqa: F401
 import app.anomaly.persistence  # noqa: F401
 import app.auth.identity.models  # noqa: F401

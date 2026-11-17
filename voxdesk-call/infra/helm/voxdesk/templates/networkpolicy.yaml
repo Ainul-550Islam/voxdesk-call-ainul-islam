@@ -1,0 +1,284 @@
+{{- /*
+NetworkPolicy (PART 17B / P17B-01).
+
+Default deny for *ingress* on every pod this release owns, then the flows that
+actually exist, each named after the call path it carries:
+
+  ingress-controller -> api:8000, web:3000
+  web                -> api:8000          (server-side rendering calls the Service
+                                           directly; the browser goes via ingress)
+  api                -> realtime-gateway:8790   (POST /ingest/v1/publish)
+  api, gateway       -> media-engine:9001       (session setup)
+  anything in release -> database, redis (only when the operator names an
+                                           in-cluster selector)
+  prometheus         -> api, gateway, media-engine metrics ports
+
+Egress is deliberately unrestricted and this comment is the reason: the API
+calls five named external providers whose addresses are not known at render
+time. A default-deny egress rule here would either break calls or require a
+DNS-based policy that many CNI plugins do not implement. `networkPolicy.enabled`
+governs ingress only; that is stated rather than implied.
+
+Selector shapes used below:
+  * `networkPolicy.*.podSelector` values are full selector maps
+    (`{matchLabels: {...}}`) — rendered bare under `podSelector:`.
+  * `$nameSel` is a label map — rendered under `matchLabels:`.
+Mixing those two up is silent at render time and invalid at admission, which is
+why each use below says which shape it is.
+*/ -}}
+{{- $np := .Values.networkPolicy | default dict -}}
+{{- if $np.enabled | default false }}
+{{- $ingressNs := ($np.ingressController | default dict).namespace | default "ingress-nginx" -}}
+{{- $ingressSel := ($np.ingressController | default dict).podSelector | default dict -}}
+{{- $nameSel := dict "app.kubernetes.io/name" (include "voxdesk.name" .) "app.kubernetes.io/instance" .Release.Name -}}
+{{- $dbSel := ($np.database | default dict).podSelector | default dict -}}
+{{- $redisSel := ($np.redis | default dict).podSelector | default dict -}}
+{{- $monNs := ($np.monitoring | default dict).namespace | default "monitoring" -}}
+{{- $monSel := ($np.monitoring | default dict).podSelector | default dict -}}
+{{- $monitoringOn := ($np.monitoring | default dict).enabled | default true -}}
+{{- $rt := .Values.realtimeGateway | default dict -}}
+{{- $me := .Values.mediaEngine | default dict -}}
+{{- $fe := .Values.frontend | default dict -}}
+
+# ---------------------------------------------------------------------------
+# Default deny: every pod of this release, nothing in.
+# ---------------------------------------------------------------------------
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "voxdesk.fullname" . }}-default-deny
+  labels:
+    {{- include "voxdesk.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- toYaml $nameSel | nindent 6 }}
+  policyTypes: ["Ingress"]
+  ingress: []
+---
+# ---------------------------------------------------------------------------
+# API: ingress controller, the console, and Prometheus.
+# ---------------------------------------------------------------------------
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "voxdesk.fullname" . }}-allow-api
+  labels:
+    {{- include "voxdesk.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+spec:
+  podSelector:
+    matchLabels:
+      {{- toYaml $nameSel | nindent 6 }}
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ $ingressNs }}
+          {{- with $ingressSel }}
+          podSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      ports:
+        - protocol: TCP
+          port: 8000
+    {{- if $fe.enabled }}
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- toYaml $nameSel | nindent 14 }}
+              app.kubernetes.io/component: web
+      ports:
+        - protocol: TCP
+          port: 8000
+    {{- end }}
+    {{- if $monitoringOn }}
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ $monNs }}
+          {{- with $monSel }}
+          podSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      ports:
+        - protocol: TCP
+          port: 8000
+    {{- end }}
+---
+# ---------------------------------------------------------------------------
+# Frontend: the ingress controller. Nothing else talks to it.
+# ---------------------------------------------------------------------------
+{{- if $fe.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "voxdesk.fullname" . }}-allow-web
+  labels:
+    {{- include "voxdesk.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+spec:
+  podSelector:
+    matchLabels:
+      {{- toYaml $nameSel | nindent 6 }}
+      app.kubernetes.io/component: web
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ $ingressNs }}
+          {{- with $ingressSel }}
+          podSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      ports:
+        - protocol: TCP
+          port: {{ $fe.port | default 3000 }}
+{{- end }}
+---
+# ---------------------------------------------------------------------------
+# Realtime gateway: browser WebSocket upgrades (via ingress), the API's
+# server-to-server ingest, and Prometheus on the same port.
+# ---------------------------------------------------------------------------
+{{- if $rt.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "voxdesk.fullname" . }}-allow-realtime-gateway
+  labels:
+    {{- include "voxdesk.labels" . | nindent 4 }}
+    app.kubernetes.io/component: realtime-gateway
+spec:
+  podSelector:
+    matchLabels:
+      {{- toYaml $nameSel | nindent 6 }}
+      app.kubernetes.io/component: realtime-gateway
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ $ingressNs }}
+          {{- with $ingressSel }}
+          podSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+        # The API publishes realtime events to POST /ingest/v1/publish.
+        - podSelector:
+            matchLabels:
+              {{- toYaml $nameSel | nindent 14 }}
+      ports:
+        - protocol: TCP
+          port: {{ $rt.port | default 8790 }}
+    {{- if $monitoringOn }}
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ $monNs }}
+          {{- with $monSel }}
+          podSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      ports:
+        - protocol: TCP
+          port: {{ $rt.port | default 8790 }}
+    {{- end }}
+{{- end }}
+---
+# ---------------------------------------------------------------------------
+# Media engine: control port from the gateway; UDP from anywhere, because a
+# carrier or browser sends RTP from an address the cluster cannot predict —
+# that is what ICE is for.
+# ---------------------------------------------------------------------------
+{{- if $me.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "voxdesk.fullname" . }}-allow-media-engine
+  labels:
+    {{- include "voxdesk.labels" . | nindent 4 }}
+    app.kubernetes.io/component: media-engine
+spec:
+  podSelector:
+    matchLabels:
+      {{- toYaml $nameSel | nindent 6 }}
+      app.kubernetes.io/component: media-engine
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- toYaml $nameSel | nindent 14 }}
+              app.kubernetes.io/component: realtime-gateway
+      ports:
+        - protocol: TCP
+          port: {{ $me.controlPort | default 9001 }}
+    - ports:
+        - protocol: UDP
+          port: {{ $me.rtpPort | default 5000 }}
+    {{- if $monitoringOn }}
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ $monNs }}
+          {{- with $monSel }}
+          podSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      ports:
+        - protocol: TCP
+          port: {{ $me.controlPort | default 9001 }}
+    {{- end }}
+{{- end }}
+---
+# ---------------------------------------------------------------------------
+# Database / Redis. Rendered only when the operator names an in-cluster
+# selector; a managed database is not in this namespace and needs no rule.
+# `$dbSel` / `$redisSel` are full selector maps.
+# ---------------------------------------------------------------------------
+{{- if and $dbSel (gt (len (keys $dbSel)) 0) }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "voxdesk.fullname" . }}-allow-db
+  labels:
+    {{- include "voxdesk.labels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+spec:
+  podSelector:
+    {{- toYaml $dbSel | nindent 4 }}
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- toYaml $nameSel | nindent 14 }}
+      ports:
+        - protocol: TCP
+          port: {{ ($np.database | default dict).port | default 5432 }}
+{{- end }}
+{{- if and $redisSel (gt (len (keys $redisSel)) 0) }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "voxdesk.fullname" . }}-allow-redis
+  labels:
+    {{- include "voxdesk.labels" . | nindent 4 }}
+    app.kubernetes.io/component: redis
+spec:
+  podSelector:
+    {{- toYaml $redisSel | nindent 4 }}
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- toYaml $nameSel | nindent 14 }}
+      ports:
+        - protocol: TCP
+          port: {{ ($np.redis | default dict).port | default 6379 }}
+{{- end }}
+{{- end }}

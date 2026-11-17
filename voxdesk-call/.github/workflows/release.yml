@@ -106,14 +106,19 @@ jobs:
           sudo apt-get install -y -qq protobuf-compiler cmake g++ redis-server
           sudo service redis-server start
           python -m pip install --upgrade pip
-          pip install -r requirements.txt pytest pytest-asyncio aiosqlite respx fakeredis soundfile==0.13.1 noisereduce==3.0.3
-          cd dashboard && npm ci
-          cd ../dashboard-next && npm ci
+          pip install -r requirements.txt -r requirements-docs.txt pytest pytest-asyncio aiosqlite respx fakeredis soundfile==0.13.1 noisereduce==3.0.3
+          cd dashboard-next && npm ci
 
       - name: Run full verify-sale gate (truth, tests, SBOMs, feature matrix, due-diligence zip)
         run: |
           make verify-sale
           ls -lh dist/due-diligence-*.zip dist/SHA256SUMS sbom/*.cdx.json
+
+      - name: Build buyer-facing release bundle and verify its checksums
+        run: |
+          python3 scripts/build_release.py
+          sha256sum -c dist/SHA256SUMS
+          unzip -t dist/voxdesk-developer-release-*.zip
 
       - name: Build production Docker image
         run: |
@@ -125,6 +130,7 @@ jobs:
           name: due-diligence-pack-${{ github.ref_name }}
           path: |
             dist/due-diligence-*.zip
+            dist/voxdesk-developer-release-*.zip
             dist/SHA256SUMS
             sbom/*.cdx.json
           retention-days: 90
@@ -135,7 +141,9 @@ jobs:
         with:
           files: |
             dist/due-diligence-*.zip
+            dist/voxdesk-developer-release-*.zip
             dist/SHA256SUMS
+            docs-site/changelog.xml
             sbom/python-backend.cdx.json
             sbom/node-dashboard.cdx.json
             sbom/go-services.cdx.json

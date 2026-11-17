@@ -45,6 +45,7 @@ from app.services.public_widget_service import (
 router = APIRouter(prefix="/api/v1/public/widget", tags=["public-widget"])
 
 _WIDGET_EMBED_PATH = Path(__file__).resolve().parents[2] / "widget" / "embed.js"
+_WIDGET_CHAT_PATH = Path(__file__).resolve().parents[2] / "widget" / "chat.js"
 
 
 class PublicWidgetVoiceBootstrapRequest(BaseModel):
@@ -76,6 +77,10 @@ async def get_widget_config(
     x_voxdesk_public_key: str | None = Header(None, alias="X-VoxDesk-Public-Key"),
     session: AsyncSession = Depends(get_session),
 ) -> PublicWidgetBootstrapConfig:
+    """Configuration for an embedded widget, resolved from the request Origin.
+
+    Returns only what a web page may know: product name, colours, position and the session endpoint. A key presented from an origin not on the key's allowlist is refused.
+    """
     raw_key = x_voxdesk_public_key or public_key
     effective_origin = extract_request_origin(
         origin_header=request.headers.get("origin"),
@@ -116,6 +121,26 @@ async def create_widget_voice_bootstrap(
     )
 
 
+@router.get("/chat.js")
+async def get_widget_chat_js() -> Response:
+    """Serve the text chat widget (`widget/chat.js`).
+
+    Same origin, same headers as `embed.js`: a customer embedding the chat
+    widget must not have to whitelist a second host, and the file must not be
+    sniffed into another type.
+    """
+    if not _WIDGET_CHAT_PATH.is_file():
+        raise HTTPException(status_code=404, detail="Widget chat.js not found")
+    return Response(
+        content=_WIDGET_CHAT_PATH.read_text(encoding="utf-8"),
+        media_type="application/javascript; charset=utf-8",
+        headers={
+            "X-Content-Type-Options": "nosniff",
+            "Cache-Control": "public, max-age=300",
+        },
+    )
+
+
 @router.get("/embed.js")
 async def get_widget_embed_js() -> Response:
     """Serve the CSP-safe embeddable widget loader (`widget/embed.js`)."""
@@ -143,6 +168,10 @@ async def start_widget_session(
     x_voxdesk_public_key: str | None = Header(None, alias="X-VoxDesk-Public-Key"),
     session: AsyncSession = Depends(get_session),
 ) -> PublicWidgetSessionRead:
+    """Open a widget session.
+
+    The only unauthenticated route that can spend money, so it passes the abuse gates — captcha, budget, toll-fraud heuristics — before a session row exists. Every refusal names the gate that fired.
+    """
     if x_voxdesk_public_key and not payload.public_key:
         payload = payload.model_copy(update={"public_key": x_voxdesk_public_key})
 
@@ -170,6 +199,10 @@ async def read_widget_session(
     authorization: str | None = Header(None),
     session: AsyncSession = Depends(get_session),
 ) -> PublicWidgetSessionRead:
+    """Read a widget session's state and turns.
+
+    The session token is the credential; there is no other lookup path.
+    """
     raw_token = _extract_widget_session_token(
         widget_session_header=x_voxdesk_widget_session,
         authorization_header=authorization,
@@ -200,6 +233,10 @@ async def post_widget_session_message(
     authorization: str | None = Header(None),
     session: AsyncSession = Depends(get_session),
 ) -> PublicWidgetMessageSendResponse:
+    """Send one visitor message and return the agent's reply.
+
+    Blocking on purpose: a widget that returns a message id and polls is a widget that feels broken.
+    """
     raw_token = _extract_widget_session_token(
         widget_session_header=x_voxdesk_widget_session,
         authorization_header=authorization,
@@ -228,6 +265,7 @@ async def terminate_widget_session(
     authorization: str | None = Header(None),
     session: AsyncSession = Depends(get_session),
 ) -> PublicWidgetSessionRead:
+    """End a widget session. Idempotent; ending an ended session returns its final state."""
     raw_token = _extract_widget_session_token(
         widget_session_header=x_voxdesk_widget_session,
         authorization_header=authorization,

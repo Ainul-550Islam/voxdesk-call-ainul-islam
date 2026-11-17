@@ -247,8 +247,9 @@ export default function ForecastingPage() {
       <div style={{ display: "grid", gridTemplateColumns: "320px 1fr 320px", gap: 12 }}>
         <section className="card" style={{ padding: 12 }}>
           <h3>Scope</h3>
-          <label style={{ fontSize: 11 }}>Environment ID (UUID)</label>
+          <label htmlFor="forecast-environment-id" style={{ fontSize: 11 }}>Environment ID (UUID)</label>
           <input
+            id="forecast-environment-id"
             type="text"
             data-testid="forecast-environment-id"
             value={environmentId}
@@ -256,8 +257,9 @@ export default function ForecastingPage() {
             placeholder="00000000-0000-0000-0000-000000000000"
             style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }}
           />
-          <label style={{ fontSize: 11, display: "block", marginTop: 6 }}>Model version ID (UUID)</label>
+          <label htmlFor="forecast-model-version-id" style={{ fontSize: 11, display: "block", marginTop: 6 }}>Model version ID (UUID)</label>
           <input
+            id="forecast-model-version-id"
             type="text"
             data-testid="forecast-model-version-id"
             value={modelVersionId}
@@ -265,8 +267,9 @@ export default function ForecastingPage() {
             placeholder="00000000-0000-0000-0000-000000000000"
             style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }}
           />
-          <label style={{ fontSize: 11, display: "block", marginTop: 6 }}>Series reference (optional)</label>
+          <label htmlFor="forecast-series-reference" style={{ fontSize: 11, display: "block", marginTop: 6 }}>Series reference (optional)</label>
           <input
+            id="forecast-series-reference"
             type="text"
             value={seriesReference}
             onChange={(e) => setSeriesReference(e.target.value)}
@@ -282,6 +285,7 @@ export default function ForecastingPage() {
             {points.map((p, i) => (
               <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 60px 24px", gap: 4, marginBottom: 4 }}>
                 <input
+                  aria-label={`Period ${i + 1}`}
                   value={p.period}
                   onChange={(e) => {
                     const next = [...points];
@@ -291,6 +295,7 @@ export default function ForecastingPage() {
                   style={{ padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }}
                 />
                 <input
+                  aria-label={`Value ${i + 1}`}
                   type="number"
                   value={p.value}
                   onChange={(e) => {
@@ -316,7 +321,7 @@ export default function ForecastingPage() {
 
           <div style={{ marginTop: 16 }}>
             <h4>Method</h4>
-            <select value={method} onChange={(e) => setMethod(e.target.value)} style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc" }}>
+            <select aria-label="Forecast method" value={method} onChange={(e) => setMethod(e.target.value)} style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc" }}>
               {METHODS.map((m) => (
                 <option key={m.value} value={m.value}>
                   {m.label}
@@ -326,15 +331,15 @@ export default function ForecastingPage() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginTop: 8 }}>
               <div>
                 <label style={{ fontSize: 11 }}>Horizon</label>
-                <input type="number" min={1} max={365} value={horizon} onChange={(e) => setHorizon(parseInt(e.target.value, 10) || 1)} style={{ width: "100%", padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }} />
+                <input aria-label="Forecast horizon in periods" type="number" min={1} max={365} value={horizon} onChange={(e) => setHorizon(parseInt(e.target.value, 10) || 1)} style={{ width: "100%", padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }} />
               </div>
               <div>
                 <label style={{ fontSize: 11 }}>Window</label>
-                <input type="number" min={1} max={100} value={windowSize} onChange={(e) => setWindowSize(parseInt(e.target.value, 10) || 1)} style={{ width: "100%", padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }} />
+                <input aria-label="Moving-average window" type="number" min={1} max={100} value={windowSize} onChange={(e) => setWindowSize(parseInt(e.target.value, 10) || 1)} style={{ width: "100%", padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }} />
               </div>
               <div>
                 <label style={{ fontSize: 11 }}>Alpha</label>
-                <input type="number" min={0} max={1} step={0.1} value={alpha} onChange={(e) => setAlpha(parseFloat(e.target.value) || 0)} style={{ width: "100%", padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }} />
+                <input aria-label="Smoothing alpha" type="number" min={0} max={1} step={0.1} value={alpha} onChange={(e) => setAlpha(parseFloat(e.target.value) || 0)} style={{ width: "100%", padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }} />
               </div>
             </div>
             <button

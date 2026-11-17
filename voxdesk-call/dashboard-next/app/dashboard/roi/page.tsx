@@ -41,7 +41,7 @@ export default function ROIPage() {
       <section className="card">
         <h2>Baselines ({baselines.length})</h2>
         {baselines.length === 0 ? <p className="muted">No baselines. Backend: app/roi/service.py ROIBaseline, _validate_period, _validate_metrics</p> : (
-          <div className="table-wrap">
+          <div className="table-wrap" tabIndex={0} role="region" aria-label="Data table">
             <table>
               <thead><tr><th>ID</th><th>Period</th><th>Metrics</th></tr></thead>
               <tbody>

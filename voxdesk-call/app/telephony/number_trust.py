@@ -15,7 +15,7 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Protocol
+from typing import Any, Iterable, Protocol
 from urllib.parse import quote
 
 import httpx
@@ -680,3 +680,98 @@ async def scheduled_refresh_number_trust_profiles(
         "skipped_unconfigured": skipped_unconfigured,
         "errors": errors,
     }
+
+
+# ===========================================================================
+# PART 13 / P13-10 — branded caller ID for imported numbers
+# ===========================================================================
+#
+# A number we bought carries our carrier's CNAM registration. A number the
+# *tenant* imported carries whatever their old carrier registered, which is
+# often nothing -- so the call shows up as an unknown number and gets ignored.
+# Branding it means filing the display name with the carrier that terminates
+# the number, and only some carriers accept that filing for a BYO number.
+#
+# The table below is capability, not wishful thinking: it says which providers
+# accept a branded-CID request and what evidence they return. Nothing here
+# claims a registration exists until the carrier has confirmed it.
+
+BRANDED_CALLER_ID_PROVIDERS: dict[str, dict] = {
+    "telnyx": {
+        "supported": True,
+        "mechanism": "CNAM storage on the number order",
+        "requires": ("display_name", "business_registration"),
+    },
+    "twilio": {
+        "supported": True,
+        "mechanism": "Trust Hub branded calling (Shaken/Stir attestation)",
+        "requires": ("display_name", "business_registration", "address"),
+    },
+    "vonage": {
+        "supported": False,
+        "mechanism": "",
+        "requires": (),
+    },
+}
+#: Display names longer than this are rejected by every carrier we tested.
+DISPLAY_NAME_MAX = 15
+
+
+class BrandingError(NumberTrustError):
+    def __init__(self, code: str, message: str) -> None:
+        super().__init__(message)
+        self.code = code
+
+
+@dataclass(frozen=True)
+class BrandingPlan:
+    provider: str
+    supported: bool
+    mechanism: str
+    missing: tuple[str, ...]
+    display_name: str
+
+    @property
+    def ready(self) -> bool:
+        return self.supported and not self.missing
+
+    def as_dict(self) -> dict:
+        return {
+            "provider": self.provider,
+            "supported": self.supported,
+            "mechanism": self.mechanism,
+            "display_name": self.display_name,
+            "missing": list(self.missing),
+            "ready": self.ready,
+        }
+
+
+def normalise_display_name(value: str | None) -> str:
+    """Carriers accept letters, digits, spaces and a few marks -- nothing else."""
+    text = " ".join((value or "").split())
+    if not text:
+        raise BrandingError("missing_display_name", "a branded caller ID needs a display name")
+    if len(text) > DISPLAY_NAME_MAX:
+        raise BrandingError(
+            "display_name_too_long",
+            f"carriers accept at most {DISPLAY_NAME_MAX} characters for a display name",
+        )
+    if not all(char.isalnum() or char in " .,&'-" for char in text):
+        raise BrandingError(
+            "display_name_invalid", "the display name contains characters carriers reject"
+        )
+    return text
+
+
+def plan_branding(
+    provider: str, *, display_name: str | None, provided: Iterable[str] = ()
+) -> BrandingPlan:
+    """Whether this carrier can brand an imported number, and what it needs."""
+    key = (provider or "").strip().lower()
+    row = BRANDED_CALLER_ID_PROVIDERS.get(key)
+    if row is None:
+        raise BrandingError("unknown_provider", f"{provider!r} is not a configured carrier")
+    name = normalise_display_name(display_name) if row["supported"] else (display_name or "")
+    supplied = {str(item).strip().lower() for item in provided if str(item).strip()}
+    missing = tuple(item for item in row["requires"] if item not in supplied)
+    return BrandingPlan(key, bool(row["supported"]), row["mechanism"], missing, name)

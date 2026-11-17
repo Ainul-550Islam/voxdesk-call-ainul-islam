@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.enterprise_models import BatchCall, CallPolicy
 from app.db.models import Call, CallStatus, Campaign
 from app.db.telephony_models import TelephonyCallSession, TelephonyUsageLedger
+from app.telephony.concurrency_policy import CpsGate, load_limit
 
 
 @dataclass(frozen=True)
@@ -33,6 +34,12 @@ class ConcurrencyVerdict:
     max_concurrent_calls: int
     calls_last_minute: int = 0
     max_calls_per_minute: int | None = None
+    #: PART 13: true when this call sits above the tenant's paid base and is
+    #: therefore inside the burst allowance rather than the subscription.
+    burst: bool = False
+    burst_billing: bool = False
+    ceiling: int | None = None
+    provider_cps: int | None = None
 
 
 @dataclass(frozen=True)
@@ -291,6 +298,11 @@ async def _agent_call_count(
     return len(matched)
 
 
+#: One CPS gate per process: the carrier's limit is a fact about the carrier,
+#: not about a request, so a per-request bucket would measure nothing.
+_PROVIDER_CPS = CpsGate()
+
+
 async def check_concurrency_and_rate(
     db: AsyncSession,
     tenant_id: uuid.UUID,
@@ -299,8 +311,16 @@ async def check_concurrency_and_rate(
     campaign: Campaign | None = None,
     batch: BatchCall | None = None,
     now: datetime | None = None,
+    provider: str | None = None,
 ) -> ConcurrencyVerdict:
-    """Check concurrency, per-minute/hour/day rate, and daily budget limits."""
+    """Check concurrency, per-minute/hour/day rate, and daily budget limits.
+
+    PART 13 adds two ceilings to the same answer rather than a second endpoint:
+    the tenant's *entitlement* (paid base plus derived burst ceiling, only when
+    an entitlement row exists) and the carrier's calls-per-second budget for
+    `provider`. A tenant with no entitlement row keeps exactly the behaviour it
+    had before PART 13, which is what makes this change safe to ship.
+    """
     now_naive = _naive_utc(now)
     policy = await resolve_call_policy(db, tenant_id, agent_id, "concurrency")
     cfg = policy.config if (policy is not None and isinstance(policy.config, dict)) else {}
@@ -323,6 +343,39 @@ async def check_concurrency_and_rate(
     active_calls = await _agent_call_count(
         db, tenant_id, agent_id, active_only=True
     )
+
+    entitlement, entitlement_row = await load_limit(db, tenant_id)
+    burst = False
+    burst_billing = False
+    ceiling: int | None = None
+    if entitlement_row is not None:
+        ceiling = entitlement.ceiling
+        if active_calls >= ceiling:
+            return ConcurrencyVerdict(
+                allowed=False,
+                reason=f"burst_ceiling_exceeded ({active_calls}/{ceiling})",
+                active_calls=active_calls,
+                max_concurrent_calls=max_concurrent,
+                ceiling=ceiling,
+                burst=True,
+                burst_billing=entitlement.burst_billing,
+            )
+        burst = active_calls >= entitlement.base
+        burst_billing = burst and entitlement.burst_billing
+
+    cps = entitlement.cps_for(provider) if provider else None
+    if provider and cps is not None and not _PROVIDER_CPS.allow(provider, cps):
+        return ConcurrencyVerdict(
+            allowed=False,
+            reason=f"provider_cps_exceeded ({provider} > {cps}/s)",
+            active_calls=active_calls,
+            max_concurrent_calls=max_concurrent,
+            ceiling=ceiling,
+            burst=burst,
+            burst_billing=burst_billing,
+            provider_cps=cps,
+        )
+
     if active_calls >= max_concurrent:
         return ConcurrencyVerdict(
             allowed=False,
@@ -402,6 +455,10 @@ async def check_concurrency_and_rate(
         max_concurrent_calls=max_concurrent,
         calls_last_minute=calls_last_min,
         max_calls_per_minute=max_per_min,
+        burst=burst,
+        burst_billing=burst_billing,
+        ceiling=ceiling,
+        provider_cps=cps,
     )
 
 

@@ -166,7 +166,7 @@ export default function InsightPage() {
             <textarea value={question} onChange={(e) => setQuestion(e.target.value)} rows={3} style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid #ccc", marginTop: 4, fontSize: 13 }} placeholder="What are Q3 trends?" />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
-            <div><label style={{ fontSize: 12, fontWeight: 600 }}>Analysis Type</label><select value={analysisType} onChange={(e) => setAnalysisType(e.target.value)} style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc", marginTop: 4 }}><option value="summary">summary</option><option value="trend">trend</option><option value="comparison">comparison</option><option value="recommendation">recommendation</option></select></div>
+            <div><label htmlFor="insight-analysis-type" style={{ fontSize: 12, fontWeight: 600 }}>Analysis Type</label><select id="insight-analysis-type" aria-label="Analysis type" value={analysisType} onChange={(e) => setAnalysisType(e.target.value)} style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc", marginTop: 4 }}><option value="summary">summary</option><option value="trend">trend</option><option value="comparison">comparison</option><option value="recommendation">recommendation</option></select></div>
             <div><label style={{ fontSize: 12, fontWeight: 600 }}>Metrics ({metrics.length})</label><div style={{ fontSize: 11, marginTop: 4 }}>{metrics.map(m=>`${m.kind}=${m.value}${m.unit||""}`).join(", ")}</div></div>
           </div>
           <div style={{ marginBottom: 12 }}>
@@ -174,9 +174,9 @@ export default function InsightPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               {metrics.map((m, i) => (
                 <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 60px 60px 24px", gap: 4 }}>
-                  <input value={m.kind} onChange={(e) => { const ms = [...metrics]; ms[i]={...ms[i], kind: e.target.value}; setMetrics(ms); }} placeholder="call_volume" style={{ padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }} />
-                  <input type="number" value={m.value} onChange={(e) => { const ms = [...metrics]; ms[i]={...ms[i], value: parseFloat(e.target.value)||0}; setMetrics(ms); }} style={{ padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }} />
-                  <input value={m.unit||""} onChange={(e) => { const ms = [...metrics]; ms[i]={...ms[i], unit: e.target.value}; setMetrics(ms); }} placeholder="unit" style={{ padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }} />
+                  <input aria-label={`Metric ${i + 1} kind`} value={m.kind} onChange={(e) => { const ms = [...metrics]; ms[i]={...ms[i], kind: e.target.value}; setMetrics(ms); }} placeholder="call_volume" style={{ padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }} />
+                  <input aria-label={`Metric ${i + 1} value`} type="number" value={m.value} onChange={(e) => { const ms = [...metrics]; ms[i]={...ms[i], value: parseFloat(e.target.value)||0}; setMetrics(ms); }} style={{ padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }} />
+                  <input aria-label={`Metric ${i + 1} unit`} value={m.unit||""} onChange={(e) => { const ms = [...metrics]; ms[i]={...ms[i], unit: e.target.value}; setMetrics(ms); }} placeholder="unit" style={{ padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }} />
                   <button onClick={() => setMetrics(metrics.filter((_, idx)=>idx!==i))} style={{ padding: 2, borderRadius: 4, border: "1px solid #ccc", background: "#fff", cursor: "pointer" }}>×</button>
                 </div>
               ))}
@@ -233,7 +233,7 @@ export default function InsightPage() {
 
           <div style={{ marginTop: 16 }}>
             <h4>Example Payload</h4>
-            <pre style={{ fontSize: 10, background: "#f9fafb", padding: 8, borderRadius: 4, overflowX: "auto" }}>
+            <pre tabIndex={0} role="region" aria-label="Request payload" style={{ fontSize: 10, background: "#f9fafb", padding: 8, borderRadius: 4, overflowX: "auto" }}>
 {`POST /api/specialized-agents/insight/execute
 {
   "environment_id": "uuid",

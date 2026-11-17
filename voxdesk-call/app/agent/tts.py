@@ -82,6 +82,13 @@ class SpeedAwareElevenLabsTTSService(ElevenLabsTTSService):
             voice_settings["speed"] = self._voxdesk_speed
         return voice_settings or None
 
+    async def update_speed(self, speed: float) -> float:
+        """Update ElevenLabs' supported speed setting for subsequent utterances."""
+        normalized, _adjusted = normalize_speech_speed(speed)
+        self._voxdesk_speed = normalized
+        await self._update_settings({"speed": normalized})
+        return normalized
+
 
 def validate_tts_config() -> None:
     """Refuse to build a TTS service with no ElevenLabs key configured.

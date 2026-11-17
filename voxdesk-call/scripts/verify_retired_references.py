@@ -40,7 +40,7 @@ def declaration_lines(path, text):
 
 
 def scan(root=ROOT):
-    files = {p for directory in ('app', 'services', 'scripts', '.github', 'dashboard/src', 'dashboard-next', 'sdk')
+    files = {p for directory in ('app', 'services', 'scripts', '.github', 'dashboard-next', 'sdk')
              for p in (root / directory).rglob('*')
              if p.is_file() and p.suffix in SUFFIXES and not SKIP.intersection(p.relative_to(root).parts)}
     files.update(root.glob('docker-compose*.yml'))

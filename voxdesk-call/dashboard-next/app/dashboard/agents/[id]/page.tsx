@@ -10,11 +10,74 @@ import { GlassBadge } from "@/components/enterprise/GlassBadge";
 import { GlassCard } from "@/components/enterprise/GlassCard";
 import { SectionHeader } from "@/components/enterprise/SectionHeader";
 
-type AgentDetailTab = "Config" | "Flow" | "Versions" | "Tools" | "Knowledge" | "Test";
+type AgentDetailTab = "Config" | "Flow" | "Versions" | "Tools" | "Knowledge" | "Test" | "Voice behaviour";
 
-const TABS: AgentDetailTab[] = ["Config", "Flow", "Versions", "Tools", "Knowledge", "Test"];
+const TABS: AgentDetailTab[] = ["Config", "Flow", "Versions", "Tools", "Knowledge", "Test", "Voice behaviour"];
+
+// PART 12 (P12-01..P12-07): the voice-behaviour block. Defaults mirror VoiceBehaviorConfig in
+// app/domain/agent_models.py — every one reproduces pre-PART-12 behaviour, so opening this tab and
+// saving without changing anything must not alter how an existing agent sounds.
+type VoiceBehaviour = {
+  colloquial: boolean;
+  colloquial_budget_ms: number;
+  expressive: boolean;
+  expressive_emotions: string[];
+  dynamic_pace: boolean;
+  pace_min_speed: number;
+  pace_max_speed: number;
+  begin_message_delay_ms: number;
+  stt_endpointing_mode: "default" | "accuracy" | "latency";
+  denoise_mode: "off" | "noise" | "noise_and_speech";
+  normalize_for_speech: boolean;
+  read_numbers_slowly: boolean;
+  languages: string[];
+};
+
+const DEFAULT_VOICE_BEHAVIOUR: VoiceBehaviour = {
+  colloquial: false,
+  colloquial_budget_ms: 50,
+  expressive: false,
+  expressive_emotions: ["neutral", "warm", "calm"],
+  dynamic_pace: true,
+  pace_min_speed: 0.8,
+  pace_max_speed: 1.2,
+  begin_message_delay_ms: 0,
+  stt_endpointing_mode: "default",
+  denoise_mode: "off",
+  normalize_for_speech: true,
+  read_numbers_slowly: false,
+  languages: [],
+};
+
+const EMOTION_CHOICES = ["neutral", "warm", "calm", "happy", "empathetic", "excited"];
+
+// The same rules the backend enforces on publish, surfaced before the request is sent. Keeping
+// them here as well is not duplication for its own sake: a 422 after a round trip is a worse
+// experience than an inline hint, and the backend remains the authority.
+function validateVoiceBehaviour(value: VoiceBehaviour): string[] {
+  const problems: string[] = [];
+  if (value.colloquial_budget_ms < 5 || value.colloquial_budget_ms > 500) {
+    problems.push("Colloquial budget must be between 5 and 500 ms.");
+  }
+  if (!(value.pace_min_speed >= 0.5 && value.pace_min_speed < value.pace_max_speed && value.pace_max_speed <= 2.0)) {
+    problems.push("Pace bounds must satisfy 0.5 ≤ min < max ≤ 2.0.");
+  }
+  if (value.begin_message_delay_ms < 0 || value.begin_message_delay_ms > 3000) {
+    problems.push("Begin-message delay must be between 0 and 3000 ms.");
+  }
+  if (value.languages.length > 13) {
+    problems.push("At most 13 languages can be allowed.");
+  }
+  if (value.denoise_mode === "noise_and_speech") {
+    problems.push("Background-voice suppression needs a diarizing STT; frames are kept until one is configured.");
+  }
+  return problems;
+}
 
 export default function AgentDetailPage() {
+  const [voiceBehaviour, setVoiceBehaviour] = useState<VoiceBehaviour>(DEFAULT_VOICE_BEHAVIOUR);
+  const voiceProblems = validateVoiceBehaviour(voiceBehaviour);
+
   const params = useParams<{ id: string }>();
   const agentId = String(params?.id ?? "default");
 
@@ -577,6 +640,192 @@ export default function AgentDetailPage() {
                   })}
                 </div>
               </div>
+            </GlassCard>
+          )}
+
+          {activeTab === "Voice behaviour" && (
+            <GlassCard
+              title="Voice behaviour"
+              description="PART 12 — how the agent sounds and paces itself on a live call"
+            >
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }} data-testid="voice-behaviour-panel">
+                <label style={{ fontSize: 13 }}>
+                  <input
+                    type="checkbox"
+                    checked={voiceBehaviour.colloquial}
+                    onChange={(e) => setVoiceBehaviour({ ...voiceBehaviour, colloquial: e.target.checked })}
+                  />{" "}
+                  Colloquial rewriting
+                </label>
+                <label style={{ fontSize: 13 }}>
+                  Budget (ms)
+                  <input
+                    type="number"
+                    min={5}
+                    max={500}
+                    value={voiceBehaviour.colloquial_budget_ms}
+                    onChange={(e) => setVoiceBehaviour({ ...voiceBehaviour, colloquial_budget_ms: Number(e.target.value) })}
+                    style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc" }}
+                  />
+                </label>
+                <label style={{ fontSize: 13 }}>
+                  <input
+                    type="checkbox"
+                    checked={voiceBehaviour.expressive}
+                    onChange={(e) => setVoiceBehaviour({ ...voiceBehaviour, expressive: e.target.checked })}
+                  />{" "}
+                  Expressive tags
+                </label>
+                <div style={{ fontSize: 13 }}>
+                  Allowed emotions
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
+                    {EMOTION_CHOICES.map((emotion) => {
+                      const checked = voiceBehaviour.expressive_emotions.includes(emotion);
+                      return (
+                        <label key={emotion} style={{ fontSize: 12 }}>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => {
+                              const next = checked
+                                ? voiceBehaviour.expressive_emotions.filter((value) => value !== emotion)
+                                : [...voiceBehaviour.expressive_emotions, emotion];
+                              setVoiceBehaviour({ ...voiceBehaviour, expressive_emotions: next });
+                            }}
+                          />{" "}
+                          {emotion}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+                <label style={{ fontSize: 13 }}>
+                  <input
+                    type="checkbox"
+                    checked={voiceBehaviour.dynamic_pace}
+                    onChange={(e) => setVoiceBehaviour({ ...voiceBehaviour, dynamic_pace: e.target.checked })}
+                  />{" "}
+                  Adaptive pace
+                </label>
+                <label style={{ fontSize: 13 }}>
+                  Min pace
+                  <input
+                    type="number"
+                    step="0.05"
+                    min={0.5}
+                    max={2}
+                    value={voiceBehaviour.pace_min_speed}
+                    onChange={(e) => setVoiceBehaviour({ ...voiceBehaviour, pace_min_speed: Number(e.target.value) })}
+                    style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc" }}
+                  />
+                </label>
+                <label style={{ fontSize: 13 }}>
+                  Max pace
+                  <input
+                    type="number"
+                    step="0.05"
+                    min={0.5}
+                    max={2}
+                    value={voiceBehaviour.pace_max_speed}
+                    onChange={(e) => setVoiceBehaviour({ ...voiceBehaviour, pace_max_speed: Number(e.target.value) })}
+                    style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc" }}
+                  />
+                </label>
+                <label style={{ fontSize: 13 }}>
+                  Begin-message delay (ms)
+                  <input
+                    type="number"
+                    min={0}
+                    max={3000}
+                    step={50}
+                    value={voiceBehaviour.begin_message_delay_ms}
+                    onChange={(e) => setVoiceBehaviour({ ...voiceBehaviour, begin_message_delay_ms: Number(e.target.value) })}
+                    style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc" }}
+                  />
+                </label>
+                <label style={{ fontSize: 13 }}>
+                  STT endpointing
+                  <select
+                    value={voiceBehaviour.stt_endpointing_mode}
+                    onChange={(e) =>
+                      setVoiceBehaviour({
+                        ...voiceBehaviour,
+                        stt_endpointing_mode: e.target.value as VoiceBehaviour["stt_endpointing_mode"],
+                      })
+                    }
+                    style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc" }}
+                  >
+                    <option value="default">Default (unchanged)</option>
+                    <option value="accuracy">Accuracy (+40% silence)</option>
+                    <option value="latency">Latency (−30% silence)</option>
+                  </select>
+                </label>
+                <label style={{ fontSize: 13 }}>
+                  Denoise
+                  <select
+                    value={voiceBehaviour.denoise_mode}
+                    onChange={(e) =>
+                      setVoiceBehaviour({
+                        ...voiceBehaviour,
+                        denoise_mode: e.target.value as VoiceBehaviour["denoise_mode"],
+                      })
+                    }
+                    style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc" }}
+                  >
+                    <option value="off">Off</option>
+                    <option value="noise">Noise suppression</option>
+                    <option value="noise_and_speech">Noise + background voice</option>
+                  </select>
+                </label>
+                <label style={{ fontSize: 13 }}>
+                  <input
+                    type="checkbox"
+                    checked={voiceBehaviour.normalize_for_speech}
+                    onChange={(e) => setVoiceBehaviour({ ...voiceBehaviour, normalize_for_speech: e.target.checked })}
+                  />{" "}
+                  Normalise for speech
+                </label>
+                <label style={{ fontSize: 13 }}>
+                  <input
+                    type="checkbox"
+                    checked={voiceBehaviour.read_numbers_slowly}
+                    onChange={(e) => setVoiceBehaviour({ ...voiceBehaviour, read_numbers_slowly: e.target.checked })}
+                  />{" "}
+                  Read long numbers slowly
+                </label>
+                <label style={{ fontSize: 13 }}>
+                  Allowed languages (comma separated)
+                  <input
+                    type="text"
+                    value={voiceBehaviour.languages.join(", ")}
+                    placeholder="en-US, es-US"
+                    onChange={(e) =>
+                      setVoiceBehaviour({
+                        ...voiceBehaviour,
+                        languages: e.target.value
+                          .split(",")
+                          .map((value) => value.trim())
+                          .filter(Boolean),
+                      })
+                    }
+                    style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc" }}
+                  />
+                </label>
+              </div>
+              {voiceProblems.length > 0 && (
+                <ul style={{ marginTop: 12, color: "#fca5a5", fontSize: 13 }} data-testid="voice-behaviour-problems">
+                  {voiceProblems.map((problem) => (
+                    <li key={problem}>{problem}</li>
+                  ))}
+                </ul>
+              )}
+              <p style={{ marginTop: 12, fontSize: 12, color: "#94a3b8" }}>
+                Settings are validated again by the API on publish.{" "}
+                <Link href={`/dashboard/agents/${agentId}?tab=Test`} style={{ color: "#a5b4fc" }}>
+                  Place a test call
+                </Link>{" "}
+                to hear the change.
+              </p>
             </GlassCard>
           )}
 

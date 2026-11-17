@@ -11,9 +11,11 @@ from __future__ import annotations
 
 import asyncio
 import json
+import uuid
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import FileResponse, PlainTextResponse, Response
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,12 +29,26 @@ from app.core.config import settings
 from app.core.logging import log
 from app.db.models import (
     Call,
+    CallDirection,
     CallStatus,
     Lead,
     LeadStatus,
     Tenant,
     TransferState,
 )
+from app.db.telephony_models import TelephonyCallSession, TelephonyTransferRecord
+from app.telephony.call_session import (
+    CallSessionManager,
+    append_runtime_event,
+    append_transcript_turn,
+)
+from app.telephony.exceptions import CallStateTransitionError
+from app.telephony.enums import (
+    TERMINAL_CALL_STATES,
+    TelephonyCallState,
+    TransferLifecycleState,
+)
+from app.telephony.providers.twilio import TwilioAdapter
 from app.db.session import get_session, get_sessionmaker
 from app.integrations import crm
 from app.integrations.crm import hooks as crm_hooks
@@ -164,6 +180,180 @@ def build_call_control_twiml(
     )
 
 
+async def _apply_session_status_callback(
+    session: AsyncSession,
+    *,
+    call_sid: str,
+    raw_status: str,
+    duration_seconds: int | None = None,
+    call_session_id: uuid.UUID | None = None,
+) -> TelephonyCallSession | None:
+    """Mirror Twilio call progress into the authoritative call-session state."""
+    stmt = select(TelephonyCallSession).where(
+        TelephonyCallSession.provider == "TWILIO"
+    )
+    if call_session_id is not None:
+        stmt = stmt.where(TelephonyCallSession.id == call_session_id)
+    else:
+        stmt = stmt.where(TelephonyCallSession.provider_call_id == call_sid)
+    call_session = (
+        await session.execute(
+            stmt.with_for_update().execution_options(populate_existing=True)
+        )
+    ).scalar_one_or_none()
+    if call_session is None:
+        return None
+
+    existing_sid = str(call_session.provider_call_id or "")
+    if existing_sid != call_sid:
+        if not existing_sid.startswith("pending_") or not call_sid:
+            log.warning(
+                "twilio.runtime_status_sid_mismatch",
+                call_session_id=str(call_session.id),
+                provider_call_id=call_sid,
+            )
+            return None
+        duplicate = await session.scalar(
+            select(TelephonyCallSession.id).where(
+                TelephonyCallSession.provider == "TWILIO",
+                TelephonyCallSession.provider_call_id == call_sid,
+                TelephonyCallSession.id != call_session.id,
+            )
+        )
+        if duplicate is not None:
+            return None
+        call_session.provider_call_id = call_sid
+
+    mapped = {
+        "initiated": TelephonyCallState.DIALING,
+        "queued": TelephonyCallState.DIALING,
+        "ringing": TelephonyCallState.RINGING,
+        "answered": TelephonyCallState.IN_PROGRESS,
+        "in-progress": TelephonyCallState.IN_PROGRESS,
+        "completed": TelephonyCallState.COMPLETED,
+        "failed": TelephonyCallState.FAILED,
+        "busy": TelephonyCallState.BUSY,
+        "no-answer": TelephonyCallState.NO_ANSWER,
+        "canceled": TelephonyCallState.CANCELLED,
+        "cancelled": TelephonyCallState.CANCELLED,
+    }
+    target = mapped.get((raw_status or "").strip().lower())
+    if target is None:
+        return call_session
+    current = TelephonyCallState(call_session.status)
+    if target == TelephonyCallState.IN_PROGRESS and current in {
+        TelephonyCallState.TRANSFERRING,
+        TelephonyCallState.TRANSFERRED,
+    }:
+        # A delayed "in-progress" parent-call callback must not regress a
+        # transfer that already moved the call into its conference.
+        return call_session
+    if current in TERMINAL_CALL_STATES:
+        return call_session
+    try:
+        await CallSessionManager(session).transition_state(
+            call_session,
+            target,
+            occurred_at=datetime.now(timezone.utc),
+            provider_duration_seconds=duration_seconds,
+            hangup_reason=(
+                raw_status[:120]
+                if target in TERMINAL_CALL_STATES
+                else None
+            ),
+            event_detail={"provider": "TWILIO", "provider_status": raw_status[:64]},
+        )
+    except CallStateTransitionError as exc:
+        # Call-session state has its own monotonic state machine. A late carrier
+        # event is acknowledged without regressing it.
+        log.info(
+            "twilio.runtime_status_ignored",
+            call_sid=call_sid,
+            status=raw_status,
+            error_category=type(exc).__name__[:64],
+        )
+    return call_session
+
+
+async def _bind_twilio_legacy_call(
+    session: AsyncSession,
+    call_session: TelephonyCallSession,
+    call_sid: str,
+) -> Call | None:
+    """Bind a session-based outbound call to the legacy row used by `/ws`."""
+    if not call_sid or call_session.environment_id is None:
+        return None
+    existing_sid = str(call_session.provider_call_id or "")
+    if existing_sid != call_sid:
+        if not existing_sid.startswith("pending_"):
+            return None
+        duplicate = await session.scalar(
+            select(TelephonyCallSession.id).where(
+                TelephonyCallSession.provider == "TWILIO",
+                TelephonyCallSession.provider_call_id == call_sid,
+                TelephonyCallSession.id != call_session.id,
+            )
+        )
+        if duplicate is not None:
+            return None
+        call_session.provider_call_id = call_sid
+
+    legacy_call = (
+        await session.execute(
+            select(Call)
+            .where(Call.call_sid == call_sid)
+            .with_for_update()
+            .execution_options(populate_existing=True)
+        )
+    ).scalar_one_or_none()
+    if legacy_call is not None and (
+        legacy_call.tenant_id != call_session.tenant_id
+        or legacy_call.environment_id != call_session.environment_id
+    ):
+        return None
+
+    if legacy_call is None:
+        metadata = dict(call_session.metadata_json or {})
+        agent_id = None
+        version_id = None
+        try:
+            if call_session.agent_id:
+                agent_id = uuid.UUID(str(call_session.agent_id))
+        except (ValueError, TypeError):
+            agent_id = None
+        try:
+            version_ref = metadata.get("resolved_agent_version_id")
+            if version_ref:
+                version_id = uuid.UUID(str(version_ref))
+        except (ValueError, TypeError):
+            version_id = None
+        now = datetime.now(timezone.utc)
+        legacy_call = Call(
+            id=uuid.uuid4(),
+            tenant_id=call_session.tenant_id,
+            environment_id=call_session.environment_id,
+            call_sid=call_sid,
+            from_number=call_session.from_number,
+            to_number=call_session.to_number,
+            status=CallStatus.RINGING,
+            direction=CallDirection.OUTBOUND,
+            agent_id=agent_id,
+            agent_version_id=version_id,
+            experiment_id=call_session.experiment_id,
+            variant_id=call_session.variant_id,
+            started_at=call_session.started_at or now,
+        )
+        session.add(legacy_call)
+        await session.flush()
+
+    if call_session.legacy_call_id and call_session.legacy_call_id != legacy_call.id:
+        linked_call = await session.get(Call, call_session.legacy_call_id)
+        if linked_call is not None:
+            return None
+    call_session.legacy_call_id = legacy_call.id
+    return legacy_call
+
+
 @router.post("/voice", response_class=PlainTextResponse)
 async def incoming_call(
     request: Request,
@@ -254,6 +444,14 @@ async def incoming_call(
         session.add(call)
         try:
             await session.flush()
+            raw_overrides = request.query_params.get("voxdesk_overrides")
+            if not raw_overrides:
+                form_data = await request.form()
+                raw_overrides = form_data.get("voxdesk_overrides")
+            if raw_overrides:
+                from app.telephony.webhooks import apply_inbound_overrides_to_call
+
+                apply_inbound_overrides_to_call(call, raw_overrides)
             await resolve_runtime_config(session, call, tenant)
             await publish_call_event(session, call, "call_started")
             await session.commit()
@@ -362,6 +560,7 @@ async def outbound_answer(
     lead_id: str = "",
     AnsweredBy: str = Form(""),
     CallSid: str = Form(""),
+    call_session_id: uuid.UUID | None = None,
     session: AsyncSession = Depends(get_session),
 ):
     """
@@ -380,22 +579,121 @@ async def outbound_answer(
         return PlainTextResponse("forbidden", status_code=403)
 
     response = VR()
+    runtime_call = None
+    legacy_call = None
+    if call_session_id is not None:
+        runtime_call = (
+            await session.execute(
+                select(TelephonyCallSession)
+                .where(
+                    TelephonyCallSession.id == call_session_id,
+                    TelephonyCallSession.provider == "TWILIO",
+                )
+                .with_for_update()
+                .execution_options(populate_existing=True)
+            )
+        ).scalar_one_or_none()
+        if runtime_call is None or not CallSid:
+            log.warning(
+                "outbound.session_callback_unmatched",
+                call_session_id=str(call_session_id),
+                has_call_sid=bool(CallSid),
+            )
+            response.hangup()
+            return PlainTextResponse(str(response), media_type="application/xml")
+        legacy_call = await _bind_twilio_legacy_call(session, runtime_call, CallSid)
+        if legacy_call is None:
+            log.error(
+                "outbound.session_legacy_call_link_failed",
+                call_session_id=str(call_session_id),
+                call_sid=CallSid,
+            )
+            response.hangup()
+            return PlainTextResponse(str(response), media_type="application/xml")
+    else:
+        if CallSid:
+            runtime_call = (
+                await session.execute(
+                    select(TelephonyCallSession)
+                    .where(
+                        TelephonyCallSession.provider == "TWILIO",
+                        TelephonyCallSession.provider_call_id == CallSid,
+                    )
+                    .with_for_update()
+                    .execution_options(populate_existing=True)
+                )
+            ).scalar_one_or_none()
+            legacy_call = (
+                await session.execute(
+                    select(Call).where(Call.call_sid == CallSid)
+                    .with_for_update().execution_options(populate_existing=True)
+                )
+            ).scalar_one_or_none()
+
+    if runtime_call is not None and runtime_call.status in {
+        state.value for state in TERMINAL_CALL_STATES
+    }:
+        response.hangup()
+        if legacy_call is not None:
+            await session.commit()
+        return PlainTextResponse(str(response), media_type="application/xml")
+
     if AnsweredBy.startswith("machine"):
         # Only documented provider verdicts are customer-facing facts. Unknown
         # machine-prefixed values retain the old hangup behavior, not a verdict.
         recognized_machine = AnsweredBy in {
             "machine_start", "machine_end_beep", "machine_end_silence", "machine_end_other",
         }
-        if recognized_machine:
-            call = (await session.execute(select(Call).where(
-                Call.call_sid == CallSid,
-            ))).scalar_one_or_none()
-            if call is not None:
-                await publish_call_event(session, call, "voicemail_detected")
-                await session.commit()
+        if runtime_call is not None and runtime_call.status in {
+            TelephonyCallState.CREATED.value,
+            TelephonyCallState.DIALING.value,
+            TelephonyCallState.RINGING.value,
+            TelephonyCallState.ANSWERED.value,
+        }:
+            await CallSessionManager(session).transition_state(
+                runtime_call,
+                TelephonyCallState.VOICEMAIL,
+                occurred_at=datetime.now(timezone.utc),
+                hangup_reason="answering_machine_detected",
+                event_detail={"answered_by": "machine"},
+            )
+        if legacy_call is not None:
+            transition = call_state.apply_status(
+                legacy_call,
+                CallStatus.NO_ANSWER,
+                reason="answering machine detected",
+                source="twilio_outbound_answer",
+            )
+            await call_state.publish_transition(session, legacy_call, transition)
+        if recognized_machine and legacy_call is not None:
+            await publish_call_event(session, legacy_call, "voicemail_detected")
+        if runtime_call is not None or legacy_call is not None:
+            await session.commit()
         log.info("outbound.machine_hangup", lead=lead_id, recognized=recognized_machine)
         response.hangup()
         return PlainTextResponse(str(response), media_type="application/xml")
+
+    if runtime_call is not None and runtime_call.status in {
+        TelephonyCallState.CREATED.value,
+        TelephonyCallState.DIALING.value,
+        TelephonyCallState.RINGING.value,
+        TelephonyCallState.ANSWERED.value,
+    }:
+        await CallSessionManager(session).transition_state(
+            runtime_call,
+            TelephonyCallState.IN_PROGRESS,
+            occurred_at=datetime.now(timezone.utc),
+            event_detail={"answer_source": "twilio_outbound_answer"},
+        )
+    if legacy_call is not None:
+        transition = call_state.apply_status(
+            legacy_call,
+            CallStatus.IN_PROGRESS,
+            source="twilio_outbound_answer",
+        )
+        await call_state.publish_transition(session, legacy_call, transition)
+    if runtime_call is not None or legacy_call is not None:
+        await session.commit()
 
     connect = Connect()
     connect.stream(
@@ -551,6 +849,7 @@ async def call_status(
     CallSid: str = Form(...),
     CallStatus_: str = Form(alias="CallStatus", default=""),
     CallDuration: str = Form(default="0"),
+    call_session_id: uuid.UUID | None = None,
     session: AsyncSession = Depends(get_session),
 ):
     """
@@ -565,21 +864,33 @@ async def call_status(
     if not await _verify_twilio(request):
         return PlainTextResponse("forbidden", status_code=403)
 
+    try:
+        duration = float(CallDuration or 0)
+    except ValueError:
+        duration = 0.0
+    runtime_call = await _apply_session_status_callback(
+        session,
+        call_sid=CallSid,
+        raw_status=CallStatus_,
+        duration_seconds=max(0, int(duration)),
+        call_session_id=call_session_id,
+    )
     call = (
         await session.execute(
             select(Call).where(Call.call_sid == CallSid)
             .with_for_update().execution_options(populate_existing=True)
         )
     ).scalar_one_or_none()
+    if call is None and runtime_call is not None:
+        # A very fast status callback can beat the runtime's post-origination
+        # persistence. Recreate the websocket-facing row from the authoritative
+        # call session, then apply this callback normally below.
+        call = await _bind_twilio_legacy_call(session, runtime_call, CallSid)
     if call is None:
-        # Unknown SID: acknowledge so Twilio stops retrying, but do nothing.
-        log.info("status.unknown_call_sid", call_sid=CallSid)
+        if runtime_call is None:
+            log.info("status.unknown_call_sid", call_sid=CallSid)
+        await session.commit()
         return PlainTextResponse("ok")
-
-    try:
-        duration = float(CallDuration or 0)
-    except ValueError:
-        duration = 0.0
 
     result = call_state.apply_provider_status(
         call, CallStatus_, duration_seconds=duration, source="twilio_status"
@@ -598,6 +909,10 @@ async def call_status(
                 f"{transfer_service.INFERRED_PREFIX}"
                 f"call ended while {call.transfer_state.value}",
             )
+        elif call.transfer_state is TransferState.CONNECTED and dict(
+            (call.transfer_context or {}).get("transfer_v2") or {}
+        ):
+            await transfer_service.record_transfer_v2_event(session, call, "ended")
 
     if result.applied and call_state.is_terminal(call.status) and tenant:
         await billing_hooks.on_call_finalized(session, tenant, call)
@@ -656,6 +971,532 @@ async def call_status(
     return PlainTextResponse("ok")
 
 
+@router.get("/transfer-hold-music")
+async def transfer_hold_music() -> Response:
+    """Serve the licensed, Twilio-compatible WAV used by <Conference waitUrl>."""
+    path = transfer_service.HOLD_MUSIC_PATH
+    if not transfer_service.hold_music_available() or path.suffix.lower() != ".wav":
+        raise HTTPException(status_code=404, detail="Hold music is not available")
+    return FileResponse(
+        path,
+        media_type="audio/wav",
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
+
+
+async def _load_session_transfer(
+    session: AsyncSession,
+    *,
+    call_session_id: uuid.UUID,
+    transfer_id: uuid.UUID,
+) -> tuple[TelephonyCallSession | None, TelephonyTransferRecord | None]:
+    """Load one signed Twilio transfer callback within its call-session tenant."""
+    call_session = (
+        await session.execute(
+            select(TelephonyCallSession)
+            .where(TelephonyCallSession.id == call_session_id)
+            .with_for_update()
+            .execution_options(populate_existing=True)
+        )
+    ).scalar_one_or_none()
+    if call_session is None or (call_session.provider or "").upper() != "TWILIO":
+        return None, None
+    transfer = (
+        await session.execute(
+            select(TelephonyTransferRecord)
+            .where(
+                TelephonyTransferRecord.id == transfer_id,
+                TelephonyTransferRecord.call_session_id == call_session.id,
+                TelephonyTransferRecord.tenant_id == call_session.tenant_id,
+            )
+            .with_for_update()
+            .execution_options(populate_existing=True)
+        )
+    ).scalar_one_or_none()
+    return call_session, transfer
+
+
+def _session_transfer_parts(
+    transfer: TelephonyTransferRecord,
+) -> tuple[dict, dict, dict]:
+    context = dict(transfer.context_snapshot or {})
+    v2 = dict(context.get("transfer_v2") or {})
+    plan = dict(v2.get("plan") or {})
+    return context, v2, plan
+
+
+def _save_session_transfer_parts(
+    transfer: TelephonyTransferRecord,
+    context: dict,
+    v2: dict,
+) -> None:
+    transfer.context_snapshot = {**context, "transfer_v2": v2}
+
+
+def _hangup_twiml() -> Response:
+    voice = VoiceResponse()
+    voice.hangup()
+    return Response(str(voice), media_type="application/xml")
+
+
+@router.post("/transfer-session-target")
+async def transfer_session_target(
+    request: Request,
+    call_session_id: uuid.UUID,
+    transfer_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+) -> Response:
+    """AMD-gated called-party TwiML for the production TelephonyCallSession flow."""
+    if not await _verify_twilio(request):
+        return PlainTextResponse("forbidden", status_code=403)
+    form = await request.form()
+    target_call_sid = str(form.get("CallSid") or "").strip()
+    call_session, transfer = await _load_session_transfer(
+        session,
+        call_session_id=call_session_id,
+        transfer_id=transfer_id,
+    )
+    if (
+        call_session is None
+        or transfer is None
+        or not target_call_sid
+        or call_session.status not in {"TRANSFERRING", "TRANSFERRED"}
+        or transfer.status not in {
+            TransferLifecycleState.STARTING.value,
+            TransferLifecycleState.RINGING_TARGET.value,
+            TransferLifecycleState.WHISPERING.value,
+        }
+    ):
+        return _hangup_twiml()
+
+    context, v2, plan = _session_transfer_parts(transfer)
+    previous_target = str(v2.get("target_call_sid") or "")
+    if previous_target and previous_target != target_call_sid:
+        return _hangup_twiml()
+
+    require_human = bool(plan.get("require_human", True))
+    answered_by = str(form.get("AnsweredBy") or "").strip()
+    allowed, verdict = transfer_service.human_leg_verdict(
+        {"AnsweredBy": answered_by} if answered_by else None,
+        require_human=require_human,
+    )
+    v2.update(
+        {
+            "target_call_sid": target_call_sid,
+            "human_verified": allowed,
+            "amd_verdict": verdict,
+        }
+    )
+    if allowed:
+        transfer.status = TransferLifecycleState.WHISPERING.value
+        call_session.transfer_state = TransferLifecycleState.WHISPERING.value
+        append_runtime_event(
+            call_session,
+            event_type="transfer.human_verified",
+            detail={"transfer_id": str(transfer.id), "amd_verdict": verdict},
+        )
+    else:
+        append_runtime_event(
+            call_session,
+            event_type="transfer.human_rejected",
+            detail={"transfer_id": str(transfer.id), "amd_verdict": verdict},
+        )
+    _save_session_transfer_parts(transfer, context, v2)
+    await session.commit()
+
+    voice = VoiceResponse()
+    if not allowed:
+        # Fail closed without telling the target or caller the AMD verdict.
+        voice.hangup()
+    elif v2.get("kind") == "conference":
+        from app.telephony.transfer import (
+            conference_target_twiml,
+            transfer_session_conference_url,
+        )
+
+        whisper = transfer_service._safe_whisper_reason(str(plan.get("whisper") or ""))
+        twiml = conference_target_twiml(
+            str(v2.get("conference_name") or ""),
+            briefing_text=whisper,
+            status_callback_url=transfer_session_conference_url(
+                call_session.id, transfer.id
+            ),
+        )
+        return Response(twiml, media_type="application/xml")
+    else:
+        whisper = transfer_service._safe_whisper_reason(str(plan.get("whisper") or ""))
+        if whisper:
+            voice.say(whisper, voice="Polly.Joanna")
+    return Response(str(voice), media_type="application/xml")
+
+
+@router.post("/transfer-session-status")
+async def transfer_session_status(
+    request: Request,
+    call_session_id: uuid.UUID,
+    transfer_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+) -> Response:
+    """Complete a direct <Dial> transfer and return the caller to its media stream."""
+    if not await _verify_twilio(request):
+        return PlainTextResponse("forbidden", status_code=403)
+    form = await request.form()
+    call_sid = str(form.get("CallSid") or "").strip()
+    outcome = str(form.get("DialCallStatus") or "").strip().lower()
+    call_session, transfer = await _load_session_transfer(
+        session,
+        call_session_id=call_session_id,
+        transfer_id=transfer_id,
+    )
+    if (
+        call_session is None
+        or transfer is None
+        or call_session.provider_call_id != call_sid
+        or call_session.status not in {"TRANSFERRING", "TRANSFERRED"}
+    ):
+        return _hangup_twiml()
+    context, v2, plan = _session_transfer_parts(transfer)
+    if v2.get("kind") != "direct":
+        return _hangup_twiml()
+
+    successful = outcome in {"answered", "completed"} and (
+        not bool(plan.get("require_human", True))
+        or v2.get("human_verified") is True
+    )
+    manager = CallSessionManager(session)
+    now = datetime.now(timezone.utc)
+    if successful:
+        transfer.status = TransferLifecycleState.COMPLETED.value
+        transfer.failure_reason = None
+        v2["provider_events"] = list(v2.get("provider_events") or []) + [
+            {"event": "bridged", "at": now.isoformat()},
+            {"event": "ended", "at": now.isoformat()},
+        ]
+        call_session.transfer_state = TransferLifecycleState.COMPLETED.value
+        append_runtime_event(
+            call_session,
+            event_type="transfer.bridged",
+            detail={"transfer_id": str(transfer.id), "target": transfer.target_destination},
+            occurred_at=now,
+        )
+        append_runtime_event(
+            call_session,
+            event_type="transfer.ended",
+            detail={"transfer_id": str(transfer.id)},
+            occurred_at=now,
+        )
+        append_transcript_turn(
+            call_session,
+            role="system",
+            content="[Human transfer ended; the assistant is available again]",
+            metadata={"transfer_id": str(transfer.id)},
+            occurred_at=now,
+        )
+        if call_session.status in {"TRANSFERRING", "TRANSFERRED"}:
+            await manager.transition_state(
+                call_session,
+                TelephonyCallState.IN_PROGRESS,
+                occurred_at=now,
+                event_detail={"transfer_v2": True, "resumed_after_transfer": True},
+            )
+        transfer.completed_at = now
+        greeting = "The transfer has ended. I can help you further."
+    else:
+        failure = (
+            str(v2.get("amd_verdict") or "human_not_confirmed")
+            if outcome in {"answered", "completed"}
+            else (outcome or "transfer_failed")
+        )
+        transfer.status = TransferLifecycleState.FAILED.value
+        transfer.failure_reason = failure[:400]
+        v2["provider_events"] = list(v2.get("provider_events") or []) + [
+            {"event": "cancelled", "at": now.isoformat(), "reason": failure}
+        ]
+        call_session.transfer_state = TransferLifecycleState.FAILED.value
+        append_runtime_event(
+            call_session,
+            event_type="transfer.cancelled",
+            detail={"transfer_id": str(transfer.id), "reason": failure},
+            occurred_at=now,
+        )
+        transfer.completed_at = now
+        if transfer.fallback_action == "HANGUP":
+            await manager.transition_state(
+                call_session,
+                TelephonyCallState.COMPLETED,
+                occurred_at=now,
+                hangup_reason="transfer_target_failed_hangup",
+                event_detail={"transfer_v2": True, "reason": failure},
+            )
+            _save_session_transfer_parts(transfer, context, v2)
+            await session.commit()
+            voice = VoiceResponse()
+            voice.say("I couldn't reach that team. Goodbye.")
+            voice.hangup()
+            return Response(str(voice), media_type="application/xml")
+        if call_session.status in {"TRANSFERRING", "TRANSFERRED"}:
+            await manager.transition_state(
+                call_session,
+                TelephonyCallState.IN_PROGRESS,
+                occurred_at=now,
+                event_detail={"transfer_v2": True, "fallback_action": "RETURN_TO_AGENT"},
+            )
+        greeting = "I wasn't able to reach them, but I can keep helping."
+
+    _save_session_transfer_parts(transfer, context, v2)
+    await session.commit()
+    return Response(
+        build_media_stream_twiml(call_sid, greeting_text=greeting),
+        media_type="application/xml",
+    )
+
+
+@router.post("/transfer-session-target-status", response_class=PlainTextResponse)
+async def transfer_session_target_status(
+    request: Request,
+    call_session_id: uuid.UUID,
+    transfer_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+) -> PlainTextResponse:
+    """Observe target-call progress and recover a parked caller if dialing fails."""
+    if not await _verify_twilio(request):
+        return PlainTextResponse("forbidden", status_code=403)
+    form = await request.form()
+    target_call_sid = str(form.get("CallSid") or "").strip()
+    call_status = str(form.get("CallStatus") or "").strip().lower()
+    call_session, transfer = await _load_session_transfer(
+        session,
+        call_session_id=call_session_id,
+        transfer_id=transfer_id,
+    )
+    if call_session is None or transfer is None or not target_call_sid:
+        return PlainTextResponse("ok")
+    context, v2, plan = _session_transfer_parts(transfer)
+    if v2.get("kind") != "conference":
+        return PlainTextResponse("ok")
+    known_target_sid = str(v2.get("target_call_sid") or "")
+    if known_target_sid and known_target_sid != target_call_sid:
+        return PlainTextResponse("ok")
+    v2["target_call_sid"] = target_call_sid
+    events = list(v2.get("provider_events") or [])
+    events.append({"event": call_status[:32], "at": datetime.now(timezone.utc).isoformat()})
+    v2["provider_events"] = events[-20:]
+
+    terminal_target = call_status in {"busy", "failed", "no-answer", "canceled", "cancelled", "completed"}
+    if terminal_target and transfer.status != TransferLifecycleState.COMPLETED.value:
+        resumed = False
+        try:
+            await TwilioAdapter().resume_call(call_session.provider_call_id)
+            resumed = True
+        except Exception:
+            resumed = False
+        now = datetime.now(timezone.utc)
+        transfer.status = TransferLifecycleState.FAILED.value
+        transfer.failure_reason = "target_not_connected"
+        transfer.completed_at = now
+        call_session.transfer_state = TransferLifecycleState.FAILED.value
+        v2["caller_resume_confirmed"] = resumed
+        append_runtime_event(
+            call_session,
+            event_type=("transfer.cancelled" if resumed else "transfer.resume_unconfirmed"),
+            detail={
+                "transfer_id": str(transfer.id),
+                "reason": "target_not_connected",
+                "caller_resume_confirmed": resumed,
+            },
+            occurred_at=now,
+        )
+        if resumed and call_session.status in {"TRANSFERRING", "TRANSFERRED"}:
+            await CallSessionManager(session).transition_state(
+                call_session,
+                TelephonyCallState.IN_PROGRESS,
+                occurred_at=now,
+                event_detail={"transfer_v2": True, "fallback_action": "RETURN_TO_AGENT"},
+            )
+    _save_session_transfer_parts(transfer, context, v2)
+    await session.commit()
+    return PlainTextResponse("ok")
+
+
+@router.post("/transfer-session-conference", response_class=PlainTextResponse)
+async def transfer_session_conference(
+    request: Request,
+    call_session_id: uuid.UUID,
+    transfer_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+) -> PlainTextResponse:
+    """Track verified target joins/leaves and return the caller to AI after consult."""
+    if not await _verify_twilio(request):
+        return PlainTextResponse("forbidden", status_code=403)
+    form = await request.form()
+    event = str(form.get("StatusCallbackEvent") or "").strip().lower()
+    participant_call_sid = str(form.get("CallSid") or "").strip()
+    friendly_name = str(form.get("FriendlyName") or "").strip()
+    call_session, transfer = await _load_session_transfer(
+        session,
+        call_session_id=call_session_id,
+        transfer_id=transfer_id,
+    )
+    if call_session is None or transfer is None:
+        return PlainTextResponse("ok")
+    context, v2, _plan = _session_transfer_parts(transfer)
+    if (
+        v2.get("kind") != "conference"
+        or friendly_name != str(v2.get("conference_name") or "")
+        or not participant_call_sid
+    ):
+        return PlainTextResponse("ok")
+
+    target_sid = str(v2.get("target_call_sid") or "")
+    parent_sid = call_session.provider_call_id
+    now = datetime.now(timezone.utc)
+    manager = CallSessionManager(session)
+    if event in {"participant-join", "join"} and participant_call_sid == target_sid:
+        if v2.get("human_verified") is True and transfer.status != TransferLifecycleState.COMPLETED.value:
+            transfer.status = TransferLifecycleState.COMPLETED.value
+            call_session.transfer_state = TransferLifecycleState.COMPLETED.value
+            transfer.completed_at = now
+            if call_session.status == TelephonyCallState.TRANSFERRING.value:
+                await manager.transition_state(
+                    call_session,
+                    TelephonyCallState.TRANSFERRED,
+                    occurred_at=now,
+                    event_detail={"transfer_v2": True, "conference_joined": True},
+                )
+            append_runtime_event(
+                call_session,
+                event_type="transfer.bridged",
+                detail={"transfer_id": str(transfer.id), "conference_name": friendly_name},
+                occurred_at=now,
+            )
+            append_transcript_turn(
+                call_session,
+                role="system",
+                content=f"[{transfer.transfer_mode} transfer connected to {transfer.target_destination}]",
+                metadata={"transfer_id": str(transfer.id)},
+                occurred_at=now,
+            )
+    elif event in {"participant-leave", "leave"}:
+        if participant_call_sid == target_sid and transfer.status == TransferLifecycleState.COMPLETED.value:
+            resumed = False
+            try:
+                await TwilioAdapter().resume_call(parent_sid)
+                resumed = True
+            except Exception:
+                resumed = False
+            v2["caller_resume_confirmed"] = resumed
+            v2["ended_at"] = now.isoformat()
+            append_runtime_event(
+                call_session,
+                event_type="transfer.ended" if resumed else "transfer.resume_unconfirmed",
+                detail={"transfer_id": str(transfer.id), "caller_resume_confirmed": resumed},
+                occurred_at=now,
+            )
+            if resumed and call_session.status == TelephonyCallState.TRANSFERRED.value:
+                await manager.transition_state(
+                    call_session,
+                    TelephonyCallState.IN_PROGRESS,
+                    occurred_at=now,
+                    event_detail={"transfer_v2": True, "resumed_after_conference": True},
+                )
+        elif participant_call_sid == parent_sid and call_session.status not in {
+            TelephonyCallState.COMPLETED.value,
+            TelephonyCallState.FAILED.value,
+            TelephonyCallState.CANCELLED.value,
+        }:
+            v2["ended_at"] = now.isoformat()
+            await manager.transition_state(
+                call_session,
+                TelephonyCallState.COMPLETED,
+                occurred_at=now,
+                hangup_reason="caller_left_transfer_conference",
+                event_detail={"transfer_v2": True},
+            )
+            append_runtime_event(
+                call_session,
+                event_type="transfer.ended",
+                detail={"transfer_id": str(transfer.id), "caller_left": True},
+                occurred_at=now,
+            )
+    elif event in {"conference-end", "end"}:
+        v2["conference_ended_at"] = now.isoformat()
+        if transfer.completed_at is None:
+            transfer.completed_at = now
+
+    _save_session_transfer_parts(transfer, context, v2)
+    await session.commit()
+    return PlainTextResponse("ok")
+
+
+@router.post("/transfer-whisper")
+async def transfer_whisper(
+    request: Request,
+    call_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+) -> Response:
+    """Privately brief a verified human before Twilio connects the caller.
+
+    Twilio invokes the <Number url> only after its AMD result is available and
+    before bridging the two call legs. Missing/unknown AMD results fail closed:
+    the callee is hung up, while the caller remains on the parent <Dial> path.
+    """
+    if not await _verify_twilio(request):
+        return PlainTextResponse("forbidden", status_code=403)
+
+    call = (
+        await session.execute(
+            select(Call).where(Call.id == call_id)
+            .with_for_update().execution_options(populate_existing=True)
+        )
+    ).scalar_one_or_none()
+    voice = VoiceResponse()
+    if call is None:
+        voice.hangup()
+        return Response(str(voice), media_type="application/xml")
+
+    transfer_context = dict(call.transfer_context or {})
+    plan = dict(transfer_context.get("transfer_v2") or {})
+    # This endpoint is only valid for a live plan created by the transfer
+    # service. An absent/stale plan is not permission to bridge a party.
+    if (
+        call_state.is_terminal(call.status)
+        or call.transfer_state not in (TransferState.REQUESTED, TransferState.DIALING)
+        or not plan
+        or not plan.get("require_human")
+    ):
+        voice.hangup()
+        return Response(str(voice), media_type="application/xml")
+
+    form = await request.form()
+    answered_by = str(form.get("AnsweredBy") or "").strip()
+    allowed, verdict = transfer_service.human_leg_verdict(
+        {"AnsweredBy": answered_by} if answered_by else None,
+        require_human=True,
+    )
+    plan["human_verified"] = allowed
+    plan["amd_verdict"] = verdict
+    transfer_context["transfer_v2"] = plan
+    call.transfer_context = transfer_context
+    await session.commit()
+
+    if not allowed:
+        # Do not disclose the machine-detection result to either party.
+        voice.hangup()
+        log.info(
+            "transfer_amd_rejected",
+            call_id=str(call.id),
+            verdict=verdict,
+        )
+    else:
+        whisper = transfer_service._safe_whisper_reason(
+            str(plan.get("whisper") or "")
+        )
+        if whisper:
+            voice.say(whisper, voice="Polly.Joanna")
+
+    return Response(str(voice), media_type="application/xml")
+
+
 @router.post("/transfer-status", response_class=PlainTextResponse)
 async def transfer_status(
     request: Request,
@@ -690,11 +1531,34 @@ async def transfer_status(
         transfer_state=call.transfer_state.value,
     )
 
+    connected = False
+    transfer_outcome = outcome
     if outcome in ("answered", "completed"):
-        changed = await transfer_service.mark_transfer_connected(session, call)
-        if changed:
-            tenant = await session.get(Tenant, call.tenant_id)
-            await crm_hooks.on_transfer_completed(session, tenant, call)
+        v2_plan = dict((call.transfer_context or {}).get("transfer_v2") or {})
+        if v2_plan.get("require_human") and v2_plan.get("human_verified") is not True:
+            failure_reason = str(v2_plan.get("amd_verdict") or "human_not_confirmed")
+            inferred_failure = (
+                call.transfer_state is TransferState.FAILED
+                and (call.transfer_error or "").startswith(transfer_service.INFERRED_PREFIX)
+            )
+            changed = await transfer_service.mark_transfer_failed(
+                session, call, failure_reason
+            )
+            if inferred_failure:
+                call.transfer_error = failure_reason
+                await publish_call_event(session, call, "transfer_failed")
+                await transfer_service.record_transfer_v2_event(
+                    session, call, "cancelled", detail=failure_reason
+                )
+                changed = True
+            transfer_outcome = failure_reason
+        else:
+            changed = await transfer_service.mark_transfer_connected(session, call)
+            connected = changed or call.transfer_state is TransferState.CONNECTED
+            transfer_outcome = "connected" if connected else outcome
+            if changed:
+                tenant = await session.get(Tenant, call.tenant_id)
+                await crm_hooks.on_transfer_completed(session, tenant, call)
     elif outcome in ("busy", "no-answer", "failed", "canceled", "cancelled"):
         inferred_failure = (
             call.transfer_state is TransferState.FAILED
@@ -704,6 +1568,10 @@ async def transfer_status(
         if inferred_failure:
             call.transfer_error = outcome
             await publish_call_event(session, call, "transfer_failed")
+            if dict((call.transfer_context or {}).get("transfer_v2") or {}):
+                await transfer_service.record_transfer_v2_event(
+                    session, call, "cancelled", detail=outcome
+                )
             changed = True
     elif outcome in ("initiated", "ringing") and call.transfer_state in (
         TransferState.REQUESTED, TransferState.DIALING,
@@ -724,7 +1592,9 @@ async def transfer_status(
     if outcome in ("answered", "completed"):
         if changed:
             await realtime_events.emit_call_event(
-                call, kind="call.transfer", extra={"transfer_outcome": "connected"}
+                call,
+                kind="call.transfer",
+                extra={"transfer_outcome": transfer_outcome},
             )
     elif outcome in ("busy", "no-answer", "failed", "canceled", "cancelled"):
         if changed:

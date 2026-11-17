@@ -161,9 +161,7 @@ async def test_all_outbound_clients_reject_ssrf_targets(db, tenant_a, bad_url: s
             key_name="voxdesk-kek",
         )
         with pytest.raises(KmsOperationError):
-            await vault_kms.generate_data_key(
-                encryption_context={"tenant_id": str(tenant_a.id)}
-            )
+            await vault_kms.generate_data_key(encryption_context={"tenant_id": str(tenant_a.id)})
 
 
 @pytest.mark.parametrize(
@@ -188,31 +186,35 @@ async def test_dns_rebinding_is_blocked_at_resolution_time(
     def _fake_getaddrinfo(_host, _port, *_args, **_kwargs):
         return [(family, socket.SOCK_STREAM, socket.IPPROTO_TCP, "", sockaddr)]
 
-    monkeypatch.setattr(socket, "getaddrinfo", _fake_getaddrinfo)
+    # Scope the process-global resolver patch to the test body. The autouse
+    # identity-rate-limit fixture performs Redis cleanup after this test, and
+    # must see the real resolver when its teardown runs.
+    with monkeypatch.context() as scoped:
+        scoped.setattr(socket, "getaddrinfo", _fake_getaddrinfo)
 
-    rebind_url = "https://rebind.attacker.example/webhook"
+        rebind_url = "https://rebind.attacker.example/webhook"
 
-    # Core resolved validator blocks the rebound IP
-    with pytest.raises(OutboundUrlError):
-        await validate_resolved_outbound_url(rebind_url, require_https=True)
+        # Core resolved validator blocks the rebound IP
+        with pytest.raises(OutboundUrlError):
+            await validate_resolved_outbound_url(rebind_url, require_https=True)
 
-    # Webhook delivery blocks the rebound IP before opening a socket
-    wh_res = await deliver(
-        url=rebind_url,
-        body=b'{"ping":true}',
-        secret="whsec_rebind",
-        event_id="evt_rebind",
-    )
-    assert wh_res.kind == "permanent"
-    assert wh_res.category == "invalid_endpoint"
+        # Webhook delivery blocks the rebound IP before opening a socket
+        wh_res = await deliver(
+            url=rebind_url,
+            body=b'{"ping":true}',
+            secret="whsec_rebind",
+            event_id="evt_rebind",
+        )
+        assert wh_res.kind == "permanent"
+        assert wh_res.category == "invalid_endpoint"
 
-    # MCP client _request blocks the rebound IP before opening a socket
-    mcp_srv = McpServer(
-        id=uuid.uuid4(),
-        tenant_id=tenant_a.id,
-        name="Rebind MCP",
-        endpoint=rebind_url,
-        transport="streamable_http",
-    )
-    with pytest.raises(McpError, match="DNS resolution is not allowed"):
-        await mcp_request(mcp_srv, "ping", {})
+        # MCP client _request blocks the rebound IP before opening a socket
+        mcp_srv = McpServer(
+            id=uuid.uuid4(),
+            tenant_id=tenant_a.id,
+            name="Rebind MCP",
+            endpoint=rebind_url,
+            transport="streamable_http",
+        )
+        with pytest.raises(McpError, match="DNS resolution is not allowed"):
+            await mcp_request(mcp_srv, "ping", {})

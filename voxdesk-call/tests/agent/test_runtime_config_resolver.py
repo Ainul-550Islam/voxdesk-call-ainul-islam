@@ -355,3 +355,66 @@ async def test_resolver_precedence_experiment_over_phone_number_and_scoped_rag(d
     assert "Allowed Pricing Policy" in rag_block
     assert "$125" in rag_block
     assert "Internal HR Handbook" not in rag_block
+
+
+@pytest.mark.asyncio
+async def test_resolver_keeps_legacy_root_level_call_controls(db):
+    tenant = Tenant(
+        id=uuid.uuid4(),
+        name="Legacy Call Controls Tenant",
+        twilio_number="+14155550700",
+    )
+    db.add(tenant)
+    await db.flush()
+
+    agent = Agent(
+        id=uuid.uuid4(),
+        tenant_id=tenant.id,
+        external_key="legacy-controls",
+        name="Legacy Controls Agent",
+        status="published",
+        current_draft_config={
+            "voicemail_detection_enabled": True,
+            "voicemail_action": "static_message",
+            "voicemail_message": "Please call us back.",
+            "voicemail_window_s": "9",
+            "user_dtmf_enabled": "true",
+            "user_dtmf_mode": "fixed_digits",
+            "user_dtmf_fixed_digits": "6",
+            "call_screening_message": "This is a brief screening message.",
+            "call_screening_wait_s": "15",
+            "ivr_navigation_enabled": True,
+            "ivr_goal": "billing",
+            "auto_hangup_on_ivr": "true",
+            "ivr_max_menus": "4",
+            "structured_output_schema": {"type": "object", "properties": {}},
+        },
+    )
+    db.add(agent)
+    await db.flush()
+    call = Call(
+        id=uuid.uuid4(),
+        tenant_id=tenant.id,
+        agent_id=agent.id,
+        call_sid="CA_LEGACY_CONTROLS",
+        from_number="+14155559000",
+        to_number="+14155550700",
+        direction=CallDirection.INBOUND,
+        status=CallStatus.IN_PROGRESS,
+    )
+    db.add(call)
+    await db.flush()
+
+    cfg = await resolve_runtime_config(db, call, tenant)
+    assert cfg.call_tooling["voicemail_detection_enabled"] is True
+    assert cfg.call_tooling["voicemail_action"] == "static_message"
+    assert cfg.call_tooling["voicemail_window_s"] == 9.0
+    assert cfg.call_tooling["user_dtmf_enabled"] is True
+    assert cfg.call_tooling["user_dtmf_mode"] == "fixed_digits"
+    assert cfg.call_tooling["user_dtmf_fixed_digits"] == 6
+    assert cfg.call_tooling["call_screening_enabled"] is True
+    assert cfg.call_tooling["call_screening_wait_s"] == 15.0
+    assert cfg.call_tooling["ivr_navigation_enabled"] is True
+    assert cfg.call_tooling["auto_hangup_on_ivr"] is True
+    assert cfg.call_tooling["ivr_max_menus"] == 4
+    assert cfg.structured_output_schema == {"type": "object", "properties": {}}

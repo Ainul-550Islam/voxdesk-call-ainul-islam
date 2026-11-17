@@ -33,9 +33,24 @@ ENV_FILE = REPO_ROOT / os.environ.get("VOXDESK_CHECK_ENV_FILE", ".env.check")
 
 
 def _stack_reachable() -> bool:
+    """Only run Docker-stack smokes when all three stack services are up.
+
+    A standalone API process also answers /health on port 8000; treating that
+    as the full voxdesk-check stack ran destructive/live probes against a
+    partial local development server. Require the API, realtime gateway, and
+    media engine health endpoints before enabling this integration suite.
+    """
     try:
-        r = httpx.get(f"{HTTP_BASE}/health", timeout=2.0)
-        return r.status_code == 200
+        with httpx.Client(timeout=1.0) as client:
+            probes = (
+                (HTTP_BASE, "/health"),
+                (GATEWAY_BASE, "/healthz"),
+                (MEDIA_BASE, "/v1/health"),
+            )
+            return all(
+                client.get(f"{base.rstrip('/')}{path}").status_code == 200
+                for base, path in probes
+            )
     except Exception:
         return False
 

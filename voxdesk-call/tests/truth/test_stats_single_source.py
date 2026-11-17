@@ -48,8 +48,12 @@ def test_stats_json_is_single_source_of_truth() -> None:
     assert readme_stats["registered_routes"] == reg_routes
     assert readme_stats["collected_pytest_nodes"] == collected
     assert f"REST API ({reg_routes} routes)" in readme
-    assert "`dashboard/` (Vite + React 18) is the **canonical production operator console**" in readme
-    assert "`dashboard-next/` (Next.js 16 App Router) is an **experimental" in readme
+    # PART 17A: the frontend claim flipped. The guard stays — it just pins the
+    # truth that is true now: Next is canonical, and the Vite tree is gone from
+    # disk, from the README, and from the production image.
+    assert "`dashboard-next/` (Next.js 16 App Router) is the **canonical production" in readme
+    assert not (ROOT / "dashboard").exists(), "the retired Vite dashboard is back on disk"
+    assert "Vite + React 18" not in readme, "README still advertises the retired Vite console"
 
     # 2. docs/SALES/PRICING_AND_TIERS.md must match docs/STATS.json and have no hard-coded GREEN
     pricing = (ROOT / "docs" / "SALES" / "PRICING_AND_TIERS.md").read_text(encoding="utf-8")

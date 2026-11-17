@@ -89,6 +89,19 @@ func (r *Registry) Set(name string, labels map[string]string, value float64) {
 	f.gauge.With(toLabels(f.labelNames, labels)).Set(value)
 }
 
+// AddGauge adjusts a gauge by a signed amount. It is used for shared live
+// counts, where setting 0 when one of several concurrent sessions ends would
+// incorrectly hide the other active sessions.
+func (r *Registry) AddGauge(name string, labels map[string]string, value float64) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	f := r.familyLocked(name, labels)
+	if f == nil || f.gauge == nil {
+		return
+	}
+	f.gauge.With(toLabels(f.labelNames, labels)).Add(value)
+}
+
 // Value reads one metric sample.
 func (r *Registry) Value(name string, labels map[string]string) float64 {
 	families, err := r.registry.Gather()

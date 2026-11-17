@@ -105,3 +105,161 @@ scheduler:
   resources:
     requests: {cpu: 200m, memory: 256Mi}
     limits: {cpu: "1", memory: 1Gi}
+
+# =============================================================================
+# PART 17B (P17B-01): everything the call path needs, on.
+#
+# Before this file grew these blocks the chart rendered api + scheduler only,
+# so a Kubernetes install had no realtime edge, no media plane, no console, no
+# backup and no migration job. The compose stack had all of them; the chart
+# was the deployment that "worked" by containing less.
+# =============================================================================
+
+realtimeGateway:
+  enabled: true
+  port: 8790
+  replicaCount: 3
+  # Redis, not memory: with three replicas the memory broker means a browser
+  # tab only sees events published to the pod that happens to hold its socket.
+  broker: redis
+  redisUrl: "redis://redis:6379/0"
+  allowedOrigins: "https://app.example.com"
+  maxConnections: 20000
+  maxConnectionsPerTenant: 256
+  antiAffinity: true
+  image:
+    repository: ghcr.io/voxdesk/voxdesk-realtime-gateway
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+  resources:
+    requests: {cpu: 500m, memory: 256Mi}
+    limits: {cpu: "2", memory: 1Gi}
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 20
+    targetCPUUtilizationPercentage: 70
+    targetConnectionsPerPod: "2000"
+    scaleDownStabilizationWindowSeconds: 600
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 2
+
+mediaEngine:
+  enabled: true
+  replicaCount: 1
+  hostNetwork: true
+  # Both must be set for the SDP candidate: the engine advertises these, not
+  # the pod IP.
+  publicIp: ""          # e.g. "203.0.113.10" — operator-supplied per node pool
+  label: "edge-prod-1"
+  maxParticipants: 64
+  resources:
+    requests: {cpu: "1", memory: 512Mi}
+    limits: {cpu: "4", memory: 2Gi}
+  nodeSelector:
+    # Media nodes are tainted in most clusters because UDP capacity is not
+    # shared kindly with a normal workload.
+    voxdesk.io/role: media
+  tolerations:
+    - key: voxdesk.io/role
+      operator: Equal
+      value: media
+      effect: NoSchedule
+
+frontend:
+  enabled: true
+  port: 3000
+  replicaCount: 3
+  image:
+    repository: ghcr.io/voxdesk/voxdesk-call
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 3000
+  ingress:
+    enabled: true
+    className: "nginx"
+    host: "app.example.com"
+    paths:
+      - path: /
+        pathType: Prefix
+    annotations:
+      # The console is a Next server, not a static export: the WebSocket
+      # upgrade goes through the ingress, so the timeout has to outlast a call.
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    tls:
+      - secretName: voxdesk-web-tls
+        hosts:
+          - "app.example.com"
+  resources:
+    requests: {cpu: 200m, memory: 256Mi}
+    limits: {cpu: "1", memory: 1Gi}
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 2
+
+migrateJob:
+  enabled: true
+  backoffLimit: 1
+  activeDeadlineSeconds: 900
+
+backup:
+  enabled: true
+  schedule: "0 2 * * *"
+  timeZone: Etc/UTC
+  retain: 14
+  # Empty on purpose in a shipped example: set this to your object-store path
+  # and use an image that has rclone, or accept that the only copy is the PVC.
+  remote: ""
+  persistentVolume:
+    create: true
+    size: 200Gi
+    storageClassName: ""
+
+networkPolicy:
+  enabled: true
+  ingressController:
+    namespace: ingress-nginx
+    podSelector:
+      matchLabels:
+        app.kubernetes.io/name: ingress-nginx
+  database:
+    # Managed PostgreSQL is outside the cluster; no in-cluster selector to
+    # allow, so this stays empty and the db policy is not rendered.
+    podSelector: {}
+  redis:
+    podSelector:
+      matchLabels:
+        app.kubernetes.io/name: redis
+  monitoring:
+    namespace: monitoring
+    podSelector:
+      matchLabels:
+        app.kubernetes.io/name: prometheus
+
+serviceMonitor:
+  enabled: true
+  interval: 15s
+  labels:
+    release: kube-prometheus-stack
+  prometheusRule:
+    enabled: true
+    labels:
+      release: kube-prometheus-stack
+    includePlatformRules: true
+
+# Off by default even in prod: turning it on requires a ClusterSecretStore the
+# operator has already created, and a chart that assumes one fails on install.
+externalSecrets:
+  enabled: false
+  secretStoreRef:
+    name: ""
+    kind: ClusterSecretStore

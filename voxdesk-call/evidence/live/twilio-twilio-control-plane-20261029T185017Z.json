@@ -1,0 +1,22 @@
+{
+  "schema": "voxdesk.live_evidence/v1",
+  "provider": "twilio",
+  "check": "twilio.control-plane",
+  "group": "carriers",
+  "summary": "Twilio REST control plane answers for the configured account (read-only).",
+  "status": "skipped",
+  "started_at": "2026-10-29T18:50:17Z",
+  "finished_at": "2026-10-29T18:50:17Z",
+  "commit_sha": "554fb1f9602d1dd0a62d407b9b3f991c41e369e1",
+  "raw_log": "evidence/live/raw/twilio-twilio-control-plane-20261029T185017Z.log",
+  "raw_log_sha256": "185adf837dee8347818aad472a008e7726db4ac72f8cee1a9bf58af48735952c",
+  "raw_log_bytes": 400,
+  "cost_guard": null,
+  "detail": {
+    "missing_env": [
+      "TWILIO_ACCOUNT_SID",
+      "TWILIO_AUTH_TOKEN"
+    ]
+  },
+  "skip_reason": "credentials absent: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN \u2014 the check was not attempted, so it proves nothing"
+}

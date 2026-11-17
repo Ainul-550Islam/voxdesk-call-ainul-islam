@@ -67,7 +67,8 @@ class FailoverServiceWrapper(FrameProcessor):
         self.window_seconds = float(window_seconds)
         self.cooldown_seconds = float(cooldown_seconds)
         self.timeout_ms = float(timeout_ms)
-        self._clock = clock
+        # FrameProcessor reserves ``_clock`` for Pipecat's BaseClock.
+        self._monotonic_now = clock
 
         self.slots: list[ProviderSlot] = [self._coerce_slot(primary, default_name="primary")]
         for idx, fb in enumerate(fallbacks):
@@ -119,7 +120,7 @@ class FailoverServiceWrapper(FrameProcessor):
         return self.active_slot.name
 
     def _refresh_circuits(self) -> None:
-        now = self._clock()
+        now = self._monotonic_now()
         for slot in self.slots:
             if (
                 slot.state == CircuitState.OPEN
@@ -130,7 +131,7 @@ class FailoverServiceWrapper(FrameProcessor):
 
     def record_failure(self, reason: str = "") -> bool:
         """Record a failure on the active slot. Returns True if failover occurred."""
-        now = self._clock()
+        now = self._monotonic_now()
         slot = self.slots[self._active_index]
         cutoff = now - self.window_seconds
         slot.failure_timestamps = [t for t in slot.failure_timestamps if t >= cutoff]
@@ -171,6 +172,14 @@ class FailoverServiceWrapper(FrameProcessor):
             proc = slot.get_processor()
             if hasattr(proc, "register_function"):
                 proc.register_function(name, handler, **kwargs)
+
+    async def update_speed(self, speed: float):
+        """Forward adaptive speed to the active TTS provider when it supports it."""
+        processor = self.active_slot.get_processor()
+        updater = getattr(processor, "update_speed", None)
+        if not callable(updater):
+            return False
+        return await updater(speed)
 
     async def process_frame(self, frame: Frame, direction: FrameDirection):
         await super().process_frame(frame, direction)

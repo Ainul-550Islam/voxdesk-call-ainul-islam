@@ -27,7 +27,7 @@ if str(ROOT) not in sys.path:
 
 from scripts.pytest_collection_stats import measure_collected_pytest_nodes  # noqa: E402
 
-SOURCE_ROOTS = ('app', 'services', 'dashboard/src', 'dashboard-next', 'sdk')
+SOURCE_ROOTS = ('app', 'services', 'dashboard-next', 'sdk')
 SOURCE_SUFFIXES = {'.py', '.ts', '.tsx', '.js', '.rs', '.go', '.cpp', '.h', '.hpp'}
 SOURCE_SKIP_PARTS = {'node_modules', 'target', 'build', 'dist', 'vendor', '__pycache__', '.next'}
 
@@ -339,23 +339,42 @@ secret, and E2E mode off. Those checks are enforced by
 | `bash scripts/run_full_tests.sh` | checks Postgres and Redis, migrates to head, runs every chunk with JUnit and a summary table (`docs/TESTING.md`) |
 | `python scripts/pytest_chunks.py` | runs the whole population in chunks, JUnit per chunk |
 | `python scripts/reconcile_validation_results.py --strict` | fails when collected != recorded; writes `reports/TEST_EVIDENCE_SUMMARY.json` |
-| `make staging-proof` | `evidence/staging/<date>/staging_proof.json` from a real `docker compose up --build` |
-| `python scripts/live_evidence_run.py --list` | opt-in, cost-guarded live-provider checks -> `evidence/live/*.json` |
+| `make staging-proof` | `evidence/staging/` — writes `<date>/staging_proof.json` from a real `docker compose up --build` |
+| `python scripts/live_evidence_run.py --list` | opt-in, cost-guarded live-provider checks -> one JSON per provider under `evidence/live/` |
 | `make polyglot-evidence` | `reports/POLYGLOT_EVIDENCE_SUMMARY.json` for Go, Rust and C++ services |
 | `make security-evidence` | `reports/SECURITY_EVIDENCE_SUMMARY.json` |
 | `bash scripts/verify_deploy_assets.sh` | validates Helm, Terraform and Caddy for real |
 | `make verify-truth` | every number quoted in the docs equals the code |
 | `make verify-hygiene` | no generated artifact is tracked by git |
 
+## Developer documentation
+
+Install the documentation-only dependency and build the buyer-facing reference:
+
+```sh
+pip install -r requirements-docs.txt
+make docs-build
+```
+
+This generates the published OpenAPI reference, 93-request Postman collection,
+RSS changelog feed, and strict MkDocs site under `build/docs-site/`. The docs
+coverage guard fails if a published endpoint loses its summary or description.
+The deterministic allowlisted document bundle is built with
+`python scripts/build_release.py`; verify its archive with
+`sha256sum -c dist/SHA256SUMS`.
+
 ## Frontends
 
-* `dashboard/` (Vite + React 18) is the **canonical production operator console**
-  built into `Dockerfile` and served by FastAPI/Caddy in `docker-compose.prod.yml`
-  and `infra/helm/voxdesk`.
-* `dashboard-next/` (Next.js 16 App Router) is an **experimental, opt-in shadow
-  console** (`dashboard-next/README.md`) validated in CI (`npm test`,
-  `tsc --noEmit`, `next build`) and not deployed by default in production compose
-  or Helm manifests.
+* `dashboard-next/` (Next.js 16 App Router) is the **canonical production
+  operator console**. `Dockerfile` builds it into the `web` stage
+  (`output: 'standalone'`), `docker-compose.prod.yml` runs it as its own
+  container, and Caddy routes every non-API path to it. Validated in CI
+  (`vitest run`, `tsc --noEmit`, `next build`, and the Playwright
+  `dashboard-next/e2e/shipped_image.spec.ts` journey).
+* The Vite dashboard tree it replaced was **deleted in PART 17A** once
+  `docs/UI_PARITY.md` reported `PORT 0`. Its route inventory survives as
+  `docs/ui_parity_routes.json`; every route it had is either served by
+  `dashboard-next` or recorded as `DEAD` with a reason.
 
 ## Deployment
 

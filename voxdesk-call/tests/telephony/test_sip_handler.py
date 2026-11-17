@@ -103,9 +103,7 @@ def _headers(
     presented: str | None = None,
 ) -> dict[str, str]:
     stamp = str(timestamp if timestamp is not None else int(time.time()))
-    signature = presented if presented is not None else session_token(
-        secret, call_id, stamp, nonce
-    )
+    signature = presented if presented is not None else session_token(secret, call_id, stamp, nonce)
     return {
         "authorization": f"Bearer {token}",
         "x-voxdesk-sip-call-id": call_id,
@@ -115,15 +113,31 @@ def _headers(
     }
 
 
-def _start(call_id: str, *, to: str = "+15550001111", codec: str = "PCMU") -> str:
+def _start(
+    call_id: str,
+    *,
+    to: str = "+15550001111",
+    from_number: str = "+15559998888",
+    codec: str = "PCMU",
+    direction: str = "inbound",
+    tenant_id: str = "",
+    trunk_id: str = "",
+    environment_id: str = "",
+    source_ip: str = "192.0.2.44",
+) -> str:
     return json.dumps(
         {
             "type": "start",
             "event": "start",
             "call_id": call_id,
-            "from": "+15559998888",
+            "from": from_number,
             "to": to,
             "codec": codec,
+            "direction": direction,
+            "tenant_id": tenant_id,
+            "trunk_id": trunk_id,
+            "environment_id": environment_id,
+            "source_ip": source_ip,
         }
     )
 
@@ -237,11 +251,28 @@ async def test_the_bridge_refuses_an_unsupported_codec(app) -> None:
         assert await socket.expect_close() == 1008
 
 
+async def test_the_bridge_refuses_an_inbound_start_without_route_scope(app) -> None:
+    async with _connect(app, "/telephony/sip/ws", headers=_headers("unscoped-call")) as socket:
+        await socket.send_text(_start("unscoped-call"))
+        assert await socket.expect_close() == 1008
+
+
 async def test_the_bridge_refuses_an_unknown_destination(app, sessionmaker_, monkeypatch) -> None:
+    from app.telephony.sip.sip_gateway_client import SipGatewayClient
+
     monkeypatch.setattr(sip_handler, "get_sessionmaker", lambda: sessionmaker_)
+    monkeypatch.setattr(SipGatewayClient, "supports_tenant_trunks", True)
     headers = _headers("call-1")
     async with _connect(app, "/telephony/sip/ws", headers=headers) as socket:
-        await socket.send_text(_start("call-1", to="+19999999999"))
+        await socket.send_text(
+            _start(
+                "call-1",
+                to="+19999999999",
+                tenant_id="11111111-1111-4111-8111-111111111111",
+                trunk_id="22222222-2222-4222-8222-222222222222",
+                environment_id="33333333-3333-4333-8333-333333333333",
+            )
+        )
         assert await socket.expect_close() == 1008
 
 
@@ -251,19 +282,52 @@ async def test_the_bridge_refuses_an_unknown_destination(app, sessionmaker_, mon
 async def test_the_bridge_binds_the_number_to_its_tenant_and_starts_the_pipeline(
     app, sessionmaker_, db, monkeypatch
 ) -> None:
-    """A valid start event runs the agent for the tenant that owns the number."""
-    from app.telephony.number_provisioning import PhoneNumber, PhoneNumberStatus
+    """A valid routed start runs only for its application-authorized trunk."""
+    import uuid
+
+    from sqlalchemy import select
+
+    from app.db.models import Environment
+    from app.db.telephony_models import TelephonyPhoneNumber, TelephonySipConnection
+    from app.telephony.sip.sip_gateway_client import SipGatewayClient
     from tests.conftest import make_tenant
 
     tenant = await make_tenant(db, name="SIP Tenant")
-    number = PhoneNumber(
+    production_environment = (
+        await db.execute(
+            select(Environment).where(
+                Environment.tenant_id == tenant.id,
+                Environment.kind == "production",
+            )
+        )
+    ).scalar_one()
+    trunk = TelephonySipConnection(
+        id=uuid.uuid4(),
         tenant_id=tenant.id,
+        name="Inbound test trunk",
         provider="sip",
-        e164="+15550001111",
-        status=PhoneNumberStatus.ACTIVE.value,
+        phone_number_e164="+15550001111",
+        termination_uri="sips:carrier.example:5061",
+        transport="TLS",
+        status="READY",
+        metadata_json={"allowed_cidrs": ["192.0.2.0/24"]},
     )
-    db.add(number)
+    db.add(trunk)
+    await db.flush()
+    db.add(
+        TelephonyPhoneNumber(
+            tenant_id=tenant.id,
+            number="+15550001111",
+            e164_number="+15550001111",
+            provider="sip",
+            sip_connection_id=trunk.id,
+            sip_enabled=True,
+            inbound_enabled=True,
+            status="READY",
+        )
+    )
     await db.commit()
+    monkeypatch.setattr(SipGatewayClient, "supports_tenant_trunks", True)
 
     # The bridge opens its own session; point it at the test database.
     monkeypatch.setattr(sip_handler, "get_sessionmaker", lambda: sessionmaker_)
@@ -278,7 +342,14 @@ async def test_the_bridge_binds_the_number_to_its_tenant_and_starts_the_pipeline
 
     headers = _headers("call-1")
     async with _connect(app, "/telephony/sip/ws", headers=headers) as socket:
-        await socket.send_text(_start("call-1"))
+        await socket.send_text(
+            _start(
+                "call-1",
+                tenant_id=str(tenant.id),
+                trunk_id=str(trunk.id),
+                environment_id=str(production_environment.id),
+            )
+        )
         # The agent returns immediately, so the socket closes on its own.
         for _ in range(50):
             if started:
@@ -289,30 +360,197 @@ async def test_the_bridge_binds_the_number_to_its_tenant_and_starts_the_pipeline
     assert started["tenant"].id == tenant.id
     assert started["call"].to_number == "+15550001111"
     assert started["call"].tenant_id == tenant.id
+    assert started["call"].environment_id == production_environment.id
     assert started["carrier_provider"] == "sip"
     assert started["call_sid"] == "call-1"
     assert isinstance(started["transport"], sip_handler.SipWebsocketTransport)
 
 
-async def test_the_bridge_binds_the_call_to_the_tenant_of_the_number(
+async def test_the_bridge_rechecks_the_sip_peer_ip_before_creating_call_history(
     app, sessionmaker_, db, monkeypatch
 ) -> None:
-    """The call row is written for the tenant that owns the called number."""
+    import uuid
+
     from sqlalchemy import select
 
-    from app.db.models import Call
+    from app.db.models import Call, Environment
+    from app.db.telephony_models import TelephonyPhoneNumber, TelephonySipConnection
+    from app.telephony.sip.sip_gateway_client import SipGatewayClient
+    from tests.conftest import make_tenant
+
+    tenant = await make_tenant(db, name="SIP Source ACL Tenant")
+    environment = (
+        await db.execute(
+            select(Environment).where(
+                Environment.tenant_id == tenant.id,
+                Environment.kind == "production",
+            )
+        )
+    ).scalar_one()
+    trunk = TelephonySipConnection(
+        id=uuid.uuid4(),
+        tenant_id=tenant.id,
+        name="SIP source ACL trunk",
+        provider="sip",
+        phone_number_e164="+15550004444",
+        termination_uri="sips:carrier.example:5061",
+        transport="TLS",
+        status="READY",
+        metadata_json={"allowed_cidrs": ["192.0.2.0/24"]},
+    )
+    db.add(trunk)
+    await db.flush()
+    db.add(
+        TelephonyPhoneNumber(
+            tenant_id=tenant.id,
+            number="+15550004444",
+            e164_number="+15550004444",
+            provider="sip",
+            sip_connection_id=trunk.id,
+            sip_enabled=True,
+            inbound_enabled=True,
+            status="READY",
+        )
+    )
+    await db.commit()
+    monkeypatch.setattr(SipGatewayClient, "supports_tenant_trunks", True)
+    monkeypatch.setattr(sip_handler, "get_sessionmaker", lambda: sessionmaker_)
+
+    async with _connect(app, "/telephony/sip/ws", headers=_headers("spoofed-peer")) as socket:
+        await socket.send_text(
+            _start(
+                "spoofed-peer",
+                to="+15550004444",
+                tenant_id=str(tenant.id),
+                trunk_id=str(trunk.id),
+                environment_id=str(environment.id),
+                source_ip="203.0.113.77",
+            )
+        )
+        assert await socket.expect_close() == 1008
+
+    async with sessionmaker_() as session:
+        rows = (
+            (await session.execute(select(Call).where(Call.call_sid == "spoofed-peer")))
+            .scalars()
+            .all()
+        )
+    assert rows == []
+
+
+async def test_the_bridge_binds_outbound_calls_by_the_owned_caller_id(
+    app, sessionmaker_, db, monkeypatch
+) -> None:
+    from sqlalchemy import select
+
+    from app.db.models import Call, CallDirection, Environment
     from app.telephony.number_provisioning import PhoneNumber, PhoneNumberStatus
     from tests.conftest import make_tenant
 
-    tenant = await make_tenant(db, name="SIP Tenant Two")
-    number = PhoneNumber(
-        tenant_id=tenant.id,
-        provider="sip",
-        e164="+15550002222",
-        status=PhoneNumberStatus.ACTIVE.value,
+    tenant = await make_tenant(db, name="SIP Outbound Tenant")
+    caller_number = "+15550003333"
+    db.add(
+        PhoneNumber(
+            tenant_id=tenant.id,
+            provider="sip",
+            e164=caller_number,
+            status=PhoneNumberStatus.ACTIVE.value,
+        )
     )
-    db.add(number)
     await db.commit()
+    monkeypatch.setattr(sip_handler, "get_sessionmaker", lambda: sessionmaker_)
+
+    started: dict = {}
+
+    async def _fake_run_voice_agent(**kwargs):
+        started.update(kwargs)
+        return None
+
+    monkeypatch.setattr("app.agent.pipeline.run_voice_agent", _fake_run_voice_agent)
+
+    headers = _headers("call-outbound")
+    async with _connect(app, "/telephony/sip/ws", headers=headers) as socket:
+        await socket.send_text(
+            _start(
+                "call-outbound",
+                from_number=caller_number,
+                to="+14155550123",
+                direction="outbound",
+            )
+        )
+        for _ in range(50):
+            if started:
+                break
+            await asyncio.sleep(0.02)
+
+    assert started
+    assert started["tenant"].id == tenant.id
+    assert started["call"].direction is CallDirection.OUTBOUND
+    async with sessionmaker_() as session:
+        call = (
+            await session.execute(select(Call).where(Call.call_sid == "call-outbound"))
+        ).scalar_one()
+        environment = (
+            await session.execute(
+                select(Environment).where(
+                    Environment.tenant_id == tenant.id,
+                    Environment.kind == "production",
+                )
+            )
+        ).scalar_one()
+        assert call.direction is CallDirection.OUTBOUND
+        assert call.environment_id == environment.id
+
+
+async def test_the_bridge_binds_the_call_to_the_tenant_of_the_number(
+    app, sessionmaker_, db, monkeypatch
+) -> None:
+    """The durable call row follows the application-authorized SIP trunk."""
+    import uuid
+
+    from sqlalchemy import select
+
+    from app.db.models import Call, Environment
+    from app.db.telephony_models import TelephonyPhoneNumber, TelephonySipConnection
+    from app.telephony.sip.sip_gateway_client import SipGatewayClient
+    from tests.conftest import make_tenant
+
+    tenant = await make_tenant(db, name="SIP Tenant Two")
+    production_environment = (
+        await db.execute(
+            select(Environment).where(
+                Environment.tenant_id == tenant.id,
+                Environment.kind == "production",
+            )
+        )
+    ).scalar_one()
+    trunk = TelephonySipConnection(
+        id=uuid.uuid4(),
+        tenant_id=tenant.id,
+        name="Inbound test trunk two",
+        provider="sip",
+        phone_number_e164="+15550002222",
+        termination_uri="sips:carrier.example:5061",
+        transport="TLS",
+        status="READY",
+        metadata_json={"allowed_cidrs": ["192.0.2.0/24"]},
+    )
+    db.add(trunk)
+    await db.flush()
+    db.add(
+        TelephonyPhoneNumber(
+            tenant_id=tenant.id,
+            number="+15550002222",
+            e164_number="+15550002222",
+            provider="sip",
+            sip_connection_id=trunk.id,
+            sip_enabled=True,
+            inbound_enabled=True,
+            status="READY",
+        )
+    )
+    await db.commit()
+    monkeypatch.setattr(SipGatewayClient, "supports_tenant_trunks", True)
 
     monkeypatch.setattr(sip_handler, "get_sessionmaker", lambda: sessionmaker_)
 
@@ -323,7 +561,15 @@ async def test_the_bridge_binds_the_call_to_the_tenant_of_the_number(
 
     headers = _headers("call-bound")
     async with _connect(app, "/telephony/sip/ws", headers=headers) as socket:
-        await socket.send_text(_start("call-bound", to="+15550002222"))
+        await socket.send_text(
+            _start(
+                "call-bound",
+                to="+15550002222",
+                tenant_id=str(tenant.id),
+                trunk_id=str(trunk.id),
+                environment_id=str(production_environment.id),
+            )
+        )
         await asyncio.sleep(0.4)
 
     async with sessionmaker_() as session:
@@ -332,5 +578,14 @@ async def test_the_bridge_binds_the_call_to_the_tenant_of_the_number(
         ).scalar_one_or_none()
         assert call is not None
         assert call.tenant_id == tenant.id
+        production_environment = (
+            await session.execute(
+                select(Environment).where(
+                    Environment.tenant_id == tenant.id,
+                    Environment.kind == "production",
+                )
+            )
+        ).scalar_one()
+        assert call.environment_id == production_environment.id
         assert call.from_number == "+15559998888"
         assert call.to_number == "+15550002222"

@@ -29,7 +29,7 @@ export default function ReviewsPage() {
       <section className="card">
         <h2>Cases ({reviews.length})</h2>
         {reviews.length === 0 ? <p className="muted">No cases. Execute a specialized agent that requires review to create one.</p> : (
-          <div className="table-wrap">
+          <div className="table-wrap" tabIndex={0} role="region" aria-label="Data table">
             <table>
               <thead><tr><th>ID</th><th>Subject</th><th>Status</th><th>Priority</th><th>Created</th></tr></thead>
               <tbody>

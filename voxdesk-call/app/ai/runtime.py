@@ -149,6 +149,8 @@ async def voice_llm(
     temperature: float,
     max_tokens: int,
     blocked_output: tuple[str, ...] = (),
+    structured_output_schema: dict | None = None,
+    structured_output_strict: bool = True,
 ):
     """Governed Pipecat adapter. Policy denial happens before ``build_llm``."""
     prepared = await prepare_voice(
@@ -162,6 +164,8 @@ async def voice_llm(
         temperature=temperature,
         max_tokens=max_tokens,
         allow_key_fallback=False,
+        structured_output_schema=structured_output_schema,
+        structured_output_strict=structured_output_strict,
     )
     return service, prepared
 

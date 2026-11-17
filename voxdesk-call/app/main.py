@@ -86,14 +86,13 @@ from app.api.environment_resource_export_routes import router as environment_res
 from app.api.team_routes import router as team_router
 from app.api.gdpr_routes import router as gdpr_router
 from app.api.license_routes import router as license_router
-from app.api.api_key_routes import router as api_key_router
+from app.api.machine_routes import router as machine_router
 from app.api.domain_routes import router as domain_router
 from app.api.identity_routes import router as identity_router
 from app.api.mfa_routes import router as mfa_router
 from app.api.password_routes import router as password_router
 from app.api.scim_routes import admin_router as scim_admin_router
 from app.api.scim_routes import scim_router
-from app.api.service_account_routes import router as service_account_router
 from app.api.security_session_routes import security_router
 from app.api.session_routes import router as session_router
 from app.api.sso_routes import admin_router as sso_admin_router
@@ -202,9 +201,24 @@ from app.api.carrier_router import router as carrier_router
 from app.api.compliance_v2 import router as compliance_v2_router
 from app.api.contact_center_v2_router import router as contact_center_v2_router
 from app.api.integrations_v2_router import router as integrations_v2_router
-# Batch 07: one aggregate mount for the workforce, white-label, TLS-widget and
-# mobile surfaces. Each leaf router retains its own auth/permission boundary.
-from app.platform_v2.router import router as platform_v2_router
+# Batch 07: mount through the stable app.api shims in the same order as the
+# platform-v2 aggregate. Each router retains its own auth/permission boundary.
+from app.api.wfm_routes import router as wfm_router
+from app.api.whitelabel_routes import (
+    public_router as whitelabel_tls_router,
+    router as whitelabel_router,
+    widget_public_router as whitelabel_widget_router,
+)
+from app.api.mobile_routes import router as mobile_router
+from app.api.call_debug_routes import router as call_debug_router
+from app.api.contact_memory_routes import router as contact_memory_router
+from app.api.public_chat_routes import router as public_chat_router
+from app.api.share_routes import router as share_router
+from app.api.workflow_library_routes import router as workflow_library_router
+from app.api.concurrency_routes import router as concurrency_router
+from app.api.country_policy_routes import router as country_policy_router
+from app.api.messaging_registration_routes import router as messaging_registration_router
+from app.api.sip_trunk_routes import router as sip_trunk_router
 # Batch 03 data-residency guard: refuse a request that names a region the
 # caller's tenant may not use, on the placement-bearing paths only.
 from app.compliance_v2.residency.middleware import add_residency_middleware
@@ -235,6 +249,21 @@ async def lifespan(app: FastAPI):
             raise RuntimeError("Insecure configuration, refusing to start: " + "; ".join(problems))
         for problem in problems:
             log.warning("config.insecure", problem=problem)
+
+    # Concurrency leases share the configured Redis backend across workers.
+    # Without a URL the manager is explicitly process-local; no request path
+    # pretends the in-memory counters are distributed.
+    from app.telephony.concurrency_policy import RedisCounterStore
+    from app.api.concurrency_routes import configure_counter_store
+
+    concurrency_redis = None
+    if (settings.redis_url or "").strip():
+        import redis.asyncio as redis
+
+        concurrency_redis = redis.from_url(settings.redis_url, decode_responses=True)
+        configure_counter_store(RedisCounterStore(concurrency_redis))
+    else:
+        configure_counter_store(None)
 
     engine = get_engine()
     if settings.app_env.lower() in {"development", "test"}:
@@ -278,12 +307,16 @@ async def lifespan(app: FastAPI):
     reset_drain_state()
     log.info("voxdesk.started")
     yield
-    await drain_and_shutdown(
-        reason="lifespan_shutdown",
-        flush_outbox=settings.app_env.lower() not in {"test"},
-    )
-    reset_drain_state()
-    await engine.dispose()
+    try:
+        await drain_and_shutdown(
+            reason="lifespan_shutdown",
+            flush_outbox=settings.app_env.lower() not in {"test"},
+        )
+    finally:
+        reset_drain_state()
+        if concurrency_redis is not None:
+            await concurrency_redis.aclose()
+        await engine.dispose()
 
 
 def _api_docs_config() -> dict[str, str | None]:
@@ -363,8 +396,8 @@ app.include_router(license_router)
 # STEP 18, enterprise identity. Registered here, in the same place and the same
 # way as everything above: the human identity surface (identity, MFA, sessions),
 # the two public credential-recovery flows plus the login-page capability
-# lookup (password_router), machine credentials (api_key_router for API keys,
-# service_account_router for machine identities), enterprise
+# lookup (password_router), machine credentials (machine_router combines API
+# keys and service accounts), enterprise
 # domains (domain_router), SSO administration and its public login endpoints
 # (sso_admin_router / sso_public_router), and SCIM provisioning
 # (scim_admin_router for the credentials an IdP uses, scim_router for the
@@ -374,8 +407,7 @@ app.include_router(mfa_router)
 app.include_router(session_router)
 app.include_router(security_router)
 app.include_router(password_router)
-app.include_router(api_key_router)
-app.include_router(service_account_router)
+app.include_router(machine_router)
 app.include_router(domain_router)
 app.include_router(sso_admin_router)
 app.include_router(sso_public_router)
@@ -531,7 +563,48 @@ app.include_router(carrier_router)
 app.include_router(compliance_v2_router)
 app.include_router(contact_center_v2_router)
 app.include_router(integrations_v2_router)
-app.include_router(platform_v2_router)
+app.include_router(wfm_router)
+app.include_router(whitelabel_router)
+app.include_router(mobile_router)
+app.include_router(whitelabel_tls_router)
+app.include_router(whitelabel_widget_router)
+# PART 13 — telephony and carrier parity
+app.include_router(sip_trunk_router)
+app.include_router(concurrency_router)
+app.include_router(country_policy_router)
+app.include_router(messaging_registration_router)
+app.include_router(call_debug_router)
+# PART 14 -- workflow library, memory settings/brief, share links, public chat
+app.include_router(workflow_library_router)
+app.include_router(contact_memory_router)
+app.include_router(share_router)
+app.include_router(public_chat_router)
+
+# PART 18 (P18-03) — request-a-call demo. Public, tenant-less, every gate is in
+# app/services/public_demo_service.py; this router only translates refusals.
+from app.api.public_demo_routes import router as public_demo_router  # noqa: E402
+
+app.include_router(public_demo_router)
+
+# PART 12 (P12-20/P12-24/P12-25) — flow components, agent portability, agent folders
+from app.api.agent_folder_routes import router as agent_folder_router  # noqa: E402
+from app.api.agent_template_routes import router as agent_template_router  # noqa: E402
+from app.api.agent_portability_routes import router as agent_portability_router  # noqa: E402
+from app.api.flow_component_routes import router as flow_component_router  # noqa: E402
+
+app.include_router(flow_component_router)
+app.include_router(agent_portability_router)
+app.include_router(agent_folder_router)
+app.include_router(agent_template_router)
+
+# PART 15 (P15-04/P15-08) -- alert rules and batch tests
+from app.api.alert_rule_routes import router as alert_rule_router  # noqa: E402
+from app.api.role_routes import router as role_router  # noqa: E402  # PART 16: custom roles
+from app.api.batch_test_routes import router as batch_test_router  # noqa: E402
+
+app.include_router(alert_rule_router)
+app.include_router(role_router)
+app.include_router(batch_test_router)
 
 # Quarantine synthetic route generators before the application starts serving.
 # Their `/endpoint-N` handlers return fabricated identifiers/counts/timestamps;
@@ -659,57 +732,54 @@ add_security_txt(app)
 
 
 def _mount_dashboard_if_built(app: FastAPI, dist_dir: str | None = None) -> None:
-    """Serve the built dashboard when it is present in the image.
+    """Serve a statically exported Next build, when one is present.
 
-    CANONICAL PRODUCTION FRONTEND (P0-01 audit):
-    - dashboard/ (Vite + React) is the sole production frontend shipped by Dockerfile
-    - dashboard-next/ (Next.js) is roadmap/shadow-parity, CI-tested in polyglot.yml
-      but NOT served by this function nor built in production Dockerfile.
-    - See docs/CURRENT-ARCHITECTURE.md, docs/DASHBOARD.md, dashboard-next/README.md
+    CANONICAL PRODUCTION FRONTEND (PART 17A): dashboard-next/ (Next.js). The Vite
+    dashboard was retired in P17A-05 — it is no longer built, mounted or shipped —
+    so this helper no longer knows that path at all.
 
-    The React build is a separate stage in the Dockerfile. When it exists
-    (production image) its static assets are mounted and any non-API path falls
-    back to index.html so client-side routes (e.g. /agent) survive a refresh.
-    In dev/test the dist directory does not exist and the app stays API-only.
+    How it is actually served
+    ------------------------
+    Production does NOT go through this function. `dashboard-next` is built with
+    `output: 'standalone'` and runs as its own container (`Dockerfile` stage
+    `web`, port 3000); Caddy sends documents there and API paths to this app. The
+    API image deliberately contains no HTML any more.
 
-    Future promotion path for Next.js:
-    - When dashboard-next achieves full parity per its migration checklist,
-      Dockerfile will switch to build dashboard-next and this function will
-      be updated to mount .next/standalone or export output.
-    - Until then, this function explicitly logs which frontend is canonical.
+    This helper stays for the single-process layout: if someone exports the site
+    (`next build` with `output: 'export'` into `dashboard-next/out`) and drops it
+    next to the app, the API serves it without needing a Node runtime. Two shapes
+    are handled:
+
+    * `/_next/*` — content-addressed assets, mounted as static files;
+    * everything else that is not an API path — resolved to a file in the export,
+      with `.html` and `index.html` fallbacks so `/about` finds `about.html`.
+
+    A path that resolves to nothing returns JSON 404. Next's export is
+    multi-page (each route has its own file), so there is no shell to fall back
+    to; answering 200 with the home page for an unknown URL is exactly the
+    SEO/refresh bug the SPA fallback used to hide. In dev/test there is no export
+    and the app stays API-only.
     """
     if dist_dir is None:
         dist_dir = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "..", "dashboard", "dist")
+            os.path.join(os.path.dirname(__file__), "..", "dashboard-next", "out")
         )
     index_file = os.path.join(dist_dir, "index.html")
-
-    # Detect shadow frontend presence for observability (not serving it)
-    shadow_next_dir = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "..", "dashboard-next", ".next")
-    )
-    shadow_next_exists = os.path.isdir(shadow_next_dir)
 
     if not os.path.isfile(index_file):
         log.info(
             "dashboard.not_built",
-            canonical="dashboard (Vite)",
-            shadow_next_present=shadow_next_exists,
+            canonical="dashboard-next (Next.js)",
             dist_dir=dist_dir,
+            note="production serves the Next standalone server via Caddy; this mount is for a static export",
         )
         return
 
-    log.info(
-        "dashboard.mounted",
-        canonical="dashboard (Vite)",
-        dist_dir=dist_dir,
-        shadow_next_present=shadow_next_exists,
-        note="dashboard-next is roadmap/shadow, not production served",
-    )
+    log.info("dashboard.mounted", canonical="dashboard-next (Next.js)", dist_dir=dist_dir)
 
-    assets_dir = os.path.join(dist_dir, "assets")
-    if os.path.isdir(assets_dir):
-        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+    next_dir = os.path.join(dist_dir, "_next")
+    if os.path.isdir(next_dir):
+        app.mount("/_next", StaticFiles(directory=next_dir), name="next-static")
 
     # Register every method, not just GET. A GET-only `/{full_path}` makes
     # Starlette answer POST/PUT/PATCH/DELETE on unknown paths with 405
@@ -720,24 +790,26 @@ def _mount_dashboard_if_built(app: FastAPI, dist_dir: str | None = None) -> None
         methods=["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         include_in_schema=False,
     )
-    async def _spa_fallback(request: Request, full_path: str):
-        # Never let the SPA shell swallow unknown API/telephony/auth paths -- a
-        # typo'd client call must 404 (JSON), not receive an HTML 200.
+    async def _static_site_fallback(request: Request, full_path: str):
+        # Never let the site swallow unknown API/telephony/auth paths -- a typo'd
+        # client call must 404 (JSON), not receive an HTML 200.
         api_prefix = full_path.startswith(
             ("api/", "auth/", "telephony/", "channels/", "health")
         )
         if api_prefix or request.method not in {"GET", "HEAD"}:
             return JSONResponse(status_code=404, content={"detail": "Not found"})
-        # API/telephony/auth paths are handled by the routers above; anything
-        # else maps to a real file when one exists, otherwise the SPA shell.
-        candidate = os.path.normpath(os.path.join(dist_dir, full_path))
-        if (
-            full_path
-            and os.path.isfile(candidate)
-            and os.path.abspath(candidate).startswith(os.path.abspath(dist_dir))
+
+        root = os.path.abspath(dist_dir)
+        for candidate in (
+            os.path.join(dist_dir, full_path),
+            os.path.join(dist_dir, f"{full_path}.html"),
+            os.path.join(dist_dir, full_path, "index.html"),
         ):
-            return FileResponse(candidate)
-        return FileResponse(index_file)
+            resolved = os.path.abspath(candidate)
+            # Path traversal guard: a `..` in the URL must never escape the export.
+            if resolved.startswith(root + os.sep) and os.path.isfile(resolved):
+                return FileResponse(resolved)
+        return JSONResponse(status_code=404, content={"detail": "Not found"})
 
 
 _mount_dashboard_if_built(app)

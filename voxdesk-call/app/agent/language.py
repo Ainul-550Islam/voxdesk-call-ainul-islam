@@ -153,3 +153,205 @@ def execute_switch_language(
         "voice_id": voice_id,
     }
 
+
+
+# ============================================ P12-07: per-agent language allowlist ==========
+
+REPLY_POLICIES = ("follow_caller", "primary_only")
+
+
+@dataclass(frozen=True)
+class LanguagePolicy:
+    """Which languages this agent may speak, and what it does outside that set.
+
+    ``follow_caller`` replies in whatever allowed language the caller used; ``primary_only``
+    always answers in ``primary`` even if the caller swapped. A language that is *not* allowed
+    gets :attr:`fallback_phrase` and a flag, never a silent reply in the wrong language.
+    """
+
+    primary: str = DEFAULT_LANGUAGE
+    allowlist: tuple[str, ...] = (DEFAULT_LANGUAGE,)
+    reply_policy: str = "follow_caller"
+    fallback_phrase: str = "Sorry, I can only help in English."
+    detect_multilingual: bool = False
+
+    def validate(self) -> list[str]:
+        problems: list[str] = []
+        if self.reply_policy not in REPLY_POLICIES:
+            problems.append(f"languages.reply_policy must be one of {list(REPLY_POLICIES)}")
+        if not self.allowlist:
+            problems.append("languages.allowlist must contain at least one language")
+        if len(self.allowlist) > 13:
+            problems.append("languages.allowlist may contain at most 13 languages")
+        unknown = [code for code in self.allowlist if not _is_known_language(code)]
+        if unknown:
+            problems.append(f"languages.allowlist contains unsupported codes: {unknown}")
+        if not _is_known_language(self.primary):
+            problems.append(f"languages.primary {self.primary!r} is not a supported language")
+        if self.primary not in {code for code in self.allowlist} and _is_known_language(self.primary):
+            problems.append("languages.primary must also appear in the allowlist")
+        if not self.fallback_phrase or len(self.fallback_phrase) > 200:
+            problems.append("languages.fallback_phrase must be 1..200 characters")
+        if self.detect_multilingual and len(self.allowlist) < 2:
+            problems.append("languages.detect_multilingual needs at least two allowed languages")
+        return problems
+
+    def allows(self, code: str) -> bool:
+        raw = (code or "").strip()
+        if not raw:
+            return False
+        if raw.lower() in {"multi", "auto", "multilingual"}:
+            return self.detect_multilingual
+        if raw in self.allowlist:
+            return True
+        base = raw.split("-")[0].lower()
+        return any(code.split("-")[0].lower() == base for code in self.allowlist)
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "primary": self.primary,
+            "allowlist": list(self.allowlist),
+            "reply_policy": self.reply_policy,
+            "fallback_phrase": self.fallback_phrase,
+            "detect_multilingual": self.detect_multilingual,
+        }
+
+
+def _is_known_language(code: str | None) -> bool:
+    if not code:
+        return False
+    raw = code.strip()
+    if raw.lower() in MULTILINGUAL_CODES:
+        return True
+    if raw in LANGUAGES:
+        return True
+    base = raw.split("-")[0].lower()
+    return any(known.split("-")[0].lower() == base for known in LANGUAGES)
+
+
+def build_language_policy(
+    *,
+    languages: Any = None,
+    language: str | None = None,
+    reply_policy: str = "follow_caller",
+    fallback_phrase: str | None = None,
+) -> LanguagePolicy:
+    """Build a validated policy from agent config.
+
+    ``languages`` may be a list of BCP-47 codes, a comma-separated string, or ``None`` (which
+    means "the single configured language"). ``multi``/``auto`` in the list turns on detection.
+    """
+    raw_codes: list[str] = []
+    if isinstance(languages, str):
+        raw_codes = [part.strip() for part in languages.split(",") if part.strip()]
+    elif isinstance(languages, (list, tuple, set)):
+        raw_codes = [str(part).strip() for part in languages if str(part).strip()]
+        if not raw_codes:
+            # An explicitly empty allowlist is a misconfiguration, not "use the default": an
+            # agent that can speak no language would otherwise silently speak the default one.
+            raise ValueError("languages.allowlist must contain at least one language")
+
+    detect = any(code.lower() in MULTILINGUAL_CODES for code in raw_codes)
+    codes = [code for code in raw_codes if code.lower() not in MULTILINGUAL_CODES]
+
+    primary = (language or (codes[0] if codes else DEFAULT_LANGUAGE)).strip()
+    if not codes:
+        codes = [primary]
+    if primary not in codes:
+        codes = [primary, *codes]
+
+    if fallback_phrase is None:
+        label = get_profile(primary).name if _is_known_language(primary) else primary
+        fallback_phrase = f"Sorry, I can only help in {label}."
+
+    policy = LanguagePolicy(
+        primary=primary,
+        allowlist=tuple(dict.fromkeys(codes)),
+        reply_policy=reply_policy if reply_policy in REPLY_POLICIES else "follow_caller",
+        fallback_phrase=fallback_phrase,
+        detect_multilingual=detect,
+    )
+    problems = policy.validate()
+    if problems:
+        raise ValueError("; ".join(problems))
+    return policy
+
+
+@dataclass(frozen=True)
+class LanguageDecision:
+    """What to do with a detected language."""
+
+    allowed: bool
+    reply_language: str
+    spoken_language: str
+    instruction: str = ""
+    fallback_phrase: str = ""
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "allowed": self.allowed,
+            "reply_language": self.reply_language,
+            "spoken_language": self.spoken_language,
+            "instruction": self.instruction,
+            "fallback_phrase": self.fallback_phrase,
+        }
+
+
+def decide_language(detected: str | None, policy: LanguagePolicy) -> LanguageDecision:
+    """Map a detected language onto the policy without guessing outside the allowlist."""
+    candidate = (detected or "").strip()
+    if not candidate or candidate.lower() in MULTILINGUAL_CODES:
+        return LanguageDecision(
+            allowed=True,
+            reply_language=policy.primary,
+            spoken_language=policy.primary,
+            instruction="",
+        )
+    if not policy.allows(candidate):
+        return LanguageDecision(
+            allowed=False,
+            reply_language=policy.primary,
+            spoken_language=policy.primary,
+            instruction=(
+                "The caller is speaking a language this agent does not support. Say the fallback "
+                "phrase once, in the agent's primary language, and offer to continue there."
+            ),
+            fallback_phrase=policy.fallback_phrase,
+        )
+    if policy.reply_policy == "primary_only":
+        return LanguageDecision(
+            allowed=True,
+            reply_language=policy.primary,
+            spoken_language=policy.primary,
+            instruction=(
+                "The caller may speak another allowed language, but always reply in "
+                f"{policy.primary}."
+            ),
+        )
+    resolved = candidate if candidate in LANGUAGES else _canonical_code(candidate)
+    return LanguageDecision(allowed=True, reply_language=resolved, spoken_language=resolved)
+
+
+def _canonical_code(code: str) -> str:
+    base = code.split("-")[0].lower()
+    for known in LANGUAGES:
+        if known.split("-")[0].lower() == base:
+            return known
+    return code
+
+
+def detection_constraints(policy: LanguagePolicy) -> dict[str, Any]:
+    """STT/LLM constraints that keep detection inside the allowlist."""
+    return {
+        "allowed_languages": list(policy.allowlist),
+        "stt_language": "multi" if (policy.detect_multilingual and len(policy.allowlist) > 1) else policy.primary,
+        "stt_model": "nova-3" if (policy.detect_multilingual and len(policy.allowlist) > 1) else "nova-2",
+        "llm_instruction": (
+            "Only speak these languages: "
+            + ", ".join(policy.allowlist)
+            + ". If the caller uses another language, apologise once in "
+            + policy.primary
+            + " and offer to continue in it."
+        ),
+        "fallback_phrase": policy.fallback_phrase,
+    }

@@ -30,6 +30,7 @@ def _database(tmp_path: Path) -> str:
     bootstrap = (
         "import asyncio\n"
         "from sqlalchemy.ext.asyncio import create_async_engine\n"
+        "import app.db.component_models  # noqa: F401\n"
         "import app.db.compliance_v2_models  # noqa: F401\n"
         "from app.db.models import Base\n"
         "async def main():\n"

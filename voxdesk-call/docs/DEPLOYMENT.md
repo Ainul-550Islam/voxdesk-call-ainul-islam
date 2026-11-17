@@ -169,7 +169,7 @@ silently skips migrations: the entrypoint runs `migrate.py` and exits on
 failure, so the container never serves with a stale schema.
 
 Migration chain (`alembic/versions/`): a single linear head at
-`0069_voice_demo_sessions` with no gaps back to `0001_baseline`
+`0091_call_debug_pcap_metadata` with no gaps back to `0001_baseline`
 (enforced by `tests/test_deployment.py`). `0018` adds membership, invitation
 and quota tables and backfills one active membership per existing user without
 rewriting user or tenant ids. `0017` adds `organizations`,

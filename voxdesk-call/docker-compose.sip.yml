@@ -1,0 +1,132 @@
+# Disposable SIP gateway protocol stack. It validates the Go SIP/RTP/WebSocket
+# gateway against SIPp and a test-only authenticated media peer. It is not a
+# carrier stack, does not contain live credentials, and does not dial PSTN.
+#
+# Start the gateway/media services, and optionally the SIPp UAS:
+#   docker compose -f docker-compose.sip.yml up -d --build sip-gateway media-test
+#   docker compose -f docker-compose.sip.yml --profile e2e up -d --build
+#
+# The Python one-call RTP/WebSocket bridge is available separately under the
+# `python-bridge` profile. It is not started alongside the Go gateway by default.
+
+name: voxdesk-sip
+
+services:
+  media-test:
+    build:
+      context: services/sip-gateway/test-media
+      dockerfile: Dockerfile
+    environment:
+      SIP_GATEWAY_TOKEN: sip-e2e-token
+      MEDIA_TEST_WS_PORT: "8765"
+      MEDIA_TEST_HTTP_PORT: "8766"
+    ports:
+      - "8766:8766/tcp"
+    networks:
+      sip-test:
+        ipv4_address: 172.30.50.3
+    healthcheck:
+      test:
+        - CMD
+        - python3
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8766/healthz', timeout=2).read()"
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  sip-gateway:
+    build:
+      context: services/sip-gateway
+      dockerfile: Dockerfile
+    depends_on:
+      media-test:
+        condition: service_healthy
+    environment:
+      VOXDESK_SIP_GATEWAY_TOKEN: sip-e2e-token
+      VOXDESK_SIP_MEDIA_WS_URL: ws://media-test:8765/telephony/sip/ws
+      VOXDESK_SIP_HOST: 172.30.50.2
+      VOXDESK_SIP_API_ADDR: :8080
+      VOXDESK_SIP_PORT: "5060"
+      VOXDESK_SIP_ALLOWED_CIDRS: 172.30.50.0/24
+      VOXDESK_MEDIA_PORT_MIN: "30000"
+      VOXDESK_MEDIA_PORT_MAX: "30100"
+      VOXDESK_SIP_CODEC: PCMU
+    ports:
+      - "8080:8080/tcp"
+      - "5060:5060/udp"
+      - "30000-30100:30000-30100/udp"
+    networks:
+      sip-test:
+        ipv4_address: 172.30.50.2
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/sip-gateway", "healthcheck", "http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+
+  # Server-side SIPp scenario: the gateway originates one lab call to this UAS.
+  sipp:
+    image: ctaloi/sipp:latest
+    profiles: ["e2e"]
+    depends_on:
+      sip-gateway:
+        condition: service_healthy
+    entrypoint: ["sipp"]
+    command:
+      - -sf
+      - /sipp/outbound-answer.xml
+      - -i
+      - 172.30.50.4
+      - -p
+      - "5060"
+      - -mi
+      - 172.30.50.4
+      - -mp
+      - "40000"
+      - -m
+      - "1"
+      - -timeout
+      - 30s
+      - -trace_msg
+      - -trace_err
+    volumes:
+      - ./tests/telephony/sipp:/sipp:ro
+    networks:
+      sip-test:
+        ipv4_address: 172.30.50.4
+
+  # Optional one-call Python RTP/WebSocket process, useful for the alternate
+  # bridge implementation. It has no SIP signalling and is not used by the Go
+  # gateway path above.
+  bridge:
+    build:
+      context: services/sip-gateway
+      dockerfile: Dockerfile.bridge
+    profiles: ["python-bridge"]
+    depends_on:
+      media-test:
+        condition: service_healthy
+    environment:
+      BRIDGE_CALL_ID: bridge-e2e
+      BRIDGE_RTP_PORT: "41000"
+      BRIDGE_REMOTE_HOST: 172.30.50.4
+      BRIDGE_REMOTE_PORT: "40000"
+      BRIDGE_APP_WS: ws://media-test:8765/telephony/sip/ws
+      BRIDGE_TOKEN: sip-e2e-token
+      BRIDGE_FROM_NUMBER: +15559998888
+      BRIDGE_TO_NUMBER: +15550001111
+      BRIDGE_DIRECTION: inbound
+      BRIDGE_CODEC: PCMU
+    ports:
+      - "41000:41000/udp"
+    networks:
+      sip-test:
+        ipv4_address: 172.30.50.5
+
+networks:
+  sip-test:
+    ipam:
+      config:
+        - subnet: 172.30.50.0/24

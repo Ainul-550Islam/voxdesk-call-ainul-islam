@@ -9,7 +9,7 @@ provisioned yet); it reveals nothing beyond whether a token is valid.
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import TenantContext, record_audit, require_role
@@ -21,6 +21,8 @@ router = APIRouter(prefix="/api/billing/license", tags=["billing-license"])
 
 
 class IssueLicenseIn(BaseModel):
+    model_config = ConfigDict(json_schema_extra={"examples": [{"plan": "self_hosted_enterprise", "seats": 25, "expires_in_days": 365}]})
+
     plan: str = Field(min_length=1, max_length=32)
     seats: int = Field(ge=1, le=100000)
     expires_in_days: int = Field(ge=1, le=3650)
@@ -35,6 +37,8 @@ class LicenseOut(BaseModel):
 
 
 class VerifyLicenseIn(BaseModel):
+    model_config = ConfigDict(json_schema_extra={"examples": [{"license": "eyJhbGciOiJIUzI1NiJ9..."}]})
+
     license: str
 
 
@@ -44,6 +48,10 @@ async def issue(
     ctx: TenantContext = Depends(require_role(UserRole.OWNER)),
     session: AsyncSession = Depends(get_session),
 ):
+    """Mint a signed licence for a self-hosted installation.
+
+    Owner-only. The signature is HMAC over the licence claims, so the installation can verify itself offline.
+    """
     import time
 
     expires_at = int(time.time()) + payload.expires_in_days * 86400
@@ -72,6 +80,10 @@ async def issue(
 
 @router.post("/verify")
 async def verify(payload: VerifyLicenseIn):
+    """Verify a licence signature and its claims.
+
+    Unauthenticated because a self-hosted installation has no account with us; the signature is the credential.
+    """
     info = licensing.verify_license(payload.license)
     if info is None:
         return {"valid": False}

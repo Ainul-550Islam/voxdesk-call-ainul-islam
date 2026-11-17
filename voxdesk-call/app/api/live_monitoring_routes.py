@@ -1396,3 +1396,493 @@ async def clear_monitoring_idempotency_cache(
             "message": "Durable live-monitoring idempotency receipts are retained to prevent replayed side effects.",
         },
     )
+
+
+# ===========================================================================
+# PART 15 — live calls list, live scoring, auto-actions
+#
+# The supervisor endpoints above answer "may I listen to this call". The block
+# below answers "which calls need me right now, and what should happen to them
+# automatically". Keeping them in one router keeps `calls.monitor` as the single
+# permission a supervisor needs.
+# ===========================================================================
+
+import asyncio as _asyncio  # noqa: E402  (grouped with the PART 15 block)
+import json as _json  # noqa: E402
+
+from fastapi.responses import StreamingResponse  # noqa: E402
+
+from app.db.monitoring_models import AutoActionRule, AutoActionRun, CallLiveScore  # noqa: E402
+from app.db.session import get_sessionmaker  # noqa: E402
+from app.telephony import auto_actions as _auto  # noqa: E402
+from app.telephony import live_scoring as _scoring  # noqa: E402
+
+#: How often the SSE stream re-reads the active-call set.
+LIVE_STREAM_INTERVAL_SECONDS = 2.0
+#: A stream closes itself after this long, so an abandoned tab cannot hold a
+#: connection (and a database read every two seconds) forever.
+LIVE_STREAM_MAX_SECONDS = 300.0
+#: Active calls returned by the list endpoint.
+LIVE_LIST_LIMIT = 200
+
+
+def _mask_caller(number: str | None) -> str:
+    """Last four digits. The live list is a working screen, not a data export."""
+    digits = "".join(ch for ch in (number or "") if ch.isdigit())
+    if not digits:
+        return ""
+    if len(digits) <= 4:
+        return "*" * len(digits)
+    return f"{'*' * (len(digits) - 4)}{digits[-4:]}"
+
+
+def _call_age_seconds(call: Call, now: datetime) -> float:
+    if call.started_at is None:
+        return 0.0
+    started = call.started_at
+    if started.tzinfo is not None:
+        started = started.astimezone(timezone.utc).replace(tzinfo=None)
+    return max(0.0, (now - started).total_seconds())
+
+
+async def _live_call_rows(session: AsyncSession, tenant_id: uuid.UUID) -> List[Dict[str, Any]]:
+    """Active calls with the last few transcript lines and the latest score."""
+    calls = list(
+        (
+            await session.scalars(
+                select(Call)
+                .where(Call.tenant_id == tenant_id, Call.status == CallStatus.IN_PROGRESS)
+                .order_by(Call.started_at.desc())
+                .limit(LIVE_LIST_LIMIT)
+            )
+        ).all()
+    )
+    if not calls:
+        return []
+
+    call_ids = [call.id for call in calls]
+    score_rows = (
+        await session.scalars(
+            select(CallLiveScore)
+            .where(
+                CallLiveScore.tenant_id == tenant_id,
+                CallLiveScore.call_id.in_(call_ids),
+            )
+            .order_by(CallLiveScore.created_at.desc())
+        )
+    ).all()
+    latest: Dict[uuid.UUID, CallLiveScore] = {}
+    for row in score_rows:
+        latest.setdefault(row.call_id, row)
+
+    bus = get_monitor_bus()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    out: List[Dict[str, Any]] = []
+    for call in calls:
+        score = latest.get(call.id)
+        out.append(
+            {
+                "call_id": str(call.id),
+                "direction": (
+                    call.direction.value if hasattr(call.direction, "value") else str(call.direction or "")
+                ),
+                "caller": _mask_caller(call.from_number),
+                "number": _mask_caller(call.to_number),
+                "agent_id": str(call.agent_id) if call.agent_id else None,
+                "started_at": call.started_at.isoformat() if call.started_at else None,
+                "duration_seconds": round(_call_age_seconds(call, now), 1),
+                "status": (
+                    call.status.value if hasattr(call.status, "value") else str(call.status)
+                ),
+                "score": score.score if score else None,
+                "band": score.band if score else None,
+                "score_components": dict(score.components or {}) if score else {},
+                "score_reasons": list((score.components or {}).get("reasons", [])) if score else [],
+                "transcript_tail": bus.transcript_tail(call.id),
+            }
+        )
+    return out
+
+
+@router.get("/live")
+async def list_live_calls(
+    ctx: TenantContext = Depends(require_calls_monitor(write=False)),
+    session: AsyncSession = Depends(get_session),
+) -> Dict[str, Any]:
+    """Every active call in the tenant, newest first (P15-01)."""
+    calls = await _live_call_rows(session, ctx.tenant_id)
+    return {
+        "calls": calls,
+        "total": len(calls),
+        "at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@router.get("/live/stream")
+async def stream_live_calls(
+    ctx: TenantContext = Depends(require_calls_monitor(write=False)),
+) -> StreamingResponse:
+    """Server-sent events: one snapshot of the active-call set every two seconds.
+
+    The session is created inside the generator: a request-scoped session is
+    closed when the response starts streaming, which would surface as a
+    ``ResourceClosedError`` two seconds later on the first refresh.
+
+    ``EventSource`` cannot send an Authorization header, so the browser client
+    passes the access token as a query parameter on a first call that exchanges
+    it for a short-lived stream; here we accept the standard header, and the
+    dashboard's server-side proxy is what carries it.
+    """
+    tenant_id = ctx.tenant_id
+    sessionmaker = get_sessionmaker()
+
+    async def event_source():
+        started = datetime.now(timezone.utc)
+        while True:
+            elapsed = (datetime.now(timezone.utc) - started).total_seconds()
+            if elapsed > LIVE_STREAM_MAX_SECONDS:
+                yield "event: end\ndata: {\"reason\": \"max_duration\"}\n\n"
+                return
+            try:
+                async with sessionmaker() as session:
+                    calls = await _live_call_rows(session, tenant_id)
+                payload = {
+                    "calls": calls,
+                    "total": len(calls),
+                    "at": datetime.now(timezone.utc).isoformat(),
+                }
+                yield f"data: {_json.dumps(payload, separators=(',', ':'))}\n\n"
+            except _asyncio.CancelledError:  # client went away
+                raise
+            except Exception as exc:  # keep the stream alive, report the error
+                log.warning(
+                    "live_monitoring.stream_tick_failed",
+                    error_type=type(exc).__name__,
+                )
+                yield "event: error\ndata: {\"code\": \"tick_failed\"}\n\n"
+            await _asyncio.sleep(LIVE_STREAM_INTERVAL_SECONDS)
+
+    return StreamingResponse(
+        event_source(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
+    )
+
+
+class LiveScoreTurn(BaseModel):
+    speaker: str = Field(pattern="^(caller|agent)$")
+    sentiment: float = Field(default=0.0, ge=-1.0, le=1.0)
+    latency_ms: float = Field(default=0.0, ge=0.0, le=120_000.0)
+    text: str = Field(default="", max_length=4000)
+
+
+class LiveScoreIn(BaseModel):
+    turns: List[LiveScoreTurn] = Field(min_length=1, max_length=24)
+    weights: Dict[str, float] | None = None
+    agent_id: Optional[str] = Field(default=None, max_length=120)
+
+
+@router.post("/{call_id}/live-score")
+async def record_live_score(
+    call_id: uuid.UUID,
+    payload: LiveScoreIn,
+    ctx: TenantContext = Depends(require_calls_monitor(write=False)),
+    session: AsyncSession = Depends(get_session),
+) -> Dict[str, Any]:
+    """Score a batch of turns for a call, store the explanation, fan it out.
+
+    Scoring is computed by :mod:`app.telephony.live_scoring`; this route only
+    decides where the result is kept. Nothing is stored until there are enough
+    turns for a score to mean something.
+    """
+    call = await session.get(Call, call_id)
+    if call is None or call.tenant_id != ctx.tenant_id:
+        raise HTTPException(status_code=404, detail={"code": "not_found", "message": "call not found"})
+
+    scorer = _scoring.LiveScorer(weights=payload.weights)
+    score = None
+    for turn in payload.turns:
+        score = scorer.observe(
+            str(call_id),
+            _scoring.Turn(
+                speaker=turn.speaker,
+                sentiment=turn.sentiment,
+                latency_ms=turn.latency_ms,
+                text=turn.text,
+            ),
+        )
+    if score is None:
+        return {
+            "call_id": str(call_id),
+            "scored": False,
+            "reason": "insufficient_samples",
+            "min_samples": _scoring.MIN_SAMPLES,
+        }
+
+    row = CallLiveScore(
+        tenant_id=ctx.tenant_id,
+        call_id=call_id,
+        agent_id=payload.agent_id or (str(call.agent_id) if call.agent_id else None),
+        score=score.score,
+        components={**score.components, "reasons": list(score.reasons)},
+        weights=score.weights,
+        band=score.band,
+        sample_count=score.sample_count,
+    )
+    session.add(row)
+    await session.commit()
+    published = await _scoring.publish_score(str(call_id), score)
+    return {
+        "call_id": str(call_id),
+        "scored": True,
+        "score": score.score,
+        "band": score.band,
+        "components": score.components,
+        "reasons": list(score.reasons),
+        "published_to": published,
+        "sample_count": score.sample_count,
+    }
+
+
+class AutoActionRuleIn(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    trigger: str = Field(pattern="^(score_below|sentiment_below|keyword|loop_detected|latency_above)$")
+    action: str = Field(pattern="^(transfer|webhook|alert|end_call)$")
+    threshold: Optional[float] = None
+    keywords: List[str] = Field(default_factory=list, max_length=20)
+    action_config: Dict[str, Any] = Field(default_factory=dict)
+    scope_agent_id: Optional[str] = Field(default=None, max_length=120)
+    max_per_call: int = Field(default=1, ge=1, le=5)
+    enabled: bool = True
+
+
+class AutoActionRulePatch(BaseModel):
+    threshold: Optional[float] = None
+    keywords: Optional[List[str]] = None
+    action_config: Optional[Dict[str, Any]] = None
+    max_per_call: Optional[int] = Field(default=None, ge=1, le=5)
+    enabled: Optional[bool] = None
+
+
+class AutoActionSignalIn(BaseModel):
+    score: Optional[int] = Field(default=None, ge=0, le=100)
+    sentiment: Optional[float] = Field(default=None, ge=-1.0, le=1.0)
+    latency_ms: Optional[float] = Field(default=None, ge=0.0, le=120_000.0)
+    text: str = Field(default="", max_length=8000)
+    loop_detected: bool = False
+
+
+def _auto_rule_dict(rule: AutoActionRule) -> Dict[str, Any]:
+    return {
+        "id": str(rule.id),
+        "name": rule.name,
+        "trigger": rule.trigger,
+        "action": rule.action,
+        "threshold": rule.threshold,
+        "keywords": list(rule.keywords or []),
+        "action_config": dict(rule.action_config or {}),
+        "scope_agent_id": rule.scope_agent_id,
+        "max_per_call": rule.max_per_call,
+        "enabled": bool(rule.enabled),
+        "created_at": rule.created_at.isoformat() if rule.created_at else None,
+        "updated_at": rule.updated_at.isoformat() if rule.updated_at else None,
+    }
+
+
+@router.get("/auto-actions")
+async def list_auto_actions(
+    ctx: TenantContext = Depends(require_calls_monitor(write=False)),
+    session: AsyncSession = Depends(get_session),
+) -> Dict[str, Any]:
+    rows = (
+        await session.scalars(
+            select(AutoActionRule)
+            .where(AutoActionRule.tenant_id == ctx.tenant_id)
+            .order_by(AutoActionRule.name)
+        )
+    ).all()
+    return {
+        "rules": [_auto_rule_dict(row) for row in rows],
+        "triggers": list(_auto.TRIGGERS),
+        "actions": list(_auto.ACTIONS),
+    }
+
+
+@router.post("/auto-actions", status_code=201)
+async def create_auto_action(
+    payload: AutoActionRuleIn,
+    ctx: TenantContext = Depends(require_calls_monitor(write=True)),
+    session: AsyncSession = Depends(get_session),
+) -> Dict[str, Any]:
+    if payload.trigger in ("score_below", "sentiment_below", "latency_above") and payload.threshold is None:
+        raise HTTPException(
+            status_code=422,
+            detail={"code": "threshold_required", "message": f"{payload.trigger} needs a threshold"},
+        )
+    if payload.trigger == "keyword" and not payload.keywords:
+        raise HTTPException(
+            status_code=422,
+            detail={"code": "keywords_required", "message": "keyword trigger needs at least one keyword"},
+        )
+    existing = await session.scalar(
+        select(AutoActionRule).where(
+            AutoActionRule.tenant_id == ctx.tenant_id, AutoActionRule.name == payload.name
+        )
+    )
+    if existing is not None:
+        raise HTTPException(
+            status_code=409,
+            detail={"code": "name_taken", "message": f"a rule named {payload.name!r} exists"},
+        )
+    rule = AutoActionRule(
+        tenant_id=ctx.tenant_id,
+        name=payload.name.strip(),
+        trigger=payload.trigger,
+        threshold=payload.threshold,
+        keywords=[word.strip() for word in payload.keywords if word.strip()],
+        action=payload.action,
+        action_config=dict(payload.action_config),
+        scope_agent_id=payload.scope_agent_id or None,
+        enabled=payload.enabled,
+        max_per_call=payload.max_per_call,
+        created_by=str(ctx.user_id) if ctx.user_id else None,
+    )
+    session.add(rule)
+    await session.commit()
+    await session.refresh(rule)
+    return _auto_rule_dict(rule)
+
+
+@router.patch("/auto-actions/{rule_id}")
+async def patch_auto_action(
+    rule_id: uuid.UUID,
+    payload: AutoActionRulePatch,
+    ctx: TenantContext = Depends(require_calls_monitor(write=True)),
+    session: AsyncSession = Depends(get_session),
+) -> Dict[str, Any]:
+    rule = await session.get(AutoActionRule, rule_id)
+    if rule is None or rule.tenant_id != ctx.tenant_id:
+        raise HTTPException(status_code=404, detail={"code": "not_found"})
+    for field, value in payload.model_dump(exclude_unset=True).items():
+        if value is None:
+            continue
+        setattr(rule, field, value)
+    await session.commit()
+    await session.refresh(rule)
+    return _auto_rule_dict(rule)
+
+
+@router.delete("/auto-actions/{rule_id}", status_code=204)
+async def delete_auto_action(
+    rule_id: uuid.UUID,
+    ctx: TenantContext = Depends(require_calls_monitor(write=True)),
+    session: AsyncSession = Depends(get_session),
+):
+    rule = await session.get(AutoActionRule, rule_id)
+    if rule is None or rule.tenant_id != ctx.tenant_id:
+        raise HTTPException(status_code=404, detail={"code": "not_found"})
+    await session.delete(rule)
+    await session.commit()
+    return None
+
+
+@router.get("/{call_id}/auto-actions")
+async def get_call_auto_actions(
+    call_id: uuid.UUID,
+    ctx: TenantContext = Depends(require_calls_monitor(write=False)),
+    session: AsyncSession = Depends(get_session),
+) -> Dict[str, Any]:
+    """Every auto-action attempt recorded for one call, including skips."""
+    call = await session.get(Call, call_id)
+    if call is None or call.tenant_id != ctx.tenant_id:
+        raise HTTPException(status_code=404, detail={"code": "not_found"})
+    rows = (
+        await session.scalars(
+            select(AutoActionRun)
+            .where(
+                AutoActionRun.tenant_id == ctx.tenant_id,
+                AutoActionRun.call_id == call_id,
+            )
+            .order_by(AutoActionRun.created_at)
+        )
+    ).all()
+    return {
+        "call_id": str(call_id),
+        "runs": [
+            {
+                "id": str(row.id),
+                "rule_id": str(row.rule_id) if row.rule_id else None,
+                "action": row.action,
+                "status": row.status,
+                "sequence": row.sequence,
+                "detail": dict(row.detail or {}),
+                "last_error": row.last_error,
+                "created_at": row.created_at.isoformat() if row.created_at else None,
+            }
+            for row in rows
+        ],
+    }
+
+
+@router.post("/{call_id}/auto-actions/evaluate")
+async def evaluate_auto_actions(
+    call_id: uuid.UUID,
+    payload: AutoActionSignalIn,
+    ctx: TenantContext = Depends(require_calls_monitor(write=True)),
+    session: AsyncSession = Depends(get_session),
+) -> Dict[str, Any]:
+    """Evaluate the tenant's rules against a supplied signal for one call.
+
+    No action handlers are registered on this path: the route reports what the
+    engine *decided*, and a decision that needs a transfer is left ``skipped``
+    with ``no_handler_registered`` rather than pretending to transfer. The voice
+    pipeline registers the real handlers.
+    """
+    call = await session.get(Call, call_id)
+    if call is None or call.tenant_id != ctx.tenant_id:
+        raise HTTPException(status_code=404, detail={"code": "not_found"})
+
+    signal = _auto.Signal(
+        score=payload.score,
+        sentiment=payload.sentiment,
+        latency_ms=payload.latency_ms,
+        text=payload.text,
+        loop_detected=payload.loop_detected,
+        agent_id=str(call.agent_id) if call.agent_id else None,
+    )
+    rules = await _auto.load_rules(
+        session,
+        ctx.tenant_id,
+        agent_id=str(call.agent_id) if call.agent_id else None,
+    )
+    decisions = await _auto.run_auto_actions(
+        session,
+        tenant_id=ctx.tenant_id,
+        call_id=call_id,
+        rules=rules,
+        signal=signal,
+        handlers={},
+        context={"agent_id": str(call.agent_id) if call.agent_id else None},
+    )
+    await session.commit()
+    return {
+        "call_id": str(call_id),
+        "matched": len(decisions),
+        "summary": _auto.summarise(decisions),
+        "decisions": [
+            {
+                "rule_id": str(decision.rule_id) if decision.rule_id else None,
+                "rule_name": decision.rule_name,
+                "action": decision.action,
+                "sequence": decision.sequence,
+                "status": decision.status,
+                "reason": decision.reason,
+                "detail": dict(decision.detail),
+            }
+            for decision in decisions
+        ],
+    }

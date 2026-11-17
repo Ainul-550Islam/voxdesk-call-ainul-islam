@@ -109,6 +109,9 @@ ALLOWED_TOOLS: frozenset[str] = frozenset(
         "search_knowledge_base",
         "capture_callback",
         "verify_caller",
+        "mark_do_not_call",
+        "request_agent_transfer",
+        "save_contact_memory",
     }
 )
 
@@ -343,6 +346,312 @@ class TurnTakingConfig:
         return problems
 
 
+@dataclass(frozen=True)
+class CallToolingConfig:
+    """Voicemail, keypad and call-screening defaults (PART 12, P12-12..P12-15).
+
+    These sit next to :class:`VoiceBehaviorConfig` because they are all "what the agent does on the
+    line" settings, but they are a separate object: they are consumed by telephony tooling rather
+    than by the audio pipeline, and mixing them would make one dataclass that three subsystems
+    each partially own.
+    """
+
+    # P12-13 — voicemail
+    voicemail_detection_enabled: bool = False
+    voicemail_action: str = "hangup"
+    voicemail_message: str = ""
+    voicemail_window_s: float = 12.0
+    # P12-14 — caller keypad collection
+    user_dtmf_enabled: bool = False
+    user_dtmf_prompt: str = ""
+    user_dtmf_mode: str = "end_key"
+    user_dtmf_end_key: str = "#"
+    user_dtmf_fixed_digits: int = 4
+    user_dtmf_timeout_s: float = 5.0
+    user_dtmf_keep_last: int = 2
+    # P12-12 — call screening
+    call_screening_enabled: bool = False
+    call_screening_message: str = ""
+    call_screening_wait_s: float = 20.0
+    # P12-14 — IVR navigation
+    ivr_navigation_enabled: bool = False
+    ivr_goal: str = ""
+    auto_hangup_on_ivr: bool = False
+    ivr_max_menus: int = 3
+    # P12-11 — structured output
+    structured_output_schema: dict[str, Any] | None = None
+    structured_output_strict: bool = True
+
+    def validate(self) -> list[str]:
+        from app.agent.tools.user_dtmf import DTMF_MODES
+        from app.agent.tools.voicemail import VOICEMAIL_ACTIONS
+
+        problems: list[str] = []
+        if self.voicemail_action not in VOICEMAIL_ACTIONS + ("leave_message",):
+            problems.append(
+                f"call_tooling.voicemail_action must be one of {list(VOICEMAIL_ACTIONS)}"
+            )
+        if not (1.0 <= self.voicemail_window_s <= 60.0):
+            problems.append("call_tooling.voicemail_window_s must be between 1 and 60")
+        if self.user_dtmf_mode not in DTMF_MODES:
+            problems.append(f"call_tooling.user_dtmf_mode must be one of {list(DTMF_MODES)}")
+        if not (1 <= self.user_dtmf_fixed_digits <= 32):
+            problems.append("call_tooling.user_dtmf_fixed_digits must be between 1 and 32")
+        if not (0.1 <= self.user_dtmf_timeout_s <= 120.0):
+            problems.append("call_tooling.user_dtmf_timeout_s must be between 0.1 and 120")
+        if not (0 <= self.user_dtmf_keep_last <= 32):
+            problems.append("call_tooling.user_dtmf_keep_last must be between 0 and 32")
+        if self.user_dtmf_mode == "end_key" and self.user_dtmf_end_key not in {"*", "#", "A", "B", "C", "D"}:
+            problems.append("call_tooling.user_dtmf_end_key must be one of *, #, A, B, C, or D")
+        if len(self.user_dtmf_prompt) > 200:
+            problems.append("call_tooling.user_dtmf_prompt may contain at most 200 characters")
+        if not (1.0 <= self.call_screening_wait_s <= 60.0):
+            problems.append("call_tooling.call_screening_wait_s must be between 1 and 60")
+        if len(self.call_screening_message) > 200:
+            problems.append("call_tooling.call_screening_message may contain at most 200 characters")
+        if len(self.ivr_goal) > 120:
+            problems.append("call_tooling.ivr_goal may contain at most 120 characters")
+        if not (1 <= self.ivr_max_menus <= 20):
+            problems.append("call_tooling.ivr_max_menus must be between 1 and 20")
+        if self.structured_output_schema is not None:
+            if not isinstance(self.structured_output_schema, dict):
+                problems.append("call_tooling.structured_output_schema must be an object")
+            elif not self.structured_output_schema.get("type"):
+                problems.append("call_tooling.structured_output_schema needs a top-level 'type'")
+        return problems
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "voicemail_detection_enabled": self.voicemail_detection_enabled,
+            "voicemail_action": self.voicemail_action,
+            "voicemail_message": self.voicemail_message,
+            "voicemail_window_s": self.voicemail_window_s,
+            "user_dtmf_enabled": self.user_dtmf_enabled,
+            "user_dtmf_prompt": self.user_dtmf_prompt,
+            "user_dtmf_mode": self.user_dtmf_mode,
+            "user_dtmf_end_key": self.user_dtmf_end_key,
+            "user_dtmf_fixed_digits": self.user_dtmf_fixed_digits,
+            "user_dtmf_timeout_s": self.user_dtmf_timeout_s,
+            "user_dtmf_keep_last": self.user_dtmf_keep_last,
+            "call_screening_enabled": self.call_screening_enabled,
+            "call_screening_message": self.call_screening_message,
+            "call_screening_wait_s": self.call_screening_wait_s,
+            "ivr_navigation_enabled": self.ivr_navigation_enabled,
+            "ivr_goal": self.ivr_goal,
+            "auto_hangup_on_ivr": self.auto_hangup_on_ivr,
+            "ivr_max_menus": self.ivr_max_menus,
+            "structured_output_schema": self.structured_output_schema,
+            "structured_output_strict": self.structured_output_strict,
+        }
+
+
+def _parse_call_tooling(data: dict[str, Any] | None) -> "CallToolingConfig":
+    """Tolerant loader for the call-tooling block (same policy as `_parse_voice_behavior`)."""
+    block = data if isinstance(data, dict) else {}
+
+    def _float(key: str, default: float) -> float:
+        try:
+            return float(block.get(key, default))
+        except (TypeError, ValueError):
+            return default
+
+    def _int(key: str, default: int) -> int:
+        try:
+            return int(block.get(key, default))
+        except (TypeError, ValueError):
+            return default
+
+    def _bool(key: str, default: bool) -> bool:
+        value = block.get(key, default)
+        if value is None:
+            return default
+        if isinstance(value, str):
+            return value.strip().lower() not in {"", "0", "false", "no", "off"}
+        return bool(value)
+
+    schema = block.get("structured_output_schema")
+    return CallToolingConfig(
+        voicemail_detection_enabled=_bool("voicemail_detection_enabled", False),
+        voicemail_action=str(block.get("voicemail_action") or "hangup"),
+        voicemail_message=str(block.get("voicemail_message") or ""),
+        voicemail_window_s=_float("voicemail_window_s", 12.0),
+        user_dtmf_enabled=_bool("user_dtmf_enabled", False),
+        user_dtmf_prompt=str(block.get("user_dtmf_prompt") or ""),
+        user_dtmf_mode=str(block.get("user_dtmf_mode") or "end_key"),
+        user_dtmf_end_key=str(block.get("user_dtmf_end_key") or "#"),
+        user_dtmf_fixed_digits=_int("user_dtmf_fixed_digits", 4),
+        user_dtmf_timeout_s=_float("user_dtmf_timeout_s", 5.0),
+        user_dtmf_keep_last=_int("user_dtmf_keep_last", 2),
+        call_screening_enabled=_bool("call_screening_enabled", False),
+        call_screening_message=str(block.get("call_screening_message") or ""),
+        call_screening_wait_s=_float("call_screening_wait_s", 20.0),
+        ivr_navigation_enabled=_bool("ivr_navigation_enabled", False),
+        ivr_goal=str(block.get("ivr_goal") or ""),
+        auto_hangup_on_ivr=_bool("auto_hangup_on_ivr", False),
+        ivr_max_menus=_int("ivr_max_menus", 3),
+        structured_output_schema=schema if isinstance(schema, dict) else None,
+        structured_output_strict=_bool("structured_output_strict", True),
+    )
+
+
+def _parse_voice_behavior(data: dict[str, Any] | None) -> "VoiceBehaviorConfig":
+    """Rebuild :class:`VoiceBehaviorConfig` from stored JSON, tolerating absent keys.
+
+    Unknown values fall back to the field default rather than raising: a snapshot written by a
+    newer build must still load, and validation reports anything genuinely wrong at publish time.
+    """
+    block = data if isinstance(data, dict) else {}
+
+    def _bool(key: str, default: bool) -> bool:
+        value = block.get(key, default)
+        if value is None:
+            return default
+        if isinstance(value, str):
+            return value.strip().lower() not in {"", "0", "false", "no", "off"}
+        return bool(value)
+
+    def _int(key: str, default: int) -> int:
+        try:
+            return int(block.get(key, default))
+        except (TypeError, ValueError):
+            return default
+
+    def _float(key: str, default: float) -> float:
+        try:
+            return float(block.get(key, default))
+        except (TypeError, ValueError):
+            return default
+
+    def _tuple(key: str, default: tuple[str, ...]) -> tuple[str, ...]:
+        value = block.get(key, default)
+        if isinstance(value, str):
+            return tuple(part.strip() for part in value.split(",") if part.strip())
+        if isinstance(value, (list, tuple)):
+            return tuple(str(part) for part in value)
+        return default
+
+    return VoiceBehaviorConfig(
+        colloquial=_bool("colloquial", False),
+        colloquial_budget_ms=_int("colloquial_budget_ms", 50),
+        expressive=_bool("expressive", False),
+        expressive_emotions=_tuple("expressive_emotions", ("neutral", "warm", "calm")),
+        expressive_auto=_bool("expressive_auto", False),
+        dynamic_pace=_bool("dynamic_pace", True),
+        pace_min_speed=_float("pace_min_speed", 0.8),
+        pace_max_speed=_float("pace_max_speed", 1.2),
+        begin_message_delay_ms=_int("begin_message_delay_ms", 0),
+        stt_endpointing_mode=str(block.get("stt_endpointing_mode") or "default"),
+        denoise_mode=str(block.get("denoise_mode") or "off"),
+        normalize_for_speech=_bool("normalize_for_speech", True),
+        read_numbers_slowly=_bool("read_numbers_slowly", False),
+        format_transcript=_bool("format_transcript", True),
+        languages=_tuple("languages", ()),
+        language_reply_policy=str(block.get("language_reply_policy") or "follow_caller"),
+        language_fallback_phrase=str(block.get("language_fallback_phrase") or ""),
+    )
+
+
+@dataclass(frozen=True)
+class VoiceBehaviorConfig:
+    """Voice-behaviour parity settings (PART 12, P12-01..P12-07).
+
+    Stored inside the agent's JSON config, not in new columns: ``agents.current_draft_config``
+    is already the single source of truth for agent behaviour, and a parallel column set would
+    be a second one. Validation lives here so a bad value fails the publish, not the call.
+    """
+
+    # P12-01
+    colloquial: bool = False
+    colloquial_budget_ms: int = 50
+    # P12-02
+    expressive: bool = False
+    expressive_emotions: tuple[str, ...] = ("neutral", "warm", "calm")
+    expressive_auto: bool = False
+    # P12-03
+    dynamic_pace: bool = True
+    pace_min_speed: float = 0.8
+    pace_max_speed: float = 1.2
+    # P12-04
+    begin_message_delay_ms: int = 0
+    stt_endpointing_mode: str = "default"
+    # P12-05
+    denoise_mode: str = "off"
+    # P12-06
+    normalize_for_speech: bool = True
+    read_numbers_slowly: bool = False
+    format_transcript: bool = True
+    # P12-07
+    languages: tuple[str, ...] = ()
+    language_reply_policy: str = "follow_caller"
+    language_fallback_phrase: str = ""
+
+    def validate(self) -> list[str]:
+        problems: list[str] = []
+        if not (5 <= self.colloquial_budget_ms <= 500):
+            problems.append("voice_behavior.colloquial_budget_ms must be between 5 and 500")
+        if not (0.5 <= self.pace_min_speed < self.pace_max_speed <= 2.0):
+            problems.append(
+                "voice_behavior.pace speeds must satisfy 0.5 <= min < max <= 2.0"
+            )
+        if not (0 <= self.begin_message_delay_ms <= 3000):
+            problems.append("voice_behavior.begin_message_delay_ms must be between 0 and 3000")
+        if self.stt_endpointing_mode not in {"default", "accuracy", "latency"}:
+            problems.append(
+                "voice_behavior.stt_endpointing_mode must be default, accuracy, or latency"
+            )
+        if self.denoise_mode not in {"off", "noise", "noise_and_speech"}:
+            problems.append("voice_behavior.denoise_mode must be off, noise, or noise_and_speech")
+        if len(self.expressive_emotions) > 8:
+            problems.append("voice_behavior.expressive_emotions may contain at most 8 entries")
+        if len(self.languages) > 13:
+            problems.append("voice_behavior.languages may contain at most 13 entries")
+        if self.language_reply_policy not in {"follow_caller", "primary_only"}:
+            problems.append(
+                "voice_behavior.language_reply_policy must be follow_caller or primary_only"
+            )
+        if len(self.language_fallback_phrase) > 200:
+            problems.append("voice_behavior.language_fallback_phrase may contain at most 200 characters")
+        if self.languages:
+            from app.core.i18n import LANGUAGES
+
+            known_bases = {code.split("-")[0].lower() for code in LANGUAGES}
+            unknown = [
+                code for code in self.languages
+                if code.strip().lower() not in {"multi", "auto", "multilingual"}
+                and code.strip() not in LANGUAGES
+                and code.strip().split("-")[0].lower() not in known_bases
+            ]
+            if unknown:
+                problems.append(f"voice_behavior.languages contains unsupported codes: {unknown}")
+        if self.read_numbers_slowly and not self.normalize_for_speech:
+            # Spelling digits out and then not normalising leaves "one, two" spoken verbatim, which
+            # is fine; spelling digits and not normalising is the risky direction only for money
+            # and clocks, so warn there rather than refuse the combination.
+            pass
+        return problems
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "colloquial": self.colloquial,
+            "colloquial_budget_ms": self.colloquial_budget_ms,
+            "expressive": self.expressive,
+            "expressive_emotions": list(self.expressive_emotions),
+            "expressive_auto": self.expressive_auto,
+            "dynamic_pace": self.dynamic_pace,
+            "pace_min_speed": self.pace_min_speed,
+            "pace_max_speed": self.pace_max_speed,
+            "begin_message_delay_ms": self.begin_message_delay_ms,
+            "stt_endpointing_mode": self.stt_endpointing_mode,
+            "denoise_mode": self.denoise_mode,
+            "normalize_for_speech": self.normalize_for_speech,
+            "read_numbers_slowly": self.read_numbers_slowly,
+            "format_transcript": self.format_transcript,
+            "languages": list(self.languages),
+            "language_reply_policy": self.language_reply_policy,
+            "language_fallback_phrase": self.language_fallback_phrase,
+        }
+
+
 # ---------------------------------------------------------------------------
 # Aggregate root & immutable version record
 # ---------------------------------------------------------------------------
@@ -403,6 +712,8 @@ class AgentConfig:
     handoff: HandoffConfig = field(default_factory=HandoffConfig)
     safety: SafetyPolicy = field(default_factory=SafetyPolicy)
     turn_taking: TurnTakingConfig = field(default_factory=TurnTakingConfig)
+    voice_behavior: VoiceBehaviorConfig = field(default_factory=VoiceBehaviorConfig)
+    call_tooling: CallToolingConfig = field(default_factory=CallToolingConfig)
     enabled_tools: tuple[str, ...] = ("book_appointment", "transfer_to_human")
     knowledge_source_ids: tuple[str, ...] = ()
     metadata: dict[str, Any] = field(default_factory=dict)
@@ -436,6 +747,8 @@ class AgentConfig:
         problems.extend(self.handoff.validate())
         problems.extend(self.safety.validate())
         problems.extend(self.turn_taking.validate())
+        problems.extend(self.voice_behavior.validate())
+        problems.extend(self.call_tooling.validate())
         unknown_tools = [t for t in self.enabled_tools if t not in ALLOWED_TOOLS]
         if unknown_tools:
             problems.append(f"enabled_tools contains unsupported tools: {sorted(unknown_tools)}")
@@ -507,6 +820,8 @@ class AgentConfig:
             },
             "enabled_tools": sorted(self.enabled_tools),
             "knowledge_source_ids": sorted(self.knowledge_source_ids),
+            "voice_behavior": self.voice_behavior.as_dict(),
+            "call_tooling": self.call_tooling.as_dict(),
         }
         if self.mode != "single_prompt" or self.flow is not None:
             payload["mode"] = self.mode
@@ -584,6 +899,8 @@ class AgentConfig:
                     [str(w), float(b)] for w, b in self.turn_taking.boosted_keywords
                 ],
             },
+            "voice_behavior": self.voice_behavior.as_dict(),
+            "call_tooling": self.call_tooling.as_dict(),
             "enabled_tools": list(self.enabled_tools),
             "knowledge_source_ids": list(self.knowledge_source_ids),
             "metadata": builder_extra,
@@ -846,6 +1163,8 @@ class AgentConfig:
             operating_hours=hours_cfg,
             handoff=handoff_cfg,
             safety=safety_cfg,
+            voice_behavior=_parse_voice_behavior(block("voice_behavior")),
+            call_tooling=_parse_call_tooling(block("call_tooling")),
             turn_taking=turn_cfg,
             enabled_tools=enabled_tools,
             knowledge_source_ids=knowledge_source_ids,

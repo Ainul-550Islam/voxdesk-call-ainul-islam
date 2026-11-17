@@ -214,7 +214,12 @@ class TelephonyAdapter(ABC):
 
     @abstractmethod
     async def create_outbound(
-        self, *, to_number: str, from_number: str, answer_url: str = ""
+        self,
+        *,
+        to_number: str,
+        from_number: str,
+        answer_url: str = "",
+        status_callback_url: str = "",
     ) -> CallResult:
         """Place an outbound call. Must not return an id the provider did not issue."""
 
@@ -438,21 +443,12 @@ class TelephonyAdapter(ABC):
         external_id: str,
         conference_name: str,
     ) -> dict[str, Any]:
-        """Place the active caller leg into a conference bridge on hold (Warm Transfer 2D)."""
-        self.require_configured()
-        twiml = (
-            '<?xml version="1.0" encoding="UTF-8"?>'
-            "<Response><Dial>"
-            f'<Conference startConferenceOnEnter="false" endConferenceOnExit="true">{conference_name}</Conference>'
-            "</Dial></Response>"
+        """Park a caller in a conference only when a provider implements it."""
+        del external_id, conference_name
+        raise ProviderCapabilityError(
+            f"UNSUPPORTED_CAPABILITY: provider '{self.name}' has no verified conference-hold operation",
+            provider=self.name,
         )
-        return {
-            "provider": self.name,
-            "external_id": external_id,
-            "conference_name": conference_name,
-            "caller_hold": True,
-            "twiml": twiml,
-        }
 
     async def dial_warm_transfer_target(
         self,
@@ -462,26 +458,12 @@ class TelephonyAdapter(ABC):
         conference_name: str,
         briefing_text: str,
     ) -> dict[str, Any]:
-        """Dial the human agent leg, play the whispered briefing, and join the conference (2D)."""
-        self.require_configured()
-        twiml = (
-            '<?xml version="1.0" encoding="UTF-8"?>'
-            "<Response>"
-            f"<Say>{briefing_text}</Say>"
-            "<Dial>"
-            f'<Conference startConferenceOnEnter="true" endConferenceOnExit="false">{conference_name}</Conference>'
-            "</Dial></Response>"
+        """Dial a separate warm-transfer leg only when the provider implements it."""
+        del target_number, from_number, conference_name, briefing_text
+        raise ProviderCapabilityError(
+            f"UNSUPPORTED_CAPABILITY: provider '{self.name}' has no verified conference-target operation",
+            provider=self.name,
         )
-        return {
-            "provider": self.name,
-            "target_call_sid": f"WT_{uuid.uuid4().hex[:16]}",
-            "target_number": target_number,
-            "from_number": from_number,
-            "conference_name": conference_name,
-            "briefing_text": briefing_text,
-            "twiml": twiml,
-            "status": "briefing_played",
-        }
 
     async def complete_conference_bridge(
         self,
@@ -489,16 +471,12 @@ class TelephonyAdapter(ABC):
         external_id: str,
         conference_name: str,
     ) -> dict[str, Any]:
-        """Unhold the caller in the conference and detach the AI leg (2D)."""
-        self.require_configured()
-        return {
-            "provider": self.name,
-            "external_id": external_id,
-            "conference_name": conference_name,
-            "caller_hold": False,
-            "ai_detached": True,
-            "status": "bridged",
-        }
+        """Complete a conference bridge only when the provider confirms it."""
+        del external_id, conference_name
+        raise ProviderCapabilityError(
+            f"UNSUPPORTED_CAPABILITY: provider '{self.name}' has no verified conference-bridge operation",
+            provider=self.name,
+        )
 
     async def verify_webhook_signature(self, request: Any) -> WebhookVerdict:
         return await self.verify_webhook(request)
@@ -538,7 +516,12 @@ class SimulatedTelephonyAdapter(TelephonyAdapter):
         )
 
     async def create_outbound(
-        self, *, to_number: str, from_number: str, answer_url: str = ""
+        self,
+        *,
+        to_number: str,
+        from_number: str,
+        answer_url: str = "",
+        status_callback_url: str = "",
     ) -> CallResult:
         from app.telephony.phone import normalize
 
@@ -570,6 +553,61 @@ class SimulatedTelephonyAdapter(TelephonyAdapter):
             status="transfer_requested",
             to_number=dest,
         )
+
+    async def place_in_conference_hold(
+        self, external_id: str, conference_name: str
+    ) -> dict[str, Any]:
+        from app.telephony.transfer import conference_caller_twiml
+
+        return {
+            "provider": self.name,
+            "external_id": external_id,
+            "conference_name": conference_name,
+            "caller_hold": True,
+            "twiml": conference_caller_twiml(
+                conference_name, wait_url="", status_callback_url=""
+            ),
+            "simulated": True,
+        }
+
+    async def dial_warm_transfer_target(
+        self,
+        *,
+        target_number: str,
+        from_number: str,
+        conference_name: str,
+        briefing_text: str,
+    ) -> dict[str, Any]:
+        from app.telephony.transfer import conference_target_twiml
+
+        return {
+            "provider": self.name,
+            "target_call_sid": f"WT_{uuid.uuid4().hex[:16]}",
+            "target_number": target_number,
+            "from_number": from_number,
+            "conference_name": conference_name,
+            "briefing_text": briefing_text,
+            "twiml": conference_target_twiml(
+                conference_name,
+                briefing_text=briefing_text,
+                status_callback_url="",
+            ),
+            "status": "simulated_briefing_played",
+            "simulated": True,
+        }
+
+    async def complete_conference_bridge(
+        self, *, external_id: str, conference_name: str
+    ) -> dict[str, Any]:
+        return {
+            "provider": self.name,
+            "external_id": external_id,
+            "conference_name": conference_name,
+            "caller_hold": False,
+            "ai_detached": True,
+            "status": "bridged",
+            "simulated": True,
+        }
 
     async def search_numbers(self, *, country: str, limit: int = 10) -> list[NumberResult]:
         code = (country or "US").strip().upper()

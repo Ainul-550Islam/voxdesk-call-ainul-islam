@@ -7,6 +7,8 @@ read the whole authorization model in one screen.
 """
 from __future__ import annotations
 
+from collections.abc import Iterable
+
 from app.auth.permissions import (
     OPERATIONAL_WRITE,
     READ_ONLY_OPERATIONAL,
@@ -154,6 +156,36 @@ def is_platform_permission(permission: Permission) -> bool:
 
 def permissions_for(role: UserRole) -> frozenset[Permission]:
     return ROLE_PERMISSIONS.get(role, frozenset())
+
+
+def effective_permissions(
+    role: UserRole, custom: Iterable[Permission] = ()
+) -> frozenset[Permission]:
+    """Built-in role ∪ the tenant's custom-role grants (PART 16, P16-01).
+
+    Additive on purpose. A custom role cannot take away what the built-in role
+    already grants — "this person must not delete calls" is expressed by giving
+    them a smaller built-in role, not by a subtraction that would have to be
+    reasoned about at every call site. ``app.auth.custom_roles`` owns the rest of
+    the policy (which permissions may be bundled, who may grant them); this
+    function is the one place the union happens.
+    """
+    return frozenset(permissions_for(role)) | frozenset(custom)
+
+
+def can_assign_permissions(actor: UserRole, requested: Iterable[Permission]) -> bool:
+    """Whether ``actor`` may bundle ``requested`` into a tenant-defined role.
+
+    Escalation guard, in the same style as ``can_assign_role``: an actor can only
+    hand out what it already holds, and never a platform-only permission.
+    """
+    if not has_permission(actor, Permission.TENANT_UPDATE):
+        return False
+    held = permissions_for(actor)
+    return all(
+        permission in held and not is_platform_permission(permission)
+        for permission in requested
+    )
 
 
 def has_permission(role: UserRole, permission: Permission) -> bool:

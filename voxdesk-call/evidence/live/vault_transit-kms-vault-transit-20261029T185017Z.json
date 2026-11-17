@@ -1,0 +1,23 @@
+{
+  "schema": "voxdesk.live_evidence/v1",
+  "provider": "vault_transit",
+  "check": "kms.vault-transit",
+  "group": "kms",
+  "summary": "Vault Transit generates, unwraps and rejects a tampered data key.",
+  "status": "skipped",
+  "started_at": "2026-10-29T18:50:17Z",
+  "finished_at": "2026-10-29T18:50:17Z",
+  "commit_sha": "554fb1f9602d1dd0a62d407b9b3f991c41e369e1",
+  "raw_log": "evidence/live/raw/vault_transit-kms-vault-transit-20261029T185017Z.log",
+  "raw_log_sha256": "b09f5fc954423ebf457dc4e3f492c586499e44a5e68f685d6d652cb3c0313771",
+  "raw_log_bytes": 422,
+  "cost_guard": null,
+  "detail": {
+    "missing_env": [
+      "VAULT_ADDR",
+      "VAULT_TOKEN",
+      "VAULT_TRANSIT_KEY"
+    ]
+  },
+  "skip_reason": "credentials absent: VAULT_ADDR, VAULT_TOKEN, VAULT_TRANSIT_KEY \u2014 the check was not attempted, so it proves nothing"
+}

@@ -142,6 +142,8 @@ def build_llm(
     max_tokens: int = 120,
     *,
     allow_key_fallback: bool = True,
+    structured_output_schema: dict | None = None,
+    structured_output_strict: bool = True,
 ):
     """Pipecat LLM service. Live voice passes ``allow_key_fallback=False``.
 
@@ -186,6 +188,31 @@ def build_llm(
                 provider="llm",
             )
 
+    structured_extra: dict = {}
+    if structured_output_schema:
+        if provider == "openai":
+            from app.agent.providers.llm_providers import structured_output_params
+
+            structured_extra = {
+                "response_format": structured_output_params(
+                    structured_output_schema, strict=structured_output_strict
+                )
+            }
+        elif provider == "google":
+            if not isinstance(structured_output_schema, dict) or not structured_output_schema.get("type"):
+                from app.agent.providers.llm_providers import StructuredOutputError
+
+                raise StructuredOutputError("a JSON schema needs a top-level 'type'")
+            structured_extra = {
+                "response_mime_type": "application/json",
+                "response_schema": structured_output_schema,
+            }
+        else:
+            raise UnsupportedProviderFeatureError(
+                f"LLM provider {provider!r} does not support configured structured output",
+                provider=provider,
+            )
+
     # ---- OpenAI (ChatGPT) ------------------------------------------------
     if provider == "openai":
         from pipecat.services.openai.llm import OpenAILLMService
@@ -199,6 +226,7 @@ def build_llm(
                 # ফোনে লম্বা উত্তর = মৃত্যু। শক্ত করে বেঁধে দিলাম।
                 frequency_penalty=0.3,
                 presence_penalty=0.3,
+                extra=structured_extra,
             ),
         )
 
@@ -225,6 +253,7 @@ def build_llm(
             params=GoogleLLMService.InputParams(
                 temperature=temperature,
                 max_tokens=max_tokens,
+                extra=structured_extra,
             ),
         )
 

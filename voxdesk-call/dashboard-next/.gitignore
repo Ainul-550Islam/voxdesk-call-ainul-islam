@@ -3,3 +3,9 @@ node_modules/
 out/
 *.tsbuildinfo
 .env*.local
+# Playwright and Lighthouse artefacts are machine state, not source.
+test-results/
+playwright-report/
+blob-report/
+.lighthouseci/
+lighthouse-report/

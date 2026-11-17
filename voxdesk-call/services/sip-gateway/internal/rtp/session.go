@@ -352,17 +352,20 @@ type Session struct {
 	digits  chan string
 	control chan *rtp.Packet
 
-	mu          sync.Mutex
-	stats       Stats
-	expectedSeq uint16
-	haveSeq     bool
-	transit     float64
-	haveTransit bool
-	baseTime    time.Time
-	baseStamp   uint32
-	closed      bool
-	closeOne    sync.Once
-	readErr     error
+	mu             sync.Mutex
+	stats          Stats
+	expectedSeq    uint16
+	haveSeq        bool
+	transit        float64
+	haveTransit    bool
+	baseTime       time.Time
+	baseStamp      uint32
+	closed         bool
+	closeOne       sync.Once
+	readErr        error
+	closedCh       chan struct{}
+	capture        *packetCapture
+	captureLocalIP net.IP
 }
 
 // NewSession creates the media session of one call.
@@ -416,6 +419,7 @@ func NewSession(
 		packets:       make(chan []byte, 64),
 		digits:        make(chan string, 16),
 		control:       make(chan *rtp.Packet, 8),
+		closedCh:      make(chan struct{}),
 	}
 	go session.readLoop()
 	return session, nil
@@ -428,7 +432,29 @@ func NewSession(
 func (s *Session) SetTarget(target *net.UDPAddr) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.target = target
+	s.target = copyUDPAddr(target)
+}
+
+// SetCaptureLocalIP supplies the address advertised in SDP when the socket is
+// bound to a wildcard interface. It is used only in reconstructed PCAP headers.
+func (s *Session) SetCaptureLocalIP(ip net.IP) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.captureLocalIP = append(net.IP(nil), ip...)
+}
+
+func (s *Session) captureLocalAddr() *net.UDPAddr {
+	local := s.LocalAddr()
+	if local == nil {
+		return nil
+	}
+	s.mu.Lock()
+	ip := append(net.IP(nil), s.captureLocalIP...)
+	s.mu.Unlock()
+	if len(ip) > 0 {
+		local.IP = ip
+	}
+	return local
 }
 
 // LocalAddr returns the address the RTP socket is bound to.
@@ -474,9 +500,16 @@ func (s *Session) Send(payload []byte) error {
 	if err != nil {
 		return err
 	}
-	if _, err := s.conn.WriteToUDP(raw, s.target); err != nil {
+	s.mu.Lock()
+	target := copyUDPAddr(s.target)
+	s.mu.Unlock()
+	if target == nil {
+		return fmt.Errorf("rtp: no media target is configured")
+	}
+	if _, err := s.conn.WriteToUDP(raw, target); err != nil {
 		return err
 	}
+	s.recordPacket(s.captureLocalAddr(), target, raw, "outbound")
 	s.mu.Lock()
 	s.stats.PacketsOut++
 	s.mu.Unlock()
@@ -508,9 +541,16 @@ func (s *Session) SendDTMF(digit string) error {
 		if err != nil {
 			return err
 		}
-		if _, err := s.conn.WriteToUDP(raw, s.target); err != nil {
+		s.mu.Lock()
+		target := copyUDPAddr(s.target)
+		s.mu.Unlock()
+		if target == nil {
+			return fmt.Errorf("rtp: no media target is configured")
+		}
+		if _, err := s.conn.WriteToUDP(raw, target); err != nil {
 			return err
 		}
+		s.recordPacket(s.captureLocalAddr(), target, raw, "outbound")
 		s.mu.Lock()
 		s.stats.PacketsOut++
 		s.mu.Unlock()
@@ -525,7 +565,16 @@ func (s *Session) SendDTMF(digit string) error {
 // instead of waiting for the silence timeout.
 func (s *Session) SendBye() error {
 	raw := []byte{0x80, 0xCA, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00}
-	_, err := s.conn.WriteToUDP(raw, s.target)
+	s.mu.Lock()
+	target := copyUDPAddr(s.target)
+	s.mu.Unlock()
+	if target == nil {
+		return fmt.Errorf("rtp: no media target is configured")
+	}
+	_, err := s.conn.WriteToUDP(raw, target)
+	if err == nil {
+		s.recordPacket(s.captureLocalAddr(), target, raw, "outbound")
+	}
 	return err
 }
 
@@ -538,6 +587,9 @@ func (s *Session) Close() error {
 	s.closeOne.Do(func() {
 		s.mu.Lock()
 		s.closed = true
+		if s.closedCh != nil {
+			close(s.closedCh)
+		}
 		s.mu.Unlock()
 		err = s.conn.Close()
 		if s.pool != nil && s.ownsPort {
@@ -556,7 +608,7 @@ func (s *Session) readLoop() {
 		if err := s.conn.SetReadDeadline(time.Now().Add(readChunk)); err != nil {
 			return
 		}
-		read, _, err := s.conn.ReadFromUDP(buffer)
+		read, remote, err := s.conn.ReadFromUDP(buffer)
 		if err != nil {
 			if s.isClosed() {
 				return
@@ -569,6 +621,7 @@ func (s *Session) readLoop() {
 		}
 		raw := make([]byte, read)
 		copy(raw, buffer[:read])
+		s.recordPacket(remote, s.captureLocalAddr(), raw, "inbound")
 		if isControlPacket(raw) {
 			// An RTCP packet: the peer reports on the stream.
 			if packet, err := Unmarshal(raw); err == nil {

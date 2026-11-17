@@ -1,0 +1,21 @@
+{
+  "schema": "voxdesk.live_evidence/v1",
+  "provider": "providers",
+  "check": "providers.real-suite",
+  "group": "providers",
+  "summary": "The repository's own opt-in real-provider pytest suite (-m real_provider).",
+  "status": "skipped",
+  "started_at": "2026-11-01T14:25:29Z",
+  "finished_at": "2026-11-01T14:25:29Z",
+  "commit_sha": "3ceb037f5d48c9fa4eba896d815d16339d5bd846",
+  "raw_log": "evidence/live/raw/providers-providers-real-suite-20261101T142529Z.log",
+  "raw_log_sha256": "cfbfe67bc4461b59dd09fefb46197a9ef5349eb2344797965c2b262d37e2f499",
+  "raw_log_bytes": 369,
+  "cost_guard": null,
+  "detail": {
+    "missing_env": [
+      "VOXDESK_REAL_INTEGRATION"
+    ]
+  },
+  "skip_reason": "credentials absent: VOXDESK_REAL_INTEGRATION \u2014 the check was not attempted, so it proves nothing"
+}

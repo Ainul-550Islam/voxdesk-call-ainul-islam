@@ -10,7 +10,9 @@
     "build": "next build --webpack",
     "start": "next start",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p vite-port/tsconfig.json",
+    "test:watch": "vitest",
+    "typecheck:port": "tsc --noEmit -p vite-port/tsconfig.json"
   },
   "dependencies": {
     "@voxdesk/web-sdk": "file:../sdk/web",
@@ -26,6 +28,9 @@
     "source-map-js": "1.2.2"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
+    "@lhci/cli": "^0.14.0",
+    "@playwright/test": "^1.65.0",
     "@types/dagre": "^0.7.52",
     "@types/node": "^20.14.0",
     "@types/react": "18.3.31",

@@ -117,3 +117,57 @@ async def deliver(
         log.info("webhook.response_truncated", event_id=event_id, status=response.status_code)
     log.info("webhook.delivered", event_id=event_id, status=response.status_code)
     return HttpResult("success", response.status_code, "ok", **diagnostics)
+
+
+# ---------------------------------------------------------------------------
+# PART 14 / P14-09 -- delivery after event selection.
+#
+# `deliver` above sends one body to one URL. This is the fan-out in front of it:
+# it asks `event_selection` which endpoints want the event, and only then opens a
+# socket. An endpoint whose selection excludes the event is not contacted at all
+# -- the cheapest refused delivery is the one that never happens.
+# ---------------------------------------------------------------------------
+
+
+async def deliver_to_endpoints(
+    *,
+    event: str,
+    payload: dict,
+    body: bytes,
+    secret_for,
+    endpoints,
+    event_id: str,
+    timeout_seconds: float = 5.0,
+    client: httpx.AsyncClient | None = None,
+) -> list[dict]:
+    """Deliver one event to every subscribed endpoint.
+
+    `secret_for(endpoint)` returns the signing secret, so this module never sees
+    a secret store. `endpoints` are `app.webhooks.event_selection.Endpoint`
+    values. One failing endpoint does not stop the others.
+    """
+    from app.webhooks.event_selection import select_endpoints
+
+    results: list[dict] = []
+    for endpoint in select_endpoints(endpoints, event, payload):
+        try:
+            result = await deliver(
+                url=endpoint.url,
+                body=body,
+                secret=secret_for(endpoint),
+                event_id=event_id,
+                timeout_seconds=timeout_seconds,
+                client=client,
+            )
+            results.append(
+                {
+                    "endpoint_id": endpoint.id,
+                    "status": result.status,
+                    "kind": result.kind,
+                    "latency_ms": result.latency_ms,
+                }
+            )
+        except (OutboundUrlError, ValueError) as exc:
+            # A refused URL is a configuration problem, recorded per endpoint.
+            results.append({"endpoint_id": endpoint.id, "status": 0, "kind": "refused", "error": str(exc)[:200]})
+    return results

@@ -36,10 +36,15 @@ import app.anomaly.persistence  # noqa: F401
 import app.auth.identity.models  # noqa: F401
 import app.compliance.models  # noqa: F401
 import app.db.carrier_s2s_models  # noqa: F401  # corrected: register Batch 05/06/07 models before SQLite create_all in isolated node chunks
+import app.db.component_models  # noqa: F401  # PART 12: flow components, folders, drafts
 import app.db.compliance_v2_models  # noqa: F401  # BATCH03:compliance_v2_models
+import app.db.demo_models  # noqa: F401  # PART 18: demo call requests and verifications
 import app.db.contact_center_v2_models  # noqa: F401
 import app.db.integrations_v2_models  # noqa: F401
 import app.db.live_proof_models  # noqa: F401
+import app.db.monitoring_models  # noqa: F401  # PART 15: live scores, alerts, batch tests, guardrails, QA analyst
+import app.db.role_models  # noqa: F401
+import app.db.agency_models  # noqa: F401  # PART 16: tenant-defined roles and their grants
 import app.db.platform_v2_models  # noqa: F401
 import app.contact_center.models  # noqa: F401
 import app.db.enterprise_models  # noqa: F401

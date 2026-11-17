@@ -1,0 +1,21 @@
+{
+  "schema": "voxdesk.live_evidence/v1",
+  "provider": "telnyx",
+  "check": "telnyx.control-plane",
+  "group": "carriers",
+  "summary": "Telnyx call-control API answers for the configured account (read-only).",
+  "status": "skipped",
+  "started_at": "2026-11-01T14:25:29Z",
+  "finished_at": "2026-11-01T14:25:29Z",
+  "commit_sha": "3ceb037f5d48c9fa4eba896d815d16339d5bd846",
+  "raw_log": "evidence/live/raw/telnyx-telnyx-control-plane-20261101T142529Z.log",
+  "raw_log_sha256": "b1fb892461ec371bcb0f754dd1f26029b6349433c484a6a2ae64cff7045041ac",
+  "raw_log_bytes": 346,
+  "cost_guard": null,
+  "detail": {
+    "missing_env": [
+      "TELNYX_API_KEY"
+    ]
+  },
+  "skip_reason": "credentials absent: TELNYX_API_KEY \u2014 the check was not attempted, so it proves nothing"
+}

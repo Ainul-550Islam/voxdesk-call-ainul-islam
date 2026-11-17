@@ -9,6 +9,8 @@ the S2S processor while still emitting `TranscriptionFrame`, `BotStartedSpeaking
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import os
 import time
 from typing import Any, Callable
@@ -204,3 +206,56 @@ def is_s2s_feature_enabled(cfg: Any = None) -> bool:
     if cfg is not None and bool(getattr(cfg, "s2s_enabled", False)):
         return True
     return os.getenv("VOXDESK_ENABLE_S2S", "").strip().lower() in {"1", "true", "yes"}
+
+# ---------------------------------------------------------------------------
+# PART 12 (P12-11) — hybrid speech-to-speech: voice model speaks, text LLM thinks
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class HybridVoiceAgent:
+    """A full-duplex voice model paired with a text LLM for tools and knowledge.
+
+    Two prompts, because the two models need different instructions: the voice model needs cadence
+    and turn-taking rules, the text model needs the tool contract and the facts. Mixing them into
+    one prompt is what produces an agent that either rambles or refuses to call a tool.
+
+    Evidence tier stays `API_ONLY`: this adapter describes and dispatches the shape of the
+    integration, and there is no live provider run in the pack, so it must never be claimed as
+    `LIVE_PROVIDER`.
+    """
+
+    voice_model: str
+    text_model: str
+    voice_prompt: str = ""
+    text_prompt: str = ""
+    tools: tuple[str, ...] = ()
+    evidence_tier: str = "API_ONLY"
+
+    def __post_init__(self) -> None:
+        if not self.voice_model or not self.text_model:
+            raise ValueError("a hybrid agent needs both a voice model and a text model")
+        if self.evidence_tier != "API_ONLY":
+            raise ValueError("the hybrid adapter is API_ONLY until a live run is recorded")
+
+    @property
+    def capability(self) -> str:
+        return "hybrid"
+
+    def routing(self, *, turn_kind: str) -> str:
+        """Which model handles this turn: `voice` for chat, `text` for anything needing tools."""
+        kind = (turn_kind or "").strip().lower()
+        if kind in {"tool", "knowledge", "structured"}:
+            return "text"
+        if kind in {"greeting", "chit_chat", "ack"}:
+            return "voice"
+        raise ValueError(f"unknown turn kind {turn_kind!r}")
+
+    def describe(self) -> dict[str, Any]:
+        return {
+            "capability": self.capability,
+            "voice_model": self.voice_model,
+            "text_model": self.text_model,
+            "tools": list(self.tools),
+            "evidence_tier": self.evidence_tier,
+        }
+

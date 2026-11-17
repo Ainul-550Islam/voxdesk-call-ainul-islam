@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+from types import SimpleNamespace
 
 import pytest
 from starlette.requests import Request
@@ -290,3 +291,35 @@ async def test_twilio_capabilities_follow_configuration(monkeypatch):
     assert caps.transcription is False
     with pytest.raises(ProviderUnavailableError):
         await TwilioAdapter().search_numbers(country="US")
+
+
+async def test_twilio_outbound_passes_session_scoped_callbacks(monkeypatch):
+    monkeypatch.setattr(settings, "twilio_account_sid", "AC123", raising=False)
+    monkeypatch.setattr(settings, "twilio_auth_token", "token", raising=False)
+    captured: dict = {}
+
+    class FakeCalls:
+        def create(self, **kwargs):
+            captured.update(kwargs)
+            return SimpleNamespace(sid="CA-session-scoped")
+
+    class FakeClient:
+        calls = FakeCalls()
+
+    monkeypatch.setattr(TwilioAdapter, "_client", lambda self: FakeClient())
+    result = await TwilioAdapter().create_outbound(
+        to_number="+14155550100",
+        from_number="+14155550999",
+        answer_url="https://voice.example.test/telephony/outbound-answer?call_session_id=abc",
+        status_callback_url="https://voice.example.test/telephony/status?call_session_id=abc",
+    )
+
+    assert result.external_id == "CA-session-scoped"
+    assert captured["url"].endswith("outbound-answer?call_session_id=abc")
+    assert captured["status_callback"].endswith("status?call_session_id=abc")
+    assert captured["status_callback_event"] == [
+        "initiated",
+        "ringing",
+        "answered",
+        "completed",
+    ]

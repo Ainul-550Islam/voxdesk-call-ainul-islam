@@ -1,0 +1,268 @@
+{{- /*
+Realtime gateway (services/realtime/gateway-go).
+
+Why this exists as its own Deployment: it terminates the WebSocket edge that
+carries call events to the operator console. In docker-compose.prod.yml it is a
+separate service for the same reason. Until PART 17B the Helm chart rendered
+only `api` and `scheduler`, so a Kubernetes buyer got a deployment in which
+every live call view, live transcript and monitoring session was dead — the
+chart was "renderable" and "complete" in the same breath only because nothing
+checked.
+
+The gateway refuses to boot without VOXDESK_GATEWAY_JWT_SECRET and
+VOXDESK_GATEWAY_INGEST_SECRET (internal/config/config.go), so those two are
+wired from the same Secret the API reads. Nothing secret is rendered here.
+*/ -}}
+{{- $rt := .Values.realtimeGateway | default dict -}}
+{{- $image := $rt.image | default dict -}}
+{{- $service := $rt.service | default dict -}}
+{{- $pdb := $rt.podDisruptionBudget | default dict -}}
+{{- $autoscaling := $rt.autoscaling | default dict -}}
+{{- $probes := $rt.probes | default dict -}}
+{{- $secret := $rt.secretName | default .Values.secrets.existingSecret -}}
+{{- if $rt.enabled | default false }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "voxdesk.fullname" . }}-realtime-gateway
+  labels:
+    {{- include "voxdesk.labels" . | nindent 4 }}
+    app.kubernetes.io/component: realtime-gateway
+spec:
+  {{- if not ($autoscaling.enabled | default false) }}
+  replicas: {{ $rt.replicaCount | default 2 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "voxdesk.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: realtime-gateway
+  template:
+    metadata:
+      labels:
+        {{- include "voxdesk.labels" . | nindent 8 }}
+        app.kubernetes.io/component: realtime-gateway
+      {{- with $rt.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      # WebSocket connections are long-lived: this must exceed the client
+      # reconnect window, not the request budget. The gateway stops accepting
+      # new sockets on SIGTERM and lets existing ones finish.
+      terminationGracePeriodSeconds: {{ $rt.terminationGracePeriodSeconds | default 60 }}
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+      {{- with $rt.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $rt.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      affinity:
+        {{- if $rt.antiAffinity | default false }}
+        # A gateway pod and its replacement must not land on one node: a node
+        # drain would otherwise drop every socket on that host twice over.
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: {{ include "voxdesk.name" . }}
+                    app.kubernetes.io/instance: {{ .Release.Name }}
+                    app.kubernetes.io/component: realtime-gateway
+        {{- else }}
+        {{- toYaml ($rt.affinity | default dict) | nindent 8 }}
+        {{- end }}
+      containers:
+        - name: realtime-gateway
+          image: "{{ required "realtimeGateway.image.repository is required" $image.repository }}:{{ required "realtimeGateway.image.tag is required" $image.tag }}"
+          imagePullPolicy: {{ $image.pullPolicy | default "IfNotPresent" }}
+          ports:
+            - name: ws
+              containerPort: {{ $rt.port | default 8790 }}
+            {{- if $rt.metricsPort }}
+            # Only used when metrics are served on a second listener; the
+            # default is the same port as the WebSocket edge.
+            - name: metrics
+              containerPort: {{ $rt.metricsPort }}
+            {{- end }}
+          env:
+            - name: VOXDESK_GATEWAY_PORT
+              value: {{ $rt.port | default 8790 | quote }}
+            - name: VOXDESK_GATEWAY_LOG_LEVEL
+              value: {{ $rt.logLevel | default "info" | quote }}
+            - name: VOXDESK_GATEWAY_MAX_CONNECTIONS
+              value: {{ $rt.maxConnections | default 10000 | quote }}
+            - name: VOXDESK_GATEWAY_MAX_CONNS_PER_TENANT
+              value: {{ $rt.maxConnectionsPerTenant | default 256 | quote }}
+            - name: VOXDESK_GATEWAY_ALLOWED_ORIGINS
+              value: {{ $rt.allowedOrigins | default "" | quote }}
+            # The media engine is discovered by Service name on this namespace.
+            - name: VOXDESK_GATEWAY_MEDIA_ENGINE_URL
+              value: {{ $rt.mediaEngineUrl | default (printf "http://%s-media-engine:%d" (include "voxdesk.fullname" .) (.Values.mediaEngine.controlPort | default 9001)) | quote }}
+            - name: VOXDESK_GATEWAY_MEDIA_ENGINE_TIMEOUT_SECONDS
+              value: {{ $rt.mediaEngineTimeoutSeconds | default "1.5" | quote }}
+            - name: VOXDESK_GATEWAY_ENGINE_STEER
+              value: {{ $rt.engineSteer | default "off" | quote }}
+            - name: VOXDESK_GATEWAY_BROKER
+              value: {{ $rt.broker | default "memory" | quote }}
+            {{- if eq ($rt.broker | default "memory") "redis" }}
+            - name: VOXDESK_GATEWAY_REDIS_URL
+              value: {{ $rt.redisUrl | default .Values.config.redisUrl | quote }}
+            {{- end }}
+            # Secrets: same keys the API uses. `optional: false` is the default,
+            # so a missing key fails the pod at start rather than at first
+            # forged connection.
+            - name: VOXDESK_GATEWAY_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required "realtimeGateway.secretName or secrets.existingSecret is required" $secret }}
+                  key: {{ $rt.jwtSecretKey | default "JWT_SECRET" }}
+            - name: VOXDESK_GATEWAY_JWT_ISSUER
+              value: {{ $rt.jwtIssuer | default "voxdesk" | quote }}
+            - name: VOXDESK_GATEWAY_JWT_AUDIENCE
+              value: {{ $rt.jwtAudience | default "voxdesk-api" | quote }}
+            - name: VOXDESK_GATEWAY_INGEST_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secret }}
+                  key: {{ $rt.ingestSecretKey | default "REALTIME_GATEWAY_INGEST_SECRET" }}
+            {{- if $rt.metricsTokenKey | default "METRICS_TOKEN" }}
+            - name: VOXDESK_GATEWAY_METRICS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secret }}
+                  key: {{ $rt.metricsTokenKey | default "METRICS_TOKEN" }}
+                  optional: true
+            {{- end }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: {{ $rt.runAsUser | default 10002 }}
+            runAsGroup: {{ $rt.runAsUser | default 10002 }}
+            capabilities:
+              drop: ["ALL"]
+          # /healthz is liveness (mux answering); /readyz reports capacity and
+          # is what gates a rollout. Using /healthz for readiness would route
+          # traffic to a gateway that has already refused its last slot.
+          startupProbe:
+            httpGet: {path: {{ $probes.startup | default "/healthz" }}, port: ws}
+            periodSeconds: 2
+            failureThreshold: 30
+            timeoutSeconds: 2
+          readinessProbe:
+            httpGet: {path: {{ $probes.readiness | default "/readyz" }}, port: ws}
+            periodSeconds: 5
+            failureThreshold: 2
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet: {path: {{ $probes.liveness | default "/healthz" }}, port: ws}
+            periodSeconds: 20
+            timeoutSeconds: 3
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep {{ $rt.preStopSleepSeconds | default 5 }}"]
+          resources:
+            {{- toYaml ($rt.resources | default dict) | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "voxdesk.fullname" . }}-realtime-gateway
+  labels:
+    {{- include "voxdesk.labels" . | nindent 4 }}
+    app.kubernetes.io/component: realtime-gateway
+spec:
+  type: {{ $service.type | default "ClusterIP" }}
+  selector:
+    app.kubernetes.io/name: {{ include "voxdesk.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: realtime-gateway
+  ports:
+    - name: ws
+      port: {{ $rt.port | default 8790 }}
+      targetPort: ws
+      appProtocol: http
+{{- if $autoscaling.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "voxdesk.fullname" . }}-realtime-gateway
+  labels:
+    {{- include "voxdesk.labels" . | nindent 4 }}
+    app.kubernetes.io/component: realtime-gateway
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "voxdesk.fullname" . }}-realtime-gateway
+  minReplicas: {{ $autoscaling.minReplicas | default 2 }}
+  maxReplicas: {{ $autoscaling.maxReplicas | default 10 }}
+  behavior:
+    # Sockets do not migrate. Scaling in kills live connections on the pods
+    # that go, so scale-down is deliberately slow and one pod at a time.
+    scaleDown:
+      stabilizationWindowSeconds: {{ $autoscaling.scaleDownStabilizationWindowSeconds | default 600 }}
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 120
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 30
+  metrics:
+    {{- if $autoscaling.targetConnectionsPerPod }}
+    # Primary signal when the gateway exports it (VOXDESK_GATEWAY_METRICS
+    # exposes voxdesk_gateway_connections_active as a Pods metric via the
+    # Prometheus adapter). CPU alone under-scales a socket-bound edge.
+    - type: Pods
+      pods:
+        metric:
+          name: voxdesk_gateway_connections_active
+        target:
+          type: AverageValue
+          averageValue: {{ $autoscaling.targetConnectionsPerPod | quote }}
+    {{- end }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ $autoscaling.targetCPUUtilizationPercentage | default 70 }}
+{{- end }}
+{{- if $pdb.enabled | default true }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "voxdesk.fullname" . }}-realtime-gateway
+  labels:
+    {{- include "voxdesk.labels" . | nindent 4 }}
+    app.kubernetes.io/component: realtime-gateway
+spec:
+  minAvailable: {{ $pdb.minAvailable | default 1 }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "voxdesk.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: realtime-gateway
+{{- end }}
+{{- end }}

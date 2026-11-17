@@ -228,7 +228,7 @@ export default function VoiceAgentPage() {
             <div style={{ marginTop: 12 }}>
               <h4>Language — app/core/i18n.py</h4>
               <div style={{ fontSize: 11 }}>13 languages: en-US/GB/AU, es-US/MX, fr, de, pt-BR, it, nl, hi, ar, bn — honest, not 100+</div>
-              <select value={voiceConfig.language} onChange={(e) => setVoiceConfig({...voiceConfig, language: e.target.value})} style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc", marginTop: 4 }}>
+              <select aria-label="Language" value={voiceConfig.language} onChange={(e) => setVoiceConfig({...voiceConfig, language: e.target.value})} style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc", marginTop: 4 }}>
                 {["en-US","en-GB","en-AU","es-US","es-MX","fr-FR","de-DE","pt-BR","it-IT","nl-NL","hi-IN","ar-SA","bn-BD"].map((l) => <option key={l} value={l}>{l}</option>)}
               </select>
             </div>
@@ -237,17 +237,17 @@ export default function VoiceAgentPage() {
             <h3>Node Inspector — {selectedIvr.id}</h3>
             <div style={{ marginBottom: 10 }}>
               <label style={{ fontSize: 12, fontWeight: 600 }}>Type</label>
-              <select value={selectedIvr.type} onChange={(e) => updateIvrNode(selectedIvr.id, { type: e.target.value as any })} style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc", marginTop: 4 }}>
+              <select aria-label="Node type" value={selectedIvr.type} onChange={(e) => updateIvrNode(selectedIvr.id, { type: e.target.value as any })} style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc", marginTop: 4 }}>
                 <option value="greeting">greeting</option><option value="menu">menu</option><option value="input">input</option><option value="transfer">transfer</option><option value="hangup">hangup</option><option value="ai">ai</option>
               </select>
             </div>
             <div style={{ marginBottom: 10 }}>
               <label style={{ fontSize: 12, fontWeight: 600 }}>Prompt / Greeting</label>
-              <textarea value={selectedIvr.prompt} onChange={(e) => updateIvrNode(selectedIvr.id, { prompt: e.target.value })} rows={4} style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc", marginTop: 4, fontSize: 13 }} />
+              <textarea aria-label="Prompt or greeting" value={selectedIvr.prompt} onChange={(e) => updateIvrNode(selectedIvr.id, { prompt: e.target.value })} rows={4} style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc", marginTop: 4, fontSize: 13 }} />
             </div>
             <div style={{ marginBottom: 10 }}>
               <label style={{ fontSize: 12, fontWeight: 600 }}>Next Node ID</label>
-              <input value={selectedIvr.next || ""} onChange={(e) => updateIvrNode(selectedIvr.id, { next: e.target.value || undefined })} placeholder="hangup" style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc", marginTop: 4 }} />
+              <input aria-label="Next node ID" value={selectedIvr.next || ""} onChange={(e) => updateIvrNode(selectedIvr.id, { next: e.target.value || undefined })} placeholder="hangup" style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc", marginTop: 4 }} />
             </div>
             {selectedIvr.type === "menu" && (
               <div style={{ marginBottom: 10 }}>
@@ -285,15 +285,15 @@ export default function VoiceAgentPage() {
           <section className="card" style={{ padding: 12 }}>
             <h3>Voice Provider Mix — provider_registry.py</h3>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              <div><label style={{ fontSize: 12, fontWeight: 600 }}>TTS Provider</label><select value={voiceConfig.provider} onChange={(e) => setVoiceConfig({...voiceConfig, provider: e.target.value})} style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc", marginTop: 4 }}><option value="elevenlabs">ElevenLabs</option><option value="openai">OpenAI TTS</option><option value="deepgram">Deepgram Aura</option></select></div>
-              <div><label style={{ fontSize: 12, fontWeight: 600 }}>Voice ID</label><input value={voiceConfig.voice_id} onChange={(e) => setVoiceConfig({...voiceConfig, voice_id: e.target.value})} style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc", marginTop: 4 }} placeholder="rachel" /></div>
-              <div><label style={{ fontSize: 12, fontWeight: 600 }}>STT Provider</label><select value={voiceConfig.stt_provider} onChange={(e) => setVoiceConfig({...voiceConfig, stt_provider: e.target.value})} style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc", marginTop: 4 }}><option value="deepgram">Deepgram</option><option value="openai">OpenAI Whisper</option></select></div>
-              <div><label style={{ fontSize: 12, fontWeight: 600 }}>STT Model</label><select value={voiceConfig.stt_model} onChange={(e) => setVoiceConfig({...voiceConfig, stt_model: e.target.value})} style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc", marginTop: 4 }}><option value="nova-3">nova-3 (fallback nova-2 per language)</option><option value="nova-2">nova-2</option><option value="whisper-1">whisper-1</option></select></div>
-              <div><label style={{ fontSize: 12, fontWeight: 600 }}>LLM Provider</label><select value={voiceConfig.llm_provider} onChange={(e) => setVoiceConfig({...voiceConfig, llm_provider: e.target.value})} style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc", marginTop: 4 }}><option value="openai">OpenAI</option><option value="anthropic">Anthropic</option><option value="google">Google</option></select></div>
-              <div><label style={{ fontSize: 12, fontWeight: 600 }}>LLM Model</label><input value={voiceConfig.llm_model} onChange={(e) => setVoiceConfig({...voiceConfig, llm_model: e.target.value})} style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc", marginTop: 4 }} /></div>
+              <div><label style={{ fontSize: 12, fontWeight: 600 }}>TTS Provider</label><select aria-label="TTS provider" value={voiceConfig.provider} onChange={(e) => setVoiceConfig({...voiceConfig, provider: e.target.value})} style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc", marginTop: 4 }}><option value="elevenlabs">ElevenLabs</option><option value="cartesia">Cartesia Sonic-3</option><option value="minimax">MiniMax Speech-02</option><option value="fish_audio">Fish Audio</option><option value="openai">OpenAI TTS</option><option value="deepgram">Deepgram Aura</option></select></div>
+              <div><label style={{ fontSize: 12, fontWeight: 600 }}>Voice ID</label><input aria-label="Voice ID" value={voiceConfig.voice_id} onChange={(e) => setVoiceConfig({...voiceConfig, voice_id: e.target.value})} style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc", marginTop: 4 }} placeholder="rachel" /></div>
+              <div><label style={{ fontSize: 12, fontWeight: 600 }}>STT Provider</label><select aria-label="STT provider" value={voiceConfig.stt_provider} onChange={(e) => setVoiceConfig({...voiceConfig, stt_provider: e.target.value})} style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc", marginTop: 4 }}><option value="deepgram">Deepgram</option><option value="openai">OpenAI Whisper</option></select></div>
+              <div><label style={{ fontSize: 12, fontWeight: 600 }}>STT Model</label><select aria-label="STT model" value={voiceConfig.stt_model} onChange={(e) => setVoiceConfig({...voiceConfig, stt_model: e.target.value})} style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc", marginTop: 4 }}><option value="nova-3">nova-3 (fallback nova-2 per language)</option><option value="nova-2">nova-2</option><option value="whisper-1">whisper-1</option></select></div>
+              <div><label style={{ fontSize: 12, fontWeight: 600 }}>LLM Provider</label><select aria-label="LLM provider" value={voiceConfig.llm_provider} onChange={(e) => setVoiceConfig({...voiceConfig, llm_provider: e.target.value})} style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc", marginTop: 4 }}><option value="openai">OpenAI</option><option value="anthropic">Anthropic</option><option value="google">Google</option></select></div>
+              <div><label style={{ fontSize: 12, fontWeight: 600 }}>LLM Model</label><input aria-label="LLM model" value={voiceConfig.llm_model} onChange={(e) => setVoiceConfig({...voiceConfig, llm_model: e.target.value})} style={{ width: "100%", padding: 6, borderRadius: 4, border: "1px solid #ccc", marginTop: 4 }} /></div>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 12 }}>
-              <div><label style={{ fontSize: 12 }}>Speed</label><input type="range" min={0.5} max={1.5} step={0.1} value={voiceConfig.speed} onChange={(e) => setVoiceConfig({...voiceConfig, speed: parseFloat(e.target.value)})} style={{ width: "100%" }} /><div style={{ fontSize: 11 }}>{voiceConfig.speed}x</div></div>
+              <div><label style={{ fontSize: 12 }}>Speed</label><input aria-label="Speech speed" type="range" min={0.5} max={1.5} step={0.1} value={voiceConfig.speed} onChange={(e) => setVoiceConfig({...voiceConfig, speed: parseFloat(e.target.value)})} style={{ width: "100%" }} /><div style={{ fontSize: 11 }}>{voiceConfig.speed}x</div></div>
               <div><label style={{ fontSize: 12 }}><input type="checkbox" checked={voiceConfig.humanize} onChange={(e) => setVoiceConfig({...voiceConfig, humanize: e.target.checked})} /> Humanize</label><div style={{ fontSize: 10, color: "#666" }}>Filler words English-only per tts.py</div></div>
               <div><label style={{ fontSize: 12 }}><input type="checkbox" checked={voiceConfig.filler_words} onChange={(e) => setVoiceConfig({...voiceConfig, filler_words: e.target.checked})} /> Filler Words</label><div style={{ fontSize: 10, color: "#666" }}>English-only</div></div>
             </div>
@@ -380,10 +380,10 @@ export default function VoiceAgentPage() {
             <div style={{ marginTop: 12 }}>
               <h4>Create Clone Job — POST /api/agent/voice-clones</h4>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
-                <input value={cloneForm.name} onChange={(e) => setCloneForm({...cloneForm, name: e.target.value})} placeholder="Clone name" style={{ padding: 6, borderRadius: 4, border: "1px solid #ccc" }} />
-                <select value={cloneForm.provider} onChange={(e) => setCloneForm({...cloneForm, provider: e.target.value})} style={{ padding: 6, borderRadius: 4, border: "1px solid #ccc" }}><option value="elevenlabs">ElevenLabs</option><option value="openai">OpenAI</option></select>
-                <input value={cloneForm.audio_url} onChange={(e) => setCloneForm({...cloneForm, audio_url: e.target.value})} placeholder="Audio URL (S3/HTTPS)" style={{ padding: 6, borderRadius: 4, border: "1px solid #ccc", gridColumn: "span 2" }} />
-                <input value={cloneForm.description} onChange={(e) => setCloneForm({...cloneForm, description: e.target.value})} placeholder="Description" style={{ padding: 6, borderRadius: 4, border: "1px solid #ccc", gridColumn: "span 2" }} />
+                <input aria-label="Clone name" value={cloneForm.name} onChange={(e) => setCloneForm({...cloneForm, name: e.target.value})} placeholder="Clone name" style={{ padding: 6, borderRadius: 4, border: "1px solid #ccc" }} />
+                <select aria-label="Clone provider" value={cloneForm.provider} onChange={(e) => setCloneForm({...cloneForm, provider: e.target.value})} style={{ padding: 6, borderRadius: 4, border: "1px solid #ccc" }}><option value="elevenlabs">ElevenLabs</option><option value="openai">OpenAI</option></select>
+                <input aria-label="Audio URL" value={cloneForm.audio_url} onChange={(e) => setCloneForm({...cloneForm, audio_url: e.target.value})} placeholder="Audio URL (S3/HTTPS)" style={{ padding: 6, borderRadius: 4, border: "1px solid #ccc", gridColumn: "span 2" }} />
+                <input aria-label="Clone description" value={cloneForm.description} onChange={(e) => setCloneForm({...cloneForm, description: e.target.value})} placeholder="Description" style={{ padding: 6, borderRadius: 4, border: "1px solid #ccc", gridColumn: "span 2" }} />
               </div>
               <button onClick={handleCloneCreate} style={{ marginTop: 8, padding: "6px 12px", background: "#8b5cf6", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer" }}>Create Clone Job</button>
             </div>

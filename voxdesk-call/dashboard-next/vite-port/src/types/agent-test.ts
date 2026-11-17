@@ -1,0 +1,9 @@
+// @ts-nocheck — vendored verbatim from dashboard/src (PART 17A); checked by vite-port/tsconfig.json
+/** dashboard/src/types/agent-test.ts — Test session domain */
+export type TestState = 'IDLE'|'CONNECTING'|'LISTENING'|'THINKING'|'SPEAKING'|'INTERRUPTED'|'ENDED'|'ERROR'|'NOT_CONFIGURED';
+export type TestEventType = 'start'|'stop'|'interrupt'|'text'|'audio'|'error';
+export interface TestEvent { id: string; type: TestEventType; payload?: Record<string, unknown>; timestamp: string; }
+export interface TestTranscript { id: string; role: 'user'|'agent'|'system'; content: string; timestamp: string; latency_ms?: number; tool_calls?: { name: string; args: Record<string, unknown> }[]; }
+export interface TestSession { id: string; agent_id: string; state: TestState; created_at: string; expires_at?: string; transcript: TestTranscript[]; latency_ms?: number; }
+export interface TestSessionState { session: TestSession | null; state: TestState; isConfigured: boolean; error?: string; loading: boolean; }
+export const TEST_STATE_LABELS: Record<TestState,string> = { IDLE: 'Idle', CONNECTING: 'Connecting', LISTENING: 'Listening', THINKING: 'Thinking', SPEAKING: 'Speaking', INTERRUPTED: 'Interrupted', ENDED: 'Ended', ERROR: 'Error', NOT_CONFIGURED: 'Not Configured' };

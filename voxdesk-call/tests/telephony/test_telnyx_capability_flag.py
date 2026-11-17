@@ -1,11 +1,8 @@
-"""The Telnyx media-stream capability flag: honest, credential-derived, and gated.
+"""Telnyx AI media stays unclaimed until a real end-to-end media test passes.
 
-The flag is not a vendor claim. Telnyx does stream AI media; *this deployment* can
-only do it when it holds the API key that controls the call, the public key that
-proves a webhook came from Telnyx, and the connection id the stream attaches to.
-Anything less keeps the flag false and every media entry point answers
-``UNSUPPORTED_CAPABILITY`` (HTTP 422) instead of answering a live caller into a
-stream that cannot be authenticated.
+Credentials permit requesting a stream, but they do not prove bidirectional
+media reached the authenticated VoxDesk pipeline. These tests distinguish
+credential readiness from live-verified capability.
 """
 
 from __future__ import annotations
@@ -70,19 +67,13 @@ async def test_capability_is_false_until_every_credential_is_present(monkeypatch
     monkeypatch.setattr(settings, "telnyx_public_key", "PUBLIC-test")
     assert adapter.supports_ai_media_stream is False
     monkeypatch.setattr(settings, "telnyx_connection_id", "1234567890")
-    assert adapter.supports_ai_media_stream is True
-    assert adapter.media_stream_capability() == {
-        "provider": "telnyx",
-        "supports_ai_media_stream": True,
-        "state": "READY",
-        "missing": [],
-        "serializer": "TelnyxMediaStream",
-        "encodings": ["PCMU", "PCMA", "L16"],
-        "sample_rates": [8000],
-        "pipeline_sample_rate": 16000,
-        "stream_endpoint": "/telephony/telnyx/ws",
-        "call_control_api": "v2",
-    }
+    assert adapter.supports_ai_media_stream is False
+    capability = adapter.media_stream_capability()
+    assert capability["supports_ai_media_stream"] is False
+    assert capability["state"] == "UNVERIFIED"
+    assert capability["missing"] == []
+    assert capability["evidence_required"] is True
+    assert capability["serializer"] is None
 
 
 async def test_require_media_stream_raises_the_unsupported_capability_error(monkeypatch):
@@ -108,6 +99,7 @@ async def test_start_media_stream_is_refused_without_the_full_credential_set(mon
 
 
 async def test_start_media_stream_requires_a_secure_url(monkeypatch):
+    monkeypatch.setattr("app.telephony.providers.telnyx.TELNYX_MEDIA_STREAM_LIVE_VERIFIED", True)
     monkeypatch.setattr(settings, "telnyx_public_key", "PUBLIC-test")
     monkeypatch.setattr(settings, "telnyx_connection_id", "1234567890")
     transport = ScriptedTransport()
@@ -120,6 +112,7 @@ async def test_start_media_stream_requires_a_secure_url(monkeypatch):
 
 
 async def test_start_media_stream_sends_the_bidirectional_rtp_payload(monkeypatch):
+    monkeypatch.setattr("app.telephony.providers.telnyx.TELNYX_MEDIA_STREAM_LIVE_VERIFIED", True)
     monkeypatch.setattr(settings, "telnyx_public_key", "PUBLIC-test")
     monkeypatch.setattr(settings, "telnyx_connection_id", "1234567890")
     transport = ScriptedTransport()

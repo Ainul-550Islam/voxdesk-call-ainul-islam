@@ -146,6 +146,7 @@ class TelephonyPhoneNumber(Base):
     inbound_agent_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     inbound_agent_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
     outbound_agent_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    routing: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
     status: Mapped[str] = mapped_column(
         String(32),
         nullable=False,
@@ -603,3 +604,197 @@ class CallLatencyStat(Base):
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 
+
+
+# ---------------------------------------------------------------------------
+# PART 13 — telephony and carrier parity
+#
+# Four tables, each owning one decision the platform has to be able to point at
+# later: which trunk a call left through (`sip_trunks`), how many concurrent
+# calls a tenant may hold (`telephony_concurrency_limits` + samples), where a
+# tenant allows calls to go (`telephony_country_policy`) and whether the carrier
+# has accepted our A2P/toll-free paperwork (`messaging_registrations`). Debug
+# captures get their own table (`call_debug_artifacts`) because the row is the
+# audit trail for a file that lives in object storage.
+# ---------------------------------------------------------------------------
+
+
+class SipTrunk(Base):
+    """A carrier-facing SIP trunk. Secrets are references, never values."""
+
+    __tablename__ = "sip_trunks"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    environment_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("environments.id", ondelete="SET NULL"), nullable=True
+    )
+    name: Mapped[str] = mapped_column(String(120), nullable=False, default="Primary trunk")
+    host: Mapped[str] = mapped_column(String(255), nullable=False)
+    port: Mapped[int] = mapped_column(Integer, nullable=False, default=5061)
+    transport: Mapped[str] = mapped_column(String(8), nullable=False, default="tls")
+    srtp_required: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    auth_username: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    #: Tenant/purpose-bound pointer into the secret store, sealed with the
+    #: `sip_trunk_auth` purpose. A plaintext password here would leak credentials.
+    auth_secret_ref: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    caller_id: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    #: Carrier allow-list name; printed on the health page so an operator can
+    #: compare it against the address in docs/STATIC_IP.md.
+    egress_address: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="NOT_CONFIGURED")
+    last_test_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    last_test_ms: Mapped[float | None] = mapped_column(Float, nullable=True)
+    last_error: Mapped[str | None] = mapped_column(String(400), nullable=True)
+    metadata_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+    __table_args__ = (
+        Index("ix_sip_trunks_tenant_status", "tenant_id", "status"),
+        UniqueConstraint("tenant_id", "name", name="uq_sip_trunks_tenant_name"),
+    )
+
+
+class TelephonyConcurrencyLimit(Base):
+    """Per-tenant concurrency entitlement.
+
+    ``burst_ceiling`` is not stored: it is always derived
+    (``min(3*base, base+300)``) so an operator cannot quietly raise it to a
+    number the billing system has never seen.
+    """
+
+    __tablename__ = "telephony_concurrency_limits"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, unique=True
+    )
+    base: Mapped[int] = mapped_column(Integer, nullable=False, default=10)
+    reserved_inbound: Mapped[int] = mapped_column(Integer, nullable=False, default=2)
+    #: Charging for calls above ``base`` is a commercial switch, not an automatic
+    #: consequence of allowing burst.
+    burst_billing: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    provider_cps: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+
+class TelephonyConcurrencySample(Base):
+    """One bucket of the 24 h concurrency series."""
+
+    __tablename__ = "telephony_concurrency_samples"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    captured_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), index=True
+    )
+    #: Minute-resolution floor so a chart never shows more detail than the
+    #: sampler can honestly promise.
+    bucket_start: Mapped[datetime] = mapped_column(DateTime, nullable=False, index=True)
+    inbound: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    outbound: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    peak: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "bucket_start", name="uq_concurrency_sample_bucket"),
+    )
+
+
+class TelephonyCountryPolicy(Base):
+    """Allow or deny a country for one tenant, number or agent."""
+
+    __tablename__ = "telephony_country_policy"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    scope: Mapped[str] = mapped_column(String(16), nullable=False, default="tenant")
+    scope_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    country: Mapped[str] = mapped_column(String(2), nullable=False)
+    action: Mapped[str] = mapped_column(String(8), nullable=False, default="allow")
+    reason: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "tenant_id", "scope", "scope_id", "country", name="uq_country_policy_scope"
+        ),
+    )
+
+
+class MessagingRegistration(Base):
+    """A2P 10DLC brand/campaign or toll-free verification, as a state machine."""
+
+    __tablename__ = "messaging_registrations"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    kind: Mapped[str] = mapped_column(String(32), nullable=False, default="a2p_brand")
+    state: Mapped[str] = mapped_column(String(32), nullable=False, default="draft", index=True)
+    carrier_reference: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    rejection_reason: Mapped[str | None] = mapped_column(String(400), nullable=True)
+    submitted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+
+class CallDebugArtifact(Base):
+    """One capture file per call, with its retention clock and audit trail."""
+
+    __tablename__ = "call_debug_artifacts"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    call_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False, index=True)
+    kind: Mapped[str] = mapped_column(String(16), nullable=False, default="pcap")
+    storage_key: Mapped[str] = mapped_column(String(400), nullable=False)
+    size_bytes: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    packet_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    truncated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    captured_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
+    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, index=True)
+    purged_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    #: The user who last asked for a signed URL. Evidence of who looked at a
+    #: call's raw packets, kept on the row next to the file it describes.
+    last_accessed_by: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    last_accessed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    access_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

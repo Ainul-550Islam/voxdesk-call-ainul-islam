@@ -1,0 +1,111 @@
+{
+  "generated_at": "2026-11-07T06:10:13.203155+00:00",
+  "path_under_test": "/telephony/ws (app.telephony.twilio_handler.media_stream)",
+  "provider_fakes": true,
+  "provider_fakes_note": "External STT/LLM/TTS network calls use deterministic local provider fakes for CI cost safety; TwilioFrameSerializer mu-law 8kHz decode/encode, NoisereduceFilter spectral denoise, stream token HMAC verification, LatencyObserver, and DB session persistence are real.",
+  "denoise_enabled": true,
+  "cost_model": {
+    "denoise_enabled": true,
+    "safe_concurrent_calls_per_2vcpu_worker": 20,
+    "compute_worker_hourly_usd": 0.084,
+    "compute_cost_per_concurrent_call_hour_usd": 0.0042,
+    "wholesale_stacks": {
+      "twilio_deepgram_gpt4omini_elevenlabs": {
+        "cost_per_call_minute_usd": 0.04937,
+        "cost_per_concurrent_call_hour_usd": 2.962
+      },
+      "twilio_deepgram_gpt4omini_cartesia": {
+        "cost_per_call_minute_usd": 0.03637,
+        "cost_per_concurrent_call_hour_usd": 2.182
+      }
+    }
+  },
+  "hardware": {
+    "cpu_model": "Intel(R) Xeon(R) Processor @ 2.60GHz",
+    "logical_vcpus": 2,
+    "mem_total_mb": 1982.8,
+    "kernel": "6.1.189+",
+    "python_version": "3.13.16",
+    "arch": "x86_64"
+  },
+  "baseline_rss_mb": 336.04,
+  "steps": [
+    {
+      "concurrent_calls": 10,
+      "turns_per_call": 3,
+      "total_turns": 30,
+      "inbound_frames": 120,
+      "outbound_frames": 30,
+      "wall_elapsed_s": 1.7667,
+      "cpu_user_s": 1.226,
+      "cpu_sys_s": 0.5358,
+      "cpu_total_s": 1.7617,
+      "cpu_ms_per_call": 176.174,
+      "cpu_pct_per_call": 9.972,
+      "single_core_saturation_pct": 99.72,
+      "rss_before_mb": 338.61,
+      "rss_after_mb": 340.54,
+      "rss_delta_mb": 4.5,
+      "rss_delta_mb_per_call": 0.45,
+      "e2e_p50_ms": 273.429,
+      "e2e_p95_ms": 298.764,
+      "e2e_p99_ms": 302.186,
+      "wall_call_p50_ms": 170.855,
+      "wall_call_p95_ms": 197.53
+    },
+    {
+      "concurrent_calls": 20,
+      "turns_per_call": 3,
+      "total_turns": 60,
+      "inbound_frames": 240,
+      "outbound_frames": 60,
+      "wall_elapsed_s": 3.7547,
+      "cpu_user_s": 2.7083,
+      "cpu_sys_s": 1.0292,
+      "cpu_total_s": 3.7375,
+      "cpu_ms_per_call": 186.877,
+      "cpu_pct_per_call": 4.977,
+      "single_core_saturation_pct": 99.54,
+      "rss_before_mb": 340.54,
+      "rss_after_mb": 340.67,
+      "rss_delta_mb": 4.63,
+      "rss_delta_mb_per_call": 0.231,
+      "e2e_p50_ms": 283.293,
+      "e2e_p95_ms": 315.597,
+      "e2e_p99_ms": 317.27,
+      "wall_call_p50_ms": 190.169,
+      "wall_call_p95_ms": 202.448
+    },
+    {
+      "concurrent_calls": 30,
+      "turns_per_call": 3,
+      "total_turns": 90,
+      "inbound_frames": 360,
+      "outbound_frames": 90,
+      "wall_elapsed_s": 5.5649,
+      "cpu_user_s": 3.8732,
+      "cpu_sys_s": 1.6743,
+      "cpu_total_s": 5.5476,
+      "cpu_ms_per_call": 184.918,
+      "cpu_pct_per_call": 3.323,
+      "single_core_saturation_pct": 99.69,
+      "rss_before_mb": 340.67,
+      "rss_after_mb": 340.77,
+      "rss_delta_mb": 4.73,
+      "rss_delta_mb_per_call": 0.158,
+      "e2e_p50_ms": 285.324,
+      "e2e_p95_ms": 314.597,
+      "e2e_p99_ms": 322.692,
+      "wall_call_p50_ms": 175.945,
+      "wall_call_p95_ms": 208.792
+    }
+  ],
+  "knee_point": {
+    "knee_concurrent_calls": 30,
+    "recommended_hpa_target_calls_per_worker": 24,
+    "knee_e2e_p95_ms": 314.597,
+    "knee_cpu_ms_per_call": 184.918,
+    "knee_rss_mb": 340.77,
+    "reason": "completed_all_steps_within_slo"
+  }
+}

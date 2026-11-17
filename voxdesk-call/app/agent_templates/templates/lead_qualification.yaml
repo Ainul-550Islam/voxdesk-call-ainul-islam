@@ -1,0 +1,132 @@
+id: lead_qualification
+name: Lead Qualification
+vertical: sales
+summary: >-
+  Qualifies inbound and outbound leads against an explicit rubric, books a sales call only when the rubric passes, and records why it did or did not.
+config:
+  voice: configured-default
+  language: en-US
+  first_message: >-
+    Thanks for getting back to me. Can I ask a couple of quick questions?
+  llm_model: gpt-4o-mini
+  max_call_seconds: 600
+  end_call_after_silence_seconds: 12
+
+tools:
+  - name: book_sales_call
+    description: Put a qualified lead in front of a human seller.
+    params:
+      account_name: {type: string}
+      slot: {type: string}
+
+dynamic_variables:
+  - name: company_size
+    type: number
+    purpose: >-
+      Headcount or seat count; part of the qualification rubric.
+    required: true
+    examples: ['"40"', '"about 200 people"']
+  - name: timeline
+    type: enum
+    purpose: >-
+      When they need this. 'now' is the only value that routes to a seller.
+    required: true
+    examples: [now, quarter, year, none]
+  - name: budget_confirmed
+    type: boolean
+    purpose: >-
+      Whether a budget holder has confirmed budget exists. Asked directly, never inferred.
+    required: true
+    examples: [true, false]
+
+flow:
+  mode: rigid
+  nodes:
+    - id: start
+      node_type: start
+      params: {}
+    - id: greet
+      node_type: conversation
+      params:
+        prompt: "Introduce yourself, name the company, and ask permission to ask a few questions."
+    - id: capture
+      node_type: extract_variables
+      params:
+        variables:
+          - {'name': 'company_size', 'type': 'number', 'required': True}
+          - {'name': 'timeline', 'type': 'enum', 'enum_values': '[now, quarter, year, none]', 'required': True}
+          - {'name': 'budget_confirmed', 'type': 'boolean', 'required': True}
+    - id: score
+      node_type: logic_split
+      params:
+        equations:
+          - {'variable': 'timeline', 'operator': '==', 'value': 'now'}
+    - id: book_sales
+      node_type: function
+      params:
+        tool_name: book_sales_call
+    - id: disqualify
+      node_type: conversation
+      params:
+        prompt: "Thank them, explain the product is probably not a fit yet, and offer to send material instead. Do not argue."
+    - id: end
+      node_type: end
+      params: {}
+  edges:
+    - id: e1
+      source_id: start
+      target_id: greet
+    - id: e2
+      source_id: greet
+      target_id: capture
+    - id: e3
+      source_id: capture
+      target_id: score
+    - id: e4
+      source_id: score
+      target_id: book_sales
+    - id: e5
+      source_id: score
+      target_id: disqualify
+    - id: e6
+      source_id: book_sales
+      target_id: end
+    - id: e7
+      source_id: disqualify
+      target_id: end
+
+analysis_schema:
+  fields:
+    - name: qualified
+      type: boolean
+    - name: disqualification_reason
+      type: string
+    - name: timeline
+      type: enum
+      values: [now, quarter, year, none]
+
+simulation_cases:
+  - name: a now-timeline lead is routed to a seller
+    turns:
+      - "we need this now"
+      - "120 people"
+      - "yes the budget is approved"
+    expect_node: book_sales
+    expect_variables:
+      timeline: now
+      budget_confirmed: true
+  - name: a no-timeline lead is disqualified without pressure
+    turns:
+      - "maybe next year"
+      - "20 people"
+    expect_node: disqualify
+    expect_variables:
+      timeline: year
+
+kb_placeholders:
+  - "icp.md — the ideal-customer profile the rubric encodes"
+  - "pricing-objections.md — approved answers to the three common objections"
+
+compliance_notes:
+  - "Outbound calling rules differ by jurisdiction (calling windows, identification, opt-out). This template records consent state but does not encode a jurisdiction's rules; counsel must supply them per market."
+  - "Do not record a budget that was not stated. A guessed qualification is worse than no qualification."

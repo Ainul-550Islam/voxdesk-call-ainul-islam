@@ -45,6 +45,13 @@ async def post_dial(client, sid, dial_status, duration="30"):
     )
 
 
+async def post_human_whisper(client, call):
+    return await client.post(
+        f"/telephony/transfer-whisper?call_id={call.id}",
+        data={"CallSid": "CA-human-leg", "AnsweredBy": "human"},
+    )
+
+
 async def system_texts(db, call):
     rows = (await db.execute(
         select(Turn).where(Turn.call_id == call.id, Turn.speaker == Speaker.SYSTEM)
@@ -78,6 +85,26 @@ async def test_transfer_status_webhook_rejects_a_bad_signature(client, db, monke
     monkeypatch.setattr(settings, "app_env", "production")
     monkeypatch.setattr(settings, "twilio_skip_webhook_verify", False)
     assert (await post_dial(client, call.call_sid, "answered")).status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_transfer_whisper_webhook_rejects_a_bad_signature(client, db, monkeypatch):
+    tenant = await tenant_with_human(db)
+    call = await seed_call(db, tenant)
+    await transfer_service.request_transfer(
+        db, tenant, call, provider=FakeTelephonyProvider()
+    )
+    monkeypatch.setattr(settings, "app_env", "production")
+    monkeypatch.setattr(settings, "twilio_skip_webhook_verify", False)
+
+    response = await client.post(
+        f"/telephony/transfer-whisper?call_id={call.id}",
+        data={"CallSid": "CA-child", "AnsweredBy": "human"},
+    )
+
+    assert response.status_code == 403
+    await db.refresh(call)
+    assert "human_verified" not in call.transfer_context["transfer_v2"]
 
 
 @pytest.mark.asyncio
@@ -177,6 +204,9 @@ async def test_case_a_transfer_then_stream_close_then_completed_then_dial_callba
     await db.refresh(call)
     assert call.status is CallStatus.TRANSFERRED
 
+    # Twilio verifies the callee through <Number url> before the parent call
+    # can ever be bridged, even though the action callback below may race late.
+    assert (await post_human_whisper(client, call)).status_code == 200
     await post_status(client, call.call_sid, "completed", "200")
     await post_dial(client, call.call_sid, "answered")
 
@@ -184,6 +214,10 @@ async def test_case_a_transfer_then_stream_close_then_completed_then_dial_callba
     assert call.status is CallStatus.COMPLETED, "final status must stay terminal"
     assert call.transfer_state is TransferState.CONNECTED
     assert provider.call_count == 1
+    texts = await system_texts(db, call)
+    assert "Caller connected to a person" in texts
+    assert "Transfer ended" in texts
+    assert not any(text.startswith("Transfer cancelled") for text in texts)
 
 
 @pytest.mark.asyncio
@@ -195,6 +229,7 @@ async def test_case_b_dial_callback_then_completed(client, db):
         db, tenant, call, provider=FakeTelephonyProvider()
     )
 
+    assert (await post_human_whisper(client, call)).status_code == 200
     await post_dial(client, call.call_sid, "answered")
     await db.refresh(call)
     assert call.transfer_state is TransferState.CONNECTED
@@ -229,6 +264,7 @@ async def test_case_d_duplicate_completed_callbacks(client, db):
         db, tenant, call, provider=FakeTelephonyProvider()
     )
 
+    assert (await post_human_whisper(client, call)).status_code == 200
     for _ in range(3):
         await post_dial(client, call.call_sid, "answered")
     for _ in range(3):

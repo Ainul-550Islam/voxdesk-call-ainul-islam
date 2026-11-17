@@ -1,0 +1,2 @@
+# Keep the standalone media bridge small and in sync with the API transport.
+websockets==13.1

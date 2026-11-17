@@ -81,7 +81,10 @@ def test_the_check_is_not_vacuous(
     unserved call in a scratch file, points the file list at it, and requires
     the run to fail and to name the line.
     """
-    planted = ROOT / "dashboard" / "src" / "__verify_unserved_path__.tsx"
+    # PART 17A retired the legacy `dashboard/` tree; plant in the tree that
+    # actually ships, so this guard keeps testing the scanner and not the
+    # absence of a directory.
+    planted = ROOT / "dashboard-next" / "__verify_unserved_path__.tsx"
     planted.write_text(
         "export async function go(id: string) {\n"
         "  return fetch(`/api/definitely/not/served/${id}`);\n"
@@ -150,6 +153,9 @@ def test_extraction_ignores_comments_and_non_api_paths(tmp_path: Path, scanner: 
                 "/* const blocked = \"/api/only/in/a/block\"; */",
                 "const page = \"/dashboard/calls\";",
                 "const prefix = \"/api\";",
+                "const BASE = \"/api/whitelabel\";",
+                "request(`${BASE}/theme`);",
+                "request(BASE);",
                 "const live = await api.get(\"/api/calls/${id}\");",
             ]
         ),
@@ -161,6 +167,8 @@ def test_extraction_ignores_comments_and_non_api_paths(tmp_path: Path, scanner: 
     assert "/api/only/in/a/block" not in paths
     assert "/dashboard/calls" not in paths
     assert "/api" not in paths
+    assert "/api/whitelabel" in paths
+    assert "/api/whitelabel/theme" in paths
     assert "/api/calls/${id}" in paths
 
 

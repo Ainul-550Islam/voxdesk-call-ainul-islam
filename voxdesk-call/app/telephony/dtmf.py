@@ -148,3 +148,52 @@ async def process_call_dtmf(
         barge_in_triggered=barge_in_triggered,
         status=call_session.status,
     )
+
+# ---------------------------------------------------------------------------
+# PART 12 (P12-15) — provider events → the conversational keypad collector
+# ---------------------------------------------------------------------------
+
+def parse_user_dtmf_event(payload: dict[str, Any]) -> str:
+    """Extract the digits from a Twilio/Telnyx DTMF webhook payload.
+
+    Twilio sends `Digits`; Telnyx sends `dtmf.digit` (one digit per event) or `digits` in the
+    payload root. Anything else raises: silently returning "" makes the collector look like the
+    caller pressed nothing, which is indistinguishable from a broken carrier integration.
+    """
+    if not isinstance(payload, dict):
+        raise DtmfError("DTMF payload must be an object", detail={"payload": type(payload).__name__})
+    for key in ("Digits", "digits"):
+        value = payload.get(key)
+        if isinstance(value, str) and value.strip():
+            return validate_dtmf_digits(value)
+    nested = payload.get("dtmf")
+    if isinstance(nested, dict):
+        digit = nested.get("digit") or nested.get("digits")
+        if isinstance(digit, str) and digit.strip():
+            return validate_dtmf_digits(digit)
+    raise DtmfError("no digits in the DTMF payload", detail={"keys": sorted(payload)})
+
+
+def user_dtmf_event_for_agent(
+    payload: dict[str, Any],
+    collector: Any,
+    *,
+    at: float | None = None,
+) -> dict[str, Any] | None:
+    """Feed a provider payload into a :class:`UserDtmfCollector` and return its event, if any.
+
+    Kept separate from :func:`process_call_dtmf` on purpose: the legacy path routes a call through
+    the IVR tree, while this one feeds the *conversation*. Sharing code between them is how a menu
+    digit ends up answering a question the agent asked.
+    """
+    digits = parse_user_dtmf_event(payload)
+    result = None
+    for digit in digits:
+        finished = collector.feed(digit, at=at)
+        if finished is not None:
+            result = finished
+            break
+    if result is None:
+        return None
+    return result.to_event()
+

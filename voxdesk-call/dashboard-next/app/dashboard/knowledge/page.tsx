@@ -105,7 +105,7 @@ export default function KnowledgePage() {
         {documents.documents.length === 0 ? (
           <div className="empty">No documents uploaded yet.</div>
         ) : (
-          <div className="table-wrap">
+          <div className="table-wrap" tabIndex={0} role="region" aria-label="Data table">
             <table>
               <thead>
                 <tr>

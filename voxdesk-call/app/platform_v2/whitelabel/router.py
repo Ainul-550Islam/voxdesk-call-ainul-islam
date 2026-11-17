@@ -103,6 +103,10 @@ async def list_domains(
     ctx: TenantContext = Depends(require_permission(Permission.DOMAIN_READ)),
     session: AsyncSession = Depends(get_session),
 ):
+    """List this workspace's claimed hostnames.
+
+    Includes their verification and certificate state, so an operator can see which are live.
+    """
     size, start = api.page(limit, offset)
     rows = await domains_mod.list_for_tenant(session, tenant_id=ctx.tenant_id, limit=size, offset=start)
     return {"domains": [domains_mod.describe(row) for row in rows], "count": len(rows)}
@@ -155,6 +159,7 @@ async def read_domain(
     ctx: TenantContext = Depends(require_permission(Permission.DOMAIN_READ)),
     session: AsyncSession = Depends(get_session),
 ):
+    """Read one hostname's claim."""
     row = await domains_mod.get(session, tenant_id=ctx.tenant_id, domain_id=domain_id)
     return domains_mod.describe(row)
 
@@ -167,6 +172,7 @@ async def read_domain_checks(
     ctx: TenantContext = Depends(require_permission(Permission.DOMAIN_READ)),
     session: AsyncSession = Depends(get_session),
 ):
+    """The DNS checks for one hostname, with the resolver answers that produced them."""
     size, _ = api.page(limit, 0)
     rows = await domains_mod.checks_for(session, tenant_id=ctx.tenant_id, domain_id=domain_id, limit=size)
     return {"checks": [domains_mod.serialise_check(row) for row in rows]}
@@ -181,6 +187,10 @@ async def verify_domain(
     ctx: TenantContext = Depends(require_permission(Permission.DOMAIN_VERIFY)),
     session: AsyncSession = Depends(get_session),
 ):
+    """Re-run the DNS checks for one hostname.
+
+    Idempotent; a claim that already passes returns ACTIVE without changing anything.
+    """
     claim = await api.claim(
         session, ctx, request, operation="wl.domain.verify", payload={"domain_id": str(domain_id)}
     )
@@ -215,6 +225,10 @@ async def read_certificate(
     ctx: TenantContext = Depends(require_permission(Permission.DOMAIN_READ)),
     session: AsyncSession = Depends(get_session),
 ):
+    """The certificate state for one hostname.
+
+    A certificate is only issued after the domain is ACTIVE; before that this reports the reason rather than a placeholder.
+    """
     await domains_mod.get(session, tenant_id=ctx.tenant_id, domain_id=domain_id)
     return await tls_mod.status_for(session, tenant_id=ctx.tenant_id, domain_id=domain_id)
 
@@ -227,6 +241,7 @@ async def refresh_certificate(
     ctx: TenantContext = Depends(require_permission(Permission.DOMAIN_VERIFY)),
     session: AsyncSession = Depends(get_session),
 ):
+    """Request a renewed certificate for one hostname."""
     claim = await api.claim(
         session, ctx, request, operation="wl.certificate.refresh", payload={"domain_id": str(domain_id)}
     )
@@ -259,6 +274,10 @@ async def disable_domain(
     ctx: TenantContext = Depends(require_permission(Permission.DOMAIN_WRITE)),
     session: AsyncSession = Depends(get_session),
 ):
+    """Stop serving one hostname immediately.
+
+    The reason is recorded in the audit trail; the claim itself is kept so re-enabling does not require DNS proof again.
+    """
     claim = await api.claim(
         session, ctx, request, operation="wl.domain.disable", payload={"domain_id": str(domain_id)}
     )
@@ -293,6 +312,7 @@ async def enable_domain(
     ctx: TenantContext = Depends(require_permission(Permission.DOMAIN_WRITE)),
     session: AsyncSession = Depends(get_session),
 ):
+    """Resume serving a disabled hostname."""
     claim = await api.claim(
         session, ctx, request, operation="wl.domain.enable", payload={"domain_id": str(domain_id)}
     )
@@ -322,6 +342,10 @@ async def delete_domain(
     ctx: TenantContext = Depends(require_permission(Permission.DOMAIN_WRITE)),
     session: AsyncSession = Depends(get_session),
 ):
+    """Release a hostname claim.
+
+    After this the hostname resolves to nothing and will receive no branded document.
+    """
     await domains_mod.get(session, tenant_id=ctx.tenant_id, domain_id=domain_id)
     claim = await api.claim(
         session, ctx, request, operation="wl.domain.delete", payload={"domain_id": str(domain_id)}
@@ -343,6 +367,41 @@ async def delete_domain(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
+# --------------------------------------------------- branding (projected) ---
+@router.get("/branding")
+@api.endpoint_errors
+async def read_branding(
+    surface: str = Query(default="ui", pattern="^(ui|email|widget|document)$"),
+    ctx: TenantContext = Depends(require_permission(Permission.BRAND_READ)),
+    session: AsyncSession = Depends(get_session),
+):
+    """This tenant's branding, projected for one surface.
+
+    ``GET /theme`` returns the raw payload an editor edits. This returns what a
+    *renderer* needs and nothing else: CSS custom properties, document metadata,
+    or the widget's config, plus a ``coverage`` block naming any field that still
+    carries the vendor's name. The distinction matters because a support engineer
+    answering "why does my dashboard still say VoxDesk" needs the projection and
+    its coverage report, not the theme JSON.
+    """
+    from app.tenancy import branding as tenancy_branding
+
+    payload, version = await branding_mod.current(session, tenant_id=ctx.tenant_id)
+    theme = dict(payload) if version is not None else None
+    brand = tenancy_branding.project(
+        theme,
+        tenant_id=ctx.tenant_id,
+        surface=surface,  # type: ignore[arg-type]
+        theme_version=version.version_number if version else 0,
+    )
+    body = brand.as_dict()
+    body["css"] = brand.css_variables()
+    body["document"] = tenancy_branding.document_metadata(brand)
+    body["widget"] = tenancy_branding.widget_config_for(brand)
+    body["coverage"] = tenancy_branding.coverage(brand)
+    return body
+
+
 # -------------------------------------------------------------------- themes ---
 @router.get("/theme")
 @api.endpoint_errors
@@ -350,6 +409,7 @@ async def read_theme(
     ctx: TenantContext = Depends(require_permission(Permission.BRAND_READ)),
     session: AsyncSession = Depends(get_session),
 ):
+    """The theme payload an editor edits, plus its published version and the allowed fonts."""
     payload, version = await branding_mod.current(session, tenant_id=ctx.tenant_id)
     return {
         "payload": payload,
@@ -392,6 +452,10 @@ async def publish_theme(
     ctx: TenantContext = Depends(require_permission(Permission.BRAND_WRITE)),
     session: AsyncSession = Depends(get_session),
 ):
+    """Publish a new immutable theme version, optionally activating it.
+
+    Contrast is validated first; a theme that fails is refused with the failing pairs listed.
+    """
     claim = await api.claim(session, ctx, request, operation="wl.theme.publish", payload=body.model_dump(mode="json"))
     replay = api.replay_response(claim, resource_type="wl_brand_theme_version")
     if replay is not None:
@@ -424,6 +488,7 @@ async def list_theme_versions(
     ctx: TenantContext = Depends(require_permission(Permission.BRAND_READ)),
     session: AsyncSession = Depends(get_session),
 ):
+    """Theme version history, newest first."""
     rows = await branding_mod.versions(session, tenant_id=ctx.tenant_id)
     return {"versions": [branding_mod.describe_version(row) for row in rows]}
 
@@ -436,6 +501,10 @@ async def activate_theme_version(
     ctx: TenantContext = Depends(require_permission(Permission.BRAND_WRITE)),
     session: AsyncSession = Depends(get_session),
 ):
+    """Repoint the active theme at an earlier version.
+
+    A rollback is a pointer move: no row is rewritten, so the history stays intact.
+    """
     claim = await api.claim(
         session, ctx, request, operation="wl.theme.activate", payload={"version_id": str(version_id)}
     )
@@ -464,6 +533,7 @@ async def list_assets(
     ctx: TenantContext = Depends(require_permission(Permission.BRAND_READ)),
     session: AsyncSession = Depends(get_session),
 ):
+    """List uploaded brand assets (logos, favicons)."""
     rows = await assets_mod.list_for_tenant(session, tenant_id=ctx.tenant_id)
     return {"assets": [assets_mod.describe(row) for row in rows]}
 
@@ -534,6 +604,7 @@ async def read_asset(
     ctx: TenantContext = Depends(require_permission(Permission.BRAND_READ)),
     session: AsyncSession = Depends(get_session),
 ):
+    """Asset metadata by id."""
     row = await assets_mod.get(session, tenant_id=ctx.tenant_id, asset_id=asset_id)
     return assets_mod.describe(row)
 
@@ -568,6 +639,7 @@ async def delete_asset(
     ctx: TenantContext = Depends(require_permission(Permission.BRAND_WRITE)),
     session: AsyncSession = Depends(get_session),
 ):
+    """Delete a brand asset. A theme still referencing it falls back to no logo rather than a broken image."""
     await assets_mod.get(session, tenant_id=ctx.tenant_id, asset_id=asset_id)
     claim = await api.claim(
         session, ctx, request, operation="wl.asset.delete", payload={"asset_id": str(asset_id)}
@@ -602,6 +674,7 @@ async def list_sender_domains(
     ctx: TenantContext = Depends(require_permission(Permission.BRAND_READ)),
     session: AsyncSession = Depends(get_session),
 ):
+    """List verified sending domains for outgoing email."""
     rows = await email_mod.list_for_tenant(session, tenant_id=ctx.tenant_id)
     return {"sender_domains": [email_mod.describe(row) for row in rows]}
 
@@ -614,6 +687,10 @@ async def create_sender_domain(
     ctx: TenantContext = Depends(require_permission(Permission.BRAND_WRITE)),
     session: AsyncSession = Depends(get_session),
 ):
+    """Claim a sending domain.
+
+    Sending stays off until SPF, DKIM and DMARC all pass; this endpoint returns the records to publish.
+    """
     claim = await api.claim(
         session, ctx, request, operation="wl.sender_domain.create", payload=body.model_dump()
     )
@@ -652,6 +729,7 @@ async def verify_sender_domain(
     ctx: TenantContext = Depends(require_permission(Permission.BRAND_WRITE)),
     session: AsyncSession = Depends(get_session),
 ):
+    """Re-check a sending domain's DNS records."""
     claim = await api.claim(
         session, ctx, request, operation="wl.sender_domain.verify", payload={"sender_id": str(sender_id)}
     )
@@ -681,6 +759,7 @@ async def read_sender_records(
     ctx: TenantContext = Depends(require_permission(Permission.BRAND_READ)),
     session: AsyncSession = Depends(get_session),
 ):
+    """The DNS records a sending domain must publish."""
     sender = await email_mod.get(session, tenant_id=ctx.tenant_id, sender_id=sender_id)
     rows = await email_mod.records_for(session, tenant_id=ctx.tenant_id, sender_id=sender_id)
     return {
@@ -715,6 +794,7 @@ async def delete_sender_domain(
     ctx: TenantContext = Depends(require_permission(Permission.BRAND_WRITE)),
     session: AsyncSession = Depends(get_session),
 ):
+    """Remove a sending domain."""
     await email_mod.get(session, tenant_id=ctx.tenant_id, sender_id=sender_id)
     claim = await api.claim(
         session, ctx, request, operation="wl.sender_domain.delete", payload={"sender_id": str(sender_id)}
@@ -742,6 +822,7 @@ async def delete_sender_domain(
 async def list_templates(
     ctx: TenantContext = Depends(require_permission(Permission.BRAND_READ)),
 ):
+    """The branded email templates this deployment can render."""
     return {"templates": templates_mod.available()}
 
 
@@ -766,6 +847,10 @@ async def read_widget_admin(
     ctx: TenantContext = Depends(require_permission(Permission.BRAND_READ)),
     session: AsyncSession = Depends(get_session),
 ):
+    """The widget configuration as this workspace configured it.
+
+    Distinct from the public endpoint, which resolves the same theme by request Host.
+    """
     theme, _version = await branding_mod.current(session, tenant_id=ctx.tenant_id)
     return {
         "config": widget_mod.config_for(ctx.tenant_id, theme),

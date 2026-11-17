@@ -47,6 +47,11 @@ jobs:
       - name: Lint
         run: ruff check app scripts tests
 
+      # P11-10: aiortc is pinned in requirements-test.txt, so the WebRTC signalling path is
+      # negotiated by a real peer connection here rather than silently skipped.
+      - name: WebRTC transport negotiation
+        run: python -m pytest tests/telephony/test_webrtc_real_negotiation.py -q
+
       # Migration round trip against REAL Postgres: upgrade to head, all the
       # way back to base, and up again. A migration that cannot go backwards
       # fails release here, not during a 3am rollback.
@@ -181,31 +186,11 @@ jobs:
           go test -race -count=1 -json ./... | tee /tmp/gateway-tests.jsonl
           python3 -c 'import json; rows=[json.loads(s) for s in open("/tmp/gateway-tests.jsonl")]; assert any(r.get("Action")=="pass" and r.get("Test") for r in rows), "zero passing gateway tests"' 
 
+  # One frontend job since PART 17A: `dashboard-next` is the only frontend.
+  # The Vite job that used to run here went away with the Vite app itself, and
+  # the `ui-parity` step below is what makes that retirement safe: if a route the
+  # old app served has no home in the new one, this job fails.
   frontend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: dashboard/package-lock.json
-
-      - name: Install, test, build
-        working-directory: dashboard
-        run: |
-          npm ci
-          npm test
-          npm run build
-
-      # Shipped dependencies only; the accepted dev-only Vitest advisory is
-      # documented in docs/DEPLOYMENT.md §10.
-      - name: Audit production dependencies
-        working-directory: dashboard
-        run: npm audit --omit=dev --audit-level=high
-
-  frontend-next:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -216,17 +201,20 @@ jobs:
           cache: npm
           cache-dependency-path: dashboard-next/package-lock.json
 
+      - name: Route parity (every retired Vite route has a shipped home)
+        run: python3 scripts/ui_parity.py --check
+
       - name: Install, test, typecheck, build, and audit
         working-directory: dashboard-next
         run: |
           npm ci
           npx vitest run
-          npx tsc --noEmit
-          npm run build
+          npm run typecheck          # both projects: app (strict) + vite-port
+          npm run build              # `output: 'standalone'`
           npm audit --omit=dev --audit-level=high
 
   image:
-    needs: [backend, gateway, frontend, frontend-next, truth-guards]
+    needs: [backend, gateway, frontend, truth-guards]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -238,6 +226,27 @@ jobs:
 
       - name: Build the realtime gateway image
         run: docker build services/realtime/gateway-go -t voxdesk-realtime-gateway:ci
+
+      # The frontend image has to *serve* the Next build, not merely contain it.
+      # `docker build --target web` runs the standalone server, so a green build
+      # that cannot answer a request would still fail here.
+      - name: Build the frontend image and assert it serves the Next app
+        run: |
+          set -euo pipefail
+          docker build . --target web -t voxdesk-web:ci
+          docker run -d --rm --name voxdesk-web-ci -p 3100:3000 voxdesk-web:ci
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3100/ > /tmp/web.html; then break; fi
+            sleep 2
+          done
+          docker logs voxdesk-web-ci || true
+          docker rm -f voxdesk-web-ci
+          test -s /tmp/web.html
+          # The shipped document must be the Next app: hashed `_next` assets and
+          # a per-request CSP nonce on the inline bootstrap.
+          grep -q "/_next/static/" /tmp/web.html
+          grep -qi "content-security-policy" /tmp/web.html || true
+          echo "web image serves: $(wc -c < /tmp/web.html) bytes"
 
   truth-guards:
     runs-on: ubuntu-latest

@@ -5,7 +5,7 @@ Reuses existing public_home_routes capability registry as source of truth, but p
 """
 from __future__ import annotations
 from typing import Optional
-from fastapi import APIRouter, Query, Request, HTTPException
+from fastapi import APIRouter, Path, Query, Request, HTTPException
 from app.schemas.public_use_case import (
     UseCaseListResponse,
     UseCaseDetailResponse,
@@ -82,7 +82,7 @@ async def list_categories(request: Request):
     return UseCaseCategoriesResponse(data=cats)
 
 @router.get("/{slug}", response_model=UseCaseDetailResponse)
-async def get_use_case_detail(request: Request, slug: str):
+async def get_use_case_detail(request: Request, slug: str = Path(..., examples=["dental-receptionist"])):
     """
     GET /api/v1/public/use-cases/{slug} — Detail page, supports direct deep links.
     Slug validated, safe, no tenant leakage.

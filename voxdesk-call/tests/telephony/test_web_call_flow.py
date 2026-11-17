@@ -329,8 +329,21 @@ async def test_web_call_create_ws_protobuf_roundtrip_and_usage_persistence(
 
 @pytest.mark.asyncio
 async def test_small_webrtc_offer_returns_honest_501_when_aiortc_unavailable(
-    client, db
+    client, db, monkeypatch
 ) -> None:
+    # `aiortc` is pinned in requirements-test.txt (PART 11 / P11-10), so the absence this test
+    # is about has to be simulated explicitly rather than assumed from the environment.
+    import builtins
+
+    real_import = builtins.__import__
+
+    def _block_smallwebrtc(name, *args, **kwargs):
+        if name.startswith("pipecat.transports.smallwebrtc"):
+            raise ImportError("aiortc not installed")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", _block_smallwebrtc)
+
     tenant = await make_tenant(db, name="WebRTC Offer Tenant")
     user = await make_user(db, tenant=tenant, role=UserRole.ADMIN)
     agent = await _seed_published_agent(db, tenant.id)
@@ -395,3 +408,155 @@ async def test_widget_embed_js_and_python_sdk_helpers(client, db) -> None:
     from sdk.python.voxdesk.client import VoxDeskClient as DirectVoxDeskClient
 
     assert VoxDeskClient is DirectVoxDeskClient
+
+
+@pytest.mark.asyncio
+async def test_live_browser_pipeline_masks_protobuf_dtmf_before_llm_context(
+    app, client, db, monkeypatch
+) -> None:
+    """Exercise the non-mock browser route, its Protobuf input, and the real voice-control chain."""
+    from types import SimpleNamespace
+
+    import app.ai.runtime as ai_runtime
+    import app.telephony.web_transport as web_transport
+    from pipecat.frames.frames import InterimTranscriptionFrame, TranscriptionFrame
+    from pipecat.processors.aggregators.openai_llm_context import (
+        OpenAILLMContextFrame,
+    )
+    from pipecat.processors.frame_processor import FrameDirection, FrameProcessor
+
+    class _PassThrough(FrameProcessor):
+        async def process_frame(self, frame, direction):
+            await super().process_frame(frame, direction)
+            await self.push_frame(frame, direction)
+
+    class _ContextPassThrough(_PassThrough):
+        def __init__(self, context, role: str) -> None:
+            super().__init__()
+            self.context = context
+            self.role = role
+
+        def get_context_frame(self):
+            return OpenAILLMContextFrame(context=self.context)
+
+        async def process_frame(self, frame, direction):
+            if (
+                self.role == "user"
+                and direction == FrameDirection.DOWNSTREAM
+                and isinstance(frame, TranscriptionFrame)
+                and not isinstance(frame, InterimTranscriptionFrame)
+            ):
+                self.context.add_message({"role": "user", "content": frame.text})
+            await super().process_frame(frame, direction)
+
+    class _ContextPair:
+        def __init__(self, context) -> None:
+            self.context = context
+
+        def user(self):
+            return _ContextPassThrough(self.context, "user")
+
+        def assistant(self):
+            return _ContextPassThrough(self.context, "assistant")
+
+    class _RecordingLLM(_PassThrough):
+        def __init__(self) -> None:
+            super().__init__()
+            self.context = None
+            self.transcriptions: list[str] = []
+            self.transcription_seen = asyncio.Event()
+
+        def register_function(self, *_args, **_kwargs) -> None:
+            return None
+
+        def create_context_aggregator(self, context):
+            self.context = context
+            return _ContextPair(context)
+
+        async def process_frame(self, frame, direction):
+            if (
+                direction == FrameDirection.DOWNSTREAM
+                and isinstance(frame, TranscriptionFrame)
+                and not isinstance(frame, InterimTranscriptionFrame)
+            ):
+                self.transcriptions.append(str(frame.text or ""))
+                self.transcription_seen.set()
+            await super().process_frame(frame, direction)
+
+    tenant = await make_tenant(db, name="Live Browser DTMF Tenant")
+    tenant.humanize = False
+    user = await make_user(db, tenant=tenant, role=UserRole.ADMIN)
+    agent = await _seed_published_agent(db, tenant.id)
+    version = (
+        await db.execute(select(AgentVersion).where(AgentVersion.agent_id == agent.id))
+    ).scalar_one()
+    version.config_snapshot = {
+        **version.config_snapshot,
+        "call_tooling": {
+            "user_dtmf_enabled": True,
+            "user_dtmf_mode": "end_key",
+            "user_dtmf_end_key": "#",
+            "user_dtmf_keep_last": 2,
+            "user_dtmf_prompt": "Enter your four-digit reference number.",
+            "voicemail_detection_enabled": True,
+            "voicemail_action": "hangup",
+        },
+    }
+    await db.commit()
+
+    headers = await auth_headers(client, user)
+    created = await client.post(
+        "/api/web-calls",
+        headers={**headers, "Origin": "https://app.voxdesk.test"},
+        json={"agent_id": str(agent.id)},
+    )
+    assert created.status_code == 201, created.text
+    access_token = created.json()["access_token"]
+    call_id = uuid.UUID(created.json()["call_id"])
+
+    llm = _RecordingLLM()
+    prepared = SimpleNamespace(
+        choice=SimpleNamespace(provider="test", model="test-model"),
+        system_prompt="Test live browser voice pipeline.",
+        blocked_output=(),
+    )
+
+    async def _fake_voice_llm(*_args, **_kwargs):
+        return llm, prepared
+
+    def _fake_component(*_args, **_kwargs):
+        return _PassThrough()
+
+    monkeypatch.setattr(ai_runtime, "voice_llm", _fake_voice_llm)
+    monkeypatch.setattr(web_transport, "build_stt", _fake_component)
+    monkeypatch.setattr(web_transport, "build_stt_for_runtime", _fake_component)
+    monkeypatch.setattr(web_transport, "build_tts", _fake_component)
+    monkeypatch.setattr(web_transport, "build_tts_for_runtime", _fake_component)
+    monkeypatch.setattr(web_transport, "_ACTIVE_PROVIDER_FAKE", None)
+
+    async with asgi_websocket_connect(
+        app,
+        f"/telephony/web/ws?token={access_token}",
+        headers={"Origin": "https://app.voxdesk.test"},
+    ) as ws:
+        await ws.send_bytes(_encode_message_frame({"type": "dtmf", "digits": "1234#"}))
+        await asyncio.wait_for(llm.transcription_seen.wait(), timeout=5.0)
+
+    assert len(llm.transcriptions) == 1
+    assert "Caller entered keypad input" in llm.transcriptions[0]
+    assert "1234" not in llm.transcriptions[0]
+    assert "**34" in llm.transcriptions[0]
+    assert llm.context is not None
+    user_messages = [
+        message["content"]
+        for message in llm.context.get_messages()
+        if message.get("role") == "user"
+    ]
+    assert user_messages == [llm.transcriptions[0]]
+
+    db.expire_all()
+    saved_turns = (
+        await db.execute(select(Turn).where(Turn.call_id == call_id, Turn.speaker == db_models.Speaker.USER))
+    ).scalars().all()
+    assert [turn.text for turn in saved_turns] == [llm.transcriptions[0]]
+    assert all("1234" not in turn.text for turn in saved_turns)

@@ -196,6 +196,11 @@ class Settings(BaseSettings):
     playht_user_id: str = ""
     azure_speech_key: str = ""
     azure_speech_region: str = ""
+    # PART 12 (P12-08/P12-09) providers
+    soniox_api_key: str = ""
+    minimax_api_key: str = ""
+    minimax_group_id: str = ""
+    fish_audio_api_key: str = ""
     # Provider-neutral voice runtime policy. Provider credentials remain in
     # environment/configuration and are never stored on tenant rows.
     tts_provider: str = "elevenlabs"
@@ -226,6 +231,35 @@ class Settings(BaseSettings):
     voice_demo_rate_limit_per_minute: int = 10
     voice_demo_max_turns: int = 12
 
+    # ---------- Request-a-call demo (PART 18, P18-03) ----------
+    # The public demo dials a real number on the vendor's account, so every
+    # limit below is a *spend* limit, not a politeness setting. All of them are
+    # env-overridable so a launch day can be tightened without a deploy.
+    demo_enabled: bool = True
+    #: The demo agent an inbound demo call is routed to. Empty means the demo
+    #: answers 503 instead of dialling with nothing on the other end.
+    demo_agent_id: str = ""
+    #: Caller id for demo calls. Must be a number the telephony account owns.
+    demo_from_number: str = ""
+    #: Where the telephony provider posts the answer instruction for the demo.
+    demo_answer_url: str = ""
+    #: Global daily caps, across all visitors.
+    demo_daily_calls: int = 25
+    demo_daily_seconds: int = 600
+    demo_max_call_seconds: int = 60
+    demo_default_call_seconds: int = 25
+    #: Per-visitor limits: one IP, and one destination number.
+    demo_per_ip_hourly: int = 3
+    demo_per_number_daily: int = 2
+    #: A per-deployment salt for hashing numbers and IPs in the demo tables.
+    #: The demo refuses to run without it (a shared constant would make every
+    #: deployment's hashes comparable to every other's).
+    demo_rate_limit_salt: str = ""
+    demo_captcha_provider: str = "recaptcha_v3"
+    demo_captcha_enabled: bool = True
+    demo_captcha_threshold: float = 0.5
+    demo_captcha_site_key: str = ""
+
     # Default language for new tenants
     default_language: str = "en-US"
 
@@ -236,6 +270,11 @@ class Settings(BaseSettings):
     knowledge_s3_bucket: str = ""
     knowledge_s3_region: str = ""
     knowledge_s3_endpoint_url: str = ""      # for MinIO / R2 / Spaces
+    #: Local packet-capture directory. PCAP shares the configured S3 bucket
+    #: when KNOWLEDGE_STORAGE_BACKEND=s3, but uses a distinct object prefix.
+    pcap_local_path: str = "./var/pcap"
+    #: Dedicated HMAC key for short-lived PCAP download links.
+    pcap_signing_secret: str = ""
 
     # Upload limits. Enforced before any expensive processing.
     knowledge_max_file_mb: int = 20

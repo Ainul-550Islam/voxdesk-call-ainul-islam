@@ -191,10 +191,10 @@ async def set_opt_out(session: AsyncSession, tenant: Tenant, phone: str, out: bo
     Batch 06 rules, all enforced by ``app/leads`` rather than by direct
     status writes here:
 
-    * STOP records a *voice consent denial*, which the canonical consent
-      module turns into ``LeadStatus.DNC`` through ``lifecycle.transition``
-      (history written, CRM hook fired once). DNC stays terminal — nothing
-      in this path can reverse it.
+    * STOP records an *SMS consent denial* and a *voice consent denial*. The
+      canonical consent module turns the voice denial into ``LeadStatus.DNC``
+      through ``lifecycle.transition`` (history written, CRM hook fired once).
+      DNC stays terminal — nothing in this path can reverse it.
     * START records an *SMS consent grant* only. The existing consent policy
       explicitly forbids clearing a voice do-not-call by granting consent,
       so a DNC lead keeps its DNC status (the reversal the old code did with
@@ -219,6 +219,11 @@ async def set_opt_out(session: AsyncSession, tenant: Tenant, phone: str, out: bo
         await session.flush()
         await lifecycle.record_created(session, lead, source="messaging")
     if out:
+        # STOP is a denial for the messaging channel and also enters the
+        # tenant-wide DNC/lifecycle path for voice calls.
+        await lead_consent.record_consent(
+            session, lead, channel="sms", decision="denied", source="messaging:stop"
+        )
         await lead_consent.record_consent(
             session, lead, channel="voice", decision="denied", source="messaging:stop"
         )

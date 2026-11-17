@@ -74,8 +74,8 @@ def scan_generated_tails(paths: list[Path]) -> dict[str, Any]:
                 seen.add(resolved)
                 files_scanned.append(f)
 
-    # Also ensure both dashboard/src and dashboard-next are checked for verified:true, real:true
-    extra_roots = [ROOT / "dashboard" / "src", ROOT / "dashboard-next"]
+    # The Vite app was retired in PART 17A; the shipped console is dashboard-next.
+    extra_roots = [ROOT / "dashboard-next"]
     all_ui_files: list[Path] = list(files_scanned)
     for extra in extra_roots:
         for f in iter_source_files(extra):
@@ -128,11 +128,11 @@ def scan_generated_tails(paths: list[Path]) -> dict[str, Any]:
                 )
 
     silent_api_catches: list[dict[str, Any]] = []
-    api_dir = ROOT / "dashboard" / "src" / "api"
+    api_dir = ROOT / "dashboard-next" / "vite-port" / "src" / "api"
     for f in iter_source_files(api_dir):
         rel = str(f.resolve().relative_to(ROOT))
         # client.ts readErrorBody parses optional JSON error bodies on non-2xx responses before throwing ApiError
-        if rel == "dashboard/src/api/client.ts":
+        if rel.endswith("api/client.ts"):
             continue
         text = f.read_text(encoding="utf-8", errors="replace")
         code = strip_comments(text)
@@ -176,7 +176,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "paths",
         nargs="*",
-        default=["dashboard/src"],
+        default=["dashboard-next"],
         help="Directories or files to scan for generated tails.",
     )
     parser.add_argument(

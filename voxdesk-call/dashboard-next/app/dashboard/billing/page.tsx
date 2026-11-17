@@ -81,7 +81,7 @@ export default function BillingPage() {
 
       <section className="card">
         <h2>Usage ({usage.billing_period})</h2>
-        <div className="table-wrap">
+        <div className="table-wrap" tabIndex={0} role="region" aria-label="Data table">
           <table>
             <thead>
               <tr>
@@ -109,7 +109,7 @@ export default function BillingPage() {
 
       <section className="card">
         <h2>Plans</h2>
-        <div className="table-wrap">
+        <div className="table-wrap" tabIndex={0} role="region" aria-label="Data table">
           <table>
             <thead>
               <tr>
@@ -140,7 +140,7 @@ export default function BillingPage() {
         {invoices.length === 0 ? (
           <div className="empty">No invoices yet.</div>
         ) : (
-          <div className="table-wrap">
+          <div className="table-wrap" tabIndex={0} role="region" aria-label="Data table">
             <table>
               <thead>
                 <tr>

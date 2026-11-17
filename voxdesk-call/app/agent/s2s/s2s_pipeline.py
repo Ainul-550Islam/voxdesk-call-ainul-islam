@@ -35,9 +35,9 @@ from pipecat.frames.frames import (
     EndFrame,
     Frame,
     InputAudioRawFrame,
+    InterruptionFrame,
     OutputAudioRawFrame,
     StartFrame,
-    StartInterruptionFrame,
     TextFrame,
     TTSStartedFrame,
     TranscriptionFrame,
@@ -207,7 +207,7 @@ class S2SPipelineProcessor(FrameProcessor):
             await self.push_frame(frame, direction)
             return
 
-        if isinstance(frame, (StartInterruptionFrame,)):
+        if isinstance(frame, InterruptionFrame):
             await self._interrupt_provider()
             await self.push_frame(frame, direction)
             return
@@ -290,7 +290,7 @@ class S2SPipelineProcessor(FrameProcessor):
             await self._run_tool(event)
             return
         if event.type == S2SEventType.INTERRUPTED:
-            await self._push_frame(StartInterruptionFrame())
+            await self._push_frame(InterruptionFrame())
             return
         if event.type == S2SEventType.TURN_END:
             await self._end_turn()
@@ -502,6 +502,7 @@ async def build_s2s_runtime(
     call,
     runtime_cfg,
     handlers=None,
+    available_tools: list[dict[str, Any]] | None = None,
     voice: str = "",
     system_prompt: str = "",
 ) -> S2SRuntime | None:
@@ -579,6 +580,7 @@ async def build_s2s_runtime(
         tenant_id=tenant.id,
         custom_tools=list(getattr(runtime_cfg, "custom_tools", []) or []),
         mcp_tools=list(getattr(runtime_cfg, "mcp_tools", []) or []),
+        tools=available_tools,
         max_tool_calls=carrier.s2s_max_tool_calls,
     )
 

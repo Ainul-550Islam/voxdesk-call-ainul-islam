@@ -100,6 +100,7 @@ class S2SToolsBridge:
         custom_tools: list[dict[str, Any]] | None = None,
         api_tools: list[Any] | None = None,
         mcp_tools: list[dict[str, Any]] | None = None,
+        tools: Iterable[dict[str, Any]] | None = None,
         max_tool_calls: int = 12,
     ) -> None:
         self.handlers = handlers
@@ -108,6 +109,16 @@ class S2SToolsBridge:
         self.custom_tools = list(custom_tools or [])
         self.api_tools = list(api_tools or [])
         self.mcp_tools = list(mcp_tools or [])
+        self._schemas_override = list(tools) if tools is not None else None
+        self._allowed_tool_names = (
+            {
+                str(((schema.get("function") or {}).get("name") or schema.get("name") or "")).strip()
+                for schema in self._schemas_override
+                if isinstance(schema, dict)
+            }
+            if self._schemas_override is not None
+            else None
+        )
         self.max_tool_calls = max(1, int(max_tool_calls))
         self.calls_used = 0
         self._http_specs: dict[str, dict[str, Any]] = {}
@@ -126,7 +137,7 @@ class S2SToolsBridge:
         """Every tool this call may use, in chat-style schema form."""
         schemas: list[dict[str, Any]] = []
         seen: set[str] = set()
-        for schema in TOOL_SCHEMAS:
+        for schema in (self._schemas_override if self._schemas_override is not None else TOOL_SCHEMAS):
             name = str((schema.get("function") or {}).get("name") or "")
             if not name or name in seen:
                 continue
@@ -157,6 +168,14 @@ class S2SToolsBridge:
         payload = dict(arguments or {})
         if not tool_name:
             return {"ok": False, "error": "missing_tool_name"}
+        if self._allowed_tool_names is not None and tool_name not in self._allowed_tool_names:
+            log.info("s2s.tools.not_enabled", tool=tool_name)
+            return {
+                "ok": False,
+                "tool": tool_name,
+                "error": "tool_not_enabled",
+                "message": "That action is not enabled for this agent.",
+            }
 
         if self.calls_used >= self.max_tool_calls:
             log.warning("s2s.tools.per_call_limit", tool=tool_name, calls=self.calls_used)

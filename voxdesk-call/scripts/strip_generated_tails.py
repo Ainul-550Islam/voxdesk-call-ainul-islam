@@ -78,7 +78,7 @@ def main():
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument('--check', action='store_true')
     mode.add_argument('--apply', action='store_true')
-    parser.add_argument('paths', nargs='*', default=['dashboard/src', 'dashboard-next'])
+    parser.add_argument('paths', nargs='*', default=['dashboard-next'])
     args = parser.parse_args()
     for name in args.paths:
         if not (ROOT / name).is_dir():
@@ -93,7 +93,7 @@ def main():
         print(json.dumps(findings, indent=2))
         return int(bool(findings))
     # References in either UI or SDK block deletion, even if only one UI was selected.
-    all_paths = sorted(set(selected) | {p for folder in ('dashboard/src', 'dashboard-next', 'sdk') for p in source_files(ROOT / folder)})
+    all_paths = sorted(set(selected) | {p for folder in ('dashboard-next', 'sdk') for p in source_files(ROOT / folder)})
     originals, edits = plan(all_paths, writable=selected)
     report = []
     for path in selected:

@@ -8,6 +8,7 @@ department, emitting `OutputDTMFFrame` and carrier DTMF tones at each level.
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 from collections.abc import Awaitable, Callable
 from typing import Any
 
@@ -15,7 +16,7 @@ import structlog
 from pipecat.extensions.ivr.ivr_navigator import IVRNavigator, IVRStatus
 from pipecat.frames.frames import Frame
 
-from app.agent.tools.builtin_calls import execute_send_dtmf
+from app.agent.tools.builtin_calls import execute_end_call, execute_send_dtmf
 from app.core.metrics import record_ivr_navigation
 
 log = structlog.get_logger()
@@ -141,6 +142,8 @@ class IVRMenuRouter:
         call_sid: str | None = None,
         telephony_provider: Any | None = None,
         frame_pusher: Callable[[Frame], Awaitable[None]] | None = None,
+        auto_hangup_on_ivr: bool = False,
+        max_menus: int = 3,
     ) -> dict[str, Any]:
         """Process one IVR menu level and send the matching DTMF sequence."""
         if not explicit_digits and classify_ivr_vs_human(prompt_text) == "human":
@@ -156,7 +159,37 @@ class IVRMenuRouter:
             }
 
         chosen = explicit_digits or self.select_digit(prompt_text, goal=goal)
+        if auto_hangup_on_ivr:
+            decision = decide_ivr_action(
+                prompt_text,
+                goal=goal or self.goal,
+                menus_seen=len(self.history) + 1,
+                auto_hangup_on_ivr=True,
+                max_menus=max_menus,
+            )
+            if decision.action == "hangup":
+                hangup = await execute_end_call(
+                    reason="ivr_unreachable",
+                    call=call,
+                    call_sid=call_sid,
+                    telephony_provider=telephony_provider,
+                    frame_pusher=frame_pusher,
+                )
+                record_ivr_navigation("auto_hangup")
+                return {
+                    "ok": True,
+                    "status": "hung_up",
+                    "action": "hangup",
+                    "reason": decision.reason,
+                    "menus_seen": decision.menus_seen,
+                    "hangup_result": hangup,
+                }
+            if not explicit_digits and decision.action == "dial" and decision.digits:
+                chosen = decision.digits
         if not chosen:
+            self.history.append(
+                {"prompt": prompt_text, "digits": "", "goal": goal or self.goal}
+            )
             record_ivr_navigation("stuck")
             return {
                 "ok": False,
@@ -164,6 +197,7 @@ class IVRMenuRouter:
                 "goal": goal or self.goal,
                 "ivr_prompt": prompt_text,
                 "digits": None,
+                "menus_seen": len(self.history),
             }
 
         dtmf_res = await execute_send_dtmf(
@@ -201,8 +235,13 @@ async def execute_navigate_ivr(
     call_sid: str | None = None,
     telephony_provider: Any | None = None,
     frame_pusher: Callable[[Frame], Awaitable[None]] | None = None,
+    router: IVRMenuRouter | None = None,
+    auto_hangup_on_ivr: bool = False,
+    max_menus: int = 3,
 ) -> dict[str, Any]:
-    router = IVRMenuRouter(goal=goal)
+    router = router or IVRMenuRouter(goal=goal)
+    if goal:
+        router.goal = goal.strip()
     return await router.step(
         ivr_prompt,
         goal=goal,
@@ -211,6 +250,8 @@ async def execute_navigate_ivr(
         call_sid=call_sid,
         telephony_provider=telephony_provider,
         frame_pusher=frame_pusher,
+        auto_hangup_on_ivr=auto_hangup_on_ivr,
+        max_menus=max_menus,
     )
 
 
@@ -225,3 +266,80 @@ def build_ivr_navigator(
     if ivr_vad_params is not None:
         kwargs["ivr_vad_params"] = ivr_vad_params
     return IVRNavigator(**kwargs)
+
+# ---------------------------------------------------------------------------
+# PART 12 (P12-14) — auto-hangup on an IVR never leaving the tree
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class IvrNavigationDecision:
+    """What to do after one IVR prompt.
+
+    `auto_hangup_on_ivr` is about *live* IVR trees that never reach a person: it is not a licence to
+    hang up on the first menu, because menus are how you reach a person. So the decision carries
+    the number of menus already visited and only hangs up once the tree has proven unproductive.
+    """
+
+    action: str  # dial | hangup | wait
+    digits: str = ""
+    reason: str = ""
+    menus_seen: int = 0
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "action": self.action,
+            "digits": self.digits,
+            "reason": self.reason,
+            "menus_seen": self.menus_seen,
+        }
+
+
+def decide_ivr_action(
+    prompt_text: str,
+    *,
+    goal: str = "",
+    menus_seen: int = 0,
+    auto_hangup_on_ivr: bool = False,
+    max_menus: int = 3,
+) -> IvrNavigationDecision:
+    """Pick a digit for the current menu, or hang up when the tree is going nowhere.
+
+    A menu that repeats itself with no matching option is the signal: `menus_seen` at or beyond
+    `max_menus` with nothing matching the goal means the caller will wait forever.
+    """
+    text = prompt_text or ""
+    options = IVRMenuRouter.parse_options(text)
+    target = (goal or "").strip().lower()
+
+    if options:
+        if target:
+            matches = [(digit, desc) for digit, desc in options if target in desc or desc in target]
+            if matches:
+                return IvrNavigationDecision("dial", matches[0][0], "goal matched an option", menus_seen)
+            partial = [
+                (digit, desc)
+                for digit, desc in options
+                if any(word in desc for word in target.split() if len(word) > 3)
+            ]
+            if partial:
+                return IvrNavigationDecision("dial", partial[0][0], "partial goal match", menus_seen)
+        # An explicit route to a person is still actionable at the menu limit: it is the last
+        # chance to leave the IVR tree, not a reason to hang up before trying the operator option.
+        for digit, desc in options:
+            if any(word in desc for word in ("operator", "representative", "agent", "human")):
+                return IvrNavigationDecision("dial", digit, "operator option present", menus_seen)
+        if auto_hangup_on_ivr and menus_seen >= max_menus:
+            return IvrNavigationDecision(
+                "hangup",
+                "",
+                f"{menus_seen} menus without reaching a person and auto-hangup is on",
+                menus_seen,
+            )
+        return IvrNavigationDecision("dial", options[0][0], "first option, no goal match", menus_seen)
+
+    if classify_ivr_vs_human(text) == "human":
+        return IvrNavigationDecision("wait", "", "a person is speaking", menus_seen)
+    if auto_hangup_on_ivr and menus_seen >= 1:
+        return IvrNavigationDecision("hangup", "", "no options and auto-hangup is on", menus_seen)
+    return IvrNavigationDecision("wait", "", "nothing actionable in the prompt", menus_seen)
+

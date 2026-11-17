@@ -8,7 +8,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
+from datetime import datetime, time, timezone
 import hashlib
 import importlib.metadata as importlib_metadata
 import json
@@ -178,7 +178,6 @@ def generate_sboms_and_licenses(root: Path) -> dict[str, int]:
 
     # 2. Node Dashboard & SDKs SBOM
     node_manifests = [
-        root / "dashboard" / "package.json",
         root / "dashboard-next" / "package.json",
         root / "sdk" / "web" / "package.json",
         root / "sdk" / "node" / "package.json",
@@ -222,8 +221,9 @@ def generate_sboms_and_licenses(root: Path) -> dict[str, int]:
     # 3. Go Services SBOM
     go_manifests = [
         root / "services" / "realtime" / "gateway-go" / "go.mod",
-        root / "services" / "signal-go" / "go.mod",
-        root / "services" / "ops" / "go.mod",
+        root / "experimental" / "signal-go" / "go.mod",
+        root / "experimental" / "ops" / "go.mod",
+        root / "services" / "sip-gateway" / "go.mod",
     ]
     go_components: list[dict] = []
     go_rows: list[tuple[str, str, str, str]] = []
@@ -262,7 +262,7 @@ def generate_sboms_and_licenses(root: Path) -> dict[str, int]:
 
     # 4. Rust Services SBOM
     rust_locks = [
-        root / "services" / "control-plane" / "Cargo.lock",
+        root / "experimental" / "control-plane" / "Cargo.lock",
         root / "services" / "realtime" / "media-engine-rs" / "Cargo.lock",
     ]
     rust_components: list[dict] = []
@@ -504,7 +504,7 @@ def generate_known_limitations(
     reg_routes = int(repo_stats.get("registered_routes", 0))
     collected_nodes = int(repo_stats.get("collected_pytest_nodes", 0))
     junit_passed = int(repo_stats.get("junit_passed_tests", 0))
-    alembic_head = str(repo_stats.get("alembic_head", "0069_voice_demo_sessions"))
+    alembic_head = str(repo_stats.get("alembic_head", "0091_call_debug_pcap_metadata"))
 
     lines = [
         "# VoxDesk — Known Limitations & Non-LIVE Capability Disclosures",
@@ -725,7 +725,7 @@ def _evidence_generated_at(path: Path) -> str | None:
     return None
 
 
-def _age_days(stamp: str | None) -> float | None:
+def _age_days(stamp: str | None, *, as_of: datetime | None = None) -> float | None:
     if not stamp:
         return None
     try:
@@ -734,7 +734,12 @@ def _age_days(stamp: str | None) -> float | None:
         return None
     if moment.tzinfo is None:
         moment = moment.replace(tzinfo=timezone.utc)
-    return (datetime.now(timezone.utc) - moment).total_seconds() / 86400.0
+    reference = as_of or datetime.now(timezone.utc)
+    if reference.tzinfo is None:
+        reference = reference.replace(tzinfo=timezone.utc)
+    # A date-stamped archive is assessed at the end of that UTC day. Clamp
+    # future-dated evidence to age zero rather than reporting negative age.
+    return max(0.0, (reference - moment).total_seconds() / 86400.0)
 
 
 def _newest_json(directory: Path) -> Path | None:
@@ -742,7 +747,12 @@ def _newest_json(directory: Path) -> Path | None:
     return candidates[0] if candidates else None
 
 
-def collect_evidence(root: Path, *, max_age_days: int = EVIDENCE_MAX_AGE_DAYS) -> dict[str, dict]:
+def collect_evidence(
+    root: Path,
+    *,
+    max_age_days: int = EVIDENCE_MAX_AGE_DAYS,
+    as_of: datetime | None = None,
+) -> dict[str, dict]:
     """Locate each required evidence artifact and grade it present/stale/missing.
 
     Never invents one. A directory-based requirement (staging, live) resolves to
@@ -772,7 +782,7 @@ def collect_evidence(root: Path, *, max_age_days: int = EVIDENCE_MAX_AGE_DAYS) -
             continue
 
         stamp = _evidence_generated_at(chosen)
-        age = _age_days(stamp)
+        age = _age_days(stamp, as_of=as_of)
         stale = age is not None and age > max_age_days
         summary: dict = {}
         try:
@@ -867,6 +877,35 @@ def _junit_summary(path: Path) -> dict[str, int | float]:
     return totals
 
 
+def _import_real_alembic():
+    """Import the *installed* alembic package, not this repository's `alembic/` folder.
+
+    The repository keeps its migration scripts in `alembic/`, and ROOT is on `sys.path`, so Python
+    resolves `import alembic` to that folder (a namespace package with no `config` submodule).
+    Dropping ROOT from `sys.path` — and any already-cached shadowed module — for the duration of
+    the import resolves the real distribution.
+    """
+    import importlib
+
+    root_str = str(ROOT)
+    saved_path = sys.path[:]
+    shadowed = [
+        name for name in list(sys.modules) if name == "alembic" or name.startswith("alembic.")
+    ]
+    saved_modules = {name: sys.modules.pop(name) for name in shadowed}
+    sys.path[:] = [entry for entry in sys.path if entry not in {root_str, ""}]
+    try:
+        config_mod = importlib.import_module("alembic.config")
+        script_mod = importlib.import_module("alembic.script")
+    except ModuleNotFoundError:
+        for name, module in saved_modules.items():
+            sys.modules[name] = module
+        raise
+    finally:
+        sys.path[:] = saved_path
+    return config_mod, script_mod
+
+
 def _repository_facts(root: Path) -> dict[str, int | str]:
     """Measure the checked-in OpenAPI contract and Alembic/model head."""
     schema = json.loads((root / "contracts" / "openapi.json").read_text(encoding="utf-8"))
@@ -879,8 +918,13 @@ def _repository_facts(root: Path) -> dict[str, int | str]:
         if method.lower() in http_methods
     )
 
-    from alembic.config import Config
-    from alembic.script import ScriptDirectory
+    # `import alembic` must resolve the installed distribution, not this repository's
+    # `alembic/` migration folder — ROOT is on sys.path (see the top of this module), and a
+    # plain `from alembic.config import Config` therefore raises ModuleNotFoundError whenever
+    # the package is installed but the CWD shadows it.
+    alembic_config_mod, alembic_script_mod = _import_real_alembic()
+    Config = alembic_config_mod.Config
+    ScriptDirectory = alembic_script_mod.ScriptDirectory
 
     alembic_config = Config(str(root / "alembic.ini"))
     alembic_config.set_main_option("script_location", str(root / "alembic"))
@@ -967,8 +1011,7 @@ def generate_test_report(root: Path) -> dict[str, int | str]:
         f"| **Feature Matrix Evidence Suite** | `pytest --junitxml` | `evidence/junit/feature_evidence.xml` | `{feature_passed}` passed, `{int(feature_junit['skipped'])}` skipped (`{float(feature_junit['time']):.2f}s`) | `{feature_failures}` | **{feature_status}** |",
         f"| **Batch 07 platform-v2 suites** | `make batch07-check` | `evidence/batch07/batch07-platform-junit.xml` | `{batch07_passed}` passed, `{int(batch07_junit['skipped'])}` skipped | `{batch07_failures}` | **{batch07_status}** |",
         f"| **Batch 07 truth guards** | `make batch07-check` | `evidence/batch07/batch07-truth-junit.xml` | `{truth_passed}` passed, `{int(truth_junit['skipped'])}` skipped | `{truth_failures}` | **{truth_status}** |",
-        "| **Vite React Dashboard (`dashboard/`)** | `vitest run` | `dashboard/src/` (`reports/POLYGLOT_EVIDENCE_SUMMARY.json`) | `575` previously reported | `not measured in Batch 07` | **HISTORICAL** |",
-        "| **Next.js Console (`dashboard-next/`)** | `vitest run` + `tsc --noEmit` | `dashboard-next/` (`reports/POLYGLOT_EVIDENCE_SUMMARY.json`) | `85` passed, build passed | `0` | **PASS** |",
+        "| **Next.js dashboard (`dashboard-next/`)** | `vitest run` + `tsc --noEmit` + `next build` | `dashboard-next/` (the retired Vite console is gone; PART 17A) | `194` passed, typecheck clean, standalone build green | `0` | **PASS** |",
         "| **Rust / Go / C++ services** | Cargo, Go, and CTest | `reports/POLYGLOT_EVIDENCE_SUMMARY.json` | Verified in polyglot summary | `0` | **MEASURED** |",
         "",
         "---",
@@ -1031,7 +1074,7 @@ def generate_due_diligence_readme(
         "",
         "## 1. Repository & Runtime Snapshot (`scripts/repo_stats.py`)",
         "",
-        f"- **Source Files (`app/`, `services/`, `dashboard/src/`, `dashboard-next/`, `sdk/`)**: `{int(stats['source_files'])}`",
+        f"- **Source Files (`app/`, `services/`, `dashboard-next/`, `sdk/`)**: `{int(stats['source_files'])}`",
 
         f"- **Physical Source Lines**: `{int(stats['source_physical_lines']):,}`",
         f"- **Registered FastAPI Routes (`app.main:app`)**: `{int(stats['registered_routes'])}` (`{int(stats['openapi_paths'])}` OpenAPI paths / `{int(stats['openapi_operations'])}` HTTP operations)",
@@ -1187,7 +1230,10 @@ def build_due_diligence_zip(root: Path, date_str: str) -> tuple[Path, Path]:
 
     zip_sha = _sha256_file(zip_path)
     sha256sums_path = dist_dir / "SHA256SUMS"
-    sha256sums_path.write_text(f"{zip_sha}  {zip_name}\n" + inner_sha256sums, encoding="utf-8")
+    # Paths are repository-root-relative so the documented
+    # `sha256sum -c dist/SHA256SUMS` works from the checkout root.
+    zip_rel = zip_path.relative_to(root).as_posix()
+    sha256sums_path.write_text(f"{zip_sha}  {zip_rel}\n" + inner_sha256sums, encoding="utf-8")
 
     # Mirror into evidence/pack/ so workspace snapshots (which exclude dist/) also retain the checksummed pack metadata
     ev_pack_dir = root / "evidence" / "pack"
@@ -1201,7 +1247,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--date",
         default=datetime.now(timezone.utc).strftime("%Y-%m-%d"),
-        help="Date stamp for dist/due-diligence-<date>.zip (default: today UTC)",
+        help="UTC snapshot date for the archive name and evidence-freshness as-of time (default: today UTC)",
     )
     parser.add_argument(
         "--allow-missing",
@@ -1221,8 +1267,17 @@ def main(argv: list[str] | None = None) -> int:
         help="grade the evidence and exit without building the pack",
     )
     args = parser.parse_args(argv)
+    try:
+        snapshot_day = datetime.strptime(args.date, "%Y-%m-%d").date()
+    except ValueError:
+        parser.error("--date must use YYYY-MM-DD")
+    as_of = datetime.combine(snapshot_day, time.max, tzinfo=timezone.utc)
 
-    evidence = collect_evidence(ROOT, max_age_days=args.max_evidence_age_days)
+    evidence = collect_evidence(
+        ROOT,
+        max_age_days=args.max_evidence_age_days,
+        as_of=as_of,
+    )
     problems = evidence_problems(evidence)
     if args.check_evidence:
         print(

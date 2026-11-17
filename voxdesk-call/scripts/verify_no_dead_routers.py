@@ -42,28 +42,11 @@ ROOT = Path(__file__).resolve().parents[1]
 ENTRYPOINT = "app/main.py"
 ROUTE_PACKAGE = "app/api"
 
-#: Route modules that build an ``APIRouter`` but are deliberately not mounted.
-#: Shrink-only: adding a key here is the change this guard exists to stop, so CI
-#: compares the set against the frozen baseline below.
-ALLOWLIST: dict[str, str] = {
-    "app.api.machine_routes": (
-        "machine-credential administration is superseded by app/api/service_account_routes.py, "
-        "which is mounted and covers the same operations; deletion is scheduled with the "
-        "Batch 07 hardening pass"
-    ),
-    "app.api.call_outcome_routes": (
-        "human-recorded outcome and QA metric endpoints for /api/conversations/{call_id}/outcomes; "
-        "not mounted in app/main.py, so no operator can reach them. Mounting is a product "
-        "decision (it duplicates part of app/qa), queued for the Batch 07 pass"
-    ),
-    "app.api.industry_template_routes": (
-        "compliance industry-template instantiation under /industry-templates; not mounted in "
-        "app/main.py. Surfacing it is a compliance-product decision queued for Batch 03/07"
-    ),
-}
-
-#: Cannot grow without an explicit, reviewed edit to this constant.
-ALLOWLIST_BASELINE = frozenset(ALLOWLIST)
+#: No route module is exempted from the mount graph: mounted routers must be
+#: reachable from ``app/main.py`` (directly or through router composition), and
+#: obsolete route modules are deleted rather than left behind as exceptions.
+ALLOWLIST: dict[str, str] = {}
+ALLOWLIST_BASELINE = frozenset()
 
 #: Markers that only appear in generated filler, never in reviewed code.
 FILLER_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
@@ -154,18 +137,22 @@ def _file_for_module(root: Path, module: str) -> Path | None:
     return None
 
 
-def _submodule_imports(tree: ast.Module):
-    """Yield ``(local_name, dotted_module)`` for submodule-style imports.
+def _submodule_imports(tree: ast.Module, root: Path = ROOT):
+    """Yield local names and source modules for module/router imports.
 
-    A ``from pkg import thing`` where ``pkg.thing`` could itself be a module is a
-    candidate composition edge; the caller verifies the target is a real file.
-    Importing a bare attribute (``from x import router``) yields
-    ``x.router`` which never resolves to a file, so it is filtered out there.
+    ``from pkg import submodule`` is a composition edge when ``pkg.submodule``
+    is a file. A route import such as ``from pkg.routes import router as r``
+    resolves to ``pkg.routes`` when that source file exists; it counts only if
+    the importing module actually passes ``r`` to ``include_router``.
     """
     for node in ast.walk(tree):
         if isinstance(node, ast.ImportFrom) and node.module and not node.level:
             for alias in node.names:
-                yield (alias.asname or alias.name), f"{node.module}.{alias.name}"
+                local = alias.asname or alias.name
+                dotted = f"{node.module}.{alias.name}"
+                if alias.name.endswith("router") and _file_for_module(root, node.module) is not None:
+                    dotted = node.module
+                yield local, dotted
         elif isinstance(node, ast.Import):
             for alias in node.names:
                 if "." in alias.name:
@@ -178,15 +165,10 @@ def composed_modules(root: Path, entry_modules) -> set[str]:
     Batch 06 keeps ``app/main.py`` small by mounting one aggregator per v2
     package; the leaf route modules are composed inside those aggregators rather
     than imported by the entry point directly. A scanner that read only
-    ``app/main.py`` would call every such leaf an orphan. This walks the
-    ``from pkg import submodule`` edges of each mounted module (transitively) and
-    returns those submodules whose ``<name>.<attr>`` is referenced by the
-    composing module — i.e. whose router is actually included, either directly
-    in ``include_router(...)`` or through an ``AREAS``-style mapping.
-
-    Only *submodule* imports count, so a plain ``from x import router`` (the
-    shape of the legacy allowlisted dead routers) is never mistaken for a live
-    composition edge.
+    ``app/main.py`` would call every such leaf an orphan. This walks module
+    imports transitively and follows aliases that are passed to an
+    ``include_router(...)`` call. Importing a route module without actually
+    including its router does not make it reachable.
     """
     reachable: set[str] = set()
     queue = list(entry_modules)
@@ -204,7 +186,7 @@ def composed_modules(root: Path, entry_modules) -> set[str]:
         except SyntaxError:
             continue
         candidates: dict[str, str] = {}
-        for local, dotted in _submodule_imports(tree):
+        for local, dotted in _submodule_imports(tree, root):
             if _file_for_module(root, dotted) is not None:
                 candidates[local] = dotted
         if not candidates:
@@ -214,14 +196,22 @@ def composed_modules(root: Path, entry_modules) -> set[str]:
             for node in ast.walk(tree)
             if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name)
         }
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            if not isinstance(node.func, ast.Attribute) or node.func.attr != "include_router":
+                continue
+            used.update(arg.id for arg in node.args if isinstance(arg, ast.Name))
+            used.update(
+                keyword.value.id
+                for keyword in node.keywords
+                if isinstance(keyword.value, ast.Name)
+            )
         for local, dotted in candidates.items():
             if local in used and dotted not in reachable:
                 reachable.add(dotted)
                 queue.append(dotted)
-    # A deliberately-unmounted legacy dead router is never "composed" by a v2
-    # aggregator; exclude the allowlist explicitly so a stray same-named import
-    # cannot reclassify it. The strict-mode backlog test relies on this.
-    return reachable - set(ALLOWLIST)
+    return reachable
 
 
 def mounted_modules(root: Path = ROOT) -> set[str]:

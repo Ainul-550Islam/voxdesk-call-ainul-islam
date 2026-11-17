@@ -1,0 +1,132 @@
+id: receptionist
+name: Inbound Receptionist
+vertical: general
+summary: >-
+  Answers the main line, identifies the caller, routes to the right department or takes a message. The default starting point when a business has no specific vertical.
+config:
+  voice: configured-default
+  language: en-US
+  first_message: >-
+    Thanks for calling. This is the virtual receptionist. How can I help you today?
+  llm_model: gpt-4o-mini
+  max_call_seconds: 480
+  end_call_after_silence_seconds: 12
+
+tools:
+  - name: take_message
+    description: Record a callback message when nobody is available.
+    params:
+      caller_name: {type: string}
+      callback_number: {type: string}
+
+dynamic_variables:
+  - name: caller_name
+    type: string
+    purpose: >-
+      Name the caller gives; used in the message and the transfer announcement.
+    required: true
+    examples: ['"Sarah"', '"Mr. Rahman"']
+  - name: intent
+    type: enum
+    purpose: >-
+      Which department the caller asked for. Drives the routing split.
+    required: true
+    examples: [sales, support, billing, other]
+
+flow:
+  mode: rigid
+  nodes:
+    - id: start
+      node_type: start
+      params: {}
+    - id: greet
+      node_type: conversation
+      params:
+        prompt: "Greet the caller and ask how you can help. Keep it under 20 words."
+    - id: capture_intent
+      node_type: extract_variables
+      params:
+        variables:
+          - {'name': 'intent', 'type': 'enum', 'enum_values': '[sales, support, billing, other]', 'required': True}
+    - id: route
+      node_type: logic_split
+      params:
+        equations:
+          - {'variable': 'intent', 'operator': '==', 'value': 'sales'}
+    - id: transfer_sales
+      node_type: transfer
+      params:
+        destination: "sales-queue"
+        transfer_mode: "warm"
+    - id: capture_name
+      node_type: extract_variables
+      params:
+        variables:
+          - {'name': 'caller_name', 'type': 'string', 'required': True}
+    - id: take_message
+      node_type: function
+      params:
+        tool_name: take_message
+    - id: end
+      node_type: end
+      params: {}
+  edges:
+    - id: e1
+      source_id: start
+      target_id: greet
+    - id: e2
+      source_id: greet
+      target_id: capture_intent
+    - id: e3
+      source_id: capture_intent
+      target_id: route
+    - id: e4
+      source_id: route
+      target_id: transfer_sales
+    - id: e5
+      source_id: route
+      target_id: capture_name
+    - id: e6
+      source_id: capture_name
+      target_id: take_message
+    - id: e7
+      source_id: take_message
+      target_id: end
+    - id: e8
+      source_id: transfer_sales
+      target_id: end
+
+analysis_schema:
+  fields:
+    - name: intent
+      type: enum
+      values: [sales, support, billing, other]
+    - name: resolved_by
+      type: enum
+      values: [transfer, message, abandoned]
+    - name: caller_name
+      type: string
+
+simulation_cases:
+  - name: a support call reaches the support transfer
+    turns:
+      - "I need help with my account"
+      - "support"
+    expect_node: transfer_sales
+    expect_variables:
+      intent: support
+  - name: a name is captured before taking a message
+    turns:
+      - "can someone call me back"
+      - "Sarah"
+    expect_node: capture_name
+    expect_variables:
+      caller_name: Sarah
+
+kb_placeholders:
+  - "hours-of-operation.md — opening hours per region; the agent must not guess them"
+  - "departments.md — which department owns which topic"
+
+compliance_notes:
+  - "Call recording disclosure: recording is off by default; if it is enabled, counsel must approve the disclosure sentence before go-live."
+  - "No PCI scope: this flow never asks for a card number. Payment by phone must go through the payment provider's own IVR."

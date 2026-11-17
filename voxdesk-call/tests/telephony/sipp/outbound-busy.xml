@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE scenario SYSTEM "sipp.dtd">
+<!--
+  PART 13 / P13-01 — the callee is busy.
+
+  A 486 must reach the call log as `user_busy`, not as a generic failure. This
+  scenario is the input side of that assertion.
+-->
+<scenario name="outbound-busy">
+  <recv request="INVITE" timeout="10000" />
+  <send>
+    <![CDATA[
+      SIP/2.0 486 Busy Here
+      [last_Via:]
+      [last_From:]
+      [last_To:];tag=[pid]SIPpTag02[call_number]
+      [last_Call-ID:]
+      [last_CSeq:]
+      Content-Length: 0
+
+    ]]>
+  </send>
+  <recv request="ACK" timeout="5000" optional="true" />
+</scenario>

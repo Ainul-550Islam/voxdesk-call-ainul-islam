@@ -5,8 +5,10 @@ from __future__ import annotations
 import uuid
 
 import pytest
+from sqlalchemy import select
 
 from app.db.models import Agent, AgentVersion
+from app.db.telephony_models import TelephonyCallSession, TelephonyPhoneNumber
 from app.telephony.enums import SipConnectionStatus, SipTransportProtocol, TelephonyProviderName
 from app.telephony.exceptions import SipConfigurationError
 from app.telephony.number_provisioning import PhoneNumber
@@ -56,7 +58,7 @@ def test_sip_digest_auth_and_cidr_ip_acl():
 
 
 @pytest.mark.asyncio
-async def test_sip_connection_lifecycle_and_inbound_invite_routing(db):
+async def test_sip_connection_lifecycle_and_inbound_invite_routing(db, monkeypatch):
     tenant = await make_tenant(db, name="SIP BYOC Enterprise")
     agent = Agent(
         id=uuid.uuid4(),
@@ -117,10 +119,49 @@ async def test_sip_connection_lifecycle_and_inbound_invite_routing(db):
         sip_connection_id=created.id,
         payload=SipConnectionTestRequest(),
     )
-    assert tested.status == SipConnectionStatus.READY.value
+    assert tested.status == SipConnectionStatus.CONFIGURED.value
+    assert "verified tenant-scoped TLS/SRTP" in (tested.last_error or "")
+
+    uri = "sip:+14155550155@ingress.voxdesk.ai"
+    with pytest.raises(SipConfigurationError) as unsupported:
+        await svc.route_inbound_sip_invite(
+            to_uri=uri,
+            from_uri="sip:+14155550199@cube.enterprise.example.com",
+            sip_call_id="SIP-CALL-ID-777@cube",
+            source_ip="192.0.2.50",
+            expected_password="sip-pass-999",
+        )
+    assert unsupported.value.status_code == 503
+    assert unsupported.value.code == "SIP_TENANT_TRUNK_UNSUPPORTED"
+    assert (await db.scalars(select(TelephonyCallSession))).all() == []
+
+    # Exercise the legacy positive path only under an explicit capability mock;
+    # production remains disabled until the real gateway verifies this contract.
+    monkeypatch.setattr(
+        "app.telephony.sip.sip_gateway_client.SipGatewayClient.supports_tenant_trunks",
+        True,
+    )
+    supported = await svc.test_sip_connection(
+        tenant_id=tenant.id,
+        sip_connection_id=created.id,
+        payload=SipConnectionTestRequest(),
+    )
+    assert supported.status == SipConnectionStatus.READY.value
+    db.add(
+        TelephonyPhoneNumber(
+            tenant_id=tenant.id,
+            number="+14155550155",
+            e164_number="+14155550155",
+            provider="sip",
+            sip_connection_id=created.id,
+            sip_enabled=True,
+            inbound_enabled=True,
+            status="READY",
+        )
+    )
+    await db.flush()
 
     nonce = "nonce-sip-12345"
-    uri = "sip:+14155550155@ingress.voxdesk.ai"
     digest_hex = compute_sip_digest_response(
         username="cube_trunk",
         realm="voxdesk.sip",
@@ -129,7 +170,6 @@ async def test_sip_connection_lifecycle_and_inbound_invite_routing(db):
         uri=uri,
         nonce=nonce,
     )
-
     routed = await svc.route_inbound_sip_invite(
         to_uri=uri,
         from_uri="sip:+14155550199@cube.enterprise.example.com",
@@ -148,12 +188,11 @@ async def test_sip_connection_lifecycle_and_inbound_invite_routing(db):
     assert routed["agent_id"] == str(agent.id)
     assert routed["serializer"] == "SIPBridgeFrameSerializer"
 
-    # Unauthorized source IP must fail closed with 403
-    with pytest.raises(SipConfigurationError) as exc_info:
+    with pytest.raises(SipConfigurationError) as denied:
         await svc.route_inbound_sip_invite(
             to_uri=uri,
             from_uri="sip:+14155550199@attacker.example.com",
             sip_call_id="SIP-CALL-ID-888@attacker",
             source_ip="203.0.113.99",
         )
-    assert exc_info.value.status_code == 403
+    assert denied.value.status_code == 403

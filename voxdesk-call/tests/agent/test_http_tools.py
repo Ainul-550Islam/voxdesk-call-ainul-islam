@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from types import SimpleNamespace
 
 import httpx
 import pytest
@@ -10,7 +11,11 @@ import respx
 
 from app.agent.tools.http_tools import build_http_tool_schemas, execute_agent_http_tool
 from app.agent.tools.mcp_tools import build_mcp_tool_schemas, execute_agent_mcp_tool
-from app.db.models import McpServer, McpTool
+from app.agent.functions import FunctionHandlers
+from app.agent.pipeline import filter_enabled_tools
+from app.agent.s2s.s2s_tools_bridge import S2SToolsBridge
+from app.db.models import ApiTool, CallStatus, McpServer, McpTool, TransferState
+from app.runtime.agent_config_resolver import _resolve_scoped_tools
 from tests.conftest import make_tenant
 
 
@@ -144,3 +149,88 @@ async def test_mcp_tool_schema_and_execution(db, monkeypatch):
     )
     assert res["ok"] is True
     assert res["result"]["allergies"] == ["penicillin"]
+
+
+@pytest.mark.asyncio
+async def test_persisted_api_tool_schema_matches_cascaded_and_s2s_contracts(db, monkeypatch):
+    tenant = await make_tenant(db, name="API Tool Parity Tenant")
+    tool = ApiTool(
+        id=uuid.uuid4(),
+        tenant_id=tenant.id,
+        name="lookup_order",
+        description="Look up an order and optional filter.",
+        method="GET",
+        url_template="https://api.example.test/orders/{order_id}",
+        parameter_schema={
+            "type": "object",
+            "properties": {"order_id": {"type": "string"}},
+            "required": ["order_id"],
+        },
+        body_schema={
+            "type": "object",
+            "properties": {"status": {"type": "string"}},
+            "required": ["status"],
+        },
+        enabled=True,
+    )
+    db.add(tool)
+    await db.flush()
+
+    descriptors = await _resolve_scoped_tools(
+        db,
+        tenant_id=tenant.id,
+        agent_id=None,
+        snapshot={},
+    )
+    descriptor = next(item for item in descriptors if item["name"] == "lookup_order")
+    call = SimpleNamespace(status=CallStatus.IN_PROGRESS, transfer_state=TransferState.NONE)
+    handlers = FunctionHandlers(
+        session=db,
+        tenant=tenant,
+        call=call,
+        runtime_config=SimpleNamespace(custom_tools=[descriptor], mcp_tools=[]),
+    )
+    cascaded = [
+        schema
+        for schema in handlers.available_tools()
+        if schema["function"]["name"] == "lookup_order"
+    ]
+    helper_schema = build_http_tool_schemas([descriptor])
+    assert cascaded == helper_schema
+    assert cascaded[0]["function"]["parameters"]["required"] == ["order_id", "body"]
+    assert cascaded[0]["function"]["parameters"]["properties"]["body"] == tool.body_schema
+    direct_api_schema = build_http_tool_schemas([], api_tools=[tool])
+    assert direct_api_schema[0]["function"]["parameters"] == cascaded[0]["function"]["parameters"]
+
+    active = filter_enabled_tools(cascaded, [], custom_names={"lookup_order"})
+    bridge = S2SToolsBridge(
+        handlers=handlers,
+        session=db,
+        tenant_id=tenant.id,
+        custom_tools=[descriptor],
+        tools=active,
+    )
+    openai_tool = bridge.tools_for("openai_realtime")[0]
+    gemini_tool = bridge.tools_for("gemini_live")[0]["functionDeclarations"][0]
+    expected_parameters = cascaded[0]["function"]["parameters"]
+    assert openai_tool["parameters"] == expected_parameters
+    assert gemini_tool["parameters"] == expected_parameters
+
+    executions = []
+
+    async def fake_http_execution(**kwargs):
+        executions.append(kwargs)
+        return {"ok": True, "tool": kwargs["tool_spec"]["name"]}
+
+    monkeypatch.setattr("app.agent.functions.execute_agent_http_tool", fake_http_execution)
+    cascaded_result = await handlers.dispatch(
+        "lookup_order", {"order_id": "ORD-42", "body": {"status": "open"}}
+    )
+    monkeypatch.setattr("app.agent.s2s.s2s_tools_bridge.execute_agent_http_tool", fake_http_execution)
+    realtime_result = await bridge.execute(
+        "lookup_order", {"order_id": "ORD-42", "body": {"status": "open"}}
+    )
+    assert cascaded_result == realtime_result == {"ok": True, "tool": "lookup_order"}
+    assert len(executions) == 2
+    assert all(item["tool_spec"] == descriptor for item in executions)
+    assert all(item["arguments"] == {"order_id": "ORD-42", "body": {"status": "open"}} for item in executions)

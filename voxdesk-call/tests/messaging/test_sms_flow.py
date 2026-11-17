@@ -12,8 +12,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.db.enterprise_models import DncEntry, MessageChannel
-from app.db.models import Lead, LeadStatus, MessageWebhookReceipt
+from app.db.models import Environment, Lead, LeadStatus, MessageWebhookReceipt
 from app.db.retell_models import ChatAgent, ChatAgentVersion
+from app.leads.activities import history_for
+from app.leads.models import LeadConsent
 from app.messaging.sms import compute_twilio_signature
 from app.telephony.dnc import evaluate_dnc
 from tests.conftest import make_tenant
@@ -26,6 +28,15 @@ async def _seed_sms_tenant_and_chat_agent(
     to_number = f"+1415555{uuid.uuid4().int % 10000:04d}"
     tenant = await make_tenant(db, name="SMS Flow Tenant")
     tenant.twilio_number = to_number
+    environment_id = (
+        await db.execute(
+            select(Environment.id).where(
+                Environment.tenant_id == tenant.id,
+                Environment.kind == "production",
+                Environment.status == "active",
+            )
+        )
+    ).scalar_one()
     await db.flush()
 
     cfg_snap = {
@@ -84,6 +95,7 @@ async def _seed_sms_tenant_and_chat_agent(
     lead = Lead(
         id=uuid.uuid4(),
         tenant_id=tenant.id,
+        environment_id=environment_id,
         name="Sam Caller",
         phone="+14155550999",
         status=LeadStatus.NEW,
@@ -157,9 +169,23 @@ async def test_inbound_sms_stop_keyword_adds_dnc_and_blocks_outbound(
     assert dnc_row is not None
     assert dnc_row.source == "sms:stop"
 
-    # Verify Lead status updated to DNC and evaluate_dnc blocks outbound calls
+    # The tenant DNC registry blocks outbound contact, while the lead status
+    # transition is written through the canonical consent/lifecycle path.
     await db.refresh(lead)
     assert lead.status == LeadStatus.DNC
+    history = await history_for(db, lead.tenant_id, lead.environment_id, lead.id)
+    assert [(row.from_status, row.to_status, row.source) for row in history] == [
+        ("new", "do_not_call", "consent"),
+    ]
+    consents = (
+        await db.execute(
+            select(LeadConsent).where(LeadConsent.lead_id == lead.id)
+        )
+    ).scalars().all()
+    assert {(row.channel, row.decision, row.source) for row in consents} == {
+        ("sms", "denied", "messaging:stop"),
+        ("voice", "denied", "messaging:stop"),
+    }
     decision = await evaluate_dnc(db, tenant_id, "+14155550999")
     assert decision.blocked is True
 

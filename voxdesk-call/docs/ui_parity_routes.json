@@ -1,0 +1,585 @@
+{
+  "note": "Frozen route inventory of dashboard/src/app/router.tsx, captured by scripts/ui_parity.py before the Vite app was deleted (PART 17A, P17A-05). Do not edit by hand.",
+  "routes": [
+    {
+      "path": "/product",
+      "component": "VoiceAgentsPage",
+      "category": "product"
+    },
+    {
+      "path": "/product/voice-agents",
+      "component": "VoiceAgentsPage",
+      "category": "product"
+    },
+    {
+      "path": "/product/customer-service",
+      "component": "CustomerServicePage",
+      "category": "product"
+    },
+    {
+      "path": "/product/answering-service",
+      "component": "AnsweringServicePage",
+      "category": "product"
+    },
+    {
+      "path": "/product/appointment-setter",
+      "component": "AppointmentSetterPage",
+      "category": "product"
+    },
+    {
+      "path": "/product/telemarketing",
+      "component": "TelemarketingPage",
+      "category": "product"
+    },
+    {
+      "path": "/product/outbound",
+      "component": "OutboundPage",
+      "category": "product"
+    },
+    {
+      "path": "/product/inbound",
+      "component": "InboundPage",
+      "category": "product"
+    },
+    {
+      "path": "/product/analytics",
+      "component": "AnalyticsPage",
+      "category": "product"
+    },
+    {
+      "path": "/product/voice-cloning",
+      "component": "VoiceCloningPage",
+      "category": "product"
+    },
+    {
+      "path": "/solutions",
+      "component": "SolutionsPage",
+      "category": "solutions"
+    },
+    {
+      "path": "/solutions/support",
+      "component": "CustomerServicePage",
+      "category": "solutions"
+    },
+    {
+      "path": "/solutions/appointments",
+      "component": "AppointmentSetterPage",
+      "category": "solutions"
+    },
+    {
+      "path": "/solutions/lead-qualification",
+      "component": "TelemarketingPage",
+      "category": "solutions"
+    },
+    {
+      "path": "/solutions/outbound",
+      "component": "OutboundPage",
+      "category": "solutions"
+    },
+    {
+      "path": "/use-cases",
+      "component": "UseCasesPage",
+      "category": "solutions"
+    },
+    {
+      "path": "/use-cases/:slug",
+      "component": "UseCasesDetailPage",
+      "category": "solutions"
+    },
+    {
+      "path": "/industries",
+      "component": "IndustriesPage",
+      "category": "solutions"
+    },
+    {
+      "path": "/industries/:slug",
+      "component": "IndustryDetailPage",
+      "category": "solutions"
+    },
+    {
+      "path": "/integrations",
+      "component": "IntegrationsPage",
+      "category": "product"
+    },
+    {
+      "path": "/integrations/:slug",
+      "component": "IntegrationDetailPage",
+      "category": "product"
+    },
+    {
+      "path": "/pricing",
+      "component": "PricingPage",
+      "category": "public"
+    },
+    {
+      "path": "/developers",
+      "component": "DevelopersPage",
+      "category": "developers"
+    },
+    {
+      "path": "/docs",
+      "component": "DocsPage",
+      "category": "developers"
+    },
+    {
+      "path": "/docs/:slug",
+      "component": "DocsPage",
+      "category": "developers"
+    },
+    {
+      "path": "/security",
+      "component": "SecurityPage",
+      "category": "company"
+    },
+    {
+      "path": "/trust",
+      "component": "TrustPage",
+      "category": "company"
+    },
+    {
+      "path": "/compliance",
+      "component": "CompliancePage",
+      "category": "company"
+    },
+    {
+      "path": "/status",
+      "component": "StatusPage",
+      "category": "company"
+    },
+    {
+      "path": "/resources",
+      "component": "ResourcesPage",
+      "category": "public"
+    },
+    {
+      "path": "/blog",
+      "component": "BlogPage",
+      "category": "public"
+    },
+    {
+      "path": "/blog/:slug",
+      "component": "BlogPost",
+      "category": "public"
+    },
+    {
+      "path": "/about",
+      "component": "AboutPage",
+      "category": "company"
+    },
+    {
+      "path": "/careers",
+      "component": "CareersPage",
+      "category": "company"
+    },
+    {
+      "path": "/team",
+      "component": "TeamPage",
+      "category": "company"
+    },
+    {
+      "path": "/book-demo",
+      "component": "BookDemoPage",
+      "category": "company"
+    },
+    {
+      "path": "/voice-demo",
+      "component": "VoiceDemoPage",
+      "category": "public"
+    },
+    {
+      "path": "/login",
+      "component": "LoginPage",
+      "category": "auth"
+    },
+    {
+      "path": "/signup",
+      "component": "SignupPage",
+      "category": "auth"
+    },
+    {
+      "path": "/privacy",
+      "component": "PrivacyPage",
+      "category": "legal"
+    },
+    {
+      "path": "/terms",
+      "component": "TermsPage",
+      "category": "legal"
+    },
+    {
+      "path": "/dpa",
+      "component": "DPA",
+      "category": "legal"
+    },
+    {
+      "path": "/sla",
+      "component": "SLA",
+      "category": "legal"
+    },
+    {
+      "path": "/app",
+      "component": "OperatorConsole",
+      "category": "dashboard"
+    },
+    {
+      "path": "/app/overview",
+      "component": "OperatorConsole",
+      "category": "dashboard"
+    },
+    {
+      "path": "/app/agents",
+      "component": "AgentsPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/app/public-keys",
+      "component": "WidgetSettings",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard",
+      "component": "AgentsPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/agents",
+      "component": "AgentsPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/agents/new",
+      "component": "CreateAgentPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/agents/:id",
+      "component": "AgentDetailPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/agents/:id/builder",
+      "component": "AgentBuilderPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/agents/:id/versions/:version",
+      "component": "AgentVersionDetailPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/agents/:id/settings",
+      "component": "AgentSettingsPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/agents/:id/voice",
+      "component": "AgentVoicePage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/agents/:id/model",
+      "component": "AgentModelPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/agents/:id/tools",
+      "component": "AgentToolsPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/agents/:id/test-history",
+      "component": "AgentTestHistoryPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/agents/:id/duplicate",
+      "component": "AgentDuplicatePage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/public-keys",
+      "component": "WidgetSettings",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/chat-agents",
+      "component": "ChatAgentsPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/contacts",
+      "component": "ContactsPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/playground",
+      "component": "AgentPlaygroundPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/simulations",
+      "component": "SimulationsPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/qa-scorecards",
+      "component": "QAScorecardsPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/conductor",
+      "component": "ConductorPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/phone-numbers",
+      "component": "PhoneNumbersPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/call-runtime",
+      "component": "CallRuntimePage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/app/phone-numbers",
+      "component": "PhoneNumbersPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/app/call-runtime",
+      "component": "CallRuntimePage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/studio/conductor",
+      "component": "ConductorPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/product/playground",
+      "component": "AgentPlaygroundPage",
+      "category": "product"
+    },
+    {
+      "path": "/product/simulations",
+      "component": "SimulationsPage",
+      "category": "product"
+    },
+    {
+      "path": "/product/qa-scorecards",
+      "component": "QAScorecardsPage",
+      "category": "product"
+    },
+    {
+      "path": "/product/conductor",
+      "component": "ConductorPage",
+      "category": "product"
+    },
+    {
+      "path": "/dashboard/analytics",
+      "component": "AnalyticsPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/final-parity",
+      "component": "FinalParityPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/campaigns/:id",
+      "component": "CampaignDetailPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/settings/identity",
+      "component": "IdentitySettingsPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/team",
+      "component": "TeamConsolePage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/webhooks",
+      "component": "WebhooksPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/audit-log",
+      "component": "AuditLogPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/knowledge-base",
+      "component": "KnowledgeConsolePage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/integrations-console",
+      "component": "IntegrationsConsolePage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/analytics-console",
+      "component": "AnalyticsConsolePage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/workspace",
+      "component": "OperatorConsole",
+      "category": "dashboard"
+    },
+    {
+      "path": "/calls/:id",
+      "component": "CallLogConsole",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/calls/:id",
+      "component": "CallLogConsole",
+      "category": "dashboard"
+    },
+    {
+      "path": "/agent",
+      "component": "AgentsPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/phone-numbers",
+      "component": "PhoneNumbersPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/",
+      "component": "HomePage",
+      "category": "public"
+    },
+    {
+      "path": "/home",
+      "component": "HomePage",
+      "category": "public"
+    },
+    {
+      "path": "/contact",
+      "component": "ContactSalesPage",
+      "category": "company"
+    },
+    {
+      "path": "/contact-sales",
+      "component": "ContactSalesPage",
+      "category": "company"
+    },
+    {
+      "path": "/dashboard/agents/list",
+      "component": "AgentListPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/app/agents/list",
+      "component": "AgentListPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/knowledge",
+      "component": "AgentKnowledgePage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/app/knowledge",
+      "component": "AgentKnowledgePage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/agents/archive",
+      "component": "AgentArchivePage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/app/agents/archive",
+      "component": "AgentArchivePage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/experiments",
+      "component": "ExperimentsPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/experiments",
+      "component": "ExperimentsPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/app/experiments",
+      "component": "ExperimentsPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/customer-service/analytics",
+      "component": "CustomerServiceAnalytics",
+      "category": "dashboard"
+    },
+    {
+      "path": "/app/customer-service/analytics",
+      "component": "CustomerServiceAnalytics",
+      "category": "dashboard"
+    },
+    {
+      "path": "/workflows",
+      "component": "WorkflowsPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/workflows",
+      "component": "WorkflowsPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/campaigns",
+      "component": "CampaignsPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/campaigns",
+      "component": "CampaignsPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/settings",
+      "component": "WorkspaceSettingsPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/settings",
+      "component": "WorkspaceSettingsPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/security-settings",
+      "component": "WorkspaceSettingsPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/billing",
+      "component": "BillingPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/billing",
+      "component": "BillingPage",
+      "category": "dashboard"
+    },
+    {
+      "path": "/calls",
+      "component": "CallLogConsole",
+      "category": "dashboard"
+    },
+    {
+      "path": "/dashboard/calls",
+      "component": "CallLogConsole",
+      "category": "dashboard"
+    }
+  ]
+}

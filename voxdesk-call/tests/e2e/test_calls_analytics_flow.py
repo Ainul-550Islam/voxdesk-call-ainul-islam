@@ -46,9 +46,18 @@ async def test_persisted_call_transcript_replay_and_analytics_read_paths(
     headers = await auth_headers(client, owner_a)
     replay = await client.get(f"/api/calls/{call.id}/replay", headers=headers)
     assert replay.status_code == 200, replay.text
-    transcript = replay.json()["transcript"] or ""
+    replay_doc = replay.json()
+    transcript = replay_doc["transcript"] or ""
     assert "understanding my invoice" in transcript.lower()
     assert "explain the invoice" in transcript.lower()
+    assert replay_doc["id"] == str(call.id)
+    assert replay_doc["call_sid"] == call.call_sid
+    transcript_turns = [
+        event
+        for event in replay_doc["timeline"]
+        if event.get("event") == "transcript_turn"
+    ]
+    assert {event["speaker"] for event in transcript_turns} == {"user", "assistant"}
 
     search = await client.post(
         "/api/calls/search",

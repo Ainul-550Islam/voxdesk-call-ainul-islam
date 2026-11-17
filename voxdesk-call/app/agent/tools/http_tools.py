@@ -10,10 +10,12 @@ template interpolation (`{{param}}`), timeout enforcement, and secret/PII redact
 
 from __future__ import annotations
 
+import json
+
 import os
 import re
 import uuid
-from typing import Any
+from typing import Any, Mapping
 
 import httpx
 import structlog
@@ -76,6 +78,22 @@ def _scrub_value(value: Any) -> Any:
     return value
 
 
+def _api_tool_parameters(parameter_schema: Any, body_schema: Any = None) -> dict[str, Any]:
+    """Compose the top-level API-tool arguments, including its validated request body."""
+    parameters = dict(parameter_schema) if isinstance(parameter_schema, dict) else {}
+    parameters.setdefault("type", "object")
+    if body_schema and isinstance(body_schema, dict):
+        properties = dict(parameters.get("properties") or {})
+        properties.setdefault("body", dict(body_schema))
+        parameters["properties"] = properties
+        required = list(parameters.get("required") or [])
+        if body_schema.get("required") and "body" not in required:
+            required.append("body")
+        if required:
+            parameters["required"] = required
+    return parameters
+
+
 def build_http_tool_schemas(
     custom_tools: list[dict[str, Any]] | tuple[dict[str, Any], ...],
     api_tools: list[ApiTool] | None = None,
@@ -95,6 +113,9 @@ def build_http_tool_schemas(
             "properties": raw_schema.get("properties", {}),
             "required": raw_schema.get("required", []),
         }
+        body_schema = raw_schema.get("body_schema") or tool_def.get("body_schema")
+        if body_schema:
+            params = _api_tool_parameters(params, body_schema)
         description = str(
             raw_schema.get("description")
             or tool_def.get("description")
@@ -118,13 +139,13 @@ def build_http_tool_schemas(
         if not name or name in seen_names:
             continue
         seen_names.add(name)
-        params = dict(
+        params = _api_tool_parameters(
             getattr(api_tool, "input_schema", None)
             or getattr(api_tool, "parameters_schema", None)
-            or {"type": "object", "properties": {}}
+            or getattr(api_tool, "parameter_schema", None)
+            or {"type": "object", "properties": {}},
+            getattr(api_tool, "body_schema", None),
         )
-        if "type" not in params:
-            params["type"] = "object"
         schemas.append(
             {
                 "type": "function",
@@ -291,3 +312,80 @@ async def execute_agent_http_tool(
     finally:
         if owns_client:
             await http_client.aclose()
+
+# ---------------------------------------------------------------------------
+# PART 12 (P12-27) — tool constants and a substitution preview
+# ---------------------------------------------------------------------------
+
+class ToolConstantError(ValueError):
+    """A constant that cannot be resolved to a value."""
+
+
+def resolve_tool_constants(
+    constants: dict[str, Any] | None,
+    variables: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Resolve a tool's constants to literals.
+
+    Two forms are accepted, matching the specification:
+
+    ``{"env": "prod"}``                      a static value
+    ``{"customer": {"variable": "name"}}``   a dynamic variable reference
+
+    A dynamic reference that cannot be resolved raises rather than becoming an empty string: a
+    request sent to ``https://api.example/v1/customers/`` is much harder to debug than a refusal
+    that names the missing variable.
+    """
+    resolved: dict[str, Any] = {}
+    variables = dict(variables or {})
+    for name, spec in (constants or {}).items():
+        key = str(name)
+        if isinstance(spec, Mapping) and "variable" in spec:
+            source = str(spec["variable"]).strip()
+            if source.startswith("{{") and source.endswith("}}"):
+                source = source[2:-2].strip()
+            if source not in variables:
+                raise ToolConstantError(f"constant '{key}' references unknown variable '{source}'")
+            resolved[key] = variables[source]
+        elif isinstance(spec, Mapping) and "value" in spec:
+            resolved[key] = spec["value"]
+        else:
+            resolved[key] = spec
+    return resolved
+
+
+def preview_request(
+    tool_def: Mapping[str, Any],
+    *,
+    arguments: Mapping[str, Any] | None = None,
+    variables: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """What would be sent, with every substitution visible.
+
+    This is the "test invoke" view in the builder: an operator can see the final URL and body
+    before a live caller ever triggers the tool, which is the difference between a five-minute fix
+    and a support ticket.
+    """
+    constants = resolve_tool_constants(tool_def.get("constants"), variables)
+    merged: dict[str, Any] = {**constants, **{k: v for k, v in (variables or {}).items()}}
+    merged.update(dict(arguments or {}))
+
+    url = _interpolate_string(str(tool_def.get("url") or tool_def.get("endpoint_url") or ""), merged)
+    headers = {
+        str(key): _interpolate_string(str(value), merged)
+        for key, value in dict(tool_def.get("headers") or {}).items()
+    }
+    body = tool_def.get("body")
+    payload = _interpolate_value(body, merged) if body is not None else None
+    return {
+        "method": str(tool_def.get("http_method") or tool_def.get("method") or "GET").upper(),
+        "url": url,
+        "headers": headers,
+        "body": payload,
+        "constants": constants,
+        "unresolved": sorted(
+            match for match in _TEMPLATE_VAR_RE.findall(json.dumps({"url": url, "body": payload}))
+            if match not in merged
+        ),
+    }
+

@@ -282,6 +282,14 @@ func BuildResponse(request *Message, statusCode int, reason string) *Message {
 			response.AddHeader(name, value)
 		}
 	}
+	// A successful INVITE response establishes the dialog. The UAS must echo
+	// the proxy's Record-Route values so the caller keeps the trusted edge in
+	// the route set for ACK, BYE, and subsequent dialog requests.
+	if strings.EqualFold(request.Method, "INVITE") && statusCode >= 200 && statusCode < 300 {
+		for _, value := range request.HeaderValues("record-route") {
+			response.AddHeader("record-route", value)
+		}
+	}
 	if tag := request.Tag("to"); tag == "" {
 		response.SetHeader("to", fmt.Sprintf("%s;tag=%s", request.Header("to"), RandomToken(6)))
 	}

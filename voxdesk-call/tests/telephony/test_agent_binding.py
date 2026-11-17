@@ -16,6 +16,7 @@ from app.db.models import (
     UserRole,
 )
 from app.runtime.agent_config_resolver import resolve_runtime_config
+from app.db.retell_models import DynamicVariableDefinition
 from app.telephony.number_provisioning import (
     PhoneNumber,
     PhoneNumberStatus,
@@ -236,6 +237,191 @@ async def test_patch_phone_number_binds_agents_and_routes_calls_distinctly(clien
     assert cfg_2.llm_provider == "anthropic"
     assert call_2.agent_id == agent_b.id
     assert call_2.agent_version_id == ver_b1.id
+
+
+@pytest.mark.asyncio
+async def test_weighted_number_routing_persists_and_resolves_deterministically(client, db):
+    (
+        tenant,
+        user,
+        agent_a,
+        agent_b,
+        _ver_a1,
+        _ver_a2,
+        _ver_b1,
+        num_1,
+        _num_2,
+    ) = await _seed_tenant_with_two_agents(db)
+
+    from app.telephony.number_routing import build_routing
+
+    route_config = {
+        "inbound": [
+            {"agent_id": str(agent_a.id), "weight": 70, "label": "control"},
+            {"agent_id": str(agent_b.id), "weight": 30, "label": "canary"},
+        ]
+    }
+    num_1.routing = route_config
+    await db.commit()
+
+    caller = "+14155559999"
+    expected = build_routing(route_config).select(
+        "inbound", caller=caller, salt=f"{num_1.e164}|inbound"
+    )
+    call = Call(
+        id=uuid.uuid4(),
+        tenant_id=tenant.id,
+        call_sid="CA_WEIGHTED_001",
+        from_number=caller,
+        to_number=num_1.e164,
+        direction=CallDirection.INBOUND,
+        status=CallStatus.IN_PROGRESS,
+    )
+    db.add(call)
+    await db.flush()
+    runtime_cfg = await resolve_runtime_config(db, call, tenant)
+
+    assert str(runtime_cfg.agent_id) == expected
+    assert runtime_cfg.source == "phone_number_weighted"
+    assert call.transfer_context["number_routing"]["selected_agent_id"] == expected
+    assert call.transfer_context["number_routing"]["candidate_count"] == 2
+
+    headers = await auth_headers(client, user)
+    created = await client.post(
+        "/api/v1/telephony/phone-numbers",
+        headers=headers,
+        json={
+            "number": "+14155550103",
+            "routing": {
+                "inbound": [
+                    {"agent_id": str(agent_a.id), "weight": 80},
+                    {"agent_id": str(agent_b.id), "weight": 20},
+                ],
+                "outbound": [{"agent_id": str(agent_b.id), "weight": 1}],
+            },
+        },
+    )
+    assert created.status_code == 201, created.text
+    body = created.json()
+    assert body["inbound_agent_id"] == str(agent_a.id)
+    assert body["outbound_agent_id"] == str(agent_b.id)
+    assert body["routing"]["inbound"][1]["weight"] == 20.0
+
+    updated = await client.patch(
+        f"/api/v1/telephony/phone-numbers/{body['id']}",
+        headers=headers,
+        json={"routing": {"inbound": [{"agent_id": str(agent_b.id), "weight": 1}]}},
+    )
+    assert updated.status_code == 200, updated.text
+    updated_body = updated.json()
+    assert updated_body["inbound_agent_id"] == str(agent_b.id)
+    assert updated_body["routing"]["inbound"] == [
+        {"agent_id": str(agent_b.id), "weight": 1.0, "label": ""}
+    ]
+
+    call = Call(
+        id=uuid.uuid4(),
+        tenant_id=tenant.id,
+        call_sid="CA_WEIGHTED_TELEPHONY_001",
+        from_number="+14155559998",
+        to_number="+14155550103",
+        direction=CallDirection.INBOUND,
+        status=CallStatus.IN_PROGRESS,
+    )
+    db.add(call)
+    await db.flush()
+    runtime_cfg = await resolve_runtime_config(db, call, tenant)
+    assert runtime_cfg.agent_id == agent_b.id
+    assert runtime_cfg.source == "phone_number"
+
+
+@pytest.mark.asyncio
+async def test_call_dynamic_variables_apply_defaults_overrides_and_prompt_templates(db):
+    tenant, _user, agent_a, _agent_b, ver_a1, _ver_a2, _ver_b1, _num_1, _num_2 = (
+        await _seed_tenant_with_two_agents(db)
+    )
+    ver_a1.config_snapshot = {
+        **ver_a1.config_snapshot,
+        "system_prompt": "Welcome {{ customer_name }}.",
+        "greeting": "Hello {{customer_name}}!",
+    }
+    db.add(
+        DynamicVariableDefinition(
+            tenant_id=tenant.id,
+            chat_agent_id=None,
+            name="tier",
+            var_type="string",
+            description="Customer tier",
+            default_value={"value": "standard"},
+            constraints={},
+            is_required=False,
+            is_nullable=False,
+        )
+    )
+    call = Call(
+        id=uuid.uuid4(),
+        tenant_id=tenant.id,
+        call_sid="CA_DYNAMIC_VARIABLES_001",
+        from_number="+14155559991",
+        to_number="+14155550101",
+        direction=CallDirection.INBOUND,
+        status=CallStatus.IN_PROGRESS,
+        agent_id=agent_a.id,
+        agent_version_id=ver_a1.id,
+        transfer_context={"channel": "phone", "dynamic_variables": {"customer_name": "Dana"}},
+    )
+    db.add(call)
+    await db.flush()
+
+    runtime_cfg = await resolve_runtime_config(db, call, tenant)
+
+    assert runtime_cfg.system_prompt == "Welcome Dana."
+    assert runtime_cfg.greeting == "Hello Dana!"
+    assert runtime_cfg.dynamic_variables["customer_name"] == "Dana"
+    assert runtime_cfg.dynamic_variables["tier"] == "standard"
+    assert runtime_cfg.dynamic_variables["direction"] == "inbound"
+    assert runtime_cfg.dynamic_variables["call_type"] == "inbound"
+    assert call.transfer_context["dynamic_variable_overrides"] == {"customer_name": "Dana"}
+    assert call.transfer_context["dynamic_variables"] == runtime_cfg.dynamic_variables
+
+
+@pytest.mark.asyncio
+async def test_verified_inbound_overrides_bind_agent_version_and_dynamic_variables(db):
+    tenant, _user, _agent_a, agent_b, _ver_a1, _ver_a2, ver_b1, _num_1, _num_2 = (
+        await _seed_tenant_with_two_agents(db)
+    )
+    from app.telephony.webhooks import apply_inbound_overrides_to_call
+
+    call = Call(
+        id=uuid.uuid4(),
+        tenant_id=tenant.id,
+        call_sid="CA_INBOUND_OVERRIDE_001",
+        from_number="+14155559990",
+        to_number="+14155550199",
+        direction=CallDirection.INBOUND,
+        status=CallStatus.IN_PROGRESS,
+        transfer_context={},
+    )
+    db.add(call)
+    await db.flush()
+    applied = apply_inbound_overrides_to_call(
+        call,
+        {
+            "agent_id": agent_b.external_key,
+            "agent_version": 1,
+            "dynamic_variables": {"campaign": "spring"},
+            "metadata": {"source": "lead-form"},
+        },
+    )
+
+    runtime_cfg = await resolve_runtime_config(db, call, tenant)
+
+    assert applied.agent_id == agent_b.external_key
+    assert runtime_cfg.agent_id == agent_b.id
+    assert runtime_cfg.agent_version_id == ver_b1.id
+    assert runtime_cfg.source == "inbound_webhook"
+    assert runtime_cfg.dynamic_variables["campaign"] == "spring"
+    assert call.transfer_context["metadata"]["source"] == "lead-form"
 
 
 @pytest.mark.asyncio

@@ -6,7 +6,7 @@ Computes and prints a table of:
 - Clone modules (from ``scripts/verify_no_filler.py``)
 - ``Padding ... line N`` lines (from ``scripts/strip_padding_markers.py --check``)
 - Code lines of the three retired filler engine dirs (``app/voice_engine``, ``app/rtc_engine``, ``app/pstn_engine``)
-- Generated-tail files & lines in ``dashboard/src`` (from ``scripts/strip_generated_tails.py --check``)
+- Generated-tail files & lines in ``dashboard-next`` (from ``scripts/strip_generated_tails.py --check``)
 - Code lines by area (``app``, ``tests``, ``alembic``, ``scripts``, ``dashboard``, ``dashboard-next``, ``services``) split REAL vs FAKE
 - Pytest tests collected (from ``reports/check/pytest_summary.json`` or ``pytest --collect-only``)
 - Alembic heads
@@ -160,7 +160,6 @@ def _count_area_lines(clone_files: set[str], tail_lines_by_file: dict[str, int])
         "tests",
         "alembic",
         "scripts",
-        "dashboard",
         "dashboard-next",
         "services",
     ]

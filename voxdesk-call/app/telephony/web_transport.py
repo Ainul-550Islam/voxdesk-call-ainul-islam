@@ -55,13 +55,20 @@ from pipecat.transports.websocket.fastapi import (
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.agent.audio import build_ambient_mixer, build_denoise_filter
+from app.agent.audio import build_ambient_mixer, build_denoise_stack
 from app.agent.functions import FunctionHandlers
-from app.agent.humanize import Backchannel, FillerInjector, TextNormalizer, vary_greeting
+from app.agent.humanize import Backchannel, vary_greeting
 from app.agent.idle_reminders import build_idle_reminder_processor
-from app.agent.language import resolve_language_config
 from app.agent.latency import LatencyObserver, LatencyTrackingProcessor
-from app.agent.pipeline import GovernedHearing, GovernedSpeech, MAX_TOOL_CALLS_PER_CALL
+from app.agent.pipeline import (
+    GovernedHearing,
+    GovernedSpeech,
+    MAX_TOOL_CALLS_PER_CALL,
+    build_live_voice_controls,
+    build_language_runtime,
+    filter_enabled_tools,
+    requires_runtime_stt,
+)
 from app.agent.prompts import build_system_prompt
 from app.agent.stt import build_stt, build_stt_for_runtime
 from app.agent.tts import build_tts, build_tts_for_runtime
@@ -598,12 +605,17 @@ async def _run_live_browser_pipecat_session(
         call,
         temperature=runtime_cfg.temperature,
         max_tokens=runtime_cfg.max_tokens or 110,
+        structured_output_schema=runtime_cfg.structured_output_schema,
+        structured_output_strict=runtime_cfg.structured_output_strict,
     )
     choice = prepared.choice
 
     turn_cfg = build_turn_config(runtime_cfg)
     serializer = ProtobufFrameSerializer()
-    denoise_filter = build_denoise_filter(runtime_cfg.denoise_enabled)
+    denoise_filter, denoise_gate, _denoise_plan = build_denoise_stack(
+        getattr(runtime_cfg, "denoise_mode", "off")
+    )
+    runtime_cfg.denoise_gate = denoise_gate
     ambient_mixer = build_ambient_mixer(
         runtime_cfg.ambient_sound,
         ambient_volume=runtime_cfg.ambient_volume,
@@ -628,11 +640,7 @@ async def _run_live_browser_pipecat_session(
         params=FastAPIWebsocketParams(**transport_kwargs),
     )
 
-    if (
-        runtime_cfg.stt_provider != "deepgram"
-        or runtime_cfg.stt_fallback_providers
-        or runtime_cfg.boosted_keywords
-    ):
+    if requires_runtime_stt(runtime_cfg, tenant):
         stt = build_stt_for_runtime(runtime_cfg)
     else:
         stt = build_stt(tenant)
@@ -659,7 +667,21 @@ async def _run_live_browser_pipecat_session(
         runtime_config=runtime_cfg,
         frame_pusher=_push_frame_to_task,
     )
-    active_tools = handlers.available_tools()
+    custom_names = {t.get("name") for t in runtime_cfg.custom_tools} | {
+        t.get("qualified_name") or t.get("name") for t in runtime_cfg.mcp_tools
+    }
+    call_tooling = dict(getattr(runtime_cfg, "call_tooling", {}) or {})
+    active_tools = filter_enabled_tools(
+        handlers.available_tools(),
+        runtime_cfg.enabled_tools,
+        custom_names=custom_names,
+        ivr_navigation_enabled=bool(call_tooling.get("ivr_navigation_enabled", False)),
+    )
+    active_tool_names = {
+        str((schema.get("function") or {}).get("name") or "")
+        for schema in active_tools
+        if (schema.get("function") or {}).get("name")
+    }
     tool_calls_this_call = 0
 
     async def _tool_bridge(params: Any) -> None:
@@ -670,11 +692,14 @@ async def _run_live_browser_pipecat_session(
                 {"ok": False, "message": "I can't do that right now. Offer to take a message."}
             )
             return
+        if params.function_name not in active_tool_names:
+            await params.result_callback(
+                {"ok": False, "message": "That action is not enabled for this agent."}
+            )
+            return
+
         from app.ai.guardrails.tool_policy import agent_runtime_decision
 
-        custom_names = {t.get("name") for t in runtime_cfg.custom_tools} | {
-            t.get("qualified_name") or t.get("name") for t in runtime_cfg.mcp_tools
-        }
         if params.function_name not in custom_names:
             verdict = agent_runtime_decision(params.function_name)
             if not verdict.allowed:
@@ -691,7 +716,10 @@ async def _run_live_browser_pipecat_session(
         tenant.name,
         tenant.agent_name,
     )
-    lang_profile = resolve_language_config(runtime_cfg.language or tenant.language)
+    language_policy, language_instruction = build_language_runtime(
+        runtime_cfg,
+        fallback_language=tenant.language,
+    )
 
     context = OpenAILLMContext(
         messages=[
@@ -703,7 +731,7 @@ async def _run_live_browser_pipecat_session(
                         or prepared.system_prompt
                         or build_system_prompt(tenant, choice.provider)
                     )
-                    + lang_profile.llm_instruction
+                    + language_instruction
                 ),
             },
             {"role": "assistant", "content": greeting},
@@ -741,18 +769,30 @@ async def _run_live_browser_pipecat_session(
 
     stt_usage = UsageTracker(track_stt=True)
     voice_usage = UsageTracker(track_voice=True, provider=choice.provider)
+    voice_controls = build_live_voice_controls(
+        runtime_cfg,
+        tenant=tenant,
+        call=call,
+        call_sid=str(getattr(call, "call_sid", "") or ""),
+        telephony_provider=None,
+        tts=tts,
+        turn_config=turn_cfg,
+        language_policy=language_policy,
+    )
 
     pipeline = Pipeline(
         [
             transport.input(),
+            *voice_controls["input"],
             stt,
             stt_usage,
+            *voice_controls["transcript"],
             GovernedHearing(),
+            *voice_controls["after_hearing"],
             *humanizers,
             context_aggregator.user(),
             llm,
-            FillerInjector(),
-            TextNormalizer(),
+            *voice_controls["output"],
             GovernedSpeech(blocked_substrings=prepared.blocked_output),
             tts,
             voice_usage,
@@ -927,9 +967,12 @@ async def web_call_websocket_endpoint(
             media_gateway_manager.close_session(call.id)
 
 
-# P11-10 WebRTC Decision: Canonical browser audio uses `/telephony/web/ws` (`ws-protobuf`),
-# while `/telephony/web/offer` returns HTTP `503 UNSUPPORTED_CAPABILITY` with
-# `fallback_transport: "ws-protobuf"` whenever optional `aiortc` is absent.
+# P11-10 WebRTC decision (docs/WEBRTC_TRANSPORT_DECISION.md): canonical browser audio uses
+# `/telephony/web/ws` (`ws-protobuf`). `/telephony/web/offer` performs real SDP/ICE/DTLS
+# negotiation when optional `aiortc` is installed and returns HTTP `503
+# UNSUPPORTED_CAPABILITY` with `fallback_transport: "ws-protobuf"` when it is absent, but the
+# negotiated tracks are NOT yet routed into an agent pipeline, so WebRTC is signalling-only
+# and is not offered to customers. Do not advertise it until P11-10b lands with audio proof.
 @router.post("/telephony/web/offer")
 async def web_call_webrtc_offer_endpoint(
     payload: WebRTCOfferRequest,

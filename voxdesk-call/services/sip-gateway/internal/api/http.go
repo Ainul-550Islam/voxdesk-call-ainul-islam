@@ -10,6 +10,7 @@ package api
 import (
 	"context"
 	"crypto/subtle"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -52,35 +53,53 @@ const (
 // ErrCallNotFound is returned for an unknown call.
 var ErrCallNotFound = errors.New("api: the call does not exist")
 
+// ErrCallTenantMismatch is returned when a tenant-scoped request names a
+// call owned by another tenant.
+var ErrCallTenantMismatch = errors.New("api: the call does not belong to the requested tenant")
+
 // Call is one live call.
 type Call struct {
-	ID           string    `json:"id"`
-	From         string    `json:"from"`
-	To           string    `json:"to"`
-	Codec        string    `json:"codec"`
-	State        string    `json:"status"`
-	Direction    string    `json:"direction"`
-	Remote       string    `json:"remote"`
-	StartedAt    time.Time `json:"started_at"`
-	TerminatedAt time.Time `json:"terminated_at,omitempty"`
+	ID            string    `json:"id"`
+	TenantID      string    `json:"tenant_id,omitempty"`
+	TrunkID       string    `json:"trunk_id,omitempty"`
+	EnvironmentID string    `json:"environment_id,omitempty"`
+	From          string    `json:"from"`
+	To            string    `json:"to"`
+	Codec         string    `json:"codec"`
+	State         string    `json:"status"`
+	Direction     string    `json:"direction"`
+	Remote        string    `json:"remote"`
+	StartedAt     time.Time `json:"started_at"`
+	TerminatedAt  time.Time `json:"terminated_at,omitempty"`
 
 	peer    *bridge.RTPPeer
 	session *bridge.Session
-	target  *net.UDPAddr
+	// peerIP is the original per-INVITE source authorized by the network
+	// boundary: the UDP peer for direct lab traffic, or a proxy-asserted IP
+	// accepted only from a configured trusted-proxy CIDR. It is carried over
+	// the authenticated media socket for the Python route recheck.
+	peerIP string
+	target *net.UDPAddr
+	// dialog headers preserve the tags negotiated by the remote peer.
+	dialogFrom string
+	dialogTo   string
 	// port is the RTP port the call leased from the port pool.
 	port uint16
 }
 
 // CallManager owns the calls of the gateway.
 type CallManager struct {
-	mu       sync.Mutex
-	calls    map[string]*Call
-	cfg      config.Config
-	client   *sipua.Client
-	registry *metrics.Registry
-	pool     *rtp.PortPool
-	acl      *sipua.ACL
-	trunks   *sipua.ConfigCache
+	mu              sync.Mutex
+	calls           map[string]*Call
+	cfg             config.Config
+	client          *sipua.Client
+	registry        *metrics.Registry
+	pool            *rtp.PortPool
+	acl             *sipua.ACL
+	trustedProxyACL *sipua.ACL
+	mediaPeerACL    *sipua.ACL
+	trunks          *sipua.ConfigCache
+	inboundRoutes   *sipua.InboundRouteResolver
 }
 
 // NewCallManager creates the manager.
@@ -101,44 +120,115 @@ func NewCallManager(
 	if err != nil {
 		return nil, err
 	}
-	return &CallManager{
-		calls:    map[string]*Call{},
-		cfg:      cfg,
-		client:   client,
-		registry: registry,
-		pool:     pool,
-		acl:      acl,
-		trunks:   sipua.NewConfigCache(cfg.TrunkConfigURL, cfg.TrunkConfigTTL),
-	}, nil
+	trustedProxyACL, err := sipua.NewACL(cfg.TrustedProxyCIDRs)
+	if err != nil {
+		return nil, err
+	}
+	mediaPeerACL, err := sipua.NewACL(cfg.MediaPeerCIDRs)
+	if err != nil {
+		return nil, err
+	}
+	manager := &CallManager{
+		calls:           map[string]*Call{},
+		cfg:             cfg,
+		client:          client,
+		registry:        registry,
+		pool:            pool,
+		acl:             acl,
+		trustedProxyACL: trustedProxyACL,
+		mediaPeerACL:    mediaPeerACL,
+		trunks: sipua.NewConfigCacheWithTenantURL(
+			cfg.TrunkConfigURL,
+			cfg.TenantTrunkConfigURL,
+			cfg.TrunkConfigTTL,
+			cfg.GatewayToken,
+		),
+		inboundRoutes: sipua.NewInboundRouteResolver(cfg.InboundRouteURL, cfg.GatewayToken),
+	}
+	if client != nil {
+		client.SetCaptureHandler(manager.captureSIPPacket)
+	}
+	return manager, nil
 }
 
-// peerAllowed reports whether a peer may call the gateway.
-//
-// The access list of the environment is the floor; the application may
-// narrow it further with the configuration of the trunk.
+// peerAllowed reports whether the immediate SIP socket peer is allowed by the
+// deployment-wide network ACL. When a trusted edge is used, this address is
+// the edge, not the carrier; per-trunk authorization uses inboundSourceIP.
 func (m *CallManager) peerAllowed(remote *net.UDPAddr) bool {
-	if remote == nil {
-		return false
+	return remote != nil && remote.IP != nil && m.acl.Allows(remote.IP)
+}
+
+// inboundSourceIP returns the SIP peer address authorized by the Python route
+// resolver. Proxy metadata is accepted only from explicitly trusted proxy CIDRs;
+// a caller-supplied header from any other peer is ignored.
+func (m *CallManager) inboundSourceIP(request *sipua.Message, remote *net.UDPAddr) (net.IP, error) {
+	if request == nil || remote == nil || remote.IP == nil {
+		return nil, errors.New("api: the INVITE has no network peer address")
 	}
-	if !m.acl.Allows(remote.IP) {
+	if m.trustedProxyACL == nil || m.trustedProxyACL.Empty() || !m.trustedProxyACL.Allows(remote.IP) {
+		return canonicalIP(remote.IP), nil
+	}
+	values := request.HeaderValues("X-VoxDesk-Source-IP")
+	if len(values) != 1 {
+		return nil, errors.New("api: trusted SIP proxy must supply exactly one source-IP header")
+	}
+	value := strings.TrimSpace(values[0])
+	ip := net.ParseIP(value)
+	if value == "" || ip == nil || ip.IsUnspecified() || ip.IsMulticast() {
+		return nil, errors.New("api: trusted SIP proxy supplied an invalid source IP")
+	}
+	return canonicalIP(ip), nil
+}
+
+func canonicalIP(ip net.IP) net.IP {
+	if ipv4 := ip.To4(); ipv4 != nil {
+		return append(net.IP(nil), ipv4...)
+	}
+	return append(net.IP(nil), ip.To16()...)
+}
+
+// trunkSourceAllowed applies the legacy machine-wide trunk ACL to the original
+// SIP source, not the trusted proxy address.
+func (m *CallManager) trunkSourceAllowed(sourceIP net.IP) bool {
+	if sourceIP == nil {
 		return false
 	}
 	if cached := m.trunks.ACL(); cached != nil && !cached.Empty() {
-		return cached.Allows(remote.IP)
+		return cached.Allows(sourceIP)
 	}
 	return true
 }
 
-// trunkCredentials returns the digest credentials of the trunk.
-func (m *CallManager) trunkCredentials(ctx context.Context) *sipua.Credentials {
+// mediaPeerAllowed prevents SDP from turning the gateway into a UDP reflector
+// to arbitrary destinations. A configured RTP relay CIDR takes precedence;
+// without it, media and signalling must share an IP address.
+func (m *CallManager) mediaPeerAllowed(media, signaling *net.UDPAddr) bool {
+	if media == nil || media.IP == nil || signaling == nil || signaling.IP == nil {
+		return false
+	}
+	if m.mediaPeerACL != nil && !m.mediaPeerACL.Empty() {
+		return m.mediaPeerACL.Allows(media.IP)
+	}
+	return media.IP.Equal(signaling.IP)
+}
+
+// trunkCredentials returns the configured machine-wide digest credentials.
+// If an endpoint is configured but unavailable or incomplete, origination
+// fails closed instead of silently retrying without carrier authentication.
+func (m *CallManager) trunkCredentials(ctx context.Context) (*sipua.Credentials, error) {
 	if !m.trunks.Configured() {
-		return nil
+		return nil, nil
 	}
-	config, err := m.trunks.Trunk(ctx)
-	if err != nil || config.Username == "" {
-		return nil
+	trunk, err := m.trunks.Trunk(ctx)
+	if err != nil {
+		return nil, err
 	}
-	return &sipua.Credentials{Username: config.Username, Password: config.Password}
+	username := strings.TrimSpace(trunk.Username)
+	password := trunk.Password
+	if username == "" || strings.TrimSpace(password) == "" {
+		return nil, errors.New("api: the configured SIP trunk credentials are incomplete")
+	}
+	return &sipua.Credentials{Username: username, Password: password}, nil
 }
 
 // Get returns one call.
@@ -161,7 +251,16 @@ func (m *CallManager) List() []*Call {
 }
 
 // Originate places a call to a SIP peer.
-func (m *CallManager) Originate(ctx context.Context, callID string, from string, to string, codec string) (*Call, error) {
+func (m *CallManager) Originate(
+	ctx context.Context,
+	callID string,
+	tenantID string,
+	trunkID string,
+	environmentID string,
+	from string,
+	to string,
+	codec string,
+) (*Call, error) {
 	if callID == "" {
 		callID = sipua.RandomToken(16)
 	}
@@ -171,10 +270,75 @@ func (m *CallManager) Originate(ctx context.Context, callID string, from string,
 	if codec == "" {
 		codec = m.cfg.PreferredCodec
 	}
-	target, err := sipua.ParseTarget(to, m.cfg.SIPPort)
+	tenantScoped := strings.TrimSpace(tenantID) != "" || strings.TrimSpace(trunkID) != ""
+	var scopedTrunk *sipua.TrunkConfig
+	var credentials *sipua.Credentials
+	if tenantScoped {
+		if strings.TrimSpace(tenantID) == "" || strings.TrimSpace(trunkID) == "" {
+			return nil, errors.New("api: tenant_id and trunk_id must be supplied together")
+		}
+		trunk, err := m.trunks.TenantTrunk(ctx, tenantID, trunkID, environmentID)
+		if err != nil {
+			return nil, fmt.Errorf("api: cannot obtain the tenant SIP trunk configuration: %w", err)
+		}
+		// This gateway currently implements UDP signalling and plain RTP only.
+		// Never downgrade a tenant trunk that requires TLS or SRTP to UDP/RTP.
+		if trunk.Transport != "udp" || trunk.SRTPRequired {
+			return nil, errors.New("api: the selected tenant trunk requires SIP TLS and/or SRTP, which this gateway does not support")
+		}
+		scopedTrunk = &trunk
+		credentials = &sipua.Credentials{Username: trunk.Username, Password: trunk.Password}
+		if strings.TrimSpace(from) == "" {
+			from = trunk.CallerID
+		}
+		if strings.TrimSpace(from) == "" {
+			return nil, errors.New("api: tenant trunk origination requires an authorized caller ID")
+		}
+	}
+	requestURI := strings.TrimSpace(to)
+	if tenantScoped {
+		if !strings.HasPrefix(requestURI, "+") || len(requestURI) < 9 || len(requestURI) > 16 {
+			return nil, errors.New("api: tenant trunk origination requires an E.164 destination")
+		}
+		for _, digit := range requestURI[1:] {
+			if digit < '0' || digit > '9' {
+				return nil, errors.New("api: E.164 destination contains a non-digit")
+			}
+		}
+		host := scopedTrunk.Host
+		if ip := net.ParseIP(host); ip != nil && ip.To4() == nil {
+			host = "[" + host + "]"
+		}
+		requestURI = fmt.Sprintf("sip:%s@%s:%d", requestURI, host, scopedTrunk.Port)
+	} else if !strings.HasPrefix(strings.ToLower(requestURI), "sip:") {
+		if !strings.HasPrefix(requestURI, "+") || len(requestURI) < 9 || len(requestURI) > 16 {
+			return nil, errors.New("api: destination must be a SIP URI or an E.164 number")
+		}
+		for _, digit := range requestURI[1:] {
+			if digit < '0' || digit > '9' {
+				return nil, errors.New("api: E.164 destination contains a non-digit")
+			}
+		}
+		if m.cfg.TrunkHost == "" {
+			return nil, errors.New("api: no outbound SIP trunk host is configured for E.164 origination")
+		}
+		host := m.cfg.TrunkHost
+		if ip := net.ParseIP(host); ip != nil && ip.To4() == nil {
+			host = "[" + host + "]"
+		}
+		requestURI = fmt.Sprintf("sip:%s@%s:%d", requestURI, host, m.cfg.TrunkPort)
+	}
+	target, err := sipua.ParseTarget(requestURI, config.DefaultSIPPort)
 	if err != nil {
 		return nil, err
 	}
+	if !tenantScoped {
+		credentials, err = m.trunkCredentials(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("api: cannot obtain SIP trunk credentials: %w", err)
+		}
+	}
+	toHeader := fmt.Sprintf("<%s>", requestURI)
 
 	local, port, err := m.allocateRTPAddress()
 	if err != nil {
@@ -190,15 +354,16 @@ func (m *CallManager) Originate(ctx context.Context, callID string, from string,
 		Version:                   1,
 	})
 
+	inviteCSeq := m.client.NextSequence()
 	request := sipua.BuildRequest(sipua.RequestOptions{
 		Method:      "INVITE",
-		RequestURI:  to,
+		RequestURI:  requestURI,
 		LocalHost:   m.cfg.SIPHost,
 		LocalPort:   m.cfg.SIPPort,
 		CallID:      callID,
-		CSeq:        m.client.NextSequence(),
+		CSeq:        inviteCSeq,
 		From:        fmt.Sprintf("<sip:%s@%s>", from, m.cfg.SIPHost),
-		To:          fmt.Sprintf("<sip:%s@%s>", to, m.cfg.SIPHost),
+		To:          toHeader,
 		Contact:     fmt.Sprintf("<sip:%s@%s:%d>", m.cfg.SIPHost, m.cfg.SIPHost, m.cfg.SIPPort),
 		Body:        offer,
 		ContentType: "application/sdp",
@@ -206,8 +371,9 @@ func (m *CallManager) Originate(ctx context.Context, callID string, from string,
 
 	call := &Call{
 		ID:        callID,
+		TenantID:  tenantID,
 		From:      from,
-		To:        to,
+		To:        requestURI,
 		Codec:     codec,
 		State:     StateInviting,
 		Direction: "outbound",
@@ -219,7 +385,7 @@ func (m *CallManager) Originate(ctx context.Context, callID string, from string,
 	m.calls[callID] = call
 	m.mu.Unlock()
 
-	response, err := m.client.Request(request, target, m.trunkCredentials(ctx))
+	response, err := m.client.Request(request, target, credentials)
 	if err != nil {
 		m.finish(callID, StateFailed)
 		return nil, err
@@ -228,6 +394,25 @@ func (m *CallManager) Originate(ctx context.Context, callID string, from string,
 	if response.StatusCode >= 300 {
 		m.finish(callID, StateFailed)
 		return nil, fmt.Errorf("api: the peer answered %d %s", response.StatusCode, response.Reason)
+	}
+	m.mu.Lock()
+	call.dialogFrom = request.Header("from")
+	call.dialogTo = response.Header("to")
+	m.mu.Unlock()
+
+	ack := sipua.BuildRequest(sipua.RequestOptions{
+		Method:     "ACK",
+		RequestURI: requestURI,
+		LocalHost:  m.cfg.SIPHost,
+		LocalPort:  m.cfg.SIPPort,
+		CallID:     callID,
+		CSeq:       inviteCSeq,
+		From:       request.Header("from"),
+		To:         response.Header("to"),
+	})
+	if err := m.client.Send(ack, target); err != nil {
+		m.finish(callID, StateFailed)
+		return nil, fmt.Errorf("api: cannot acknowledge the peer's answer: %w", err)
 	}
 
 	answer, err := sdp.Parse(response.Body)
@@ -240,6 +425,19 @@ func (m *CallManager) Originate(ctx context.Context, callID string, from string,
 	if !ok {
 		m.finish(callID, StateFailed)
 		return nil, errors.New("api: the peer's answer has no audio media")
+	}
+	if err := answer.ValidatePlainRTP(media); err != nil {
+		m.finish(callID, StateFailed)
+		return nil, fmt.Errorf("api: the peer's answer is not plain RTP: %w", err)
+	}
+	mediaTarget, err := media.Endpoint(answer.Connection)
+	if err != nil {
+		m.finish(callID, StateFailed)
+		return nil, fmt.Errorf("api: the peer's answer has an unusable RTP endpoint: %w", err)
+	}
+	if !m.mediaPeerAllowed(mediaTarget, target) {
+		m.finish(callID, StateFailed)
+		return nil, errors.New("api: the peer's RTP endpoint is outside the configured media allow-list")
 	}
 	negotiated := codec
 	if format, found := media.FormatByName(codec); found {
@@ -258,7 +456,7 @@ func (m *CallManager) Originate(ctx context.Context, callID string, from string,
 
 	peer, err := bridge.NewRTPPeer(
 		&net.UDPAddr{IP: net.IPv4zero, Port: int(port)},
-		&net.UDPAddr{IP: net.ParseIP(m.cfg.SIPHost), Port: media.Port},
+		mediaTarget,
 		uint8(payloadType),
 		telephoneType,
 		sdp.DefaultClockRate,
@@ -267,6 +465,9 @@ func (m *CallManager) Originate(ctx context.Context, callID string, from string,
 	if err != nil {
 		m.finish(callID, StateFailed)
 		return nil, err
+	}
+	if captureIP := net.ParseIP(m.cfg.SIPHost); captureIP != nil {
+		peer.SetCaptureLocalIP(captureIP)
 	}
 	if err := m.startSession(call, peer, negotiated); err != nil {
 		m.finish(callID, StateFailed)
@@ -280,28 +481,99 @@ func (m *CallManager) Originate(ctx context.Context, callID string, from string,
 	return call, nil
 }
 
-// HandleInvite answers an inbound INVITE and starts the media path.
+// rejectInvite sends a non-success response for an inbound INVITE.
+func (m *CallManager) rejectInvite(
+	request *sipua.Message,
+	remote *net.UDPAddr,
+	statusCode int,
+	reason string,
+	detail error,
+) error {
+	if m.client == nil {
+		return fmt.Errorf("api: cannot send SIP %d %s without a SIP client: %w", statusCode, reason, detail)
+	}
+	m.countResponse(statusCode)
+	if err := m.client.Send(sipua.BuildResponse(request, statusCode, reason), remote); err != nil {
+		return err
+	}
+	if detail != nil {
+		return fmt.Errorf("api: SIP %d %s: %w", statusCode, reason, detail)
+	}
+	return fmt.Errorf("api: SIP %d %s", statusCode, reason)
+}
+
+// HandleInvite resolves the inbound destination to a tenant/trunk before it
+// allocates call media or sends a successful SIP response.
 func (m *CallManager) HandleInvite(request *sipua.Message, remote *net.UDPAddr) error {
-	callID := request.Header("call-id")
+	if request == nil {
+		return errors.New("api: the INVITE is missing")
+	}
+	callID := strings.TrimSpace(request.Header("call-id"))
 	if callID == "" {
 		return errors.New("api: the INVITE carries no call id")
 	}
-	if !m.peerAllowed(remote) {
-		response := sipua.BuildResponse(request, 403, "Forbidden")
-		m.countResponse(403)
-		if err := m.client.Send(response, remote); err != nil {
-			return err
-		}
-		return fmt.Errorf("api: the peer %s is not allowed to call", remote)
+	if remote == nil || remote.IP == nil {
+		return m.rejectInvite(request, remote, 403, "Forbidden", errors.New("the INVITE peer has no source IP"))
 	}
+	if !m.peerAllowed(remote) {
+		return m.rejectInvite(request, remote, 403, "Forbidden", fmt.Errorf("peer %s is not allowed", remote))
+	}
+	if m.inboundRoutes == nil {
+		return m.rejectInvite(request, remote, 503, "Service Unavailable", errors.New("inbound tenant routing is not configured"))
+	}
+	sourceIP, err := m.inboundSourceIP(request, remote)
+	if err != nil {
+		return m.rejectInvite(request, remote, 403, "Forbidden", err)
+	}
+	if !m.trunkSourceAllowed(sourceIP) {
+		return m.rejectInvite(request, remote, 403, "Forbidden", errors.New("the SIP source is outside the trunk ACL"))
+	}
+	peerIP := sourceIP.String()
+	if sourceIP.To4() != nil {
+		peerIP = sourceIP.To4().String()
+	}
+
+	routeCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	route, err := m.inboundRoutes.Resolve(
+		routeCtx,
+		request.Header("to"),
+		request.Header("from"),
+		callID,
+		peerIP,
+	)
+	cancel()
+	if err != nil {
+		statusCode, reason := http.StatusServiceUnavailable, "Service Unavailable"
+		var routeError *sipua.InboundRouteError
+		if errors.As(err, &routeError) {
+			switch routeError.StatusCode {
+			case http.StatusNotFound:
+				statusCode, reason = http.StatusNotFound, "Not Found"
+			case http.StatusUnauthorized, http.StatusForbidden, http.StatusConflict, http.StatusUnprocessableEntity:
+				statusCode, reason = http.StatusForbidden, "Forbidden"
+			}
+		}
+		return m.rejectInvite(request, remote, statusCode, reason, err)
+	}
+
 	offer, err := sdp.Parse(request.Body)
 	if err != nil {
-		return fmt.Errorf("api: the INVITE carries no usable session description: %w", err)
+		return m.rejectInvite(request, remote, 488, "Not Acceptable Here", fmt.Errorf("the INVITE carries no usable session description: %w", err))
 	}
 	offer.ApplyAttributes()
 	media, ok := offer.Audio()
 	if !ok {
-		return errors.New("api: the INVITE has no audio media")
+		return m.rejectInvite(request, remote, 488, "Not Acceptable Here", errors.New("the INVITE has no audio media"))
+	}
+	if err := offer.ValidatePlainRTP(media); err != nil {
+		return m.rejectInvite(request, remote, 488, "Not Acceptable Here", fmt.Errorf("the INVITE is not plain RTP: %w", err))
+	}
+	mediaTarget, err := media.Endpoint(offer.Connection)
+	if err != nil {
+		return m.rejectInvite(request, remote, 488, "Not Acceptable Here", fmt.Errorf("the INVITE has an unusable RTP endpoint: %w", err))
+	}
+	if !m.mediaPeerAllowed(mediaTarget, remote) {
+		return m.rejectInvite(request, remote, 403, "Forbidden", errors.New("the INVITE RTP endpoint is outside the configured media allow-list"))
 	}
 	codec := m.cfg.PreferredCodec
 	payloadType := sdp.PayloadTypeForCodec(codec)
@@ -316,9 +588,31 @@ func (m *CallManager) HandleInvite(request *sipua.Message, remote *net.UDPAddr) 
 		telephoneType = uint8(format.PayloadType)
 	}
 
+	m.mu.Lock()
+	_, duplicate := m.calls[callID]
+	m.mu.Unlock()
+	if duplicate {
+		return m.rejectInvite(request, remote, 482, "Loop Detected", errors.New("the SIP Call-ID is already active"))
+	}
+
 	local, port, err := m.allocateRTPAddress()
 	if err != nil {
-		return err
+		return m.rejectInvite(request, remote, 503, "Service Unavailable", err)
+	}
+	peer, err := bridge.NewRTPPeer(
+		&net.UDPAddr{IP: net.IPv4zero, Port: int(port)},
+		mediaTarget,
+		uint8(payloadType),
+		telephoneType,
+		sdp.DefaultClockRate,
+		port,
+	)
+	if err != nil {
+		m.pool.Release(port)
+		return m.rejectInvite(request, remote, 503, "Service Unavailable", err)
+	}
+	if captureIP := net.ParseIP(m.cfg.SIPHost); captureIP != nil {
+		peer.SetCaptureLocalIP(captureIP)
 	}
 	answer := sdp.Build(sdp.Answer{
 		Address:                   m.cfg.SIPHost,
@@ -330,43 +624,67 @@ func (m *CallManager) HandleInvite(request *sipua.Message, remote *net.UDPAddr) 
 		Version:                   1,
 	})
 
-	response := sipua.BuildResponse(request, 200, "OK")
-	response.SetHeader("content-type", "application/sdp")
-	response.Body = answer
-	if err := m.client.Send(response, remote); err != nil {
-		return err
-	}
-	m.countResponse(200)
-
 	call := &Call{
-		ID:        callID,
-		From:      request.Header("from"),
-		To:        request.Header("to"),
-		Codec:     codec,
-		State:     StateActive,
-		Direction: "inbound",
-		Remote:    remote.String(),
-		StartedAt: time.Now().UTC(),
-		target:    remote,
-		port:      port,
+		ID:            callID,
+		TenantID:      route.TenantID,
+		TrunkID:       route.TrunkID,
+		EnvironmentID: route.EnvironmentID,
+		From:          route.FromNumber,
+		To:            route.ToNumber,
+		Codec:         codec,
+		State:         StateInviting,
+		Direction:     "inbound",
+		Remote:        remote.String(),
+		peerIP:        peerIP,
+		StartedAt:     time.Now().UTC(),
+		target:        remote,
+		port:          port,
+		peer:          peer,
 	}
 	m.mu.Lock()
+	if _, duplicate = m.calls[callID]; duplicate {
+		m.mu.Unlock()
+		_ = peer.Close()
+		m.pool.Release(port)
+		return m.rejectInvite(request, remote, 482, "Loop Detected", errors.New("the SIP Call-ID is already active"))
+	}
 	m.calls[callID] = call
 	m.mu.Unlock()
 
-	peer, err := bridge.NewRTPPeer(
-		&net.UDPAddr{IP: net.IPv4zero, Port: int(port)},
-		remote,
-		uint8(payloadType),
-		telephoneType,
-		sdp.DefaultClockRate,
-		port,
-	)
-	if err != nil {
+	// Establish and authenticate the application media session before telling
+	// the remote peer that the call was accepted. The start event carries the
+	// same route binding used by tenant-scoped gateway operations.
+	if err := m.startSession(call, peer, codec); err != nil {
+		m.finish(callID, StateFailed)
+		return m.rejectInvite(request, remote, 503, "Service Unavailable", err)
+	}
+
+	m.mu.Lock()
+	if call.State == StateInviting {
+		call.State = StateActive
+		call.Codec = codec
+	}
+	active := call.State == StateActive
+	m.mu.Unlock()
+	if !active {
+		m.finish(callID, StateFailed)
+		return m.rejectInvite(request, remote, 503, "Service Unavailable", errors.New("the application media session ended during setup"))
+	}
+
+	response := sipua.BuildResponse(request, 200, "OK")
+	// The Go UAS sits behind Kamailio. Return its private SIP target as the
+	// dialog remote-target; the echoed Record-Route pair keeps the external
+	// carrier on TLS and routes this URI back through the edge.
+	contactHost := net.JoinHostPort(m.cfg.SIPHost, strconv.Itoa(m.cfg.SIPPort))
+	response.SetHeader("contact", fmt.Sprintf("<sip:%s@%s;transport=udp>", route.ToNumber, contactHost))
+	response.SetHeader("content-type", "application/sdp")
+	response.Body = answer
+	if err := m.client.Send(response, remote); err != nil {
 		m.finish(callID, StateFailed)
 		return err
 	}
-	return m.startSession(call, peer, codec)
+	m.countResponse(200)
+	return nil
 }
 
 // startSession opens the media socket to the application and pumps the RTP.
@@ -374,7 +692,19 @@ func (m *CallManager) startSession(call *Call, peer *bridge.RTPPeer, codec strin
 	ws := bridge.NewWSBridge(m.cfg.MediaWSURL, m.cfg.GatewayToken)
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
-	if err := ws.Dial(ctx, call.ID, call.From, call.To, codec); err != nil {
+	if err := ws.DialWithRoute(
+		ctx,
+		call.ID,
+		call.From,
+		call.To,
+		codec,
+		call.Direction,
+		call.TenantID,
+		call.TrunkID,
+		call.EnvironmentID,
+		call.peerIP,
+	); err != nil {
+		_ = ws.Close()
 		_ = peer.Close()
 		return err
 	}
@@ -425,6 +755,19 @@ func (m *CallManager) startSession(call *Call, peer *bridge.RTPPeer, codec strin
 	return nil
 }
 
+// RemoteHangup acknowledges a remote BYE by ending the local session. The
+// caller is responsible for sending the SIP 200 response to the request.
+func (m *CallManager) RemoteHangup(callID string) bool {
+	if strings.TrimSpace(callID) == "" {
+		return false
+	}
+	if _, ok := m.Get(callID); !ok {
+		return false
+	}
+	m.finish(callID, StateTerminated)
+	return true
+}
+
 // Hangup sends a BYE and ends the call.
 func (m *CallManager) Hangup(callID string) error {
 	call, ok := m.Get(callID)
@@ -435,6 +778,9 @@ func (m *CallManager) Hangup(callID string) error {
 	target := call.target
 	m.mu.Unlock()
 	if target != nil {
+		if call.dialogFrom == "" || call.dialogTo == "" {
+			return errors.New("api: the call has no established SIP dialog")
+		}
 		bye := sipua.BuildRequest(sipua.RequestOptions{
 			Method:     "BYE",
 			RequestURI: call.To,
@@ -442,10 +788,16 @@ func (m *CallManager) Hangup(callID string) error {
 			LocalPort:  m.cfg.SIPPort,
 			CallID:     call.ID,
 			CSeq:       m.client.NextSequence(),
-			From:       fmt.Sprintf("<sip:%s@%s>", call.From, m.cfg.SIPHost),
-			To:         fmt.Sprintf("<sip:%s@%s>", call.To, m.cfg.SIPHost),
+			From:       call.dialogFrom,
+			To:         call.dialogTo,
 		})
-		_ = m.client.Send(bye, target)
+		response, err := m.client.Request(bye, target, nil)
+		if err != nil {
+			return err
+		}
+		if response.StatusCode >= 300 {
+			return fmt.Errorf("api: the peer refused BYE with %d %s", response.StatusCode, response.Reason)
+		}
 	}
 	m.finish(callID, StateTerminated)
 	return nil
@@ -513,10 +865,79 @@ func (m *CallManager) SendDTMF(callID string, digits string) error {
 	return nil
 }
 
+// captureSIPPacket joins SIP signalling to the same capture recorder as the
+// call's RTP/RTCP media, using the SIP Call-ID as the lookup key.
+func (m *CallManager) captureSIPPacket(
+	callID string,
+	source *net.UDPAddr,
+	destination *net.UDPAddr,
+	payload []byte,
+	direction string,
+) {
+	m.mu.Lock()
+	call := m.calls[callID]
+	var peer *bridge.RTPPeer
+	if call != nil {
+		peer = call.peer
+	}
+	m.mu.Unlock()
+	if peer == nil {
+		return
+	}
+	advertisedIP := net.ParseIP(m.cfg.SIPHost)
+	if advertisedIP != nil {
+		if source != nil && source.IP.IsUnspecified() {
+			source = &net.UDPAddr{IP: advertisedIP, Port: source.Port}
+		}
+		if destination != nil && destination.IP.IsUnspecified() {
+			destination = &net.UDPAddr{IP: advertisedIP, Port: destination.Port}
+		}
+	}
+	peer.RecordPacket(source, destination, payload, direction)
+}
+
+// Capture records packets for one live call. The call must be bound to the
+// exact requesting tenant. Unbound inbound calls fail closed until routing has
+// resolved and persisted their tenant; an empty tenant is never a wildcard.
+func (m *CallManager) Capture(
+	ctx context.Context,
+	tenantID string,
+	callID string,
+	seconds int,
+	snaplen int,
+	direction string,
+) (rtp.CaptureResult, error) {
+	tenantID = strings.TrimSpace(tenantID)
+	callID = strings.TrimSpace(callID)
+	if tenantID == "" || callID == "" {
+		return rtp.CaptureResult{}, errors.New("api: tenant_id and call_id are required for capture")
+	}
+	m.mu.Lock()
+	call, ok := m.calls[callID]
+	if !ok {
+		m.mu.Unlock()
+		return rtp.CaptureResult{}, ErrCallNotFound
+	}
+	if strings.TrimSpace(call.TenantID) == "" || strings.TrimSpace(call.TenantID) != tenantID {
+		m.mu.Unlock()
+		return rtp.CaptureResult{}, ErrCallTenantMismatch
+	}
+	peer := call.peer
+	state := call.State
+	m.mu.Unlock()
+	if state != StateActive || peer == nil {
+		return rtp.CaptureResult{}, errors.New("api: the call has no active media session to capture")
+	}
+	return peer.Capture(ctx, seconds, snaplen, direction)
+}
+
 // finish terminates a call and releases its resources.
 func (m *CallManager) finish(callID string, state string) {
 	m.mu.Lock()
 	call, ok := m.calls[callID]
+	if ok && (call.State == StateTerminated || call.State == StateFailed) {
+		ok = false
+	}
 	if ok {
 		call.State = state
 		call.TerminatedAt = time.Now().UTC()
@@ -644,10 +1065,13 @@ func (s *Server) handleMetrics(w http.ResponseWriter, _ *http.Request) {
 
 // originateRequest is the body of a call request.
 type originateRequest struct {
-	CallID string `json:"call_id"`
-	From   string `json:"from"`
-	To     string `json:"to"`
-	Codec  string `json:"codec"`
+	CallID        string `json:"call_id"`
+	TenantID      string `json:"tenant_id"`
+	TrunkID       string `json:"trunk_id"`
+	EnvironmentID string `json:"environment_id"`
+	From          string `json:"from"`
+	To            string `json:"to"`
+	Codec         string `json:"codec"`
 }
 
 func (s *Server) handleCalls(w http.ResponseWriter, r *http.Request) {
@@ -667,10 +1091,17 @@ func (s *Server) handleCalls(w http.ResponseWriter, r *http.Request) {
 			writeJSON(w, http.StatusBadRequest, map[string]any{"error": "to_is_required"})
 			return
 		}
-		if body.From == "" {
+		if (strings.TrimSpace(body.TenantID) == "") != (strings.TrimSpace(body.TrunkID) == "") {
+			writeJSON(w, http.StatusBadRequest, map[string]any{"error": "tenant_id_and_trunk_id_must_be_supplied_together"})
+			return
+		}
+		if body.From == "" && strings.TrimSpace(body.TenantID) == "" {
 			body.From = s.cfg.SIPHost
 		}
-		call, err := s.manager.Originate(r.Context(), body.CallID, body.From, body.To, body.Codec)
+		call, err := s.manager.Originate(
+			r.Context(), body.CallID, body.TenantID, body.TrunkID,
+			body.EnvironmentID, body.From, body.To, body.Codec,
+		)
 		if err != nil {
 			writeJSON(w, http.StatusBadGateway, map[string]any{"error": err.Error()})
 			return
@@ -683,7 +1114,7 @@ func (s *Server) handleCalls(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleCall(w http.ResponseWriter, r *http.Request) {
-	rest := strings.TrimPrefix(r.URL.Path, "/calls/")
+	rest := strings.TrimPrefix(r.URL.Path, "/v1/calls/")
 	parts := strings.Split(rest, "/")
 	callID := parts[0]
 	if callID == "" {
@@ -745,6 +1176,66 @@ func (s *Server) handleCall(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]any{"status": "sent"})
+	case "pcap":
+		if r.Method != http.MethodPost {
+			w.Header().Set("Allow", "POST")
+			writeJSON(w, http.StatusMethodNotAllowed, map[string]any{"error": "method_not_allowed"})
+			return
+		}
+		r.Body = http.MaxBytesReader(w, r.Body, 8*1024)
+		body := struct {
+			TenantID        string `json:"tenant_id"`
+			CallID          string `json:"call_id"`
+			DurationSeconds int    `json:"duration_seconds"`
+			Snaplen         int    `json:"snaplen"`
+			Direction       string `json:"direction"`
+			Filter          string `json:"filter"`
+		}{}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]any{"error": "invalid_body"})
+			return
+		}
+		if body.CallID != "" && body.CallID != callID {
+			writeJSON(w, http.StatusBadRequest, map[string]any{"error": "call_id_mismatch"})
+			return
+		}
+		// The capture is already scoped to this call and the gateway does not
+		// implement arbitrary packet-filter expressions. Reject rather than
+		// silently accepting a filter that would not be applied.
+		if strings.TrimSpace(body.Filter) != "" {
+			writeJSON(w, http.StatusBadRequest, map[string]any{"error": "unsupported_filter"})
+			return
+		}
+		if strings.TrimSpace(body.TenantID) == "" || body.DurationSeconds < 1 || body.DurationSeconds > 300 ||
+			body.Snaplen < 64 || body.Snaplen > 65535 ||
+			(body.Direction != "both" && body.Direction != "inbound" && body.Direction != "outbound") {
+			writeJSON(w, http.StatusBadRequest, map[string]any{"error": "invalid_capture_options"})
+			return
+		}
+		capture, err := s.manager.Capture(
+			r.Context(), body.TenantID, callID, body.DurationSeconds, body.Snaplen, body.Direction,
+		)
+		if err != nil {
+			statusCode := http.StatusConflict
+			switch {
+			case errors.Is(err, ErrCallNotFound):
+				statusCode = http.StatusNotFound
+			case errors.Is(err, ErrCallTenantMismatch):
+				statusCode = http.StatusForbidden
+			case errors.Is(err, rtp.ErrCaptureBusy):
+				statusCode = http.StatusConflict
+			case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
+				statusCode = http.StatusGatewayTimeout
+			}
+			writeJSON(w, statusCode, map[string]any{"error": err.Error()})
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{
+			"content_type": "application/vnd.tcpdump.pcap",
+			"data_base64":  base64.StdEncoding.EncodeToString(capture.Data),
+			"packet_count": capture.PacketCount,
+			"truncated":    capture.Truncated,
+		})
 	case "transfer":
 		if r.Method != http.MethodPost {
 			w.Header().Set("Allow", "POST")

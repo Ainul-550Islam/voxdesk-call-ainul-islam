@@ -79,6 +79,45 @@ export interface ReauthState {
   password_set: boolean;
 }
 
+/**
+ * `GET /api/tenants/{tenant_id}/security/posture` — the server-resolved hierarchy.
+ *
+ * Ported from the retired Vite `WorkspaceSettingsPage` (PART 17A, P17A-05). The
+ * client never supplies the tenant; the server echoes back what it resolved, so
+ * the panel shows the truth rather than an echo of what we asked for.
+ */
+export interface SecurityPosture {
+  organization_id: string;
+  tenant_id: string;
+  environment_id?: string | null;
+  default_environment_id?: string | null;
+  auth_method: string;
+  is_machine: boolean;
+  client_tenant_override: boolean;
+}
+
+/**
+ * `GET /api/tenants/{tenant_id}/settings` — the allowlist projection.
+ *
+ * `app/tenancy/settings.py` withholds secret and routing fields by construction,
+ * so this type is the complete set of keys the server can return. Everything
+ * except the display name is read-only here on purpose: the API refuses the rest.
+ */
+export interface WorkspaceSettings {
+  name: string;
+  industry: string | null;
+  timezone: string | null;
+  language: string | null;
+  lifecycle_status: string;
+  plan: string | null;
+  sms_enabled: boolean;
+  whatsapp_enabled: boolean;
+  outbound_enabled: boolean;
+  record_calls: boolean;
+  ivr_enabled: boolean;
+  humanize: boolean;
+}
+
 export interface IdentityStatus {
   features: IdentityFeatures;
   policy: IdentityPolicy;

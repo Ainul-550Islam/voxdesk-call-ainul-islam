@@ -391,13 +391,14 @@ def test_voice_media_chain_wires_the_guardrail_processors():
     voice = source.index("stt_usage,")
     block = source[source.rindex("pipeline = Pipeline(", 0, voice):source.index("task = PipelineTask(", voice)]
     i_stt_usage = block.index("stt_usage,")
-    i_hearing = block.index("GovernedHearing()")
+    i_hearing = block.index("GovernedHearing(")
     i_user_ctx = block.index("context_aggregator.user()")
-    i_normalizer = block.index("TextNormalizer()")
-    i_speech = block.index("GovernedSpeech(blocked_substrings=prepared.blocked_output)")
+    i_llm = block.index("\n            llm,")
+    i_output_controls = block.index('*voice_controls["output"]')
+    i_speech = block.index("GovernedSpeech(")
     i_tts = block.index("\n            tts,")
-    assert i_stt_usage < i_hearing < i_user_ctx
-    assert i_normalizer < i_speech < i_tts
+    assert i_stt_usage < i_hearing < i_user_ctx < i_llm
+    assert i_llm < i_output_controls < i_speech < i_tts
     # The end-of-call reservation reconcile is wired into the persistence step.
     assert "prepared.budget_reserved" in source
 

@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import random
 import re
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Sequence
 
@@ -116,17 +117,25 @@ ABBREVIATIONS = {
 }
 
 
+def format_transcript_text(text: str) -> str:
+    """Clean markup and layout without changing the words or numeric values."""
+    if not text:
+        return text
+    # Remove formatting that a call transcript or speech renderer should not expose.
+    text = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", text)
+    text = re.sub(r"[*_`#>|]+", " ", text)
+    text = re.sub(r"^\s*[-•]\s*", "", text, flags=re.MULTILINE)
+    text = re.sub(r"[\U0001F300-\U0001FAFF\u2600-\u27BF]", "", text)
+    text = re.sub(r"\s{2,}", " ", text).strip()
+    return text
+
+
 def normalize_for_speech(text: str) -> str:
     """LLM-এর লেখা টেক্সটকে 'বলার মতো' টেক্সটে বদলায়।"""
     if not text:
         return text
 
-    # markdown ফেলে দাও — TTS "asterisk asterisk" বলে ফেলবে
-    text = re.sub(r"[*_`#>|]+", " ", text)
-    text = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", text)   # লিংক
-    text = re.sub(r"^\s*[-•]\s*", "", text, flags=re.MULTILINE)
-    text = re.sub(r"[\U0001F300-\U0001FAFF\u2600-\u27BF]", "", text)  # emoji
-
+    text = format_transcript_text(text)
     for pattern, replacement in ABBREVIATIONS.items():
         text = re.sub(pattern, replacement, text)
 
@@ -152,12 +161,26 @@ def normalize_for_speech(text: str) -> str:
 
 
 class TextNormalizer(FrameProcessor):
-    """LLM -> TTS এর মাঝে বসে। সব টেক্সট বলার উপযোগী করে দেয়।"""
+    """Apply one agent's selected speech/transcript presentation before TTS."""
+
+    def __init__(
+        self,
+        *,
+        normalize: bool = True,
+        read_numbers_slowly: bool = False,
+        format_transcript: bool = True,
+    ) -> None:
+        super().__init__()
+        self.options = HumanizeOptions(
+            normalize_for_speech=normalize,
+            read_numbers_slowly=read_numbers_slowly,
+            format_transcript=format_transcript,
+        )
 
     async def process_frame(self, frame: Frame, direction: FrameDirection):
         await super().process_frame(frame, direction)
         if isinstance(frame, TextFrame) and frame.text:
-            frame.text = normalize_for_speech(frame.text)
+            frame.text = apply_humanize(frame.text, self.options)
         await self.push_frame(frame, direction)
 
 
@@ -179,16 +202,23 @@ class FillerInjector(FrameProcessor):
     ওই ৮০০ms চুপ থাকলে কাস্টমার ভাবে লাইন কেটে গেছে।
     """
 
-    def __init__(self, min_gap_seconds: float = 8.0, trigger_ms: int = 800):
+    def __init__(
+        self,
+        min_gap_seconds: float = 8.0,
+        trigger_ms: int = 800,
+        *,
+        enabled: bool = True,
+    ):
         super().__init__()
         self._last_filler_at = 0.0
         self._min_gap = min_gap_seconds
         self._trigger_ms = max(0, int(trigger_ms))
+        self.enabled = bool(enabled)
 
     async def process_frame(self, frame: Frame, direction: FrameDirection):
         await super().process_frame(frame, direction)
 
-        if isinstance(frame, FunctionCallInProgressFrame):
+        if self.enabled and isinstance(frame, FunctionCallInProgressFrame):
             now = datetime.now().timestamp()
             if now - self._last_filler_at > self._min_gap:
                 self._last_filler_at = now
@@ -307,3 +337,87 @@ def vary_greeting(base: str, business_name: str, agent_name: str) -> str:
         f"Hi, {business_name}, this is {agent_name}. What can I help you with today?",
     ]
     return random.choice(templates)
+
+
+# ============================== P12-06: per-agent speech toggles =============================
+
+_DIGIT_WORDS = (
+    "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+)
+
+
+def read_numbers_slowly(text: str) -> str:
+    """Spell digits out one at a time so a serial number is heard, not rounded.
+
+    ``"call 5550142"`` becomes ``"call five, five, five, zero, one, four, two"``. Applied before
+    :func:`normalize_for_speech`, which leaves already-spelled numbers alone.
+    """
+    if not text:
+        return text
+
+    def _spell(match: re.Match[str]) -> str:
+        digits = re.sub(r"\D", "", match.group(0))
+        if len(digits) < 3:
+            return match.group(0)
+        return ", ".join(_DIGIT_WORDS[int(digit)] for digit in digits)
+
+    # Percentages, money and clock times are handled by normalize_for_speech; spelling those out
+    # digit by digit would say "two, five percent".
+    protected: list[str] = []
+
+    def _protect(match: re.Match[str]) -> str:
+        protected.append(match.group(0))
+        return f"\x00{len(protected) - 1}\x00"
+
+    text = re.sub(r"\$\s?\d[\d,]*(?:\.\d{1,2})?|\b\d{1,2}:\d{2}\b|\b\d+\s*%", _protect, text)
+    text = re.sub(r"\b\d{3,}\b", _spell, text)
+    return re.sub(r"\x00(\d+)\x00", lambda m: protected[int(m.group(1))], text)
+
+
+@dataclass(frozen=True)
+class HumanizeOptions:
+    """Per-agent speech presentation toggles (P12-06).
+
+    Every flag defaults to today's behaviour, so an agent that sets nothing sounds exactly as
+    it did before this task — a presentation change must be opted into, never inherited.
+    """
+
+    normalize_for_speech: bool = True
+    read_numbers_slowly: bool = False
+    format_transcript: bool = True
+
+    def validate(self) -> list[str]:
+        """No flag combination is dangerous enough to refuse.
+
+        Turning ``normalize_for_speech`` off deliberately lets whatever the LLM wrote reach TTS,
+        markdown included — that is the operator's call, and refusing it would make the toggle
+        unusable. The combination is documented instead of policed.
+        """
+        return []
+
+    def as_dict(self) -> dict[str, bool]:
+        return {
+            "normalize_for_speech": self.normalize_for_speech,
+            "read_numbers_slowly": self.read_numbers_slowly,
+            "format_transcript": self.format_transcript,
+        }
+
+
+def apply_humanize(text: str, options: HumanizeOptions | None = None) -> str:
+    """Apply the enabled presentation transforms in the order that keeps numbers correct."""
+    opts = options or HumanizeOptions()
+    problems = opts.validate()
+    if problems:
+        raise ValueError("; ".join(problems))
+    if not text:
+        return text
+    out = text
+    if opts.read_numbers_slowly:
+        out = read_numbers_slowly(out)
+    if opts.normalize_for_speech:
+        out = normalize_for_speech(out)
+    elif opts.format_transcript:
+        # Transcript formatting is deliberately distinct from speech normalization: when number
+        # normalization is off, operators may still remove markdown and emoji from transcripts.
+        out = format_transcript_text(out)
+    return out

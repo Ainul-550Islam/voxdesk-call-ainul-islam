@@ -99,21 +99,26 @@ class TwilioAdapter(TelephonyAdapter):
         )
 
     async def create_outbound(
-        self, *, to_number: str, from_number: str, answer_url: str = ""
+        self,
+        *,
+        to_number: str,
+        from_number: str,
+        answer_url: str = "",
+        status_callback_url: str = "",
     ) -> CallResult:
         self.require_configured()
         destination = normalize(to_number)
         caller = normalize(from_number)
         client = self._client()
         url = answer_url or f"{settings.public_base_url.rstrip('/')}/telephony/outbound-answer"
-        callback = f"{settings.public_base_url.rstrip('/')}/telephony/status"
+        callback = status_callback_url or f"{settings.public_base_url.rstrip('/')}/telephony/status"
         try:
             created = client.calls.create(
                 to=destination,
                 from_=caller,
                 url=url,
                 status_callback=callback,
-                status_callback_event=["completed", "no-answer", "busy", "failed"],
+                status_callback_event=["initiated", "ringing", "answered", "completed"],
                 timeout=25,
             )
         except Exception as exc:
@@ -158,6 +163,65 @@ class TwilioAdapter(TelephonyAdapter):
                 raise ProviderUnavailableError("Twilio SDK is not installed", provider=self.name)
             raise ProviderStateError("Twilio refused the transfer", provider=self.name)
         return CallResult(self.name, external_id, "transfer_requested", to_number=dest)
+
+    async def redirect_transfer_twiml(self, external_id: str, twiml: str) -> CallResult:
+        """Redirect an active Twilio leg to an already-built, session-scoped TwiML flow."""
+        if not (twiml or "").strip():
+            raise ProviderValidationError("Transfer TwiML is required", provider=self.name)
+        return await self._redirect_twiml(
+            external_id, twiml, confirmed_status="transfer_requested"
+        )
+
+    async def create_transfer_target(
+        self,
+        *,
+        target_number: str,
+        from_number: str,
+        answer_url: str,
+        status_callback_url: str,
+        timeout: int = 25,
+        machine_detection: bool = True,
+    ) -> CallResult:
+        """Create a separately-addressable target leg for a conference transfer.
+
+        The answer URL returns TwiML only after synchronous AMD has delivered an
+        ``AnsweredBy`` value. The target is therefore not joined to the caller's
+        conference until the signed application endpoint has accepted a human.
+        """
+        self.require_configured()
+        if not answer_url or not status_callback_url:
+            raise ProviderValidationError(
+                "Answer and status callback URLs are required", provider=self.name
+            )
+        target = normalize(target_number)
+        caller = normalize(from_number)
+        client = self._client()
+        try:
+            created = client.calls.create(
+                to=target,
+                from_=caller,
+                url=answer_url,
+                method="POST",
+                timeout=max(5, min(int(timeout), 60)),
+                machine_detection="Enable" if machine_detection else None,
+                status_callback=status_callback_url,
+                status_callback_event=["initiated", "ringing", "answered", "completed"],
+                status_callback_method="POST",
+            )
+        except Exception as exc:
+            raise self._map(exc) from exc
+        sid = str(getattr(created, "sid", "") or "").strip()
+        if not sid:
+            raise ProviderStateError(
+                "Twilio accepted no target call identifier", provider=self.name
+            )
+        return CallResult(
+            self.name,
+            sid,
+            str(getattr(created, "status", "queued") or "queued"),
+            to_number=target,
+            from_number=caller,
+        )
 
     async def bridge_to(
         self,

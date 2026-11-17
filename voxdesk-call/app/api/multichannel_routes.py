@@ -37,8 +37,6 @@ from app.messaging.channels import (
     resolve_tenant_for_destination,
 )
 from app.schemas.messaging import KeywordDisposition
-from app.telephony import dnc
-
 router = APIRouter(prefix="/api/channels", tags=["multichannel"])
 
 
@@ -358,7 +356,7 @@ async def health_check_channel(
 @router.post("/send", response_model=dict, status_code=201)
 async def send_channel_message(
     payload: SendMessageRequest,
-    ctx: TenantContext = Depends(require_permission(Permission.CALL_WRITE)),
+    ctx: TenantContext = Depends(require_permission(Permission.MESSAGING_WRITE)),
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
     """Send an outbound SMS or WhatsApp message via the configured ``ChannelAdapter``."""
@@ -411,6 +409,22 @@ async def send_channel_message(
             detail={"code": "UNSUPPORTED_CHANNEL", "message": str(exc)},
         ) from None
 
+    cfg = dict(channel.config or {})
+    health = adapter.health_check(cfg)
+    if not health.configured:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "NOT_CONFIGURED",
+                "status": "NOT_CONFIGURED",
+                "missing": list(health.missing_credentials),
+                "message": (
+                    f"{channel.provider} {chan_type} is not configured; "
+                    "no message or call was created."
+                ),
+            },
+        )
+
     try:
         dest_e164 = normalize_e164(payload.to)
     except ValueError as exc:
@@ -419,23 +433,69 @@ async def send_channel_message(
             detail={"code": "VALIDATION_ERROR", "message": str(exc)},
         ) from None
 
-    if (await dnc.evaluate_dnc(session, ctx.tenant_id, dest_e164)).blocked:
+    decision = await sms_service.check_outbound_allowed(
+        session,
+        tenant_id=ctx.tenant_id,
+        to_number=dest_e164,
+        channel_type=chan_type,
+        marketing=True,
+        media_urls=payload.media_urls,
+    )
+    if not decision.allowed:
+        status_code = (
+            403
+            if decision.code
+            in {"dnc_blocked", "registration_not_approved", "quiet_hours", "sms_consent_required"}
+            else 422
+        )
+        code = (
+            "RECIPIENT_OPTED_OUT"
+            if decision.code == "dnc_blocked"
+            else decision.code.upper()
+        )
         raise HTTPException(
-            status_code=403,
-            detail={
-                "code": "RECIPIENT_OPTED_OUT",
-                "message": "Recipient is on the tenant Do-Not-Contact list; message blocked.",
-            },
+            status_code=status_code,
+            detail={"code": code, "message": decision.message},
         )
 
-    cfg = dict(channel.config or {})
-    default_sender = (
-        payload.from_number
-        or cfg.get("from_number")
-        or cfg.get("phone_number")
-        or cfg.get("whatsapp_number")
-        or getattr(ctx.tenant, "twilio_number", None)
+    tenant_twilio_sender = (
+        getattr(ctx.tenant, "twilio_number", None)
+        if channel.provider.strip().lower() == "twilio"
+        else None
     )
+    configured_senders = [
+        cfg.get("from_number"),
+        cfg.get("phone_number"),
+        cfg.get("whatsapp_number"),
+        tenant_twilio_sender,
+    ]
+    if payload.from_number:
+        try:
+            requested_sender = normalize_e164(payload.from_number)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=422,
+                detail={"code": "VALIDATION_ERROR", "message": str(exc)},
+            ) from None
+        allowed_senders: set[str] = set()
+        for sender in configured_senders:
+            if not sender:
+                continue
+            try:
+                allowed_senders.add(normalize_e164(str(sender)))
+            except ValueError:
+                continue
+        if requested_sender not in allowed_senders:
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "code": "SENDER_NOT_AUTHORIZED",
+                    "message": "from_number is not a sender configured for this tenant channel.",
+                },
+            )
+        default_sender = payload.from_number
+    else:
+        default_sender = next((sender for sender in configured_senders if sender), None)
     try:
         result = await adapter.send_message(
             to_number=payload.to,

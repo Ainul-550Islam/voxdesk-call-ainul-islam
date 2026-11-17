@@ -83,6 +83,19 @@ async def run_analytics_query(
 ) -> dict[str, Any]:
     """Run a tenant-scoped server-side analytics aggregation query."""
     try:
+        # PART 15 (P15-06): `analysis:<field>` groups by a tenant-defined field
+        # inside a stored analysis result, which has no column of its own.
+        group_by = (body.group_by or "").strip()
+        if group_by.startswith(analytics_service.ANALYSIS_GROUP_PREFIX):
+            field = group_by[len(analytics_service.ANALYSIS_GROUP_PREFIX) :]
+            return await analytics_service.group_by_analysis_field(
+                session,
+                ctx.tenant_id,
+                field,
+                start=body.start,
+                end=body.end,
+                max_groups=body.max_groups,
+            )
         return await analytics_service.compute_metrics_and_breakdown(
             session,
             ctx.tenant_id,
@@ -291,3 +304,48 @@ async def export_custom_dashboard_csv(
         )
     except AppError as exc:
         raise _handle_app_error(exc) from exc
+
+
+# ---------------------------------------------------------------------------
+# PART 15 (P15-06) — the three series the unified dashboard needs
+# ---------------------------------------------------------------------------
+
+
+@router.get("/concurrency-24h")
+async def get_concurrency_24h(
+    ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)),
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """Concurrent calls per minute for the last 24 hours, with the peak."""
+    return await analytics_service.concurrency_series_24h(session, ctx.tenant_id)
+
+
+@router.get("/cost-by-provider")
+async def get_cost_by_provider(
+    start: datetime | None = Query(default=None),
+    end: datetime | None = Query(default=None),
+    ctx: TenantContext = Depends(require_permission(Permission.ANALYTICS_READ)),
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    return await analytics_service.cost_by_provider(session, ctx.tenant_id, start=start, end=end)
+
+
+@router.get("/disconnection-reasons")
+async def get_disconnection_reasons(
+    start: datetime | None = Query(default=None),
+    end: datetime | None = Query(default=None),
+    ctx: TenantContext = Depends(require_permission(Permission.ANALYTICS_READ)),
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    return await analytics_service.disconnection_reasons(session, ctx.tenant_id, start=start, end=end)
+
+
+@router.get("/channels")
+async def get_channel_summary(
+    start: datetime | None = Query(default=None),
+    end: datetime | None = Query(default=None),
+    ctx: TenantContext = Depends(require_permission(Permission.ANALYTICS_READ)),
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """Voice, chat and SMS side by side. Each row names its own unit."""
+    return await analytics_service.channel_summary(session, ctx.tenant_id, start=start, end=end)

@@ -98,3 +98,90 @@ scheduler:
   resources:
     requests: {cpu: 100m, memory: 128Mi}
     limits: {cpu: "500m", memory: 512Mi}
+
+# =============================================================================
+# PART 17B (P17B-01): same shape as production, one replica floor.
+# =============================================================================
+
+realtimeGateway:
+  enabled: true
+  port: 8790
+  replicaCount: 1
+  broker: memory
+  allowedOrigins: "https://app.staging.example.com"
+  antiAffinity: false
+  image:
+    repository: ghcr.io/voxdesk/voxdesk-realtime-gateway
+    tag: "1.0.0"
+    pullPolicy: Always
+  resources:
+    requests: {cpu: 100m, memory: 128Mi}
+    limits: {cpu: "1", memory: 512Mi}
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+
+mediaEngine:
+  enabled: true
+  replicaCount: 1
+  hostNetwork: true
+  # Staging needs a real address too, otherwise the smoke test proves nothing
+  # about ICE. Set this to the staging node's public address.
+  publicIp: ""
+  label: "edge-staging"
+  maxParticipants: 8
+  resources:
+    requests: {cpu: 250m, memory: 256Mi}
+    limits: {cpu: "2", memory: 1Gi}
+
+frontend:
+  enabled: true
+  port: 3000
+  replicaCount: 1
+  image:
+    repository: ghcr.io/voxdesk/voxdesk-call
+    tag: "1.0.0"
+    pullPolicy: Always
+  ingress:
+    enabled: true
+    className: "nginx"
+    host: "app.staging.example.com"
+    paths:
+      - path: /
+        pathType: Prefix
+    tls:
+      - secretName: voxdesk-staging-web-tls
+        hosts:
+          - "app.staging.example.com"
+  resources:
+    requests: {cpu: 100m, memory: 128Mi}
+    limits: {cpu: "500m", memory: 512Mi}
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+
+migrateJob:
+  enabled: true
+
+backup:
+  enabled: true
+  schedule: "0 3 * * *"
+  retain: 3
+  persistentVolume:
+    create: true
+    size: 10Gi
+
+networkPolicy:
+  enabled: true
+
+serviceMonitor:
+  enabled: true
+  prometheusRule:
+    enabled: true
+    includePlatformRules: true

@@ -49,7 +49,7 @@ Shadow/Roadmap (NOT in prod compose):
         <h2>Targets ({targets.length})</h2>
         <p className="muted">API: /api/deployments/targets — readiness, revisions, approve, deploy, verify, suspend, retire</p>
         {targets.length === 0 ? <p className="muted">No targets. Backend: app/deployment/models.py DeploymentTarget, DeploymentRevision, DeploymentReadiness, DeploymentVerification</p> : (
-          <div className="table-wrap">
+          <div className="table-wrap" tabIndex={0} role="region" aria-label="Data table">
             <table>
               <thead><tr><th>Name</th><th>Type</th><th>Status</th></tr></thead>
               <tbody>

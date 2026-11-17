@@ -1,6 +1,4 @@
-"""The Vonage capability flag: the live media stream is only offered when
-the whole credential set is present, and the HTTP surface answers 501
-instead of pretending that the feature works."""
+"""Vonage AI media remains unsupported per ADR-004 until live evidence exists."""
 
 from __future__ import annotations
 
@@ -39,11 +37,14 @@ def test_media_streaming_is_refused_without_credentials() -> None:
         adapter.require_media_streaming()
 
 
-def test_media_streaming_is_available_with_the_full_credential_set(
+def test_credentials_do_not_promote_unverified_media_streaming(
     vonage_credentials,
 ) -> None:
     adapter = VonageAdapter()
-    assert adapter.supports_ai_media_stream is True
+    assert adapter.media_stream_credentials_ready is True
+    assert adapter.supports_ai_media_stream is False
+    with pytest.raises(UnsupportedCapability):
+        adapter.require_media_streaming()
 
 
 def test_capability_row_is_not_configured_without_credentials() -> None:
@@ -52,12 +53,13 @@ def test_capability_row_is_not_configured_without_credentials() -> None:
     assert row["serializer"] is None
 
 
-def test_capability_row_is_configured_with_full_vonage_credentials(
+def test_capability_row_remains_unsupported_with_full_vonage_credentials(
     vonage_credentials,
 ) -> None:
     row = vonage_media_capabilities()["vonage"]
-    assert row["supported"] is True
-    assert row["serializer"] is not None
+    assert row["supported"] is False
+    assert row["serializer"] is None
+    assert "unsupported_capabilities" in row
 
 
 def test_telnyx_supports_ai_media_stream_configured_vs_unconfigured(
@@ -84,7 +86,8 @@ def test_telnyx_supports_ai_media_stream_configured_vs_unconfigured(
     monkeypatch.setattr(settings, "telnyx_public_key", pub_b64, raising=False)
     monkeypatch.setattr(settings, "telnyx_connection_id", "conn_12345", raising=False)
     configured = TelnyxAdapter()
-    assert configured.supports_ai_media_stream is True
+    assert configured.supports_ai_media_stream is False
+    assert configured.media_stream_capability()["state"] == "UNVERIFIED"
 
 
 

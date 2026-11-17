@@ -34,8 +34,9 @@ __pycache__/
 .venv/
 
 node_modules/
-dashboard/dist/
-dashboard/node_modules/
+dashboard-next/.next/
+dashboard-next/node_modules/
+dashboard-next/test-results/
 
 tests/
 docs/

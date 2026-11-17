@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import re
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -76,6 +76,44 @@ class StrictRequestModel(BaseModel):
 # ---------------------------------------------------------------------------
 
 
+class AgentRoutingEntry(StrictRequestModel):
+    """One agent candidate and its relative traffic weight for a number."""
+
+    agent_id: str = Field(..., min_length=1, max_length=64)
+    weight: float = Field(default=1.0, ge=0, le=1_000_000)
+    label: str = Field(default="", max_length=80)
+
+    @field_validator("weight")
+    @classmethod
+    def _finite_weight(cls, value: float) -> float:
+        import math
+
+        if not math.isfinite(value):
+            raise ValueError("routing weight must be a finite number")
+        return value
+
+
+class PhoneNumberRouting(StrictRequestModel):
+    """Optional per-channel routing update; omitted channels are unchanged."""
+
+    inbound: list[AgentRoutingEntry] | None = Field(default=None, max_length=50)
+    outbound: list[AgentRoutingEntry] | None = Field(default=None, max_length=50)
+    sms: list[AgentRoutingEntry] | None = Field(default=None, max_length=50)
+
+    @model_validator(mode="after")
+    def _validate_channels(self) -> "PhoneNumberRouting":
+        for channel in ("inbound", "outbound", "sms"):
+            entries = getattr(self, channel)
+            if entries is None:
+                continue
+            ids = [entry.agent_id.strip() for entry in entries]
+            if len(ids) != len(set(ids)):
+                raise ValueError(f"{channel} routing contains duplicate agent ids")
+            if entries and sum(entry.weight for entry in entries) <= 0:
+                raise ValueError(f"{channel} routing must have a positive total weight")
+        return self
+
+
 class PhoneNumberCreateRequest(StrictRequestModel):
     number: str = Field(..., min_length=4, max_length=32)
     provider: TelephonyProviderName = Field(default=TelephonyProviderName.TWILIO)
@@ -87,6 +125,7 @@ class PhoneNumberCreateRequest(StrictRequestModel):
     inbound_agent_id: str | None = Field(default=None, max_length=64)
     inbound_agent_version: int | None = None
     outbound_agent_id: str | None = Field(default=None, max_length=64)
+    routing: PhoneNumberRouting | None = None
     environment_id: UUID | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
 
@@ -106,6 +145,7 @@ class PhoneNumberUpdateRequest(StrictRequestModel):
     inbound_agent_id: str | None = Field(default=None, max_length=64)
     inbound_agent_version: int | None = None
     outbound_agent_id: str | None = Field(default=None, max_length=64)
+    routing: PhoneNumberRouting | None = None
     status: PhoneNumberLifecycleStatus | None = None
     metadata: dict[str, Any] | None = None
 
@@ -114,6 +154,7 @@ class PhoneNumberBindAgentRequest(StrictRequestModel):
     inbound_agent_id: str | None = Field(default=None, max_length=64)
     inbound_agent_version: int | None = None
     outbound_agent_id: str | None = Field(default=None, max_length=64)
+    routing: PhoneNumberRouting | None = None
     inbound_enabled: bool | None = None
     outbound_enabled: bool | None = None
 
@@ -135,6 +176,7 @@ class PhoneNumberResponse(BaseModel):
     inbound_agent_id: str | None = None
     inbound_agent_version: int | None = None
     outbound_agent_id: str | None = None
+    routing: dict[str, list[dict[str, Any]]] = Field(default_factory=dict)
     status: str
     metadata: dict[str, Any] = Field(default_factory=dict)
     last_health_check_at: datetime | None = None
@@ -240,6 +282,7 @@ class OutboundCallCreateRequest(StrictRequestModel):
     environment_id: UUID | None = None
     idempotency_key: str | None = Field(default=None, max_length=96)
     is_simulation: bool = False
+    dynamic_variables: dict[str, Any] = Field(default_factory=dict)
     metadata: dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("to_number")
@@ -271,6 +314,11 @@ class CallTransferRequest(StrictRequestModel):
     target_destination: str | None = Field(default=None, max_length=128)
     target_agent_id: str | None = Field(default=None, max_length=64)
     whisper_message: str | None = Field(default=None, max_length=500)
+    transfer_style: Literal["whisper", "three_way"] = "whisper"
+    caller_id_mode: Literal["agent", "original"] = "agent"
+    hold_music: bool = True
+    require_human: bool = True
+    three_way_message: str | None = Field(default=None, max_length=500)
     fallback_action: TransferFallbackAction = Field(
         default=TransferFallbackAction.RETURN_TO_AGENT
     )

@@ -37,6 +37,7 @@ import type {
   MFAChallengeToken,
   ReauthOut,
   ReasonIn,
+  SecurityPosture,
   RecoveryCodesOut,
   ResetConfirmOut,
   ResetRequestOut,
@@ -57,6 +58,7 @@ import type {
   ServiceAccountIn,
   ServiceAccountUpdateIn,
   SessionList,
+  WorkspaceSettings,
   StepUpOut,
   UnlinkOut,
   VerifyConfirmOut,
@@ -180,6 +182,20 @@ export const identityApi = {
     return request<void>(`/api/mfa/users/${segment(userId)}/reset`, {
       method: "POST",
     });
+  },
+
+  // ------------------------------------------------- posture / settings ---
+  // Both are tenant-scoped reads that the workspace settings page used to make
+  // directly. They live here so the console has one identity client, and so a
+  // caller cannot construct the tenant segment by hand.
+  posture(tenantId: string): Promise<SecurityPosture> {
+    return request<SecurityPosture>(
+      `/api/tenants/${segment(tenantId)}/security/posture`,
+    );
+  },
+
+  workspaceSettings(tenantId: string): Promise<WorkspaceSettings> {
+    return request<WorkspaceSettings>(`/api/tenants/${segment(tenantId)}/settings`);
   },
 
   // ---------------------------------------------------------- sessions ---

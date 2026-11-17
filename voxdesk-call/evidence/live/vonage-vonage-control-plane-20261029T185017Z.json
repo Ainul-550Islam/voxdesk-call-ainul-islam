@@ -1,0 +1,22 @@
+{
+  "schema": "voxdesk.live_evidence/v1",
+  "provider": "vonage",
+  "check": "vonage.control-plane",
+  "group": "carriers",
+  "summary": "Vonage application API answers for the configured account (read-only).",
+  "status": "skipped",
+  "started_at": "2026-10-29T18:50:17Z",
+  "finished_at": "2026-10-29T18:50:17Z",
+  "commit_sha": "554fb1f9602d1dd0a62d407b9b3f991c41e369e1",
+  "raw_log": "evidence/live/raw/vonage-vonage-control-plane-20261029T185017Z.log",
+  "raw_log_sha256": "3a63b8534f63de31b3577100a20fd3cc33b41e2860d87540024c34fca2a144f7",
+  "raw_log_bytes": 408,
+  "cost_guard": null,
+  "detail": {
+    "missing_env": [
+      "VONAGE_APPLICATION_ID",
+      "VONAGE_PRIVATE_KEY"
+    ]
+  },
+  "skip_reason": "credentials absent: VONAGE_APPLICATION_ID, VONAGE_PRIVATE_KEY \u2014 the check was not attempted, so it proves nothing"
+}

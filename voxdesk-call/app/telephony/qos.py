@@ -11,6 +11,7 @@ No other score is invented.
 
 from __future__ import annotations
 
+import enum
 import uuid
 from datetime import datetime, timezone
 
@@ -186,3 +187,227 @@ def _index(loss, jitter, rtt) -> tuple[float | None, str]:
         return None, ""
     raw = 100 - (loss * 2) - (jitter * 0.5) - (max(0.0, rtt - 150) * 0.1)
     return round(min(100.0, max(0.0, raw)), 3), FORMULA
+
+
+# ---------------------------------------------------------------------------
+# PART 13 / P13-12 — disconnection reasons
+#
+# Free-text `failure_reason` is fine for one engineer reading a log and useless
+# for a customer asking "how many calls failed because the carrier blocked us
+# last month?". These are the names that answer that question. Six of them are
+# new in PART 13; the four above them already existed as ad-hoc strings and are
+# kept so historical rows stay readable.
+# ---------------------------------------------------------------------------
+
+
+class DisconnectionReason(str, enum.Enum):
+    NORMAL = "normal"
+    CALLER_HANGUP = "caller_hangup"
+    AGENT_HANGUP = "agent_hangup"
+    NO_ANSWER = "no_answer"
+    USER_BUSY = "user_busy"
+    # PART 13 additions
+    INVALID_DESTINATION = "invalid_destination"
+    TELEPHONY_PROVIDER_PERMISSION_DENIED = "telephony_provider_permission_denied"
+    TELEPHONY_PROVIDER_UNAVAILABLE = "telephony_provider_unavailable"
+    SIP_ROUTING_ERROR = "sip_routing_error"
+    MARKED_AS_SPAM = "marked_as_spam"
+    USER_DECLINED = "user_declined"
+
+
+#: The six additions, as data, so the migration and the API can list them
+#: without importing the enum (a migration must not import app code).
+PART13_REASONS: tuple[str, ...] = (
+    "invalid_destination",
+    "telephony_provider_permission_denied",
+    "telephony_provider_unavailable",
+    "sip_routing_error",
+    "marked_as_spam",
+    "user_declined",
+)
+
+#: SIP final responses, as the gateway reports them. A 4xx here is a *call*
+#: failure (we reached the registrar and it said no), which is exactly why it is
+#: mapped and not retried blindly.
+SIP_STATUS_REASONS: dict[int, DisconnectionReason] = {
+    200: DisconnectionReason.NORMAL,
+    403: DisconnectionReason.TELEPHONY_PROVIDER_PERMISSION_DENIED,
+    401: DisconnectionReason.TELEPHONY_PROVIDER_PERMISSION_DENIED,
+    402: DisconnectionReason.TELEPHONY_PROVIDER_PERMISSION_DENIED,
+    404: DisconnectionReason.INVALID_DESTINATION,
+    484: DisconnectionReason.INVALID_DESTINATION,
+    485: DisconnectionReason.SIP_ROUTING_ERROR,
+    486: DisconnectionReason.USER_BUSY,
+    487: DisconnectionReason.NORMAL,
+    488: DisconnectionReason.SIP_ROUTING_ERROR,
+    500: DisconnectionReason.TELEPHONY_PROVIDER_UNAVAILABLE,
+    502: DisconnectionReason.SIP_ROUTING_ERROR,
+    503: DisconnectionReason.TELEPHONY_PROVIDER_UNAVAILABLE,
+    504: DisconnectionReason.TELEPHONY_PROVIDER_UNAVAILABLE,
+    600: DisconnectionReason.USER_BUSY,
+    603: DisconnectionReason.USER_DECLINED,
+    604: DisconnectionReason.INVALID_DESTINATION,
+    606: DisconnectionReason.MARKED_AS_SPAM,
+}
+
+#: Provider error codes that are really the same six stories. Kept small on
+#: purpose: an unmapped code becomes TELEPHONY_PROVIDER_UNAVAILABLE, which is
+#: honest ("something at the carrier failed") rather than invented.
+PROVIDER_ERROR_REASONS: dict[str, DisconnectionReason] = {
+    "21211": DisconnectionReason.INVALID_DESTINATION,          # Twilio invalid 'To'
+    "13224": DisconnectionReason.MARKED_AS_SPAM,               # Twilio spam block
+    "30006": DisconnectionReason.TELEPHONY_PROVIDER_UNAVAILABLE,  # landline/unreachable
+    "30007": DisconnectionReason.MARKED_AS_SPAM,
+    "unverified_number": DisconnectionReason.TELEPHONY_PROVIDER_PERMISSION_DENIED,
+    "403": DisconnectionReason.TELEPHONY_PROVIDER_PERMISSION_DENIED,
+    "invalid_destination": DisconnectionReason.INVALID_DESTINATION,
+    "declined": DisconnectionReason.USER_DECLINED,
+}
+
+#: What the traffic report says. One sentence, no provider names.
+REASON_LABELS: dict[DisconnectionReason, str] = {
+    DisconnectionReason.NORMAL: "Call ended normally",
+    DisconnectionReason.CALLER_HANGUP: "The caller hung up",
+    DisconnectionReason.AGENT_HANGUP: "Our side ended the call",
+    DisconnectionReason.NO_ANSWER: "Nobody answered",
+    DisconnectionReason.USER_BUSY: "The line was busy",
+    DisconnectionReason.INVALID_DESTINATION: "The destination number does not exist",
+    DisconnectionReason.TELEPHONY_PROVIDER_PERMISSION_DENIED: (
+        "The carrier refused the call: permission or verification problem"
+    ),
+    DisconnectionReason.TELEPHONY_PROVIDER_UNAVAILABLE: (
+        "The carrier was unavailable, the call never connected"
+    ),
+    DisconnectionReason.SIP_ROUTING_ERROR: "SIP routing failed before the call could connect",
+    DisconnectionReason.MARKED_AS_SPAM: "The carrier marked this call as spam",
+    DisconnectionReason.USER_DECLINED: "The callee declined the call",
+}
+
+
+def reason_from_sip_status(status: int) -> DisconnectionReason:
+    """Map a SIP final response to a reason. Unknown codes are unavailable."""
+    return SIP_STATUS_REASONS.get(int(status), DisconnectionReason.TELEPHONY_PROVIDER_UNAVAILABLE)
+
+
+def reason_from_provider_error(code: str | int, *, default: DisconnectionReason | None = None) -> DisconnectionReason:
+    key = str(code).strip().lower()
+    if key in PROVIDER_ERROR_REASONS:
+        return PROVIDER_ERROR_REASONS[key]
+    if key.isdigit() and int(key) in SIP_STATUS_REASONS:
+        return SIP_STATUS_REASONS[int(key)]
+    return default or DisconnectionReason.TELEPHONY_PROVIDER_UNAVAILABLE
+
+
+def explain_reason(reason: DisconnectionReason | str) -> str:
+    try:
+        return REASON_LABELS[DisconnectionReason(reason)]
+    except (ValueError, KeyError):
+        return "Call ended"
+
+
+async def record_failed_inbound(
+    session,
+    tenant_id,
+    *,
+    call_sid: str,
+    from_number: str,
+    to_number: str,
+    reason: DisconnectionReason | str,
+    environment_id=None,
+    provider: str = "",
+    occurred_at: datetime | None = None,
+    agent_id=None,
+):
+    """Create the history row for an inbound call that never got answered.
+
+    A failed inbound call is still a call: the phone rang, the customer has a
+    number in their log, and the tenant paid for the number. Without this row
+    the dashboard shows a quiet morning that never happened.
+    """
+    from app.db.models import Agent, Call, CallDirection, CallStatus, Environment
+
+    code = reason.value if isinstance(reason, DisconnectionReason) else str(reason)
+    moment = occurred_at or _now()
+    if environment_id is None:
+        environment_id = (
+            await session.execute(
+                select(Environment.id)
+                .where(Environment.tenant_id == tenant_id)
+                .order_by(Environment.is_default.desc(), Environment.created_at.asc())
+                .limit(1)
+            )
+        ).scalar_one_or_none()
+    if environment_id is None:
+        raise ProviderValidationError(
+            "Cannot record failed inbound call without a tenant environment.",
+            provider=provider or "telephony",
+        )
+
+    if agent_id is not None:
+        try:
+            agent_uuid = uuid.UUID(str(agent_id))
+        except (TypeError, ValueError):
+            agent_uuid = None
+        if agent_uuid is not None:
+            agent_id = (
+                await session.execute(
+                    select(Agent.id).where(
+                        Agent.id == agent_uuid,
+                        Agent.tenant_id == tenant_id,
+                    )
+                )
+            ).scalar_one_or_none()
+        else:
+            agent_id = None
+    row = (
+        await session.execute(
+            select(Call).where(Call.tenant_id == tenant_id, Call.call_sid == call_sid)
+        )
+    ).scalar_one_or_none()
+    if row is None:
+        row = Call(
+            tenant_id=tenant_id,
+            environment_id=environment_id,
+            call_sid=call_sid,
+            from_number=from_number,
+            to_number=to_number,
+            status=CallStatus.FAILED,
+            direction=CallDirection.INBOUND,
+            started_at=moment,
+            ended_at=moment,
+            duration_seconds=0.0,
+            failure_reason=code,
+            summary=explain_reason(code),
+            agent_id=agent_id,
+        )
+        session.add(row)
+    else:
+        # Provider and app-level rejection paths can race to record the same
+        # call SID. Update the one history row instead of creating a duplicate.
+        row.status = CallStatus.FAILED
+        row.direction = CallDirection.INBOUND
+        row.failure_reason = code
+        row.summary = explain_reason(code)
+        row.ended_at = row.ended_at or moment
+        row.duration_seconds = 0.0
+        if environment_id is not None:
+            row.environment_id = environment_id
+        if agent_id is not None:
+            row.agent_id = agent_id
+    await session.flush()
+    return row
+
+
+async def reason_breakdown(session, tenant_id, *, since: datetime | None = None) -> dict[str, int]:
+    """Count failed calls by reason for the traffic report."""
+    from app.db.models import Call
+
+    stmt = select(Call.failure_reason).where(
+        Call.tenant_id == tenant_id, Call.failure_reason.is_not(None)
+    )
+    if since is not None:
+        stmt = stmt.where(Call.started_at >= since)
+    counts: dict[str, int] = {}
+    for (reason,) in (await session.execute(stmt)).all():
+        counts[reason] = counts.get(reason, 0) + 1
+    return dict(sorted(counts.items()))

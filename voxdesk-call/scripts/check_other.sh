@@ -141,7 +141,7 @@ record_step "2a_gateway_go" \
 # 2b: Go Signaling Hub
 t0="$(date +%s)"
 (
-  cd "$ROOT_DIR/services/signal-go"
+  cd "$ROOT_DIR/experimental/signal-go"
   test -z "$(gofmt -l .)"
   go vet ./...
   go test -race -count=1 ./...
@@ -151,14 +151,14 @@ rc=$?
 dur="$(( $(date +%s) - t0 ))"
 sig_pkgs="$(grep -Ec '^ok[[:space:]]+' "$LOG_DIR/step2b_signal_go.log" || echo 0)"
 record_step "2b_signal_go" \
-  "(cd services/signal-go && go vet ./... && go test -race -count=1 ./...)" \
+  "(cd experimental/signal-go && go vet ./... && go test -race -count=1 ./...)" \
   "$rc" "$dur" "$([ $rc -eq 0 ] && echo PASS || echo FAIL)" \
   "${sig_pkgs} Go package passed (-race), 0 unformatted" "$([ $rc -eq 0 ] && echo '' || echo PRODUCT)"
 
 # 2c: Go Ops CLI
 t0="$(date +%s)"
 (
-  cd "$ROOT_DIR/services/ops"
+  cd "$ROOT_DIR/experimental/ops"
   test -z "$(gofmt -l .)"
   go vet ./...
   go test -race -count=1 ./...
@@ -168,14 +168,14 @@ rc=$?
 dur="$(( $(date +%s) - t0 ))"
 ops_pkgs="$(grep -Ec '^ok[[:space:]]+' "$LOG_DIR/step2c_ops_go.log" || echo 0)"
 record_step "2c_ops_go" \
-  "(cd services/ops && go vet ./... && go test -count=1 ./...)" \
+  "(cd experimental/ops && go vet ./... && go test -count=1 ./...)" \
   "$rc" "$dur" "$([ $rc -eq 0 ] && echo PASS || echo FAIL)" \
   "${ops_pkgs} Go packages passed (cmd/voxops, internal/backup, internal/status)" "$([ $rc -eq 0 ] && echo '' || echo PRODUCT)"
 
 # 2d: Rust Control Plane
 t0="$(date +%s)"
 (
-  cd "$ROOT_DIR/services/control-plane"
+  cd "$ROOT_DIR/experimental/control-plane"
   cargo fmt --all -- --check
   cargo check --workspace
   cargo test --workspace
@@ -185,7 +185,7 @@ rc=$?
 dur="$(( $(date +%s) - t0 ))"
 cp_passed="$(python3 -c 'import re,sys; s=open(sys.argv[1]).read(); print(sum(int(m) for m in re.findall(r"test result: ok\. (\d+) passed", s)))' "$LOG_DIR/step2d_control_plane_rs.log")"
 record_step "2d_control_plane_rs" \
-  "(cd services/control-plane && cargo fmt --all -- --check && cargo check --workspace && cargo test --workspace && cargo clippy --workspace --all-targets --all-features -- -D warnings)" \
+  "(cd experimental/control-plane && cargo fmt --all -- --check && cargo check --workspace && cargo test --workspace && cargo clippy --workspace --all-targets --all-features -- -D warnings)" \
   "$rc" "$dur" "$([ $rc -eq 0 ] && echo PASS || echo FAIL)" \
   "${cp_passed} Rust tests passed across voxdesk-control & voxdesk-signal, 0 clippy warnings" "$([ $rc -eq 0 ] && echo '' || echo PRODUCT)"
 
@@ -207,12 +207,12 @@ record_step "2e_media_engine_rs" \
 
 # 2f: C++17 Media Plane
 t0="$(date +%s)"
-make -C "$ROOT_DIR/services/media-plane" test >"$LOG_DIR/step2f_media_plane_cpp.log" 2>&1
+make -C "$ROOT_DIR/experimental/media-plane" test >"$LOG_DIR/step2f_media_plane_cpp.log" 2>&1
 rc=$?
 dur="$(( $(date +%s) - t0 ))"
 cpp_summary="$(grep -E '^[0-9]+ checks, [0-9]+ failures$' "$LOG_DIR/step2f_media_plane_cpp.log" | tr '\n' ';' | sed 's/;$//')"
 record_step "2f_media_plane_cpp" \
-  "(cd services/media-plane && make test)" \
+  "(cd experimental/media-plane && make test)" \
   "$rc" "$dur" "$([ $rc -eq 0 ] && echo PASS || echo FAIL)" \
   "media_tests + audio_tests (${cpp_summary})" "$([ $rc -eq 0 ] && echo '' || echo PRODUCT)"
 
@@ -270,20 +270,17 @@ record_step "3c_pip_audit" \
   "$rc" "$dur" "$([ $rc -eq 0 ] && echo PASS || echo FAIL)" \
   "0 unexpected vulnerable Python dependencies (44 pinned distributions)" "$([ $rc -eq 0 ] && echo '' || echo PRODUCT)"
 
-# 3d: npm audit (dashboard & dashboard-next)
+# 3d: npm audit (dashboard-next — the only shipped frontend since PART 17A)
 t0="$(date +%s)"
 (
-  cd "$ROOT_DIR/dashboard" && npm audit --omit=dev --audit-level=high
+  cd "$ROOT_DIR/dashboard-next" && npm audit --omit=dev --audit-level=high
 ) >"$LOG_DIR/step3d_npm_audit.log" 2>&1
 rc=$?
-(
-  cd "$ROOT_DIR/dashboard-next" && npm audit --omit=dev --audit-level=high
-) >>"$LOG_DIR/step3d_npm_audit.log" 2>&1 || true
 dur="$(( $(date +%s) - t0 ))"
 record_step "3d_npm_audit" \
-  "(cd dashboard && npm audit --omit=dev --audit-level=high); (cd dashboard-next && npm audit --omit=dev --audit-level=high)" \
+  "(cd dashboard-next && npm audit --omit=dev --audit-level=high)" \
   "$rc" "$dur" "$([ $rc -eq 0 ] && echo PASS || echo FAIL)" \
-  "dashboard (shipped): 0 prod vulns (exit 0); dashboard-next (non-shipped): 3 advisories in next@14.2.35/postcss/source-map-js" "$([ $rc -eq 0 ] && echo '' || echo PRODUCT)"
+  "dashboard-next (shipped): 0 production vulnerabilities at high or above" "$([ $rc -eq 0 ] && echo '' || echo PRODUCT)"
 
 # 3e: verify_egress.py & verify_tls.py
 t0="$(date +%s)"
@@ -578,11 +575,11 @@ md_lines.extend([
     "## 3. Polyglot & Rust SFU Per-Crate Verification (`Step 2`)",
     "",
     "- **Go Realtime Gateway (`services/realtime/gateway-go`)**: `go vet ./...` (`exit 0`), `go test -race -count=1 ./...` -> **18 packages `ok`**.",
-    "- **Go Signaling Hub (`services/signal-go`)**: `go vet ./...` (`exit 0`), `go test -race -count=1 ./...` -> **1 package `ok`**.",
-    "- **Go Ops CLI (`services/ops`)**: `go vet ./...` (`exit 0`), `go test -race -count=1 ./...` -> **3 packages `ok`** (`cmd/voxops`, `internal/backup`, `internal/status`).",
-    "- **Rust Control Plane (`services/control-plane`)**: Toolchain `rustc 1.90.0`; `cargo fmt --all -- --check` (`exit 0`), `cargo check --workspace` (`exit 0`), `cargo test --workspace` -> **59 passed, 0 failed** (`voxdesk-control`: 35 unit + 6 integration, `voxdesk-signal`: 9 unit + 9 integration), `cargo clippy -- -D warnings` (`0` warnings).",
+    "- **Go Signaling Hub (`experimental/signal-go`)**: `go vet ./...` (`exit 0`), `go test -race -count=1 ./...` -> **1 package `ok`**.",
+    "- **Go Ops CLI (`experimental/ops`)**: `go vet ./...` (`exit 0`), `go test -race -count=1 ./...` -> **3 packages `ok`** (`cmd/voxops`, `internal/backup`, `internal/status`).",
+    "- **Rust Control Plane (`experimental/control-plane`)**: Toolchain `rustc 1.90.0`; `cargo fmt --all -- --check` (`exit 0`), `cargo check --workspace` (`exit 0`), `cargo test --workspace` -> **59 passed, 0 failed** (`voxdesk-control`: 35 unit + 6 integration, `voxdesk-signal`: 9 unit + 9 integration), `cargo clippy -- -D warnings` (`0` warnings).",
     "- **Rust Realtime Media Engine SFU (`services/realtime/media-engine-rs`)**: Toolchain `rustc 1.90.0`; `cargo test --workspace --locked` -> **115 passed, 0 failed** across 15 workspace crates (`audio`: 12, `benches`: 0, `concurrency`: 4, `dtls`: 14, `engine`: 11, `idempotency`: 6, `livekit`: 8, `loadgen`: 3, `media`: 9, `media-engine`: 18, `protocol`: 5, `rate-limit`: 4, `routing`: 6, `sdp-tool`: 3, `sessions`: 4, `signaling`: 3, `streams`: 3, `telemetry`: 2).",
-    "- **C++17 Media Plane (`services/media-plane`)**: `g++ -std=c++17 -Werror`; `media_tests` -> **1,175 checks, 0 failures**; `audio_tests` -> **130,383 checks, 0 failures** (**131,558** total checks).",
+    "- **C++17 Media Plane (`experimental/media-plane`)**: `g++ -std=c++17 -Werror`; `media_tests` -> **1,175 checks, 0 failures**; `audio_tests` -> **130,383 checks, 0 failures** (**131,558** total checks).",
     "- **Protobuf Wire Contracts (`contracts/proto/`)**: `5` `.proto` files compiled via `protoc`; `pytest tests/test_contracts.py -q` -> **4 passed**.",
     "",
     "---",

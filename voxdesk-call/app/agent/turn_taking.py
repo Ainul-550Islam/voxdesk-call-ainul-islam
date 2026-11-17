@@ -21,7 +21,9 @@ from pipecat.audio.turn.base_turn_analyzer import (
     EndOfTurnState,
 )
 from pipecat.audio.vad.vad_analyzer import VADParams
+from pipecat.frames.frames import Frame, TextFrame
 from pipecat.metrics.metrics import MetricsData
+from pipecat.processors.frame_processor import FrameDirection, FrameProcessor
 
 from app.core.logging import log
 
@@ -41,6 +43,48 @@ INCOMPLETE_UTTERANCE_PATTERNS: tuple[re.Pattern[str], ...] = (
 
 def _clamp(value: float, lo: float = 0.0, hi: float = 1.0) -> float:
     return max(lo, min(hi, float(value)))
+
+
+#: P12-04 endpointing presets. `accuracy` waits longer before calling the turn over (fewer
+#: truncated sentences, slightly slower replies); `latency` does the opposite. The multipliers
+#: are applied to the responsiveness-derived `stop_secs` and then clamped, so a caller who set
+#: responsiveness to an extreme still gets a usable value.
+ENDPOINTING_MODES: dict[str, float] = {"accuracy": 1.4, "latency": 0.7}
+#: "default" keeps the pre-P12 responsiveness → stop_secs mapping unchanged, so an agent that
+#: sets nothing behaves exactly as it did before. The modes are opt-in.
+DEFAULT_ENDPOINTING_MODE = "default"
+STOP_SECS_BOUNDS = (0.15, 1.5)
+
+
+class FirstMessageDelay(FrameProcessor):
+    """Hold the agent's very first utterance back by a configured amount (P12-04).
+
+    A greeting that fires the instant the call connects talks over "hello?". The delay applies
+    to the first ``TextFrame`` only; every later frame passes straight through, so a slow
+    opening never becomes a slow conversation.
+
+    ``sleep`` is injectable so the behaviour can be asserted without waiting in real time.
+    """
+
+    def __init__(self, delay_ms: int = 0, *, sleep: Any = None) -> None:
+        super().__init__()
+        self.delay_ms = max(0, min(3000, int(delay_ms or 0)))
+        self._sleep = sleep
+        self.applied = False
+        self.delayed_ms = 0
+
+    async def process_frame(self, frame: Frame, direction: FrameDirection) -> None:
+        await super().process_frame(frame, direction)
+        if not self.applied and self.delay_ms and isinstance(frame, TextFrame) and frame.text:
+            sleep = self._sleep
+            if sleep is None:
+                import asyncio
+
+                sleep = asyncio.sleep
+            await sleep(self.delay_ms / 1000.0)
+            self.applied = True
+            self.delayed_ms = self.delay_ms
+        await self.push_frame(frame, direction)
 
 
 def responsiveness_to_stop_secs(responsiveness: float) -> float:
@@ -222,6 +266,8 @@ class TurnConfig:
         allow_interruptions: bool = True,
         end_call_after_silence_ms: int = 30000,
         max_call_duration_ms: int = 1800000,
+        begin_message_delay_ms: int = 0,
+        stt_endpointing_mode: str = DEFAULT_ENDPOINTING_MODE,
     ) -> None:
         from pipecat.audio.vad.silero import SileroVADAnalyzer
 
@@ -231,6 +277,10 @@ class TurnConfig:
         self.allow_interruptions = allow_interruptions
         self.end_call_after_silence_ms = end_call_after_silence_ms
         self.max_call_duration_ms = max_call_duration_ms
+        self.begin_message_delay_ms = max(0, min(3000, int(begin_message_delay_ms or 0)))
+        self.stt_endpointing_mode = (
+            stt_endpointing_mode if stt_endpointing_mode in ENDPOINTING_MODES else DEFAULT_ENDPOINTING_MODE
+        )
 
     def __iter__(self):
         yield self.vad_params
@@ -256,6 +306,14 @@ def build_turn_config(
         stop_secs = float(getattr(cfg, "vad_stop_secs"))
     else:
         stop_secs = responsiveness_to_stop_secs(responsiveness)
+
+    # P12-04: endpointing mode scales the wait; P12-03: an eager caller shortens it.
+    endpointing_mode = str(getattr(cfg, "stt_endpointing_mode", DEFAULT_ENDPOINTING_MODE) or "")
+    stop_secs *= ENDPOINTING_MODES.get(endpointing_mode, 1.0)
+    eagerness = getattr(cfg, "eagerness", None)
+    if eagerness is not None:
+        stop_secs *= 1.15 - 0.3 * _clamp(float(eagerness))
+    stop_secs = max(STOP_SECS_BOUNDS[0], min(STOP_SECS_BOUNDS[1], stop_secs))
     confidence, min_volume = interruption_sensitivity_to_vad(sensitivity)
 
     vad_params = VADParams(
@@ -278,4 +336,6 @@ def build_turn_config(
         allow_interruptions=bool(getattr(cfg, "barge_in_enabled", True)) and sensitivity > 0.0,
         end_call_after_silence_ms=int(getattr(cfg, "end_call_after_silence_ms", 30000) or 30000),
         max_call_duration_ms=int(getattr(cfg, "max_call_duration_ms", 1800000) or 1800000),
+        begin_message_delay_ms=int(getattr(cfg, "begin_message_delay_ms", 0) or 0),
+        stt_endpointing_mode=str(getattr(cfg, "stt_endpointing_mode", DEFAULT_ENDPOINTING_MODE) or ""),
     )

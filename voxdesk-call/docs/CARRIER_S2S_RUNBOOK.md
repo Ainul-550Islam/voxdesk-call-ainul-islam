@@ -11,16 +11,29 @@ Commands and environment only. Every status is read from the deployment.
 | `VONAGE_PRIVATE_KEY_PATH` / `VONAGE_PRIVATE_KEY` | api | RS256 private key (path or PEM) |
 | `VONAGE_SIGNATURE_SECRET` | api | Inbound webhook signature secret |
 | `SIP_GATEWAY_URL` / `SIP_GATEWAY_TOKEN` | api | Gateway control API and its shared secret |
-| `VOXDESK_SIP_GATEWAY_TOKEN` | gateway | The same secret, from the gateway's side |
+| `VOXDESK_SIP_GATEWAY_TOKEN` | gateway | Same strong secret as API `SIP_GATEWAY_TOKEN` |
+| `VOXDESK_SIP_SIGNAL_HOST` | Kamailio | Public SIP TLS FQDN/IP advertised in dialog Record-Route; certificate SAN must match the DNS name |
+| `VOXDESK_SIP_PUBLIC_IP` | RTPEngine | Carrier-reachable public IPv4 address advertised for SRTP/RTP (or the public NAT address) |
+| `VOXDESK_SIP_TLS_CERT_FILE` / `VOXDESK_SIP_TLS_KEY_FILE` | Kamailio | Host paths to the ingress full-chain certificate and matching private key |
 | `VOXDESK_SIP_MEDIA_WS_URL` | gateway | `ws://…/telephony/sip/ws` of the application |
 | `VOXDESK_SIP_HOST` / `VOXDESK_SIP_PORT` | gateway | Host and port advertised in SDP |
 | `VOXDESK_SIP_CODEC` | gateway | `PCMU` or `PCMA` |
 | `VOXDESK_SIP_CONFIG_URL` / `VOXDESK_SIP_CONFIG_TTL` | gateway | Trunk configuration endpoint and cache TTL |
-| `VOXDESK_SIP_ALLOWED_CIDRS` | gateway | Inbound CIDR allowlist (empty = allow all) |
+| `VOXDESK_SIP_ALLOWED_CIDRS` | gateway | Immediate SIP socket-peer CIDR allowlist (empty = allow all) |
+| `VOXDESK_SIP_TRUSTED_PROXY_CIDRS` | gateway | SIP edge CIDRs allowed to assert a single overwritten `X-VoxDesk-Source-IP` value |
+| `VOXDESK_SIP_MEDIA_PEER_CIDRS` | gateway | RTP destination allowlist, normally the private RTPEngine network |
 | `OPENAI_REALTIME_MODEL` / `GEMINI_LIVE_MODEL` | api | Realtime model ids |
 | `ENABLE_S2S` / `S2S_FALLBACK_ENABLED` | api | Speech-to-speech runtime and its cascaded fallback |
 | `S2S_MAX_SESSION_SECONDS` / `S2S_MAX_TOOL_CALLS` | api | Ceilings of one session and one call |
 | `S2S_SESSION_BUDGET_MICRO_USD` / `S2S_TENANT_BUDGET_MICRO_USD` | api | Cost ceilings of one session and of a tenant |
+
+The experimental SIP edge Compose file (`infra/docker/docker-compose.sip.yml`)
+publishes only TCP 5061 for SIP TLS and UDP 10000–20000 for RTPEngine media.
+Keep SIP UDP 5060 and RTPEngine NG control UDP 22222 private; allow carrier
+media only through the configured range. The Go gateway remains UDP/plain RTP,
+and tenant-trunk/BYOC routing stays disabled until the actual Docker, route,
+certificate, and media-path gates are certified. See
+`docs/SIP_TRUNK_GATEWAY_INTEGRATION.md` before operating this path.
 
 ## Commands
 

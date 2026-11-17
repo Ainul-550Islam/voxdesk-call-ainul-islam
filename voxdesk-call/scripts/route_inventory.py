@@ -88,6 +88,8 @@ PUBLIC_EXACT_ALLOWLIST: frozenset[str] = frozenset(
         "/security.txt",
         "/.well-known/security.txt",
         "/widget/embed.js",
+        # Public, static hold audio served to Twilio; no tenant data or mutation.
+        "/telephony/transfer-hold-music",
         "/{full_path:path}",
         "/auth/login",
         "/auth/signup",
@@ -140,7 +142,17 @@ HANDLER_VERIFIED_ALLOWLIST: frozenset[str] = frozenset(
         "/telephony/outbound-answer",
         "/telephony/status",
         "/telephony/transfer-status",
+        # Twilio-signed transfer callbacks; call-session/transfer IDs are checked against each other.
+        "/telephony/transfer-session-target",
+        "/telephony/transfer-session-status",
+        "/telephony/transfer-session-target-status",
+        "/telephony/transfer-session-conference",
+        "/telephony/transfer-whisper",
         "/telephony/telnyx/voice",
+        # Service-to-service endpoints authenticate the SIP gateway bearer in-handler.
+        # The route resolver also enforces tenant/trunk ownership and source-IP ACLs before success.
+        "/internal/telephony/sip-trunk-runtime-config",
+        "/internal/telephony/sip-inbound-route",
         # Vonage NCCO answer + event callback both verify the carrier JWT/HMAC
         # signature on the raw body before trusting it (vonage_handler.py).
         "/telephony/vonage/answer",
@@ -212,6 +224,19 @@ HANDLER_VERIFIED_ALLOWLIST: frozenset[str] = frozenset(
         "/api/v1/analytics/realtime/snapshot",
         "/api/v1/voice/clone/consent-phrase",
         "/api/v1/telephony/calls/{call_id}/takeover-twiml",
+        # PART 13 / P13-08: the carrier posts registration status here. The body
+        # is HMAC-SHA256 signed with TELEPHONY_WEBHOOK_SECRET and the handler
+        # refuses an unsigned callback (503 if no secret is configured, so the
+        # default is closed, not open).
+        "/api/messaging/webhooks/registration",
+        # PART 15 / P15-07: recording download for an exported call. The URL
+        # carries an expiry and an HMAC over `call_id:expiry`; the handler
+        # verifies both and answers 403 otherwise, so no bearer token is needed
+        # to open a link in a spreadsheet.
+        "/api/calls/{call_id}/recording-access",
+        # Signed capture download: `expires` + `sig` verified by the capture
+        # store before a byte is served.
+        "/api/calls/debug-artifacts/{storage_key:path}",
     }
 )
 
@@ -240,7 +265,10 @@ def _is_auth_callable(fn: Any) -> bool:
     if name in AUTH_DEP_NAMES or mod in AUTH_DEP_MODULES:
         return True
     qual = getattr(fn, "__qualname__", "") or ""
-    if any(marker in qual for marker in ("require_role", "require_step_up", "current_user", "current_context")):
+    if any(
+        marker in qual
+        for marker in ("require_role", "require_step_up", "current_user", "current_context")
+    ):
         return True
     return False
 

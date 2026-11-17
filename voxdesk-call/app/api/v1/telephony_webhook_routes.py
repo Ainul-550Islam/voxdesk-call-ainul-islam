@@ -15,11 +15,43 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 import app.db.models  # noqa: F401 - ensure ORM registry is initialized before auth/telephony imports
 from app.db.session import get_session
-from app.telephony.exceptions import ProviderWebhookVerificationError
+from app.telephony.exceptions import (
+    ProviderWebhookVerificationError,
+    TelephonyConfigurationError,
+)
 from app.telephony.schemas import WebhookProcessResult
 from app.telephony.webhooks import TelephonyWebhookProcessor
 
 router = APIRouter(prefix="/api/v1/telephony/webhooks", tags=["Telephony Webhooks"])
+
+
+async def _commit_webhook_transaction(
+    session: AsyncSession,
+    processor: TelephonyWebhookProcessor,
+) -> None:
+    try:
+        await session.commit()
+    except Exception:
+        await session.rollback()
+        await processor.rollback_pending_call_slot_acquisitions()
+        raise
+    processor.commit_pending_call_slot_acquisitions()
+    await processor.release_pending_call_slots()
+
+
+async def _rollback_webhook_transaction(
+    session: AsyncSession,
+    processor: TelephonyWebhookProcessor,
+) -> None:
+    """Discard partial processing and compensate any lease acquired in it."""
+    await session.rollback()
+    await processor.rollback_pending_call_slot_acquisitions()
+
+
+def _has_persisted_failure_history(exc: TelephonyConfigurationError) -> bool:
+    """Only expected inbound rejections with a durable failure row are committed."""
+    detail = exc.detail if isinstance(exc.detail, dict) else {}
+    return bool(detail.get("call_session_id"))
 
 
 async def _extract_webhook_payload(
@@ -80,11 +112,17 @@ async def handle_provider_inbound_webhook(
             payload=payload,
             url=str(request.url),
         )
-        await session.commit()
-        return result
-    except Exception:
-        await session.commit()
+    except TelephonyConfigurationError as exc:
+        if _has_persisted_failure_history(exc):
+            await _commit_webhook_transaction(session, processor)
+        else:
+            await _rollback_webhook_transaction(session, processor)
         raise
+    except Exception:
+        await _rollback_webhook_transaction(session, processor)
+        raise
+    await _commit_webhook_transaction(session, processor)
+    return result
 
 
 @router.post("/{provider}/status", response_model=WebhookProcessResult)
@@ -105,11 +143,17 @@ async def handle_provider_status_webhook(
             payload=payload,
             url=str(request.url),
         )
-        await session.commit()
-        return result
-    except Exception:
-        await session.commit()
+    except TelephonyConfigurationError as exc:
+        if _has_persisted_failure_history(exc):
+            await _commit_webhook_transaction(session, processor)
+        else:
+            await _rollback_webhook_transaction(session, processor)
         raise
+    except Exception:
+        await _rollback_webhook_transaction(session, processor)
+        raise
+    await _commit_webhook_transaction(session, processor)
+    return result
 
 
 @router.post("/{provider}/dtmf", response_model=WebhookProcessResult)
@@ -131,11 +175,17 @@ async def handle_provider_dtmf_webhook(
             payload=payload,
             url=str(request.url),
         )
-        await session.commit()
-        return result
-    except Exception:
-        await session.commit()
+    except TelephonyConfigurationError as exc:
+        if _has_persisted_failure_history(exc):
+            await _commit_webhook_transaction(session, processor)
+        else:
+            await _rollback_webhook_transaction(session, processor)
         raise
+    except Exception:
+        await _rollback_webhook_transaction(session, processor)
+        raise
+    await _commit_webhook_transaction(session, processor)
+    return result
 
 
 @router.post("/{provider}/recording", response_model=WebhookProcessResult)
@@ -157,8 +207,14 @@ async def handle_provider_recording_webhook(
             payload=payload,
             url=str(request.url),
         )
-        await session.commit()
-        return result
-    except Exception:
-        await session.commit()
+    except TelephonyConfigurationError as exc:
+        if _has_persisted_failure_history(exc):
+            await _commit_webhook_transaction(session, processor)
+        else:
+            await _rollback_webhook_transaction(session, processor)
         raise
+    except Exception:
+        await _rollback_webhook_transaction(session, processor)
+        raise
+    await _commit_webhook_transaction(session, processor)
+    return result

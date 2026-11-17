@@ -46,7 +46,7 @@ export default function LegalPage() {
 
       <section className="card">
         <h2>Clause Library ({clauses.length}) — 5 Default Clauses</h2>
-        <div className="table-wrap">
+        <div className="table-wrap" tabIndex={0} role="region" aria-label="Data table">
           <table>
             <thead><tr><th>Key</th><th>Title</th><th>Category</th><th>Risk Tier</th><th>Version</th><th>Pattern</th></tr></thead>
             <tbody>

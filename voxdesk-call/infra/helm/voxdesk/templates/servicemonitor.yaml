@@ -1,0 +1,117 @@
+{{- /*
+ServiceMonitor + PrometheusRule (PART 17B / P17B-01).
+
+The rules are not retyped here. `observability/alerts.yml` is the file the
+compose stack mounts into Prometheus, and it is loaded verbatim through
+`.Files.Get`, so the two deployments alert on exactly the same conditions. A
+copy in the chart would drift the first time someone edits one of them — and an
+alert that exists in only one install is worse than no alert, because the
+runbook links point at it.
+
+On top of the shared rules the chart adds the two conditions that only exist in
+Kubernetes: a Job that failed (backup, migrate) and a rollout stuck on a
+CrashLoopBackOff. Those are properties of the platform, not of the app, so they
+belong here and not in alerts.yml.
+*/ -}}
+{{- $sm := .Values.serviceMonitor | default dict -}}
+{{- if $sm.enabled | default false }}
+{{- $rt := .Values.realtimeGateway | default dict -}}
+{{- $me := .Values.mediaEngine | default dict -}}
+{{- $labels := $sm.labels | default dict }}
+{{- $nameSel := dict "app.kubernetes.io/name" (include "voxdesk.name" .) "app.kubernetes.io/instance" .Release.Name -}}
+{{- range $component, $cfg := (dict "api" (dict "port" "http" "path" "/metrics") "scheduler" (dict "port" "metrics" "path" "/metrics") "realtime-gateway" (dict "port" "ws" "path" "/metrics") "media-engine" (dict "port" "control" "path" "/metrics")) }}
+{{- $enabled := true }}
+{{- if and (eq $component "realtime-gateway") (not $rt.enabled) }}{{ $enabled = false }}{{ end }}
+{{- if and (eq $component "media-engine") (not $me.enabled) }}{{ $enabled = false }}{{ end }}
+{{- if and (eq $component "scheduler") (not (($.Values.scheduler | default dict).enabled | default true)) }}{{ $enabled = false }}{{ end }}
+{{- if $enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "voxdesk.fullname" $ }}-{{ $component }}
+  labels:
+    {{- include "voxdesk.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $component }}
+    {{- with $labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- toYaml $nameSel | nindent 6 }}
+      app.kubernetes.io/component: {{ $component }}
+  endpoints:
+    - port: {{ $cfg.port }}
+      path: {{ $cfg.path }}
+      interval: {{ $sm.interval | default "15s" }}
+      scrapeTimeout: {{ $sm.scrapeTimeout | default "10s" }}
+---
+{{- end }}
+{{- end }}
+{{- if ($sm.prometheusRule | default dict).enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "voxdesk.fullname" . }}-platform
+  labels:
+    {{- include "voxdesk.labels" . | nindent 4 }}
+    {{- with ($sm.prometheusRule | default dict).labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  groups:
+    # ---- from observability/alerts.yml (the compose stack mounts the same
+    # file). Parsed and re-emitted rather than string-indented: a raw nindent
+    # breaks `expr: |` blocks, whose continuation lines are not indented by
+    # nindent and would end up shallower than their key.
+    {{- $shared := (.Files.Get "alerts.yml" | fromYaml).groups }}
+    {{- toYaml $shared | nindent 4 }}
+    {{- if ($sm.prometheusRule | default dict).includePlatformRules }}
+    # ---- Kubernetes-only conditions ------------------------------------
+    - name: voxdesk-platform
+      rules:
+        - alert: VoxDeskBackupJobFailed
+          expr: kube_job_status_failed{job_name=~"{{ include "voxdesk.fullname" . }}-backup.*"} > 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Database backup Job failed"
+            description: "The nightly pg_dump Job failed or produced a dump pg_restore cannot read. A backup that has been failing silently is indistinguishable from no backup at all, which is why this is critical rather than a warning."
+            runbook: "docs/RUNBOOKS/backup-restore.md#a-failed-backup-job"
+
+        - alert: VoxDeskMigrationJobFailed
+          expr: kube_job_status_failed{job_name=~"{{ include "voxdesk.fullname" . }}-migrate.*"} > 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Schema migration Job failed"
+            description: "The pre-upgrade migration Job failed, so the release did not roll forward. The schema is at whatever revision the last successful run left it."
+            runbook: "docs/RUNBOOKS/dr-failover.md#a-failed-migration"
+
+        - alert: VoxDeskPodCrashLooping
+          expr: |
+            increase(kube_pod_container_status_restarts_total{namespace=~"{{ .Release.Namespace }}",pod=~"{{ include "voxdesk.fullname" . }}.*"}[15m]) > 3
+          for: 10m
+          labels:
+            severity: critical
+          annotations:
+            summary: "VoxDesk pod is restarting repeatedly"
+            description: "A pod has restarted more than three times in 15 minutes. A gateway or media-engine crash loop removes the realtime edge while the API keeps answering, so a plain HTTP health check on the API will not show it."
+            runbook: "docs/RUNBOOKS/provider-outage.md#a-service-that-will-not-stay-up"
+
+        - alert: VoxDeskRealtimeGatewaySaturated
+          expr: |
+            sum(voxdesk_gateway_connections_active) by (namespace)
+              / clamp_min(sum(voxdesk_gateway_connections_capacity) by (namespace), 1) > 0.85
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Realtime gateway above 85% of its connection capacity"
+            description: "The gateway refuses new sockets at its configured cap (VOXDESK_GATEWAY_MAX_CONNECTIONS). Above 85% the next browser reconnect burst starts getting refused, which surfaces to operators as 'live view will not load'."
+            runbook: "docs/RUNBOOKS/provider-outage.md#realtime-gateway-saturation"
+    {{- end }}
+{{- end }}
+{{- end }}

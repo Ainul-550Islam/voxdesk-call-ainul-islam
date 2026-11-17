@@ -5,9 +5,9 @@ Generated deterministically by `scripts/build_api_docs.sh` from `app.main:app.op
 ## Summary Metrics
 
 - **OpenAPI Version**: `3.1.0`
-- **Total Unique Paths**: `1252`
-- **Total HTTP Operations**: `1499`
-- **Total Tag Groups**: `155`
+- **Total Unique Paths**: `1364`
+- **Total HTTP Operations**: `1635`
+- **Total Tag Groups**: `172`
 - **Machine-Readable Schema**: [`openapi.json`](openapi.json) (mirrored at [`../../contracts/openapi.json`](../../contracts/openapi.json))
 - **Static HTML Reference (Redoc / Scalar + Offline Explorer)**: [`index.html`](index.html)
 
@@ -15,11 +15,11 @@ Generated deterministically by `scripts/build_api_docs.sh` from `app.main:app.op
 
 | HTTP Method | Operation Count |
 |---|---:|
-| `DELETE` | 70 |
-| `GET` | 644 |
-| `PATCH` | 58 |
-| `POST` | 700 |
-| `PUT` | 27 |
+| `DELETE` | 81 |
+| `GET` | 706 |
+| `PATCH` | 65 |
+| `POST` | 752 |
+| `PUT` | 31 |
 
 ## Tag Inventory
 
@@ -32,17 +32,21 @@ Generated deterministically by `scripts/build_api_docs.sh` from `app.main:app.op
 | `agent-builder` | 11 | `GET /api/v1/agents`, `POST /api/v1/agents`, `GET /api/v1/agents/{agent_id}` (+8 more) |
 | `agent-catalog` | 3 | `GET /api/agents/models`, `GET /api/agents/tools/catalog`, `GET /api/agents/voices` |
 | `agent-flow` | 6 | `GET /api/agents/flow/schema`, `GET /api/agents/{agent_id}/flow`, `PUT /api/agents/{agent_id}/flow` (+3 more) |
+| `agent-folders` | 5 | `GET /api/agent-folders`, `POST /api/agent-folders`, `PATCH /api/agent-folders/{folder_id}` (+2 more) |
 | `agent-lifecycle` | 7 | `POST /api/v1/agents/import`, `GET /api/v1/agents/lifecycle/health`, `DELETE /api/v1/agents/{agent_id}` (+4 more) |
+| `agent-portability` | 2 | `POST /api/agents/import`, `GET /api/agents/{agent_id}/export` |
 | `agent-state` | 5 | `POST /api/agent-state/accept`, `POST /api/agent-state/complete`, `POST /api/agent-state/heartbeat` (+2 more) |
+| `agent-templates` | 3 | `GET /api/agent-templates`, `GET /api/agent-templates/{template_id}`, `POST /api/agent-templates/{template_id}/instantiate` |
 | `agent-test` | 4 | `GET /api/v1/agent-tests/{session_id}`, `POST /api/v1/agent-tests/{session_id}/events`, `GET /api/v1/agent-tests/{session_id}/health` (+1 more) |
 | `agent-tools-v2` | 7 | `GET /api/v1/agent-tools/enablements`, `PUT /api/v1/agent-tools/enablements`, `POST /api/v1/agent-tools/tools/{tool_name}/dry-run` (+4 more) |
-| `agent-versions` | 3 | `GET /api/agents/{agent_id}/environments`, `POST /api/agents/{agent_id}/promote`, `GET /api/agents/{agent_id}/versions/diff` |
+| `agent-versions` | 4 | `GET /api/agents/{agent_id}/environments`, `POST /api/agents/{agent_id}/promote`, `GET /api/agents/{agent_id}/versions/diff` (+1 more) |
 | `agents` | 10 | `GET /api/agents`, `POST /api/agents`, `GET /api/agents/{agent_id}` (+7 more) |
 | `ai-evals` | 5 | `GET /api/tenants/{tenant_id}/ai/evals/datasets`, `POST /api/tenants/{tenant_id}/ai/evals/datasets`, `POST /api/tenants/{tenant_id}/ai/evals/runs` (+2 more) |
 | `ai-governance` | 12 | `GET /api/ai/costs`, `GET /api/ai/health`, `GET /api/ai/models` (+9 more) |
 | `ai-prompts` | 7 | `GET /api/tenants/{tenant_id}/ai/prompts`, `POST /api/tenants/{tenant_id}/ai/prompts`, `POST /api/tenants/{tenant_id}/ai/prompts/{prompt_key}/publish` (+4 more) |
+| `alerts` | 7 | `POST /api/alerts/evaluate`, `GET /api/alerts/events`, `GET /api/alerts/rules` (+4 more) |
 | `analytics` | 4 | `GET /api/analytics/calls`, `GET /api/analytics/conversion`, `GET /api/analytics/overview` (+1 more) |
-| `analytics-dashboards` | 10 | `GET /api/v1/analytics/dashboards`, `POST /api/v1/analytics/dashboards`, `GET /api/v1/analytics/dashboards/shared/{share_token}` (+7 more) |
+| `analytics-dashboards` | 14 | `GET /api/v1/analytics/channels`, `GET /api/v1/analytics/concurrency-24h`, `GET /api/v1/analytics/cost-by-provider` (+11 more) |
 | `anomaly-agent` | 2 | `POST /api/anomaly/analyze`, `GET /api/anomaly/{execution_id}` |
 | `api` | 22 | `GET /api/calls/{call_id}`, `GET /api/calls/{call_id}/transcript`, `GET /api/calls/{call_id}/transfer` (+19 more) |
 | `api-tools` | 3 | `GET /api/api-tools`, `POST /api/api-tools`, `POST /api/api-tools/{tool_id}/execute` |
@@ -52,12 +56,14 @@ Generated deterministically by `scripts/build_api_docs.sh` from `app.main:app.op
 | `auth` | 9 | `POST /auth/login`, `POST /auth/logout`, `POST /auth/logout-all` (+6 more) |
 | `automations` | 13 | `GET /api/automations`, `POST /api/automations`, `GET /api/automations/actions` (+10 more) |
 | `batch-calls` | 18 | `GET /api/batch-calls`, `POST /api/batch-calls`, `GET /api/batch-calls/stats/overview` (+15 more) |
-| `billing` | 11 | `GET /api/billing`, `GET /api/billing/`, `POST /api/billing/cancel` (+8 more) |
+| `batch-tests` | 9 | `GET /api/batch-tests/cases`, `POST /api/batch-tests/cases`, `DELETE /api/batch-tests/cases/{case_id}` (+6 more) |
+| `billing` | 17 | `GET /api/billing`, `GET /api/billing/`, `POST /api/billing/cancel` (+14 more) |
 | `billing-license` | 2 | `POST /api/billing/license/issue`, `POST /api/billing/license/verify` |
 | `calendar` | 8 | `GET /api/calendar/integrations`, `PUT /api/calendar/integrations/{provider}`, `DELETE /api/calendar/integrations/{provider}` (+5 more) |
+| `call-debug` | 4 | `POST /api/calls/debug-artifacts/purge`, `GET /api/calls/debug-artifacts/{storage_key}`, `GET /api/calls/{call_id}/pcap` (+1 more) |
 | `call-simulation` | 5 | `GET /api/simulations`, `POST /api/simulations`, `GET /api/simulations/{sim_id}` (+2 more) |
 | `calls-control` | 20 | `GET /api/calls`, `POST /api/calls`, `POST /api/calls/bulk` (+17 more) |
-| `calls-search-export` | 26 | `POST /api/calls/consent/check`, `GET /api/calls/dnc`, `POST /api/calls/dnc` (+23 more) |
+| `calls-search-export` | 30 | `POST /api/calls/consent/check`, `GET /api/calls/dnc`, `POST /api/calls/dnc` (+27 more) |
 | `campaigns` | 14 | `GET /api/campaigns`, `POST /api/campaigns`, `GET /api/campaigns/{campaign_id}` (+11 more) |
 | `channels` | 2 | `POST /channels/message`, `POST /channels/status` |
 | `collab-v2` | 13 | `POST /api/v1/collab/alerts/send`, `GET /api/v1/collab/channels`, `POST /api/v1/collab/meetings` (+10 more) |
@@ -74,7 +80,7 @@ Generated deterministically by `scripts/build_api_docs.sh` from `app.main:app.op
 | `compliance-v2-residency` | 7 | `GET /api/tenants/{tenant_id}/compliance/residency/check`, `POST /api/tenants/{tenant_id}/compliance/residency/check-key`, `GET /api/tenants/{tenant_id}/compliance/residency/pin` (+4 more) |
 | `compliance-v2-security` | 3 | `GET /api/tenants/{tenant_id}/compliance/security/harness/allowlist`, `GET /api/tenants/{tenant_id}/compliance/security/harness/corpus`, `POST /api/tenants/{tenant_id}/compliance/security/harness/run` |
 | `compliance-v2-siem` | 10 | `GET /api/tenants/{tenant_id}/compliance/siem/dead-letters`, `POST /api/tenants/{tenant_id}/compliance/siem/dead-letters/{dead_letter_id}/redrive`, `POST /api/tenants/{tenant_id}/compliance/siem/dispatch` (+7 more) |
-| `conductor` | 20 | `GET /api/v1/conductor/context`, `GET /api/v1/conductor/proposals`, `POST /api/v1/conductor/proposals` (+17 more) |
+| `conductor` | 24 | `POST /api/v1/conductor/build-chart`, `GET /api/v1/conductor/context`, `POST /api/v1/conductor/investigate-calls` (+21 more) |
 | `conductor-reviews` | 4 | `POST /api/v1/conductor/reviews/proposals/{proposal_id}/accept-safe`, `POST /api/v1/conductor/reviews/proposals/{proposal_id}/changes/{change_id}/accept`, `GET /api/v1/conductor/reviews/proposals/{proposal_id}/grouped-changes` (+1 more) |
 | `conductor-webhooks` | 1 | `POST /api/v1/conductor/webhooks/events` |
 | `connectors` | 9 | `GET /api/connectors`, `POST /api/connectors`, `GET /api/connectors/providers` (+6 more) |
@@ -86,8 +92,10 @@ Generated deterministically by `scripts/build_api_docs.sh` from `app.main:app.op
 | `contact-center-v2-softphone` | 19 | `GET /api/cc2/softphone/calls`, `POST /api/cc2/softphone/calls`, `GET /api/cc2/softphone/calls/{call_id}` (+16 more) |
 | `contact-center-v2-supervisor` | 2 | `GET /api/cc2/supervisor/occupancy`, `GET /api/cc2/supervisor/wallboard` |
 | `contact-center-v2-supervisor-realtime` | 1 | `GET /api/cc2/supervisor/stream-ticket` |
+| `contact-memory` | 7 | `POST /api/memory/backfill`, `GET /api/memory/settings`, `PATCH /api/memory/settings` (+4 more) |
 | `conversation-intelligence` | 11 | `GET /api/conversations/{call_id}/coaching`, `GET /api/conversations/{call_id}/compliance`, `GET /api/conversations/{call_id}/evidence` (+8 more) |
 | `crm-writeback` | 14 | `POST /api/crm/backfill`, `POST /api/crm/calls/{call_id}/disposition`, `POST /api/crm/calls/{call_id}/fields` (+11 more) |
+| `custom-roles` | 9 | `GET /api/auth/custom-roles`, `POST /api/auth/custom-roles`, `PATCH /api/auth/custom-roles/{role_id}` (+6 more) |
 | `deployment` | 13 | `GET /api/deployment/revisions/{revision_id}`, `POST /api/deployment/revisions/{revision_id}/approve`, `POST /api/deployment/revisions/{revision_id}/deploy` (+10 more) |
 | `deployment-runtime` | 6 | `POST /api/deployment/revisions/{revision_id}/apply`, `POST /api/deployment/revisions/{revision_id}/preflight`, `GET /api/deployment/revisions/{revision_id}/status` (+3 more) |
 | `enterprise-security` | 1 | `GET /api/v1/enterprise-security/posture` |
@@ -98,6 +106,7 @@ Generated deterministically by `scripts/build_api_docs.sh` from `app.main:app.op
 | `environments` | 11 | `GET /api/tenants/{tenant_id}/environments`, `POST /api/tenants/{tenant_id}/environments`, `GET /api/tenants/{tenant_id}/environments/{environment_id}` (+8 more) |
 | `evaluations` | 7 | `GET /api/v1/evaluations/rules`, `POST /api/v1/evaluations/rules`, `GET /api/v1/evaluations/rules/{rule_id}` (+4 more) |
 | `evidence` | 7 | `GET /api/governance/evidence`, `POST /api/governance/evidence/package`, `POST /api/governance/evidence/verify` (+4 more) |
+| `flow-components` | 8 | `GET /api/flow-components`, `POST /api/flow-components`, `GET /api/flow-components/stats` (+5 more) |
 | `forecasting` | 4 | `GET /api/forecast`, `POST /api/forecast`, `POST /api/forecast/backtest` (+1 more) |
 | `gdpr` | 3 | `POST /api/gdpr/erasure`, `GET /api/gdpr/export`, `GET /api/gdpr/status` |
 | `governance` | 16 | `POST /api/governance/evaluate`, `GET /api/governance/policies`, `POST /api/governance/policies` (+13 more) |
@@ -117,10 +126,11 @@ Generated deterministically by `scripts/build_api_docs.sh` from `app.main:app.op
 | `lead-segments` | 4 | `GET /api/tenants/{tenant_id}/lead-segments`, `POST /api/tenants/{tenant_id}/lead-segments`, `GET /api/tenants/{tenant_id}/lead-segments/{segment_id}` (+1 more) |
 | `leads` | 11 | `POST /api/tenants/{tenant_id}/lead-merges`, `GET /api/tenants/{tenant_id}/lead-records`, `POST /api/tenants/{tenant_id}/lead-records` (+8 more) |
 | `legal-agent` | 11 | `GET /api/legal/clause-library`, `GET /api/legal/clause-library/{clause_key}`, `GET /api/legal/playbooks` (+8 more) |
-| `live-monitoring` | 19 | `GET /api/calls/monitor/config`, `GET /api/calls/monitor/health`, `DELETE /api/calls/monitoring/idempotency/cache` (+16 more) |
+| `live-monitoring` | 28 | `GET /api/calls/auto-actions`, `POST /api/calls/auto-actions`, `PATCH /api/calls/auto-actions/{rule_id}` (+25 more) |
 | `live-proof` | 6 | `GET /api/live-proof/readiness`, `GET /api/live-proof/runs`, `POST /api/live-proof/runs` (+3 more) |
-| `mcp` | 5 | `GET /api/mcp/servers`, `POST /api/mcp/servers`, `POST /api/mcp/servers/{server_id}/discover` (+2 more) |
-| `messaging-sms` | 4 | `POST /messaging/sms/send`, `POST /messaging/sms/status`, `POST /messaging/sms/twilio` (+1 more) |
+| `mcp` | 7 | `GET /api/mcp/servers`, `POST /api/mcp/servers`, `POST /api/mcp/servers/{server_id}/discover` (+4 more) |
+| `messaging-registration` | 5 | `GET /api/messaging/registrations`, `POST /api/messaging/registrations`, `POST /api/messaging/registrations/{registration_id}/submit` (+2 more) |
+| `messaging-sms` | 3 | `POST /messaging/sms/status`, `POST /messaging/sms/twilio`, `POST /messaging/sms/webhook` |
 | `mobile` | 14 | `GET /api/mobile/deliveries`, `GET /api/mobile/devices`, `POST /api/mobile/devices` (+11 more) |
 | `model-registry` | 15 | `GET /api/governance/models`, `POST /api/governance/models`, `GET /api/governance/models/approved` (+12 more) |
 | `multichannel` | 14 | `GET /api/channels`, `POST /api/channels`, `GET /api/channels/adapters` (+11 more) |
@@ -133,13 +143,15 @@ Generated deterministically by `scripts/build_api_docs.sh` from `app.main:app.op
 | `phone-numbers` | 12 | `GET /api/phone-numbers`, `POST /api/phone-numbers/provision`, `POST /api/phone-numbers/search` (+9 more) |
 | `phone-numbers-lifecycle` | 5 | `PATCH /api/phone-numbers/{number_id}`, `DELETE /api/phone-numbers/{number_id}`, `POST /api/phone-numbers/{number_id}/configure` (+2 more) |
 | `post-call-analysis` | 21 | `GET /api/analysis/backfill`, `POST /api/analysis/backfill`, `POST /api/analysis/backfill/preview` (+18 more) |
+| `public-chat` | 2 | `GET /api/v1/public/chat/budget`, `POST /api/v1/public/chat/session` |
+| `public-demo` | 4 | `GET /api/v1/public/demo`, `POST /api/v1/public/demo/call`, `POST /api/v1/public/demo/verification` (+1 more) |
 | `public-home` | 8 | `GET /api/v1/public/analytics/summary`, `GET /api/v1/public/health`, `GET /api/v1/public/home` (+5 more) |
 | `public-site` | 5 | `POST /api/v1/public/contact-sales`, `GET /api/v1/public/site/manifest`, `GET /api/v1/public/site/pricing` (+2 more) |
 | `public-use-cases` | 4 | `GET /api/v1/public/use-cases`, `GET /api/v1/public/use-cases/categories`, `GET /api/v1/public/use-cases/health` (+1 more) |
 | `public-webhooks` | 1 | `POST /public/webhooks/{endpoint_id}` |
-| `public-widget` | 7 | `GET /api/v1/public/widget/config`, `GET /api/v1/public/widget/embed.js`, `POST /api/v1/public/widget/sessions` (+4 more) |
+| `public-widget` | 8 | `GET /api/v1/public/widget/chat.js`, `GET /api/v1/public/widget/config`, `GET /api/v1/public/widget/embed.js` (+5 more) |
 | `public-widget-keys` | 6 | `GET /api/v1/public-keys`, `POST /api/v1/public-keys`, `GET /api/v1/public-keys/{key_id}` (+3 more) |
-| `qa` | 25 | `GET /api/qa/agents/{agent_id}/compare-versions`, `GET /api/qa/agents/{agent_id}/summary`, `POST /api/qa/calibration` (+22 more) |
+| `qa` | 31 | `GET /api/qa/agents/{agent_id}/compare-versions`, `GET /api/qa/agents/{agent_id}/summary`, `GET /api/qa/analyst/patterns` (+28 more) |
 | `queues` | 18 | `GET /api/queues`, `POST /api/queues`, `GET /api/queues/{queue_id}` (+15 more) |
 | `recordings` | 7 | `GET /api/recordings`, `POST /api/recordings`, `POST /api/recordings/purge` (+4 more) |
 | `retell-parity` | 39 | `GET /api/agent-transfers`, `POST /api/agent-transfers`, `POST /api/agent-transfers/{transfer_id}/transition` (+36 more) |
@@ -151,11 +163,15 @@ Generated deterministically by `scripts/build_api_docs.sh` from `app.main:app.op
 | `salesforce` | 27 | `GET /api/integrations/salesforce/accounts`, `GET /api/integrations/salesforce/api-limits`, `POST /api/integrations/salesforce/bulk/writeback` (+24 more) |
 | `scim` | 15 | `GET /scim/v2/{connection_id}/Groups`, `POST /scim/v2/{connection_id}/Groups`, `GET /scim/v2/{connection_id}/Groups/{group_id}` (+12 more) |
 | `security` | 7 | `GET /api/security/approvals`, `POST /api/security/approvals`, `POST /api/security/approvals/{approval_id}/decision` (+4 more) |
+| `share-links` | 6 | `GET /api/share-links`, `POST /api/share-links`, `DELETE /api/share-links/{link_id}` (+3 more) |
 | `skills` | 8 | `GET /api/skills`, `POST /api/skills`, `PATCH /api/skills/{skill_id}` (+5 more) |
 | `specialized-agents` | 4 | `GET /api/specialized-agents`, `GET /api/specialized-agents/{agent_type}`, `POST /api/specialized-agents/{agent_type}/execute` (+1 more) |
 | `supervisor` | 8 | `POST /api/supervisor/agents/{user_id}/state`, `POST /api/supervisor/assignments/{assignment_id}/reassign`, `POST /api/supervisor/assignments/{assignment_id}/release` (+5 more) |
 | `team` | 6 | `GET /api/team/audit`, `GET /api/team/users`, `POST /api/team/users` (+3 more) |
-| `telephony` | 5 | `POST /telephony/ivr`, `POST /telephony/outbound-answer`, `POST /telephony/status` (+2 more) |
+| `telephony` | 11 | `POST /telephony/ivr`, `POST /telephony/outbound-answer`, `POST /telephony/status` (+8 more) |
+| `telephony-concurrency` | 4 | `GET /api/concurrency`, `PUT /api/concurrency/limits`, `POST /api/concurrency/sample` (+1 more) |
+| `telephony-countries` | 3 | `GET /api/telephony/countries`, `PUT /api/telephony/countries`, `POST /api/telephony/countries/dry-run` |
+| `telephony-trunks` | 8 | `GET /api/telephony/trunks`, `POST /api/telephony/trunks`, `GET /api/telephony/trunks/health` (+5 more) |
 | `telnyx-voice` | 1 | `POST /telephony/telnyx/voice` |
 | `tenant-admin` | 8 | `GET /api/organizations/{organization_id}/tenants`, `POST /api/organizations/{organization_id}/tenants`, `GET /api/tenants/{tenant_id}/hierarchy` (+5 more) |
 | `tenant-membership` | 10 | `POST /api/tenants/{tenant_id}/invitations`, `POST /api/tenants/{tenant_id}/invitations/accept`, `POST /api/tenants/{tenant_id}/invitations/{invitation_id}/revoke` (+7 more) |
@@ -174,9 +190,10 @@ Generated deterministically by `scripts/build_api_docs.sh` from `app.main:app.op
 | `web-call-transport` | 1 | `POST /telephony/web/offer` |
 | `web-calls-live` | 6 | `POST /api/public/web-calls`, `POST /api/web-calls`, `GET /api/web-calls/{call_id}` (+3 more) |
 | `webhooks-lifecycle` | 33 | `GET /api/webhooks`, `POST /api/webhooks`, `POST /api/webhooks/bulk/delete` (+30 more) |
-| `white-label` | 28 | `GET /api/whitelabel/assets`, `POST /api/whitelabel/assets`, `GET /api/whitelabel/assets/{asset_id}` (+25 more) |
+| `white-label` | 29 | `GET /api/whitelabel/assets`, `POST /api/whitelabel/assets`, `GET /api/whitelabel/assets/{asset_id}` (+26 more) |
 | `white-label-tls` | 2 | `GET /api/platform/tls/ask`, `GET /api/platform/tls/status` |
 | `white-label-widget` | 2 | `GET /api/whitelabel/public/widget/{public_key}/config`, `GET /api/whitelabel/public/widget/{public_key}/loader.js` |
 | `workflow-events` | 8 | `GET /api/workflows/calls/{call_id}/context`, `GET /api/workflows/calls/{call_id}/executions`, `POST /api/workflows/calls/{call_id}/outcome-writeback` (+5 more) |
+| `workflow-library` | 7 | `GET /api/workflow-library/catalog`, `POST /api/workflow-library/install`, `GET /api/workflow-library/installs` (+4 more) |
 | `workflows` | 16 | `GET /api/workflows`, `POST /api/workflows`, `GET /api/workflows/{workflow_id}` (+13 more) |
 | `workforce-management` | 42 | `GET /api/wfm/accuracy`, `GET /api/wfm/adherence`, `GET /api/wfm/adherence/exceptions` (+39 more) |

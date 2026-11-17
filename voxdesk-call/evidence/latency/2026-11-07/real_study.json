@@ -1,0 +1,73 @@
+{
+  "schema": "voxdesk.real_call_study/v1",
+  "generated_at": "2026-11-07T06:00:21Z",
+  "study_date": "2026-11-07",
+  "provider_fakes": false,
+  "status": "NOT_RUN_MISSING_CREDENTIALS",
+  "missing_credentials": [
+    "TWILIO_ACCOUNT_SID",
+    "TWILIO_AUTH_TOKEN",
+    "TWILIO_PHONE_NUMBER",
+    "TWILIO_TEST_TO_NUMBER",
+    "VOXDESK_PUBLIC_BASE_URL",
+    "DEEPGRAM_API_KEY",
+    "OPENAI_API_KEY",
+    "ELEVENLABS_API_KEY"
+  ],
+  "providers": {
+    "telephony": "twilio",
+    "stt": "deepgram/nova-2",
+    "llm": "openai/gpt-4o-mini",
+    "tts": "elevenlabs/eleven_turbo_v2_5",
+    "region": "us-east-1",
+    "codec": "PCMU/8000"
+  },
+  "hardware": {
+    "os": "Linux 6.1.189+",
+    "arch": "x86_64",
+    "python_version": "3.13.16",
+    "cpu_count": 2
+  },
+  "calls_requested": 30,
+  "calls_attempted": 0,
+  "calls_completed": 0,
+  "calls_failed": 0,
+  "turns_measured": 0,
+  "caller_leg_e2e_ms": {
+    "p50_ms": null,
+    "p95_ms": null,
+    "p99_ms": null
+  },
+  "per_stage_ttfb_ms": {
+    "stt_final": {
+      "p50_ms": null,
+      "p95_ms": null,
+      "p99_ms": null
+    },
+    "llm_ttft": {
+      "p50_ms": null,
+      "p95_ms": null,
+      "p99_ms": null
+    },
+    "tts_ttfb": {
+      "p50_ms": null,
+      "p95_ms": null,
+      "p99_ms": null
+    },
+    "pipeline_e2e": {
+      "p50_ms": null,
+      "p95_ms": null,
+      "p99_ms": null
+    }
+  },
+  "interruption_outcomes": {
+    "interruptions_detected": 0,
+    "clean_stops_under_250ms": 0,
+    "stop_latency": {
+      "p50_ms": null,
+      "p95_ms": null,
+      "p99_ms": null
+    }
+  },
+  "failures": []
+}

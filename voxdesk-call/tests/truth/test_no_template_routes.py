@@ -11,10 +11,12 @@ def test_no_template_routes_and_preserved_real_modules():
     assert 'app.api.retell_parity_routes' in modules
     assert 'app.api.conductor_routes' in modules
     expected = json.loads(Path('tests/truth/routes_snapshot.json').read_text())
-    # The /assets mount and the GET /{full_path:path} SPA fallback are mounted only when a
-    # dashboard build exists, so the expected count must follow the build state.
+    # The /_next static mount and the /{full_path:path} fallback are mounted only
+    # when a dashboard-next static export exists, so the expected count must
+    # follow the build state. (PART 17A: the Vite `dashboard/dist` tree this used
+    # to look at no longer exists — production ships the Next standalone server.)
     dashboard_routes = 2
-    build_present = Path('dashboard/dist/index.html').is_file()
+    build_present = Path('dashboard-next/out/index.html').is_file()
     expected_count = expected['route_count'] + dashboard_routes * (
         int(build_present) - int(expected['dashboard_build_present'])
     )

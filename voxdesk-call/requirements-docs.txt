@@ -1,0 +1,2 @@
+# Reproducible local documentation build.
+mkdocs==1.6.1

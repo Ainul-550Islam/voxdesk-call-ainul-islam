@@ -4,24 +4,17 @@ from __future__ import annotations
 
 import base64
 import hashlib
-import io
 import json
 import os
 import time
-import wave
 
 import pytest
 import websockets
 
+from tests.real.audio_utils import wav_to_pcm16_mono_at_rate
 from tests.real.conftest import RealEvidenceWriter, require_provider_env
 
 pytestmark = pytest.mark.real_provider
-
-
-def _wav_to_pcm16_24k(wav_bytes: bytes) -> bytes:
-    with wave.open(io.BytesIO(wav_bytes), "rb") as wf:
-        raw = wf.readframes(wf.getnframes())
-    return raw or (b"\x00\x00" * 4800)
 
 
 @pytest.mark.asyncio
@@ -33,7 +26,7 @@ async def test_openai_realtime_s2s_audio_roundtrip_and_latency(
 ) -> None:
     env = require_provider_env("openai_realtime", request=request, evidence_writer=evidence_writer)
     model = os.environ.get("OPENAI_REALTIME_MODEL", "gpt-4o-realtime-preview").strip()
-    pcm_bytes = _wav_to_pcm16_24k(sample_speech_wav_bytes)
+    pcm_bytes = wav_to_pcm16_mono_at_rate(sample_speech_wav_bytes, 24_000)
     uri = f"wss://api.openai.com/v1/realtime?model={model}"
     headers = {
         "Authorization": f"Bearer {env['OPENAI_API_KEY']}",
@@ -119,7 +112,7 @@ async def test_gemini_live_s2s_audio_roundtrip_and_latency(
 ) -> None:
     env = require_provider_env("gemini_live", request=request, evidence_writer=evidence_writer)
     model = os.environ.get("GEMINI_LIVE_MODEL", "models/gemini-2.0-flash-exp").strip()
-    pcm_bytes = _wav_to_pcm16_24k(sample_speech_wav_bytes)
+    pcm_bytes = wav_to_pcm16_mono_at_rate(sample_speech_wav_bytes, 16_000)
     uri = (
         "wss://generativelanguage.googleapis.com/ws/"
         "google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent"

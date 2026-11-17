@@ -1,4 +1,5 @@
-.PHONY: help up down logs migrate seed test lint deps-check contracts-check api-docs sbom due-diligence-pack verify-truth verify-fe-be verify-sale check-backend check-frontend check-docker check-other check-all test-backend-fast test-backend-full test-migrations dev worker clean \
+.PHONY: docs-build release-bundle
+.PHONY: help up down logs migrate seed demo demo-live demo-reset test lint deps-check contracts-check api-docs sbom due-diligence-pack verify-truth verify-fe-be verify-sale check-backend check-frontend check-docker check-other check-all test-backend-fast test-backend-full test-migrations dev worker clean ui-build ui-test ui-parity frontend-install frontend-test frontend-typecheck frontend-build frontend-check \
         staging-proof live-evidence polyglot-evidence security-evidence verify-deploy-assets verify-artifacts \
         frontend-install frontend-test frontend-typecheck frontend-build frontend-check compose-config
 
@@ -13,6 +14,8 @@ help:
 	@echo "make deps-check         - verify every pinned dependency imports + version-matches"
 	@echo "make contracts-check    - compile protobuf contracts + cross-check enums/tenancy"
 	@echo "make api-docs           - build static OpenAPI reference in docs/api/"
+	@echo "make docs-build         - build the buyer API reference, Postman collection, changelog feed, and strict MkDocs site"
+	@echo "make release-bundle     - package the buyer docs/evidence bundle and verify its SHA-256 manifest"
 	@echo "make due-diligence-pack - generate SBOMs, third-party licenses, and dist/due-diligence-<date>.zip"
 	@echo "make verify-truth       - run repository truth guards and tests/truth suite"
 	@echo "make verify-fe-be       - check every dashboard API call against the live FastAPI routes"
@@ -58,6 +61,18 @@ revision:
 seed:
 	python3 -m scripts.seed_demo_tenant
 
+# PART 18 (P18-02): a full workspace — demo tenant, seven agents from the
+# starter templates, sample contacts — with every provider set to its fake.
+# No keys, no calls, no spend. `demo-live` keeps whatever real keys are set.
+demo:
+	python3 scripts/seed_demo.py
+
+demo-live:
+	python3 scripts/seed_demo.py --live
+
+demo-reset:
+	python3 scripts/seed_demo.py --reset
+
 test:
 	python3 -m pytest -q
 
@@ -72,6 +87,17 @@ contracts-check:
 
 api-docs:
 	bash scripts/build_api_docs.sh
+
+docs-build:
+	python3 scripts/build_api_reference.py
+	python3 scripts/build_changelog_feed.py
+	python3 scripts/build_postman_collection.py
+	mkdocs build -f docs-site/mkdocs.yml
+	python3 -m pytest tests/docs -q
+
+release-bundle: docs-build
+	python3 scripts/build_release.py
+	sha256sum -c dist/SHA256SUMS
 
 due-diligence-pack:
 	python3 scripts/make_due_diligence_pack.py
@@ -130,13 +156,15 @@ verify-artifacts:
 verify-hygiene: verify-artifacts
 
 verify-truth: verify-fe-be
-	python3 scripts/strip_generated_tails.py --check dashboard/src dashboard-next
+	python3 scripts/verify_no_dead_routers.py --strict
+	python3 scripts/strip_generated_tails.py --check dashboard-next
 	python3 scripts/verify_no_filler.py
 	python3 scripts/verify_no_fake_success.py
 	python3 scripts/verify_retired_references.py
 	python3 scripts/verify_no_null_bytes.py
 	python3 scripts/strip_padding_markers.py --check
 	python3 scripts/verify_docs_paths.py
+	python3 scripts/verify_alembic_graph.py
 	python3 scripts/check_repo_size.py
 	test ! -s scripts/fake_success_allowlist.txt
 	# Tracked environment files must never carry generated secrets
@@ -151,20 +179,30 @@ check-frontend:
 	bash scripts/check_frontend.sh
 
 frontend-install:
-	cd dashboard && npm ci --no-audit --no-fund
 	cd dashboard-next && npm ci --no-audit --no-fund
 
 frontend-test:
-	cd dashboard && npm test
 	cd dashboard-next && npm test
 
 frontend-typecheck:
-	cd dashboard && npm run typecheck
 	cd dashboard-next && npm run typecheck
 
 frontend-build:
-	cd dashboard && npm run build
 	cd dashboard-next && npm run build
+
+# Route parity: every route the retired Vite app served has a shipped home.
+# PART 17A, P17A-01. Exits non-zero if any row is still PORT or if a mapping
+# points at a file that does not exist.
+ui-parity:
+	python3 scripts/ui_parity.py --check
+
+# The two names the PART 17A task list asks for, wired to the same commands CI
+# runs so "works locally" and "works in CI" cannot drift apart.
+ui-build:
+	cd dashboard-next && npm run build
+
+ui-test:
+	cd dashboard-next && $(NPX) vitest run
 
 frontend-check: frontend-typecheck frontend-test frontend-build
 
@@ -200,17 +238,18 @@ verify-sale:
 	$(MAKE) deps-check
 	$(MAKE) contracts-check
 	$(MAKE) api-docs
+	$(MAKE) docs-build
 	mkdir -p evidence/junit
 	TZ=UTC python3 -m pytest $(FEATURE_EVIDENCE_TESTS) --junitxml=evidence/junit/feature_evidence.xml -q
 	python3 scripts/generate_feature_matrix.py
-	cd dashboard && (test -d node_modules || npm ci --silent) && npx vitest run
-	cd dashboard-next && (test -d node_modules || npm ci --silent) && npx tsc --noEmit && npx vitest run
+	python3 scripts/ui_parity.py --check
+	cd dashboard-next && (test -d node_modules || npm ci --silent) && npm run typecheck && npx vitest run
 	cd services/realtime/gateway-go && GOPATH=/tmp/gopath GOCACHE=/tmp/gocache GOTOOLCHAIN=auto go test -race ./...
-	cd services/signal-go && GOPATH=/tmp/gopath GOCACHE=/tmp/gocache GOTOOLCHAIN=auto go test -race ./...
-	cd services/ops && GOPATH=/tmp/gopath GOCACHE=/tmp/gocache GOTOOLCHAIN=auto go test -race ./...
-	CARGO_HOME=/tmp/cargo PATH="/tmp/cargo/bin:$$HOME/.cargo/bin:$$PATH" cargo test --manifest-path services/control-plane/Cargo.toml --workspace
+	cd experimental/signal-go && GOPATH=/tmp/gopath GOCACHE=/tmp/gocache GOTOOLCHAIN=auto go test -race ./...
+	cd experimental/ops && GOPATH=/tmp/gopath GOCACHE=/tmp/gocache GOTOOLCHAIN=auto go test -race ./...
+	CARGO_HOME=/tmp/cargo PATH="/tmp/cargo/bin:$$HOME/.cargo/bin:$$PATH" cargo test --manifest-path experimental/control-plane/Cargo.toml --workspace
 	CARGO_HOME=/tmp/cargo PATH="/tmp/cargo/bin:$$HOME/.cargo/bin:$$PATH" cargo test --manifest-path services/realtime/media-engine-rs/Cargo.toml --workspace
-	$(MAKE) -C services/media-plane test
+	$(MAKE) -C experimental/media-plane test
 	python3 scripts/make_due_diligence_pack.py
 	test ! -s scripts/fake_success_allowlist.txt
 	ls -lh dist/due-diligence-*.zip dist/SHA256SUMS
@@ -507,7 +546,7 @@ openapi-regen:
 	$(PYTHON) -m pytest tests/test_openapi_contract_matches_live_app.py -q
 
 # --- Go services ------------------------------------------------------------
-GO_MODULES := services/sip-gateway services/realtime/gateway-go services/signal-go services/ops
+GO_MODULES := services/sip-gateway services/realtime/gateway-go experimental/signal-go experimental/ops
 go-test-all:
 	@set -e; for dir in $(GO_MODULES); do \
 		echo "== go test -race ./... ($$dir) =="; \
@@ -515,7 +554,7 @@ go-test-all:
 	done
 
 # --- Rust services ----------------------------------------------------------
-CARGO_CRATES := services/realtime/media-engine-rs services/control-plane
+CARGO_CRATES := services/realtime/media-engine-rs experimental/control-plane
 cargo-test-all:
 	@set -e; for dir in $(CARGO_CRATES); do \
 		echo "== cargo test ($$dir) =="; \
@@ -523,7 +562,7 @@ cargo-test-all:
 	done
 
 # --- Frontend workspaces ----------------------------------------------------
-FRONTEND_APPS := dashboard dashboard-next sdk/agent-softphone
+FRONTEND_APPS := dashboard-next sdk/agent-softphone
 frontend-test-all:
 	@set -e; for dir in $(FRONTEND_APPS); do \
 		echo "== frontend ($$dir) =="; \

@@ -43,3 +43,57 @@ def is_supported(label: str, *, catalog: frozenset[str] | None = None) -> bool:
 def is_restricted(label: str, *, restricted: frozenset[str] | None = None) -> bool:
     chosen = RESTRICTED_REGIONS if restricted is None else frozenset(restricted)
     return label in chosen
+
+
+# ------------------------------------------------------- write-side enforcement ---
+
+
+class CrossRegionWrite(RuntimeError):
+    """A write would land outside the region the tenant pinned. Nothing was stored.
+
+    This is the enforcement half the module was missing: ``is_supported`` answers
+    "may this label be named at all", while ``require_write_region`` answers the
+    question a residency claim actually rests on — "is *this* write going to the
+    pinned place, and can we prove it".
+    """
+
+    def __init__(self, reason: str, *, pinned: str | None, target: str | None) -> None:
+        super().__init__(reason)
+        self.reason = reason
+        self.pinned = pinned
+        self.target = target
+
+
+#: Reasons, kept as constants so a caller (and a test) never matches on prose.
+WRITE_UNPINNED = "unpinned"                 # no pin: nothing was promised, nothing proven
+WRITE_MATCHED = "pinned_region_matched"     # target == pin, and the pin is a configured region
+WRITE_TARGET_UNKNOWN = "region_target_unknown"   # pinned, but the write names no region
+WRITE_FOREIGN = "cross_region_write"        # pinned, write names a different region
+WRITE_UNCONFIGURED = "region_not_configured"     # pin names a region this deployment lacks
+
+
+def require_write_region(
+    pinned: str | None,
+    target: str | None,
+    *,
+    catalog: frozenset[str] | None = None,
+) -> str:
+    """Return the reason a write is allowed, or raise :class:`CrossRegionWrite`.
+
+    The four refusals are deliberately distinct, because they need different
+    fixes: an unstated target is a caller bug, a foreign target is a routing bug,
+    and an unconfigured pin is a deployment that promised something it cannot do.
+    A pin with no configured catalogue can never be honoured — which is exactly
+    this deployment's state, and saying so is the point.
+    """
+    if pinned is None or str(pinned).strip() == "":
+        return WRITE_UNPINNED
+    pin = normalize_label(pinned)
+    if target is None or str(target).strip() == "":
+        raise CrossRegionWrite(WRITE_TARGET_UNKNOWN, pinned=pin, target=None)
+    where = normalize_label(target)
+    if where != pin:
+        raise CrossRegionWrite(WRITE_FOREIGN, pinned=pin, target=where)
+    if not is_supported(pin, catalog=catalog):
+        raise CrossRegionWrite(WRITE_UNCONFIGURED, pinned=pin, target=where)
+    return WRITE_MATCHED

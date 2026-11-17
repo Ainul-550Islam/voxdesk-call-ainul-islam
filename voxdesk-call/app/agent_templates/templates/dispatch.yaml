@@ -1,0 +1,128 @@
+id: dispatch
+name: Dispatch
+vertical: field-service
+summary: >-
+  Takes a service request, captures the location and urgency, dispatches the nearest technician, and tells the caller when to expect them.
+config:
+  voice: configured-default
+  language: en-US
+  first_message: >-
+    What do you need a technician for, and where are you?
+  llm_model: gpt-4o-mini
+  max_call_seconds: 420
+  end_call_after_silence_seconds: 12
+
+tools:
+  - name: dispatch_technician
+    description: Find the nearest available technician for the urgency and create the job.
+    params:
+      address: {type: string}
+      urgency: {type: string}
+
+dynamic_variables:
+  - name: service_address
+    type: string
+    purpose: >-
+      Where the technician must go, read back and confirmed before dispatch.
+    required: true
+    examples: ['"14 Baker Street"', '"unit 3, 200 Oak Ave"']
+  - name: urgency
+    type: enum
+    purpose: >-
+      Drives which technician queue the job lands in.
+    required: true
+    examples: [emergency, same_day, scheduled]
+  - name: eta_window
+    type: string
+    purpose: >-
+      The window the dispatcher returned. Echoed to the caller and never invented.
+    required: false
+    examples: ['"today 2-4pm"']
+
+flow:
+  mode: rigid
+  initial_variables:
+    eta_window: '""'
+  nodes:
+    - id: start
+      node_type: start
+      params: {}
+    - id: greet
+      node_type: conversation
+      params:
+        prompt: "Ask what the problem is and where they are. Confirm the address back before dispatch."
+    - id: capture
+      node_type: extract_variables
+      params:
+        variables:
+          - {'name': 'service_address', 'type': 'string', 'required': True}
+          - {'name': 'urgency', 'type': 'enum', 'enum_values': '[emergency, same_day, scheduled]', 'required': True}
+    - id: address
+      node_type: conversation
+      params:
+        prompt: "Read the address back and get an explicit yes before dispatching."
+    - id: dispatch
+      node_type: function
+      params:
+        tool_name: dispatch_technician
+    - id: confirm
+      node_type: send_sms
+      params:
+        message: "A technician is scheduled for {{eta_window}} at {{service_address}}."
+        set_from_tool_result: dispatch_technician
+    - id: end
+      node_type: end
+      params: {}
+  edges:
+    - id: e1
+      source_id: start
+      target_id: greet
+    - id: e2
+      source_id: greet
+      target_id: capture
+    - id: e3
+      source_id: capture
+      target_id: address
+    - id: e4
+      source_id: address
+      target_id: dispatch
+    - id: e5
+      source_id: dispatch
+      target_id: confirm
+    - id: e6
+      source_id: confirm
+      target_id: end
+
+analysis_schema:
+  fields:
+    - name: urgency
+      type: enum
+      values: [emergency, same_day, scheduled]
+    - name: dispatched
+      type: boolean
+    - name: eta_window
+      type: string
+
+simulation_cases:
+  - name: an emergency is dispatched and confirmed
+    turns:
+      - "water everywhere"
+      - "emergency"
+      - "14 Baker Street"
+      - "yes"
+    expect_node: dispatch
+    expect_variables:
+      urgency: emergency
+  - name: the address is read back before dispatch
+    turns:
+      - "my boiler is broken"
+      - "scheduled"
+    expect_node: address
+
+kb_placeholders:
+  - "service-area.md — which postcodes this deployment covers"
+  - "urgency-matrix.md — what counts as an emergency for each trade"
+
+compliance_notes:
+  - "If the address is not read back and confirmed, a technician goes to the wrong place — the confirmation step is a requirement, not a courtesy."
+  - "Emergency escalation must reach a human if dispatch returns no technician; a silent failure here is a safety issue."

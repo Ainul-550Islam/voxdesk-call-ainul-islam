@@ -22,8 +22,8 @@ from tests.test_release_gate import CHECKLIST, FROZEN, LIVE, TODAY
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 VERSIONS_DIR = REPO_ROOT / "alembic" / "versions"
-HEAD = "0049_runtime_schema_alignment"
-PREVIOUS_HEAD = "0048_boolean_defaults"
+HEAD = "0091_call_debug_pcap_metadata"
+PREVIOUS_HEAD = "0090_telephony_phone_routing"
 
 
 # ------------------------------------------------------------------ facts ---
@@ -31,8 +31,7 @@ PREVIOUS_HEAD = "0048_boolean_defaults"
 
 def test_migration_heads_reports_exactly_the_current_head():
     heads = facts.migration_heads(VERSIONS_DIR)
-    # corrected: migration 0069_voice_demo_sessions is now the current sole head.
-    assert heads == ("0069_voice_demo_sessions",)
+    assert heads == ("0091_call_debug_pcap_metadata",)
 
 
 def test_migration_file_declares_the_correct_chain():

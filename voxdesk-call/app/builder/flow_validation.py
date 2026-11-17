@@ -24,7 +24,8 @@ from collections import deque
 from dataclasses import dataclass, field
 from typing import Any, Literal, Mapping
 
-from app.builder.node import FlowGraph, FlowNode
+from app.builder.code_node_runtime import CODE_NODE_MAX_SOURCE_BYTES
+from app.builder.node import EDGE_TIMINGS, MAX_FLEX_NODES, FlowGraph, FlowNode
 
 TERMINAL_NODE_TYPES: frozenset[str] = frozenset(
     {
@@ -381,6 +382,11 @@ def validate_flow(graph_or_data: FlowGraph | Mapping[str, Any]) -> FlowValidatio
                     )
                 )
 
+    # ------------------------------------------------------------------
+    # PART 12 (P12-16..P12-20) rules
+    # ------------------------------------------------------------------
+    errors.extend(_validate_part12_rules(graph, node_map, declared_vars))
+
     return FlowValidationResult(
         valid=len(errors) == 0,
         errors=errors,
@@ -388,3 +394,193 @@ def validate_flow(graph_or_data: FlowGraph | Mapping[str, Any]) -> FlowValidatio
         reachable_node_ids=sorted(all_reachable),
         declared_variables=sorted(declared_vars),
     )
+
+
+#: Functions a subagent node may delegate to. Anything else is a configuration mistake: the node
+#: exists so one flow can hand a narrow errand to another agent, not to widen its own powers.
+SUBAGENT_ALLOWED_FUNCTIONS: frozenset[str] = frozenset(
+    {
+        "book_appointment",
+        "transfer_to_human",
+        "lookup_customer",
+        "send_sms",
+        "take_message",
+        "lookup_order",
+    }
+)
+
+
+def _validate_part12_rules(
+    graph: FlowGraph,
+    node_map: dict[str, FlowNode],
+    declared_vars: set[str],
+) -> list[FlowValidationIssue]:
+    """Rules introduced by PART 12, kept together so they can be quoted by code in the report."""
+    issues: list[FlowValidationIssue] = []
+
+    # P12-19 — a flex flow is a navigation problem, and past 20 nodes the model picks badly.
+    if graph.mode == "flex" and len(graph.nodes) > MAX_FLEX_NODES:
+        issues.append(
+            FlowValidationIssue(
+                code="FLEX_TOO_LARGE",
+                message=(
+                    f"flex mode supports at most {MAX_FLEX_NODES} nodes; this flow has "
+                    f"{len(graph.nodes)}. Split it or switch to rigid."
+                ),
+                field="flow.mode",
+            )
+        )
+
+    # P12-17 — edge timing must be one of the two documented values.
+    for edge in graph.edges:
+        cond = edge.condition
+        if cond is not None and cond.timing not in EDGE_TIMINGS:
+            issues.append(
+                FlowValidationIssue(
+                    code="INVALID_EDGE_TIMING",
+                    message=(
+                        f"Edge '{edge.edge_id}' timing '{cond.timing}' must be one of "
+                        f"{sorted(EDGE_TIMINGS)}."
+                    ),
+                    edge_id=edge.edge_id,
+                    field=f"edges.{edge.edge_id}.condition.timing",
+                )
+            )
+
+    for node in graph.nodes:
+        ntype = node.node_type
+
+        # P12-19 — a global node that returns somewhere must return somewhere real.
+        gcfg = node.global_config
+        if node.is_global and gcfg is not None and gcfg.return_path:
+            if gcfg.return_path not in node_map:
+                issues.append(
+                    FlowValidationIssue(
+                        code="GLOBAL_RETURN_TARGET_MISSING",
+                        message=(
+                            f"Global node '{node.node_id}' returns to '{gcfg.return_path}', "
+                            "which is not a node in this flow."
+                        ),
+                        node_id=node.node_id,
+                        field=f"nodes.{node.node_id}.global_config.return_path",
+                    )
+                )
+
+        # P12-18 — subagent delegation is limited to a known function set.
+        if ntype == "subagent":
+            if not str(node.params.get("agent_id") or node.params.get("target_agent_id") or "").strip():
+                issues.append(
+                    FlowValidationIssue(
+                        code="SUBAGENT_TARGET_MISSING",
+                        message=f"Subagent node '{node.node_id}' has no target agent.",
+                        node_id=node.node_id,
+                        field=f"nodes.{node.node_id}.agent_id",
+                    )
+                )
+            for tool in node.params.get("tools") or node.params.get("node_tools") or []:
+                name = str(tool.get("name") if isinstance(tool, Mapping) else tool).strip()
+                if name and name not in SUBAGENT_ALLOWED_FUNCTIONS:
+                    issues.append(
+                        FlowValidationIssue(
+                            code="SUBAGENT_FUNCTION_NOT_ALLOWED",
+                            message=(
+                                f"Subagent node '{node.node_id}' delegates to '{name}', which is "
+                                f"not in the allowed set {sorted(SUBAGENT_ALLOWED_FUNCTIONS)}."
+                            ),
+                            node_id=node.node_id,
+                            field=f"nodes.{node.node_id}.tools",
+                        )
+                    )
+
+        # P12-18 — code nodes are capped at publish time, not at call time.
+        if ntype == "code":
+            source = str(node.params.get("code") or node.params.get("source") or "")
+            if not source.strip():
+                issues.append(
+                    FlowValidationIssue(
+                        code="CODE_NODE_EMPTY",
+                        message=f"Code node '{node.node_id}' has no code.",
+                        node_id=node.node_id,
+                        field=f"nodes.{node.node_id}.code",
+                    )
+                )
+            elif len(source.encode("utf-8")) > CODE_NODE_MAX_SOURCE_BYTES:
+                issues.append(
+                    FlowValidationIssue(
+                        code="CODE_NODE_TOO_LARGE",
+                        message=(
+                            f"Code node '{node.node_id}' is {len(source.encode('utf-8'))} bytes, "
+                            f"over the {CODE_NODE_MAX_SOURCE_BYTES} byte limit."
+                        ),
+                        node_id=node.node_id,
+                        field=f"nodes.{node.node_id}.code",
+                    )
+                )
+            if node.params.get("allow_network") or node.params.get("allow_filesystem"):
+                issues.append(
+                    FlowValidationIssue(
+                        code="CODE_NODE_UNSANDBOXED",
+                        message=(
+                            f"Code node '{node.node_id}' asks for network or filesystem access; "
+                            "code nodes never get either."
+                        ),
+                        node_id=node.node_id,
+                        field=f"nodes.{node.node_id}",
+                    )
+                )
+
+        # P12-20 — a component placement must name a component and a version.
+        if ntype == "component":
+            if not str(node.params.get("component_id") or "").strip():
+                issues.append(
+                    FlowValidationIssue(
+                        code="COMPONENT_REFERENCE_MISSING",
+                        message=f"Component node '{node.node_id}' does not name a component.",
+                        node_id=node.node_id,
+                        field=f"nodes.{node.node_id}.component_id",
+                    )
+                )
+            version = node.params.get("version")
+            if version is None or (isinstance(version, str) and not version.strip()):
+                issues.append(
+                    FlowValidationIssue(
+                        code="COMPONENT_VERSION_MISSING",
+                        message=f"Component node '{node.node_id}' must pin a component version.",
+                        node_id=node.node_id,
+                        field=f"nodes.{node.node_id}.version",
+                    )
+                )
+            else:
+                try:
+                    parsed_version = int(version)
+                    if parsed_version < 1 or str(parsed_version) != str(version).strip():
+                        raise ValueError
+                except (TypeError, ValueError):
+                    issues.append(
+                        FlowValidationIssue(
+                            code="COMPONENT_VERSION_INVALID",
+                            message=(
+                                f"Component node '{node.node_id}' version {version!r} must be a "
+                                "positive integer."
+                            ),
+                            node_id=node.node_id,
+                            field=f"nodes.{node.node_id}.version",
+                        )
+                    )
+
+        # P12-16 — a per-node responsiveness override must be in range.
+        if node.responsiveness_override is not None:
+            if not (0.0 <= node.responsiveness_override <= 1.0):
+                issues.append(
+                    FlowValidationIssue(
+                        code="RESPONSIVENESS_OUT_OF_RANGE",
+                        message=(
+                            f"Node '{node.node_id}' responsiveness_override "
+                            f"{node.responsiveness_override} must be between 0 and 1."
+                        ),
+                        node_id=node.node_id,
+                        field=f"nodes.{node.node_id}.responsiveness_override",
+                    )
+                )
+
+    return issues

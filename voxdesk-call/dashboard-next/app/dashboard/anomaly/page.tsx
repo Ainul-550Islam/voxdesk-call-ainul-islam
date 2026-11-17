@@ -27,12 +27,16 @@ interface DetectorResult {
   confidence?: number;
   severity?: string;
   observed_value?: number;
-  expected_range?: [number, number] | number[];
+  // `AnomalyResult` (app/anomaly/schemas.py) reports the model's baseline and
+  // the signed deviation from it. An earlier revision read `expected_range` and
+  // `z_score`, which the API never sends, so that line always rendered nothing.
+  baseline?: number | null;
+  deviation?: number | null;
+  detector?: string;
+  threshold?: number;
   explanation?: string;
   quality_state?: string;
   review_required?: boolean;
-  z_score?: number;
-  threshold?: number;
 }
 
 interface Detection {
@@ -42,7 +46,8 @@ interface Detection {
   confidence: number;
   severity: string;
   observedValue: number | null;
-  expectedRange: [number, number] | null;
+  baseline: number | null;
+  deviation: number | null;
   explanation: string;
   qualityState: string;
   reviewRequired: boolean;
@@ -70,9 +75,8 @@ function isUuid(value: string): boolean {
 }
 
 function toDetection(executionId: string, index: number, raw: DetectorResult, fallbackMetric: string): Detection {
-  const range = Array.isArray(raw.expected_range) && raw.expected_range.length >= 2
-    ? ([Number(raw.expected_range[0]), Number(raw.expected_range[1])] as [number, number])
-    : null;
+  const baseline = typeof raw.baseline === "number" && Number.isFinite(raw.baseline) ? raw.baseline : null;
+  const deviation = typeof raw.deviation === "number" && Number.isFinite(raw.deviation) ? raw.deviation : null;
   return {
     id: `${executionId}-${index}`,
     metric: String(raw.metric ?? fallbackMetric),
@@ -80,7 +84,8 @@ function toDetection(executionId: string, index: number, raw: DetectorResult, fa
     confidence: Number(raw.confidence ?? 0),
     severity: String(raw.severity ?? "unknown"),
     observedValue: raw.observed_value === undefined ? null : Number(raw.observed_value),
-    expectedRange: range,
+    baseline,
+    deviation,
     explanation: String(raw.explanation ?? ""),
     qualityState: String(raw.quality_state ?? "unknown"),
     reviewRequired: Boolean(raw.review_required),
@@ -273,7 +278,7 @@ export default function AnomalyPage() {
           />
 
           <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-            <select value={metric} onChange={(e) => setMetric(e.target.value)} style={{ flex: 1, padding: 6, borderRadius: 4, border: "1px solid #ccc", fontSize: 12 }}>
+            <select aria-label="Metric" value={metric} onChange={(e) => setMetric(e.target.value)} style={{ flex: 1, padding: 6, borderRadius: 4, border: "1px solid #ccc", fontSize: 12 }}>
               <option value="call_volume">call_volume</option>
               <option value="avg_handle_time">avg_handle_time</option>
               <option value="conversion_rate">conversion_rate</option>
@@ -328,7 +333,7 @@ export default function AnomalyPage() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
               <div>
                 <label style={{ fontSize: 11 }}>Detector</label>
-                <select value={detector} onChange={(e) => setDetector(e.target.value)} style={{ width: "100%", padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }}>
+                <select aria-label="Detector" value={detector} onChange={(e) => setDetector(e.target.value)} style={{ width: "100%", padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }}>
                   {DETECTORS.map((d) => (
                     <option key={d} value={d}>
                       {d}
@@ -338,11 +343,11 @@ export default function AnomalyPage() {
               </div>
               <div>
                 <label style={{ fontSize: 11 }}>Window</label>
-                <input type="number" min={2} max={100} value={windowSize} onChange={(e) => setWindowSize(parseInt(e.target.value, 10) || 2)} style={{ width: "100%", padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }} />
+                <input aria-label="Window size" type="number" min={2} max={100} value={windowSize} onChange={(e) => setWindowSize(parseInt(e.target.value, 10) || 2)} style={{ width: "100%", padding: 4, borderRadius: 4, border: "1px solid #ccc", fontSize: 11 }} />
               </div>
             </div>
             <label style={{ fontSize: 11, display: "block", marginTop: 8 }}>Threshold: {threshold.toFixed(2)}</label>
-            <input type="range" min={0.5} max={6} step={0.1} value={threshold} onChange={(e) => setThreshold(parseFloat(e.target.value))} style={{ width: "100%" }} />
+            <input aria-label="Anomaly threshold" type="range" min={0.5} max={6} step={0.1} value={threshold} onChange={(e) => setThreshold(parseFloat(e.target.value))} style={{ width: "100%" }} />
             <button
               onClick={runDetection}
               disabled={submitting || !configured}
@@ -402,7 +407,10 @@ export default function AnomalyPage() {
                   </div>
                   <div style={{ fontSize: 11, marginTop: 6 }}>
                     Observed {det.observedValue ?? "—"}
-                    {det.expectedRange ? ` vs expected ${det.expectedRange[0]}–${det.expectedRange[1]}` : ""}
+                    {det.baseline !== null ? ` vs baseline ${det.baseline}` : ""}
+                    {det.deviation !== null
+                      ? ` (deviation ${det.deviation > 0 ? "+" : ""}${det.deviation})`
+                      : ""}
                     {det.explanation ? ` — ${det.explanation}` : ""}
                   </div>
                   <div style={{ fontSize: 10, color: "#666", marginTop: 6 }}>

@@ -109,17 +109,28 @@ def test_dashboard_helper_does_nothing_without_dist(tmp_path):
     probe = FastAPI()
     missing = tmp_path / "no-dist-here"
     _mount_dashboard_if_built(probe, dist_dir=str(missing))
-    assert not any(r.path.startswith("/assets") for r in probe.routes)
+    assert not any(r.path.startswith("/_next") for r in probe.routes)
 
 
 @pytest.mark.asyncio
-async def test_dashboard_spa_is_served_when_dist_exists(tmp_path):
+async def test_exported_site_is_served_when_present(tmp_path):
+    """PART 17A: the mount now serves a Next static export, not a Vite SPA.
+
+    The shape changed with the frontend, so the assertions did too:
+
+    * the export is multi-page — `/about` resolves to `about.html`, and there is
+      no shell that answers every unknown URL with 200;
+    * assets live under `/_next/static`, not `/assets`;
+    * an unknown document path is a JSON 404, because pretending it exists is the
+      refresh bug the SPA fallback used to hide.
+    """
     from app.main import _mount_dashboard_if_built
 
-    dist = tmp_path / "dist"
-    (dist / "assets").mkdir(parents=True)
-    (dist / "index.html").write_text("<html>voxdesk-shell</html>")
-    (dist / "assets" / "app.js").write_text("// app")
+    dist = tmp_path / "out"
+    (dist / "_next" / "static").mkdir(parents=True)
+    (dist / "index.html").write_text("<html>voxdesk-next-home</html>")
+    (dist / "about.html").write_text("<html>voxdesk-next-about</html>")
+    (dist / "_next" / "static" / "app.js").write_text("// app")
 
     probe = FastAPI()
     _mount_dashboard_if_built(probe, dist_dir=str(dist))
@@ -127,17 +138,25 @@ async def test_dashboard_spa_is_served_when_dist_exists(tmp_path):
     async with AsyncClient(transport=ASGITransport(app=probe), base_url="http://test") as ac:
         root = await ac.get("/")
         assert root.status_code == 200
-        assert "voxdesk-shell" in root.text
+        assert "voxdesk-next-home" in root.text
 
-        # Client-side routes fall back to the SPA shell, not a 404.
-        deep = await ac.get("/agent")
-        assert deep.status_code == 200
-        assert "voxdesk-shell" in deep.text
+        # A second page is a real file in the export, resolved via `.html`.
+        about = await ac.get("/about")
+        assert about.status_code == 200
+        assert "voxdesk-next-about" in about.text
 
         # Real static assets are served.
-        asset = await ac.get("/assets/app.js")
+        asset = await ac.get("/_next/static/app.js")
         assert asset.status_code == 200
 
-        # Unknown API paths 404 instead of being swallowed by the SPA shell.
+        # Unknown API paths 404 instead of being swallowed by the site.
         bad_api = await ac.get("/api/definitely-not-real")
         assert bad_api.status_code == 404
+
+        # Unknown document paths 404 too: no catch-all shell any more.
+        missing_page = await ac.get("/definitely-not-a-page")
+        assert missing_page.status_code == 404
+
+        # Path traversal cannot escape the export directory.
+        escape = await ac.get("/../pyproject.toml")
+        assert escape.status_code == 404

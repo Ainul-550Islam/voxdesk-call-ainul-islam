@@ -32,17 +32,22 @@ provider payload.
 """
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import TenantContext, record_audit, require_permission
+from app.auth.dependencies import (
+    TenantContext,
+    get_platform_admin,
+    record_audit,
+    require_permission,
+)
 from app.auth.permissions import Permission
 from app.billing import plans as plan_catalogue
-from app.billing import reconciliation, service, webhooks
+from app.billing import cost, price_book, reconciliation, service, webhooks
 from app.billing.entitlements import load_context
 from app.billing.errors import (
     BillingError,
@@ -149,16 +154,22 @@ class CheckoutIn(BaseModel):
     tenant id, no quantity. Requirement 8, enforced by the type.
     """
 
+    model_config = ConfigDict(json_schema_extra={"examples": [{"plan_code": "growth", "interval": "month"}]})
+
     plan_code: str = Field(min_length=1, max_length=64)
     interval: BillingInterval = BillingInterval.MONTH
 
 
 class ChangePlanIn(BaseModel):
+    model_config = {"json_schema_extra": {"examples": [{"plan_code": "growth", "interval": "month"}]}}
+
     plan_code: str = Field(min_length=1, max_length=64)
     interval: BillingInterval | None = None
 
 
 class CancelIn(BaseModel):
+    model_config = {"json_schema_extra": {"examples": [{"reason": "moving to a self-hosted deployment"}]}}
+
     #: Default False: the customer has paid for the month, and cutting them
     #: off the moment they click cancel takes money for service not delivered.
     immediately: bool = False
@@ -232,6 +243,10 @@ async def get_billing(
     ctx: TenantContext = Depends(require_permission(Permission.BILLING_READ)),
     session: AsyncSession = Depends(get_session),
 ) -> BillingStatusOut:
+    """Read this workspace's billing status.
+
+    Returns the plan, subscription state, current period and the estimated overage for the period so far. Every field is an allowlist: no provider identifiers, no API keys, no payment instrument.
+    """
     status = await service.billing_status(session, ctx.tenant)
     return BillingStatusOut(
         plan_code=status.plan_code,
@@ -256,6 +271,10 @@ async def list_plans(
     ctx: TenantContext = Depends(require_permission(Permission.BILLING_READ)),
     session: AsyncSession = Depends(get_session),
 ) -> list[PlanOut]:
+    """List the plans a workspace can buy.
+
+    Server-owned catalogue. A browser can name a plan *code* but never a price; the code is resolved to a provider price id server-side.
+    """
     context = await load_context(session, ctx.tenant)
     current = context.plan.code if context.plan else None
     return [
@@ -269,6 +288,10 @@ async def get_usage(
     ctx: TenantContext = Depends(require_permission(Permission.BILLING_READ)),
     session: AsyncSession = Depends(get_session),
 ) -> UsageOut:
+    """Metered usage for the current billing period.
+
+    One entry per metric with included, used, remaining and overage. The counters come from append-only usage events, so the figure is reproducible after any dispute.
+    """
     from app.billing import metering
 
     context = await load_context(session, ctx.tenant)
@@ -339,6 +362,212 @@ async def list_invoices(
         )
         for row in rows
     ]
+
+
+# ---------------------------------------------------------------------------
+# Price book, itemised invoices, usage by provider and day, margin (P18-05)
+# ---------------------------------------------------------------------------
+#
+# The price book is deploy-scoped configuration, not tenant data: two tenants on
+# the same installation see the same rates. So reads are BILLING_READ and every
+# write is BILLING_WRITE *and* platform-admin only — a tenant admin must not be
+# able to change what everyone is charged.
+
+
+class ComponentPriceOut(BaseModel):
+    kind: str
+    component: str
+    provider: str
+    unit: str
+    divisor: int
+    millicents: int
+    list_millicents: int | None
+    label: str
+    margin_millicents: int | None
+    margin_pct: float | None
+
+
+class PriceBookOut(BaseModel):
+    version: str
+    effective_from: str
+    currency: str
+    notes: str
+    indicated: bool
+    digest: str
+    prices: list[ComponentPriceOut]
+
+
+class PriceBookChangeIn(BaseModel):
+    """A new version that differs from the latest only where stated."""
+
+    model_config = {"extra": "forbid"}
+
+    version: str = Field(min_length=3, max_length=32, pattern=r"^[0-9A-Za-z._-]+$")
+    effective_from: date
+    notes: str = Field(default="", max_length=500)
+    changes: dict[str, dict] = Field(
+        default_factory=dict,
+        description="component → {millicents, list_millicents}, e.g. {'telephony:US': {'millicents': 1400}}",
+    )
+
+
+@router.get("/price-book", response_model=PriceBookOut)
+async def get_price_book(
+    version: str | None = Query(None, max_length=32),
+    ctx: TenantContext = Depends(require_permission(Permission.BILLING_READ)),
+) -> PriceBookOut:
+    """The price book in force now, or a specific published version."""
+    del ctx
+    catalogue = price_book.default_catalogue()
+    book = catalogue.get(version) if version else catalogue.for_moment()
+    return PriceBookOut(**{k: v for k, v in book.as_dict().items() if k != "prices"}, prices=[ComponentPriceOut(**p) for p in book.as_dict()["prices"]])
+
+
+@router.get("/price-book/versions", response_model=list[dict])
+async def list_price_book_versions(
+    ctx: TenantContext = Depends(require_permission(Permission.BILLING_READ)),
+) -> list[dict]:
+    """Every published price-book version, oldest first.
+
+    Versions are immutable. An invoice cites the version it was priced with, so re-deriving an old invoice reproduces the old numbers exactly.
+    """
+    del ctx
+    return [
+        {
+            "version": book.version,
+            "effective_from": book.effective_from.isoformat(),
+            "digest": book.digest(),
+            "indicated": book.indicated,
+            "components": len(book.prices),
+        }
+        for book in price_book.default_catalogue().versions
+    ]
+
+
+@router.post("/price-book", response_model=PriceBookOut, status_code=201)
+async def publish_price_book(
+    payload: PriceBookChangeIn,
+    ctx: TenantContext = Depends(get_platform_admin),
+) -> PriceBookOut:
+    """Publish a new immutable version. Existing versions are never edited.
+
+    There is no PATCH and no DELETE on purpose: an invoice that cites version
+    ``2026-01`` must still mean the same numbers a year later.
+
+    Guarded by ``get_platform_admin``, which currently denies every principal:
+    prices are deploy-scoped, so a tenant administrator must not move them for
+    everyone. Until a platform-operator principal exists, a price change is a
+    release — see ``docs/PRICE_BOOK.md``. Denying is the correct interim
+    behaviour; inventing a superuser flag to make the endpoint "work" would be a
+    privilege-escalation hole hidden behind a convenience.
+    """
+    catalogue = price_book.default_catalogue()
+    try:
+        updated = catalogue.with_change(
+            version=payload.version,
+            effective_from=payload.effective_from,
+            changes=payload.changes,
+            notes=payload.notes,
+        )
+    except price_book.PriceBookError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from None
+    log.info("billing.price_book.published", version=payload.version, by=str(ctx.user_id))
+    book = updated.get(payload.version)
+    payload_dict = book.as_dict()
+    return PriceBookOut(
+        **{k: v for k, v in payload_dict.items() if k != "prices"},
+        prices=[ComponentPriceOut(**p) for p in payload_dict["prices"]],
+    )
+
+
+@router.get("/invoice/lines")
+async def itemised_invoice_lines(
+    ctx: TenantContext = Depends(require_permission(Permission.BILLING_READ)),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    """This period's usage, priced per component against the current book."""
+    context = await load_context(session, ctx.tenant)
+    return await cost.itemised_usage_cost(
+        session, tenant_id=ctx.tenant_id, period=context.period
+    )
+
+
+@router.get("/usage/by-provider")
+async def usage_by_provider(
+    ctx: TenantContext = Depends(require_permission(Permission.BILLING_READ)),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    """Usage split by provider and by day, from the same rows.
+
+    One query, one pivot: a "by day" chart computed separately from the "by
+    provider" table is how the two disagree by a few minutes and the customer
+    notices before we do.
+    """
+    from sqlalchemy import select
+
+    from app.db.models import UsageEvent
+
+    context = await load_context(session, ctx.tenant)
+    events = (
+        await session.execute(
+            select(UsageEvent).where(
+                UsageEvent.tenant_id == ctx.tenant_id,
+                UsageEvent.billing_period == context.period.label,
+            )
+        )
+    ).scalars().all()
+    rows = []
+    for event in events:
+        meta = dict(event.event_metadata or {})
+        rows.append(
+            {
+                "provider": meta.get("provider") or "voxdesk",
+                "metric": getattr(event.metric, "value", str(event.metric)),
+                "quantity": int(event.quantity or 0),
+                "day": event.created_at.date().isoformat() if event.created_at else "",
+            }
+        )
+    pivoted = cost.usage_by_provider_and_day(rows)
+    return {
+        "billing_period": context.period.label,
+        "currency": context.plan.currency if context.plan else "usd",
+        **pivoted,
+    }
+
+
+@router.get("/margin")
+async def margin_report(
+    ctx: TenantContext = Depends(require_permission(Permission.BILLING_READ)),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    """Cost against charge for this period — the reseller's view.
+
+    A tenant administrator sees their own margin (they are the reseller to
+    *their* customers). Nobody sees another tenant's: the query is scoped to
+    ``ctx.tenant_id`` exactly like every other read here.
+    """
+    context = await load_context(session, ctx.tenant)
+    invoice = await cost.itemised_usage_cost(
+        session, tenant_id=ctx.tenant_id, period=context.period
+    )
+    return {
+        "billing_period": context.period.label,
+        "price_book_version": invoice["price_book_version"],
+        "prices_indicated": invoice["prices_indicated"],
+        "totals": invoice["totals"],
+        "by_component": [
+            {
+                "component": line["component"],
+                "kind": line["kind"],
+                "cost_millicents": line["cost_millicents"],
+                "charge_millicents": line["charge_millicents"],
+                "margin_millicents": line["margin_millicents"],
+                "margin_pct": line["margin_pct"],
+            }
+            for line in invoice["lines"]
+        ],
+        "unpriced": invoice["unpriced"],
+    }
 
 
 @router.post("/checkout", response_model=SessionOut)
@@ -433,6 +662,10 @@ async def cancel_subscription(
     ctx: TenantContext = Depends(require_permission(Permission.BILLING_WRITE)),
     session: AsyncSession = Depends(get_session),
 ) -> BillingStatusOut:
+    """Cancel at the end of the current period.
+
+    Immediate cancellation is deliberately not offered: it would forfeit usage the customer has already been billed for.
+    """
     payload = body or CancelIn()
     try:
         await service.cancel(

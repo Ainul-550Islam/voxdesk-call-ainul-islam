@@ -21,7 +21,9 @@ from app.auth.permissions import Permission
 from app.db.models import Agent, AgentVersion, AuditAction
 from app.db.session import get_session
 from app.telephony.number_provisioning import get_owned
+from app.telephony.number_routing import RoutingError, build_routing
 from app.telephony.provider_errors import TelephonyError
+from app.telephony.schemas import PhoneNumberRouting
 from app.tenancy.isolation import HierarchyError, client_ip, to_http
 from app.tenancy.policy import bind_tenant
 
@@ -39,6 +41,7 @@ class NumberUpdateRequest(_Strict):
     inbound_agent_id: Optional[uuid.UUID] = None
     inbound_agent_version: Optional[int] = Field(default=None, ge=1)
     outbound_agent_id: Optional[uuid.UUID] = None
+    routing: Optional[PhoneNumberRouting] = None
     tenant_id: Optional[uuid.UUID] = None
 
 
@@ -79,6 +82,29 @@ def _bind(
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
+
+
+async def _resolve_tenant_route_agent(
+    session: AsyncSession, tenant_id: uuid.UUID, agent_id: str
+) -> uuid.UUID:
+    cleaned = str(agent_id or "").strip()
+    try:
+        agent_uuid = uuid.UUID(cleaned)
+    except ValueError:
+        agent_uuid = None
+    query = select(Agent).where(Agent.tenant_id == tenant_id)
+    query = query.where(Agent.id == agent_uuid) if agent_uuid else query.where(Agent.external_key == cleaned)
+    agent = (await session.execute(query)).scalar_one_or_none()
+    if (
+        agent is None
+        or agent.deleted_at is not None
+        or str(agent.status).lower() == "archived"
+    ):
+        raise HTTPException(
+            status_code=404,
+            detail=f"Agent '{cleaned}' not found for this tenant.",
+        )
+    return agent.id
 
 
 async def _validate_tenant_agent(
@@ -136,32 +162,86 @@ async def update_number(
         row = await get_owned(session, ctx.tenant_id, number_id)
         fields_set = payload.model_fields_set
 
-        if "inbound_agent_id" in fields_set or "inbound_agent_version" in fields_set:
-            eff_agent = (
-                payload.inbound_agent_id
-                if "inbound_agent_id" in fields_set
-                else row.inbound_agent_id
-            )
-            eff_ver = (
-                payload.inbound_agent_version
-                if "inbound_agent_version" in fields_set
-                else (
-                    None
-                    if ("inbound_agent_id" in fields_set and payload.inbound_agent_id is None)
-                    else row.inbound_agent_version
-                )
-            )
-            await _validate_tenant_agent(session, ctx.tenant_id, eff_agent, eff_ver)
-            if "inbound_agent_id" in fields_set:
-                row.inbound_agent_id = payload.inbound_agent_id
-            if "inbound_agent_version" in fields_set:
-                row.inbound_agent_version = payload.inbound_agent_version
-            elif "inbound_agent_id" in fields_set and payload.inbound_agent_id is None:
-                row.inbound_agent_version = None
-
+        previous_inbound = row.inbound_agent_id
+        if "inbound_agent_id" in fields_set:
+            await _validate_tenant_agent(session, ctx.tenant_id, payload.inbound_agent_id)
+            row.inbound_agent_id = payload.inbound_agent_id
         if "outbound_agent_id" in fields_set:
             await _validate_tenant_agent(session, ctx.tenant_id, payload.outbound_agent_id)
             row.outbound_agent_id = payload.outbound_agent_id
+
+        try:
+            routing_data = build_routing(
+                row.routing,
+                legacy_inbound_agent_id=(str(row.inbound_agent_id) if row.inbound_agent_id else ""),
+                legacy_outbound_agent_id=(str(row.outbound_agent_id) if row.outbound_agent_id else ""),
+            ).as_dict()
+        except (RoutingError, TypeError, ValueError) as exc:
+            raise HTTPException(status_code=422, detail=f"Invalid stored routing: {exc}") from exc
+
+        changed_channels: set[str] = set()
+        if "inbound_agent_id" in fields_set:
+            routing_data["inbound"] = (
+                [{"agent_id": str(row.inbound_agent_id), "weight": 1.0, "label": ""}]
+                if row.inbound_agent_id
+                else []
+            )
+            changed_channels.add("inbound")
+        if "outbound_agent_id" in fields_set:
+            routing_data["outbound"] = (
+                [{"agent_id": str(row.outbound_agent_id), "weight": 1.0, "label": ""}]
+                if row.outbound_agent_id
+                else []
+            )
+            changed_channels.add("outbound")
+
+        if payload.routing is not None:
+            for channel in ("inbound", "outbound", "sms"):
+                entries = getattr(payload.routing, channel)
+                if channel not in payload.routing.model_fields_set or entries is None:
+                    continue
+                route_entries = []
+                for entry in entries:
+                    resolved_id = await _resolve_tenant_route_agent(
+                        session, ctx.tenant_id, entry.agent_id
+                    )
+                    route_entries.append(
+                        {
+                            "agent_id": str(resolved_id),
+                            "weight": float(entry.weight),
+                            "label": entry.label,
+                        }
+                    )
+                routing_data[channel] = route_entries
+                changed_channels.add(channel)
+
+        if changed_channels or payload.routing is not None:
+            try:
+                routing_data = build_routing(routing_data).as_dict()
+            except (RoutingError, TypeError, ValueError) as exc:
+                raise HTTPException(status_code=422, detail=f"Invalid routing: {exc}") from exc
+            for channel in changed_channels & {"inbound", "outbound"}:
+                entries = routing_data.get(channel) or []
+                new_agent_text = str(entries[0]["agent_id"]) if entries else None
+                new_agent_uuid = uuid.UUID(new_agent_text) if new_agent_text else None
+                old_agent = getattr(row, f"{channel}_agent_id")
+                setattr(row, f"{channel}_agent_id", new_agent_uuid)
+                if channel == "inbound" and old_agent != new_agent_uuid:
+                    row.inbound_agent_version = None
+            row.routing = routing_data
+
+        if "inbound_agent_version" in fields_set:
+            await _validate_tenant_agent(
+                session,
+                ctx.tenant_id,
+                row.inbound_agent_id,
+                payload.inbound_agent_version,
+            )
+            row.inbound_agent_version = payload.inbound_agent_version
+        elif "inbound_agent_id" in fields_set and (
+            payload.inbound_agent_id is None or previous_inbound != row.inbound_agent_id
+        ):
+            row.inbound_agent_version = None
 
         # Update allowed fields — model may have label, webhook_url, capabilities
         if payload.label is not None and hasattr(row, "label"):

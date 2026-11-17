@@ -355,6 +355,7 @@ class FunctionHandlers:
         self.provider = provider
         self.runtime_config = runtime_config
         self.frame_pusher = frame_pusher
+        self._ivr_router = None
 
     # -- availability ------------------------------------------------------
     async def check_availability(self, date: str, part_of_day: str = "any") -> dict:
@@ -874,6 +875,11 @@ class FunctionHandlers:
     async def navigate_ivr(
         self, ivr_prompt: str, goal: str, digits: str | None = None
     ) -> dict:
+        from app.agent.tools.ivr_navigation import IVRMenuRouter
+
+        if self._ivr_router is None:
+            self._ivr_router = IVRMenuRouter(goal=goal)
+        call_tooling = dict(getattr(self.runtime_config, "call_tooling", {}) or {})
         return await execute_navigate_ivr(
             ivr_prompt=ivr_prompt,
             goal=goal,
@@ -882,6 +888,9 @@ class FunctionHandlers:
             call_sid=getattr(self.call, "call_sid", None),
             telephony_provider=self.provider,
             frame_pusher=self.frame_pusher,
+            router=self._ivr_router,
+            auto_hangup_on_ivr=bool(call_tooling.get("auto_hangup_on_ivr", False)),
+            max_menus=int(call_tooling.get("ivr_max_menus", 3) or 3),
         )
 
     # -- tool availability -------------------------------------------------

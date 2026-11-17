@@ -1,0 +1,22 @@
+{
+  "schema": "voxdesk.live_evidence/v1",
+  "provider": "s2s",
+  "check": "s2s.handshake",
+  "group": "s2s",
+  "summary": "A real speech-to-speech provider session module loads with live credentials.",
+  "status": "skipped",
+  "started_at": "2026-11-01T14:25:29Z",
+  "finished_at": "2026-11-01T14:25:29Z",
+  "commit_sha": "3ceb037f5d48c9fa4eba896d815d16339d5bd846",
+  "raw_log": "evidence/live/raw/s2s-s2s-handshake-20261101T142529Z.log",
+  "raw_log_sha256": "e1b65b24df3c465189eb1bb95debad6941bea206b452b6c566d6af0670545cb0",
+  "raw_log_bytes": 376,
+  "cost_guard": null,
+  "detail": {
+    "missing_env": [
+      "OPENAI_API_KEY",
+      "GOOGLE_API_KEY"
+    ]
+  },
+  "skip_reason": "credentials absent: OPENAI_API_KEY, GOOGLE_API_KEY \u2014 the check was not attempted, so it proves nothing"
+}

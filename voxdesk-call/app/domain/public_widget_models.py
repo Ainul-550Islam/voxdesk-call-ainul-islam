@@ -73,6 +73,31 @@ class PublicWidgetSessionStatus(str, Enum):
     INVALID_PUBLIC_KEY = "invalid_public_key"
 
 
+class PublicWidgetCaptchaConfig(BaseModel):
+    """Per-key captcha settings (PART 14, P14-02).
+
+    `enabled=False` is an explicit, auditable choice; a missing secret is not.
+    The service refuses with `captcha_unconfigured` in that case rather than
+    treating a broken deployment as consent.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool = True
+    provider: str = Field(default="recaptcha_v3", pattern="^(recaptcha_v3|hcaptcha|turnstile)$")
+    threshold: float = Field(default=0.5, ge=0.0, le=1.0)
+    site_key: str = Field(default="", max_length=200)
+
+
+class PublicWidgetBudgetConfig(BaseModel):
+    """Per-key daily caps on requests and billable seconds (PART 14, P14-02)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    daily_requests: int = Field(default=500, ge=1, le=1_000_000)
+    daily_seconds: int = Field(default=3600, ge=0, le=10_000_000)
+
+
 class PublicWidgetAppearanceConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -89,6 +114,10 @@ class PublicWidgetAppearanceConfig(BaseModel):
     enable_chat: bool = True
     enable_voice: bool = True
     show_branding: bool = True
+    #: PART 14: abuse controls travel with the key, because the key *is* the
+    #: public credential.
+    captcha: PublicWidgetCaptchaConfig = Field(default_factory=PublicWidgetCaptchaConfig)
+    budget: PublicWidgetBudgetConfig = Field(default_factory=PublicWidgetBudgetConfig)
 
 
 class PublicWidgetKeyCreate(BaseModel):

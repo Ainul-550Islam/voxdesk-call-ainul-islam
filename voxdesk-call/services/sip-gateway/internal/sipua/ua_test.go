@@ -135,6 +135,26 @@ func TestBuildResponseCopiesHeadersAndAddsTag(t *testing.T) {
 	}
 }
 
+func TestBuildResponseEchoesRecordRouteOnlyOnSuccessfulInvite(t *testing.T) {
+	request, err := Parse([]byte(invite))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	request.AddHeader("Record-Route", "<sip:edge-private:5060;lr>")
+	request.AddHeader("Record-Route", "<sip:edge.example.test:5061;transport=tls;lr>")
+
+	response := BuildResponse(request, 200, "OK")
+	routes := response.HeaderValues("record-route")
+	if len(routes) != 2 || routes[0] != "<sip:edge-private:5060;lr>" || routes[1] != "<sip:edge.example.test:5061;transport=tls;lr>" {
+		t.Fatalf("successful INVITE response lost its ordered Record-Route set: %#v", routes)
+	}
+
+	failure := BuildResponse(request, 404, "Not Found")
+	if got := failure.HeaderValues("record-route"); len(got) != 0 {
+		t.Fatalf("non-2xx response must not establish a route set: %#v", got)
+	}
+}
+
 func TestParseDigestAndAuthorization(t *testing.T) {
 	challenge, err := ParseDigest(
 		`Digest realm="trunk.voxdesk.local", nonce="abc123", algorithm=MD5, qop="auth"`,
@@ -228,6 +248,17 @@ func TestParseTarget(t *testing.T) {
 	if address.Port != 5060 || !address.IP.Equal(net.ParseIP("192.0.2.5")) {
 		t.Fatalf("unexpected address %+v", address)
 	}
+
+	uriAddress, err := ParseTarget("sip:callee@127.0.0.1:5070", 5060)
+	if err != nil {
+		t.Fatalf("parse SIP URI target: %v", err)
+	}
+	if uriAddress.Port != 5070 || !uriAddress.IP.Equal(net.ParseIP("127.0.0.1")) {
+		t.Fatalf("unexpected SIP URI address %+v", uriAddress)
+	}
+	if _, err := ParseTarget("sips:callee@example.com", 5060); err == nil {
+		t.Fatal("SIPS must not be silently sent over UDP")
+	}
 	if _, err := ParseTarget("", 5060); err == nil {
 		t.Fatal("expected an error for an empty target")
 	}
@@ -275,12 +306,15 @@ func TestConfigCacheReadsTheApplicationOnce(t *testing.T) {
 	var hits int
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		hits++
+		if r.Header.Get("Authorization") != "Bearer gateway-test-token" {
+			t.Errorf("the gateway bearer token was not forwarded")
+		}
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"username":"trunk","password":"secret","allowed_cidrs":["10.0.0.0/8"]}`))
 	}))
 	defer server.Close()
 
-	cache := NewConfigCache(server.URL, time.Minute)
+	cache := NewConfigCache(server.URL, time.Minute, "gateway-test-token")
 	config, err := cache.Trunk(context.Background())
 	if err != nil {
 		t.Fatalf("cannot read the configuration: %v", err)
@@ -303,8 +337,72 @@ func TestConfigCacheReadsTheApplicationOnce(t *testing.T) {
 	}
 }
 
+func TestConfigCacheReadsATenantAndTrunkScopedProfile(t *testing.T) {
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		if r.Header.Get("Authorization") != "Bearer gateway-test-token" {
+			t.Errorf("the gateway bearer token was not forwarded")
+		}
+		if r.URL.Query().Get("tenant_id") != "tenant-1" ||
+			r.URL.Query().Get("trunk_id") != "trunk-1" ||
+			r.URL.Query().Get("environment_id") != "environment-1" {
+			t.Errorf("the scoped tenant/trunk/environment query is wrong: %s", r.URL.RawQuery)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"tenant_id":"tenant-1","trunk_id":"trunk-1","environment_id":"environment-1","host":"sip.carrier.example","port":5061,"transport":"tls","srtp_required":true,"username":"carrier-user","password":"secret"}`))
+	}))
+	defer server.Close()
+
+	cache := NewConfigCacheWithTenantURL("", server.URL, time.Minute, "gateway-test-token")
+	config, err := cache.TenantTrunk(context.Background(), "tenant-1", "trunk-1", "environment-1")
+	if err != nil {
+		t.Fatalf("cannot read the tenant trunk configuration: %v", err)
+	}
+	if config.TenantID != "tenant-1" || config.TrunkID != "trunk-1" ||
+		config.Host != "sip.carrier.example" || config.Username != "carrier-user" ||
+		config.Password != "secret" || config.Transport != "tls" || !config.SRTPRequired {
+		t.Fatalf("unexpected tenant trunk configuration %+v", config)
+	}
+	if _, err := cache.TenantTrunk(context.Background(), "tenant-1", "trunk-1", "environment-1"); err != nil {
+		t.Fatalf("cannot read cached tenant trunk configuration: %v", err)
+	}
+	if hits.Load() != 1 {
+		t.Fatalf("the scoped config endpoint must be asked once; got %d hits", hits.Load())
+	}
+}
+
+func TestConfigCacheRejectsAResponseForAnotherTrunk(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"tenant_id":"tenant-1","trunk_id":"trunk-other","host":"sip.carrier.example","port":5061,"transport":"tls","srtp_required":true,"username":"carrier-user","password":"secret"}`))
+	}))
+	defer server.Close()
+
+	cache := NewConfigCacheWithTenantURL("", server.URL, time.Minute, "gateway-test-token")
+	if _, err := cache.TenantTrunk(context.Background(), "tenant-1", "trunk-1", ""); err == nil {
+		t.Fatal("the gateway must reject a profile for a different trunk")
+	}
+}
+
+func TestConfigCacheRequiresABearerToken(t *testing.T) {
+	var hits int
+	server := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+		hits++
+	}))
+	defer server.Close()
+
+	cache := NewConfigCache(server.URL, time.Minute, "")
+	if _, err := cache.Trunk(context.Background()); err == nil {
+		t.Fatal("a configured endpoint without a bearer token must fail closed")
+	}
+	if hits != 0 {
+		t.Fatal("the application must not be contacted without a bearer token")
+	}
+}
+
 func TestConfigCacheWithoutAnApplicationIsEmpty(t *testing.T) {
-	cache := NewConfigCache("", time.Minute)
+	cache := NewConfigCache("", time.Minute, "")
 	if cache.Configured() {
 		t.Fatal("a cache without a URL has nothing to ask")
 	}
@@ -323,7 +421,7 @@ func TestConfigCacheReportsAFailingApplication(t *testing.T) {
 	}))
 	defer server.Close()
 
-	cache := NewConfigCache(server.URL, time.Minute)
+	cache := NewConfigCache(server.URL, time.Minute, "gateway-test-token")
 	if _, err := cache.Trunk(context.Background()); err == nil {
 		t.Fatal("a failing application must be reported")
 	}

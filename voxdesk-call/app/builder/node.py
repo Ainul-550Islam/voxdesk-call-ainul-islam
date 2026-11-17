@@ -32,6 +32,9 @@ FLOW_NODE_TYPES: frozenset[str] = frozenset(
         "extract_variables",
         "end",
         "subagent",
+        # PART 12 (P12-18/P12-20): sandboxed code and reusable components
+        "code",
+        "component",
     }
 )
 
@@ -72,6 +75,19 @@ EQUATION_OPERATORS: frozenset[str] = frozenset(
         "matches",
     }
 )
+
+#: PART 12 (P12-17) — when an "always" edge is taken relative to the caller's reply.
+EDGE_TIMINGS: frozenset[str] = frozenset({"after_user_response", "skip_user_response"})
+
+#: PART 12 (P12-19) — rigid flows only follow declared edges; flex flows let the LLM choose among
+#: the nodes reachable from here.
+FLOW_GRAPH_MODES: frozenset[str] = frozenset({"rigid", "flex"})
+
+#: A flex flow is a navigation problem, not a graph: above this size the model picks badly.
+MAX_FLEX_NODES = 20
+
+#: PART 12 (P12-20) — how a component binding is kept in step with its source.
+COMPONENT_SYNC_MODES: frozenset[str] = frozenset({"snapshot", "live-sync"})
 
 EDGE_CONDITION_KINDS: frozenset[str] = frozenset(
     {"always", "equation", "prompt", "default", "else"}
@@ -258,11 +274,17 @@ class EdgeCondition:
     prompt: str | None = None
     expression: str | None = None
     label: str | None = None
+    #: `after_user_response` (default, the pre-PART-12 behaviour) waits for the caller to reply
+    #: before moving on; `skip_user_response` is for chained logic the caller never sees.
+    timing: str = "after_user_response"
 
     def __post_init__(self) -> None:
         self.kind = str(self.kind or "always").strip().lower()
         if self.kind not in EDGE_CONDITION_KINDS:
             self.kind = "always"
+        self.timing = str(self.timing or "after_user_response").strip().lower()
+        if self.timing not in EDGE_TIMINGS:
+            self.timing = "after_user_response"
         self.match_mode = "any" if str(self.match_mode).lower() == "any" else "all"
         if self.kind == "equation" and not self.equations and self.expression:
             self.equations = EquationClause.parse_expression(self.expression)
@@ -298,6 +320,10 @@ class EdgeCondition:
         errors: list[str] = []
         if self.kind not in EDGE_CONDITION_KINDS:
             errors.append(f"edge condition kind '{self.kind}' is invalid")
+        if self.timing not in EDGE_TIMINGS:
+            errors.append(
+                f"edge condition timing '{self.timing}' must be one of {sorted(EDGE_TIMINGS)}"
+            )
         if self.kind == "equation":
             clauses = list(self.equations)
             if not clauses and self.expression:
@@ -319,6 +345,7 @@ class EdgeCondition:
             "prompt": self.prompt,
             "expression": self.expression,
             "label": self.label,
+            "timing": self.timing,
         }
 
     @classmethod
@@ -346,6 +373,7 @@ class EdgeCondition:
             prompt=str(prompt) if prompt is not None else None,
             expression=str(expr) if expr is not None else None,
             label=str(data["label"]) if data.get("label") is not None else None,
+            timing=str(data.get("timing") or "after_user_response"),
         )
 
 
@@ -501,6 +529,14 @@ class GlobalNodeConfig:
     prompt: str = ""
     equations: list[EquationClause] = field(default_factory=list)
     return_to_previous: bool = False
+    #: PART 12 (P12-19): where to resume after the global node finishes. Empty means "the node we
+    #: came from" (the legacy `return_to_previous` behaviour), which is why both exist.
+    return_path: str = ""
+    #: How many conversational steps must pass before this global node may fire again. Stops a
+    #: reminder global node from re-triggering on the very turn that answered it.
+    cooldown_steps: int = 0
+    #: Optional example utterances shown to the trigger judge.
+    examples: list[str] = field(default_factory=list)
 
     def validate(self, node_id: str) -> list[str]:
         errors: list[str] = []
@@ -522,6 +558,12 @@ class GlobalNodeConfig:
             errors.append(
                 f"global node '{node_id}' condition_type '{self.condition_type}' must be 'prompt' or 'equation'"
             )
+        if self.cooldown_steps < 0:
+            errors.append(f"global node '{node_id}' cooldown_steps cannot be negative")
+        if self.cooldown_steps > 50:
+            errors.append(f"global node '{node_id}' cooldown_steps cannot exceed 50")
+        if self.return_path and not re.fullmatch(r"[A-Za-z0-9_.:-]{1,64}", self.return_path):
+            errors.append(f"global node '{node_id}' return_path '{self.return_path}' is not a node id")
         return errors
 
     def to_dict(self) -> dict[str, Any]:
@@ -531,6 +573,9 @@ class GlobalNodeConfig:
             "prompt": self.prompt,
             "equations": [eq.to_dict() for eq in self.equations],
             "return_to_previous": self.return_to_previous,
+            "return_path": self.return_path,
+            "cooldown_steps": self.cooldown_steps,
+            "examples": list(self.examples),
         }
 
     @classmethod
@@ -561,6 +606,9 @@ class GlobalNodeConfig:
             prompt=prompt_val,
             equations=eqs,
             return_to_previous=bool(data.get("return_to_previous", False)),
+            return_path=str(data.get("return_path") or ""),
+            cooldown_steps=int(data.get("cooldown_steps") or 0),
+            examples=[str(item) for item in (data.get("examples") or []) if str(item).strip()],
         )
 
 
@@ -662,6 +710,7 @@ class FlowNode:
         global_config: GlobalNodeConfig | dict[str, Any] | None = None,
         model_override: ModelOverride | dict[str, Any] | None = None,
         voice_override: VoiceOverride | dict[str, Any] | None = None,
+        responsiveness_override: float | None = None,
     ) -> None:
         self.node_type = str(node_type).strip()
         self.params: dict[str, Any] = dict(params or {})
@@ -696,6 +745,23 @@ class FlowNode:
             )
         else:
             self.global_config = None
+
+        # PART 12 (P12-16): per-node turn-taking. `None` means "inherit the agent's setting", which
+        # is different from 0.0 ("as fast as the VAD allows"), so it must stay nullable.
+        raw_responsiveness = (
+            responsiveness_override
+            if responsiveness_override is not None
+            else self.params.get("responsiveness_override")
+        )
+        if raw_responsiveness is None or raw_responsiveness == "":
+            self.responsiveness_override: float | None = None
+        else:
+            try:
+                self.responsiveness_override = float(raw_responsiveness)
+            except (TypeError, ValueError):
+                # Keep an invalid sentinel so validation can reject the input instead
+                # of silently treating it as "inherit".
+                self.responsiveness_override = -1.0
 
         raw_model = model_override or self.params.get("model_override")
         self.model_override: ModelOverride | None = (
@@ -900,6 +966,8 @@ class FlowNode:
             out["model_override"] = self.model_override.to_dict()
         if self.voice_override is not None:
             out["voice_override"] = self.voice_override.to_dict()
+        if self.responsiveness_override is not None:
+            out["responsiveness_override"] = self.responsiveness_override
         return out
 
     @classmethod
@@ -919,6 +987,10 @@ class FlowNode:
             "url",
             "endpoint_url",
             "http_method",
+            "code",
+            "source",
+            "input",
+            "payload",
             "result_variable",
             "destination",
             "transfer_mode",
@@ -935,6 +1007,9 @@ class FlowNode:
             "equations",
             "expression",
             "greeting",
+            "component_id",
+            "version",
+            "sync_mode",
         ):
             if key in data and key not in params:
                 params[key] = data[key]
@@ -954,6 +1029,7 @@ class FlowNode:
             global_config=global_cfg if isinstance(global_cfg, (Mapping, GlobalNodeConfig)) else None,
             model_override=model_ov if isinstance(model_ov, (Mapping, ModelOverride)) else None,
             voice_override=voice_ov if isinstance(voice_ov, (Mapping, VoiceOverride)) else None,
+            responsiveness_override=data.get("responsiveness_override"),
         )
 
 
@@ -969,6 +1045,14 @@ class FlowGraph:
     default_voice: VoiceOverride | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
     version: int = 1
+    #: `rigid` = declared edges only (the only behaviour before PART 12); `flex` = the LLM chooses
+    #: among reachable nodes. Default stays `rigid` so an existing flow cannot change by upgrading.
+    mode: str = "rigid"
+
+    def __post_init__(self) -> None:
+        self.mode = str(self.mode or "rigid").strip().lower()
+        if self.mode not in FLOW_GRAPH_MODES:
+            self.mode = "rigid"
 
     def node_map(self) -> dict[str, FlowNode]:
         return {node.node_id: node for node in self.nodes}
@@ -1040,6 +1124,7 @@ class FlowGraph:
             "initial_variables": dict(self.initial_variables),
             "variables": [v.to_dict() for v in self.variables],
             "metadata": dict(self.metadata),
+            "mode": self.mode,
         }
         if self.default_model is not None:
             out["default_model"] = self.default_model.to_dict()
@@ -1080,6 +1165,7 @@ class FlowGraph:
             default_model=ModelOverride.from_dict(data.get("default_model")),
             default_voice=VoiceOverride.from_dict(data.get("default_voice")),
             metadata=dict(data.get("metadata") or {}),
+            mode=str(data.get("mode") or "rigid"),
             version=int(data.get("version", 1)),
         )
 
@@ -1095,6 +1181,11 @@ def export_flow_json_schema() -> dict[str, Any]:
         "additionalProperties": False,
         "properties": {
             "version": {"type": "integer", "minimum": 1, "default": 1},
+            "mode": {
+                "type": "string",
+                "enum": sorted(FLOW_GRAPH_MODES),
+                "default": "rigid",
+            },
             "nodes": {
                 "type": "array",
                 "minItems": 1,
@@ -1157,6 +1248,11 @@ def export_flow_json_schema() -> dict[str, Any]:
                     "prompt": {"type": ["string", "null"]},
                     "expression": {"type": ["string", "null"]},
                     "label": {"type": ["string", "null"]},
+                    "timing": {
+                        "type": "string",
+                        "enum": sorted(EDGE_TIMINGS),
+                        "default": "after_user_response",
+                    },
                 },
             },
             "ModelOverride": {
@@ -1237,6 +1333,18 @@ def export_flow_json_schema() -> dict[str, Any]:
                         "default": [],
                     },
                     "return_to_previous": {"type": "boolean", "default": False},
+                    "return_path": {"type": "string", "default": ""},
+                    "cooldown_steps": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 50,
+                        "default": 0,
+                    },
+                    "examples": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "default": [],
+                    },
                 },
             },
             "FlowNode": {
@@ -1267,6 +1375,11 @@ def export_flow_json_schema() -> dict[str, Any]:
                     "global_config": {"$ref": "#/$defs/GlobalNodeConfig"},
                     "model_override": {"$ref": "#/$defs/ModelOverride"},
                     "voice_override": {"$ref": "#/$defs/VoiceOverride"},
+                    "responsiveness_override": {
+                        "type": ["number", "null"],
+                        "minimum": 0.0,
+                        "maximum": 1.0,
+                    },
                 },
             },
             "FlowEdge": {

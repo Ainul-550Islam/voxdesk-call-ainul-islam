@@ -518,7 +518,13 @@ async def create_web_call(
         started_at=now,
         agent_id=agent_row.id,
         agent_version_id=explicit_version_row.id if explicit_version_row is not None else None,
-        transfer_context={},
+        transfer_context={
+            "channel": "web",
+            "direction": "web",
+            "transport": transport_norm,
+            "dynamic_variables": dict(dynamic_vars or {}),
+            "metadata": dict(metadata or {}),
+        },
     )
     session.add(call)
     await session.flush()
@@ -543,19 +549,21 @@ async def create_web_call(
         ttl_seconds=ttl_seconds,
     )
 
-    context_payload: dict[str, Any] = {
-        "channel": "web",
-        "direction": "web",
-        "transport": transport_norm,
-        "web_call_token_jti": jti,
-        "web_call_token_consumed": False,
-        "web_call_token_expires_at": expires_at.isoformat(),
-        "allowed_origin": normalized_origin,
-        "public_key_id": str(public_key_id) if public_key_id else None,
-        "dynamic_variables": dict(dynamic_vars or {}),
-        "metadata": dict(metadata or {}),
-        "agent_version_number": runtime_cfg.agent_version_number or 1,
-    }
+    context_payload: dict[str, Any] = dict(call.transfer_context or {})
+    context_payload.update(
+        {
+            "channel": "web",
+            "direction": "web",
+            "transport": transport_norm,
+            "web_call_token_jti": jti,
+            "web_call_token_consumed": False,
+            "web_call_token_expires_at": expires_at.isoformat(),
+            "allowed_origin": normalized_origin,
+            "public_key_id": str(public_key_id) if public_key_id else None,
+            "metadata": dict(metadata or {}),
+            "agent_version_number": runtime_cfg.agent_version_number or 1,
+        }
+    )
     call.transfer_context = context_payload
 
     receipt = RequestIdempotencyReceipt(

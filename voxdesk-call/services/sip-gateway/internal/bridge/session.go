@@ -54,6 +54,7 @@ type Session struct {
 
 	mu       sync.Mutex
 	ended    bool
+	active   bool
 	cancel   context.CancelFunc
 	closeOne sync.Once
 	done     chan struct{}
@@ -83,12 +84,18 @@ func (s *Session) Done() <-chan struct{} {
 // Run pumps the application events into the peer until the context ends or
 // the bridge closes.
 func (s *Session) Run(ctx context.Context) error {
-	if s.metrics != nil {
-		s.metrics.Set(MetricCallsActive, map[string]string{}, 1)
-	}
 	runCtx, cancel := context.WithCancel(ctx)
 	s.mu.Lock()
+	if s.ended {
+		s.mu.Unlock()
+		cancel()
+		return fmt.Errorf("bridge: the media session has already ended")
+	}
 	s.cancel = cancel
+	s.active = true
+	if s.metrics != nil {
+		s.metrics.AddGauge(MetricCallsActive, map[string]string{}, 1)
+	}
 	s.mu.Unlock()
 	defer cancel()
 	go func() {
@@ -178,13 +185,17 @@ func (s *Session) finish() {
 	s.closeOne.Do(func() {
 		s.mu.Lock()
 		s.ended = true
+		active := s.active
+		s.active = false
 		cancel := s.cancel
 		s.mu.Unlock()
 		if cancel != nil {
 			cancel()
 		}
 		if s.metrics != nil {
-			s.metrics.Add(MetricCallsActive, map[string]string{}, -1)
+			if active {
+				s.metrics.AddGauge(MetricCallsActive, map[string]string{}, -1)
+			}
 			s.metrics.Inc(MetricSessionEnds, map[string]string{})
 		}
 		_ = s.bridge.SendStop()
@@ -233,6 +244,27 @@ func NewRTPPeer(
 // LocalAddr returns the address the RTP socket is bound to.
 func (p *RTPPeer) LocalAddr() *net.UDPAddr {
 	return p.session.LocalAddr()
+}
+
+// SetCaptureLocalIP records the externally advertised address in PCAP headers
+// when the RTP socket is bound to a wildcard interface.
+func (p *RTPPeer) SetCaptureLocalIP(ip net.IP) {
+	p.session.SetCaptureLocalIP(ip)
+}
+
+// Capture records this call's RTP/RTCP datagrams for the requested window.
+func (p *RTPPeer) Capture(
+	ctx context.Context,
+	seconds int,
+	snaplen int,
+	direction string,
+) (rtp.CaptureResult, error) {
+	return p.session.Capture(ctx, seconds, snaplen, direction)
+}
+
+// RecordPacket adds a call-associated SIP packet to the active capture.
+func (p *RTPPeer) RecordPacket(src, dst *net.UDPAddr, payload []byte, direction string) {
+	p.session.RecordPacket(src, dst, payload, direction)
 }
 
 // Packets returns the RTP packets of the peer in sequence order.

@@ -61,7 +61,7 @@ export default function GovernancePage() {
         {policies.length === 0 ? (
           <p className="muted">No policies. Backend: app/governance/policy.py, service.py, repository.py</p>
         ) : (
-          <div className="table-wrap">
+          <div className="table-wrap" tabIndex={0} role="region" aria-label="Data table">
             <table>
               <thead>
                 <tr>
@@ -94,7 +94,7 @@ export default function GovernancePage() {
         {reviews.length === 0 ? (
           <p className="muted">No review cases. Backend: app/review/service.py, repository.py, routes.py</p>
         ) : (
-          <div className="table-wrap">
+          <div className="table-wrap" tabIndex={0} role="region" aria-label="Data table">
             <table>
               <thead>
                 <tr>
@@ -127,7 +127,7 @@ export default function GovernancePage() {
         {evidence.length === 0 ? (
           <p className="muted">No evidence yet. Backend: app/governance/evidence.py, hashing.py</p>
         ) : (
-          <div className="table-wrap">
+          <div className="table-wrap" tabIndex={0} role="region" aria-label="Data table">
             <table>
               <thead>
                 <tr>

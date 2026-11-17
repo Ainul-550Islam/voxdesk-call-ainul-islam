@@ -1,0 +1,144 @@
+id: debt_collection
+name: Debt Collection
+vertical: finance
+summary: >-
+  Identifies itself, states the debt, captures a promise to pay, and records a dispute. Calling windows, identification wording and opt-out handling are supplied by counsel per jurisdiction.
+config:
+  voice: configured-default
+  language: en-US
+  first_message: >-
+    This is an automated call from {{creditor_name}} about an outstanding balance. Is now a good time?
+  llm_model: gpt-4o-mini
+  max_call_seconds: 600
+  end_call_after_silence_seconds: 12
+
+tools:
+  - name: record_promise_or_dispute
+    description: Write the promised date or the dispute reason to the account, with the call id.
+    params:
+      account_ref: {type: string}
+      promise_date: {type: string}
+      dispute_reason: {type: string}
+
+dynamic_variables:
+  - name: creditor_name
+    type: string
+    purpose: >-
+      The creditor's name as it must be spoken in the disclosure. Supplied by the tenant, never invented.
+    required: true
+    examples: ['"Northwind Services"']
+  - name: identity_confirmed
+    type: boolean
+    purpose: >-
+      Whether the person confirmed they are the named debtor. Nothing about the debt is said before this is true.
+    required: true
+    examples: [true, false]
+  - name: promise_to_pay_date
+    type: string
+    purpose: >-
+      The date the debtor promises to pay, read back to them to confirm.
+    required: false
+    examples: ['"the 30th"', '"next Friday"']
+  - name: dispute_reason
+    type: string
+    purpose: >-
+      If they dispute the debt, their reason in their own words.
+    required: false
+    examples: ['"I already paid this"']
+
+flow:
+  mode: rigid
+  nodes:
+    - id: start
+      node_type: start
+      params: {}
+    - id: disclose
+      node_type: conversation
+      params:
+        prompt: "State who is calling, that it is an attempt to collect a debt, and that any information will be used for that purpose. Keep it exact — do not paraphrase the disclosure."
+    - id: verify
+      node_type: extract_variables
+      params:
+        variables:
+          - {'name': 'identity_confirmed', 'type': 'boolean', 'required': True}
+    - id: gate
+      node_type: logic_split
+      params:
+        equations:
+          - {'variable': 'identity_confirmed', 'operator': '==', 'value': 'true'}
+    - id: capture
+      node_type: extract_variables
+      params:
+        variables:
+          - {'name': 'promise_to_pay_date', 'type': 'string', 'required': False}
+          - {'name': 'dispute_reason', 'type': 'string', 'required': False}
+    - id: record
+      node_type: function
+      params:
+        tool_name: record_promise_or_dispute
+    - id: transfer
+      node_type: transfer
+      params:
+        destination: "collections-human"
+        transfer_mode: "warm"
+    - id: end
+      node_type: end
+      params: {}
+  edges:
+    - id: e1
+      source_id: start
+      target_id: disclose
+    - id: e2
+      source_id: disclose
+      target_id: verify
+    - id: e3
+      source_id: verify
+      target_id: gate
+    - id: e4
+      source_id: gate
+      target_id: capture
+    - id: e5
+      source_id: gate
+      target_id: end
+    - id: e6
+      source_id: capture
+      target_id: record
+    - id: e7
+      source_id: record
+      target_id: transfer
+    - id: e8
+      source_id: transfer
+      target_id: end
+
+analysis_schema:
+  fields:
+    - name: outcome
+      type: enum
+      values: [promise, dispute, refusal, wrong_party, no_contact]
+    - name: promise_to_pay_date
+      type: string
+    - name: dispute_reason
+      type: string
+
+simulation_cases:
+  - name: identity gate keeps debt details from the wrong person
+    turns:
+      - "who is this"
+      - "no that is my brother"
+    expect_node: end
+    expect_variables:
+      identity_confirmed: false
+  - name: a promise to pay is recorded
+    turns:
+      - "yes this is me"
+      - "I will pay on the 30th"
+    expect_node: record
+
+kb_placeholders:
+  - "debt-policy.md — what may and may not be said about the debt"
+  - "dispute-process.md — where a dispute goes after this call"
+
+compliance_notes:
+  - "Counsel must supply, per jurisdiction: calling windows, the exact identification and mini-Miranda disclosure wording, opt-out handling, and whether voicemail may be left at all. This template implements the mechanism, not the legal rules."
+  - "State rules are left to counsel by the plan's own instruction. Do not add a jurisdiction's rules here without a citation."
+  - "If identity is not confirmed, the call ends without disclosing the debt. That is not a failure mode; it is the requirement."

@@ -34,6 +34,7 @@ import enum
 import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from pathlib import Path
 
 import structlog
 from sqlalchemy import select
@@ -52,7 +53,7 @@ from app.db.models import (
 )
 from app.telephony import call_state, phone
 from app.telephony.provider import TelephonyProvider, get_provider
-from app.telephony.transfer import transfer_twiml
+from app.telephony.transfer import transfer_twiml, transfer_whisper_url
 
 log = structlog.get_logger()
 
@@ -85,6 +86,7 @@ INFERRED_PREFIX = "inferred: "
 class TransferError(str, enum.Enum):
     NO_DESTINATION = "no_destination"
     INVALID_DESTINATION = "invalid_destination"
+    COUNTRY_NOT_ALLOWED = "country_not_allowed"
     CALL_ALREADY_ENDED = "call_already_ended"
     CALL_NOT_TRANSFERABLE = "call_not_transferable"
     PROVIDER_ERROR = "provider_error"
@@ -284,6 +286,81 @@ async def request_transfer(
         await session.commit()
         return _fail_result(dest_error, call.transfer_state)
 
+    if destination.startswith("+"):
+        from app.db.telephony_models import TelephonyPhoneNumber
+        from app.telephony.country_policy import decide_for_session
+
+        source_number_id = await session.scalar(
+            select(TelephonyPhoneNumber.id)
+            .where(
+                TelephonyPhoneNumber.tenant_id == tenant.id,
+                TelephonyPhoneNumber.e164_number == call.from_number,
+            )
+            .limit(1)
+        )
+        decision = await decide_for_session(
+            session,
+            tenant.id,
+            destination,
+            stage="transfer",
+            number_id=str(source_number_id) if source_number_id is not None else None,
+            agent_id=str(call.agent_id) if call.agent_id is not None else None,
+        )
+        if not decision.allowed:
+            await _record_failure(
+                session,
+                call,
+                "country_policy_denied",
+                error=TransferError.COUNTRY_NOT_ALLOWED,
+            )
+            log.warning(
+                "transfer_failed",
+                reason="country_policy_denied",
+                country=decision.country,
+                matched_scope=decision.matched_scope,
+                **log_ctx,
+            )
+            await session.commit()
+            return _fail_result(TransferError.COUNTRY_NOT_ALLOWED, call.transfer_state)
+
+    # The Twilio redirect path can honor E.164, a private called-party
+    # whisper, and AMD gating. Use the v2 planner for that supported subset;
+    # conference hold music and three-way bridging remain unavailable here.
+    try:
+        plan = plan_transfer_v2(
+            tenant,
+            call,
+            destination=destination,
+            style="whisper",
+            caller_id_mode="agent",
+            hold_music=False,
+            require_human=True,
+            reason=reason,
+            whisper=whisper,
+        )
+    except TransferDestinationError as exc:
+        await _record_failure(
+            session,
+            call,
+            "transfer_v2_plan_rejected",
+            error=TransferError.INVALID_DESTINATION,
+        )
+        log.warning("transfer_failed", reason="transfer_v2_plan_rejected", code=exc.code, **log_ctx)
+        await session.commit()
+        return _fail_result(TransferError.INVALID_DESTINATION, call.transfer_state)
+
+    # The country policy above must apply to the exact number sent to the
+    # carrier. If the planner ever changes normalization behavior, fail closed.
+    if plan.destination.kind != "e164" or plan.destination.resolved != destination:
+        await _record_failure(
+            session,
+            call,
+            "transfer_v2_plan_destination_mismatch",
+            error=TransferError.INVALID_DESTINATION,
+        )
+        await session.commit()
+        return _fail_result(TransferError.INVALID_DESTINATION, call.transfer_state)
+
     # -- 4. record intent (REQUESTED) --------------------------------------
     now = datetime.now(timezone.utc)
     call.escalated = True
@@ -294,6 +371,13 @@ async def request_transfer(
     call.transfer_reason = _redact_reason_for_storage(reason)
     call.transfer_attempts += 1
     call.transfer_error = None
+    transfer_context = dict(call.transfer_context or {})
+    transfer_context["transfer_v2"] = {
+        "style": plan.style,
+        "require_human": plan.require_human,
+        "whisper": plan.whisper or "",
+    }
+    call.transfer_context = transfer_context
     await add_system_event(session, call, SYSTEM_EVENT["requested"])
     # Committed before touching the provider so that if the process dies
     # mid-redirect we still know a transfer was attempted.
@@ -308,12 +392,14 @@ async def request_transfer(
 
     # -- 5. perform the actual transfer ------------------------------------
     twiml = transfer_twiml(
-        destination,
-        whisper=whisper if whisper is not None else _default_whisper(tenant, reason),
-        caller_id=phone.try_normalize(tenant.twilio_number),
+        plan.destination.resolved,
+        whisper=plan.whisper or "",
+        caller_id=plan.caller_id,
         timeout=timeout_seconds,
         answer_on_bridge=answer_on_bridge,
         record=bool(tenant.record_calls),
+        whisper_url=transfer_whisper_url(call.id),
+        require_human=plan.require_human,
     )
     result = await provider.redirect_call(call.call_sid, twiml)
 
@@ -324,6 +410,8 @@ async def request_transfer(
             f"{result.error_code}: {result.error_message}"[:300],
             error=TransferError.PROVIDER_ERROR,
         )
+        if dict((call.transfer_context or {}).get("transfer_v2") or {}):
+            await record_transfer_v2_event(session, call, "cancelled", detail="provider_error")
         await session.commit()
         # Provider detail is logged, not spoken and not returned to the LLM.
         log.error(
@@ -341,6 +429,7 @@ async def request_transfer(
     transition_result = call_state.apply_status(call, CallStatus.TRANSFERRED, source="transfer_service")
     await call_state.publish_transition(session, call, transition_result)
     await add_system_event(session, call, SYSTEM_EVENT["started"])
+    await record_transfer_v2_event(session, call, "started")
     await session.commit()
 
     log.info("transfer_started", destination=phone.redact(destination), **log_ctx)
@@ -371,6 +460,17 @@ async def mark_transfer_connected(session: AsyncSession, call: Call) -> bool:
     is allowed to be corrected here. A failure the provider actually reported
     is not.
     """
+    transfer_v2 = dict((call.transfer_context or {}).get("transfer_v2") or {})
+    if transfer_v2.get("require_human") and transfer_v2.get("human_verified") is not True:
+        log.warning(
+            "transfer_callback",
+            callback="connected",
+            reason="human_not_confirmed",
+            call_id=str(call.id),
+            call_sid=call.call_sid,
+        )
+        return False
+
     if call.transfer_state is TransferState.CONNECTED:
         log.info(
             "transfer_callback",
@@ -408,6 +508,13 @@ async def mark_transfer_connected(session: AsyncSession, call: Call) -> bool:
     call.transfer_state = TransferState.CONNECTED
     call.transfer_completed_at = datetime.now(timezone.utc)
     await add_system_event(session, call, SYSTEM_EVENT["connected"])
+    transfer_v2 = dict((call.transfer_context or {}).get("transfer_v2") or {})
+    if transfer_v2:
+        await record_transfer_v2_event(session, call, "bridged")
+        if call_state.is_terminal(call.status):
+            # The parent completed before its authoritative dial-leg callback;
+            # backfill the final stage after the verified bridge is recovered.
+            await record_transfer_v2_event(session, call, "ended")
     from app.webhooks.call_event_bridge import publish_call_event
     await publish_call_event(session, call, "transfer_completed")
     log.info(
@@ -447,6 +554,11 @@ async def mark_transfer_failed(session: AsyncSession, call: Call, reason: str) -
         return False
 
     await _record_failure(session, call, reason, error=None)
+    transfer_v2 = dict((call.transfer_context or {}).get("transfer_v2") or {})
+    if transfer_v2 and not reason.startswith(INFERRED_PREFIX):
+        await record_transfer_v2_event(
+            session, call, "cancelled", detail=_safe_whisper_reason(reason)
+        )
     reason_code = reason.lower() if reason.lower() in {"busy", "no-answer", "failed", "canceled", "cancelled"} else "provider_reported"
     log.info(
         "transfer_failed",
@@ -744,3 +856,229 @@ async def abort_warm_transfer_to_ai(
         "returned_to_ai": True,
         "fallback_message": warm_meta["fallback_message"],
     }
+
+
+# ===========================================================================
+# PART 13 / P13-09 — transfers v2
+# ===========================================================================
+#
+# The v1 transfer could dial one number and whisper one sentence. A real
+# handoff needs four more things, and each of them is a decision the tenant
+# makes rather than something the code should guess:
+#
+# * the destination may be an E.164 number, an internal extension or a SIP URI;
+# * the transfer leg may land on voicemail, so the answer has to be *classified*
+#   before the caller is bridged into a recording;
+# * the caller hears hold music while the human's phone rings;
+# * the human may want a private whisper or an open three-way call, and the
+#   caller ID they see may be the agent's number or the original caller's.
+#
+# The planner is side-effect free. `request_transfer` consumes only the
+# verified Twilio subset (E.164, caller ID, private whisper and AMD); conference
+# hold music and three-way bridging remain unsupported in that execution path.
+# Plan output alone is never evidence that a provider capability is deployed.
+
+SIP_URI_PATTERN = re.compile(r"^sips?:(?P<user>[^@\s]+)@(?P<host>[A-Za-z0-9.\-]+)(?::(?P<port>\d{1,5}))?$")
+EXTENSION_PATTERN = re.compile(r"^\d{2,6}$")
+
+TRANSFER_STYLES = ("whisper", "three_way")
+CALLER_ID_MODES = ("agent", "original")
+TRANSFER_EVENTS_V2 = ("started", "bridged", "cancelled", "ended")
+
+# Twilio <Conference waitUrl> accepts TwiML, MP3, or WAV; keep a PCM WAV
+# variant for that HTTP delivery path. The Ogg source remains in assets/hold
+# for media pipelines that support it, but must not be advertised to Twilio.
+HOLD_MUSIC_PATH = Path(__file__).resolve().parents[2] / "assets" / "hold" / "loop-default.wav"
+HOLD_MUSIC_LICENCE = HOLD_MUSIC_PATH.with_name("loop-default.LICENSE.txt")
+
+
+class TransferDestinationError(Exception):
+    """A destination the provider must not be asked to dial."""
+
+    def __init__(self, code: str, message: str) -> None:
+        super().__init__(message)
+        self.code = code
+
+
+@dataclass(frozen=True)
+class Destination:
+    kind: str
+    raw: str
+    #: What the provider dials: an E.164 number or a SIP URI.
+    resolved: str
+
+    def as_dict(self) -> dict:
+        return {"kind": self.kind, "raw": self.raw, "resolved": self.resolved}
+
+
+def parse_transfer_destination(
+    raw: str | None, *, extensions: dict[str, str] | None = None
+) -> Destination:
+    """Classify a destination and resolve an extension to something dialable.
+
+    An extension that is not in the tenant's directory is an error, not a
+    fallback: dialling an unknown extension reaches whoever happens to have it,
+    which is the worst possible outcome for a customer call.
+    """
+    text = (raw or "").strip()
+    if not text:
+        raise TransferDestinationError("no_destination", "no transfer destination is configured")
+    if SIP_URI_PATTERN.match(text):
+        return Destination("sip_uri", text, text)
+    if text.lower().startswith(("sip:", "sips:")):
+        # Looks like a URI but is not one. The shared normaliser would happily
+        # hand "sip:no-host" back unchanged, which would then be dialled.
+        raise TransferDestinationError(
+            "invalid_destination", f"{text!r} is not a valid SIP URI"
+        )
+    if EXTENSION_PATTERN.match(text):
+        number = (extensions or {}).get(text)
+        if not number:
+            raise TransferDestinationError(
+                "unknown_extension", f"extension {text} is not in the tenant directory"
+            )
+        return Destination("extension", text, phone.normalize(number))
+    try:
+        return Destination("e164", text, phone.normalize(text))
+    except phone.InvalidPhoneNumber as exc:
+        raise TransferDestinationError(
+            "invalid_destination", "the destination is neither E.164, an extension nor a SIP URI"
+        ) from exc
+
+
+def caller_id_for(mode: str, tenant: Tenant, call: Call) -> str | None:
+    """Which number the human sees: the agent's, or the original caller's."""
+    if mode not in CALLER_ID_MODES:
+        raise TransferDestinationError("invalid_caller_id_mode", f"unknown caller ID mode {mode!r}")
+    if mode == "original":
+        return call.from_number
+    return phone.try_normalize(tenant.twilio_number)
+
+
+def hold_music_available() -> bool:
+    """True when the shipped loop and its licence are both present."""
+    return HOLD_MUSIC_PATH.is_file() and HOLD_MUSIC_LICENCE.is_file()
+
+
+def amd_classify(raw: dict | None) -> str:
+    """Classify an answering-machine detection result.
+
+    Providers disagree on the vocabulary and one of them reports nothing at
+    all. ``"unknown"`` is therefore a real answer: it means "we could not tell",
+    and the caller is bridged only because the tenant asked us to bridge anyway.
+    """
+    if not raw:
+        return "unknown"
+    value = str(raw.get("result") or raw.get("AnsweredBy") or raw.get("status") or "").strip().lower()
+    if value in ("human", "answered_by_human"):
+        return "human"
+    if value.startswith("machine") or value in ("fax", "voicemail", "unknown_machine"):
+        return "machine"
+    return "unknown"
+
+
+def human_leg_verdict(amd_raw: dict | None, *, require_human: bool) -> tuple[bool, str]:
+    """Should the caller be bridged to this leg?"""
+    verdict = amd_classify(amd_raw)
+    if verdict == "machine":
+        return False, "machine_detected"
+    if verdict == "unknown" and require_human:
+        # We could not prove a person answered. Bridging anyway is how a caller
+        # ends up talking to a voicemail greeting, so ask the tenant to opt in.
+        return False, "human_not_confirmed"
+    return True, "human" if verdict == "human" else "unverified"
+
+
+@dataclass(frozen=True)
+class TransferV2Plan:
+    destination: Destination
+    style: str
+    caller_id_mode: str
+    caller_id: str | None
+    hold_music: bool
+    hold_music_asset: str | None
+    require_human: bool
+    whisper: str | None
+    three_way_message: str | None
+    events: tuple[str, ...]
+
+    def as_dict(self) -> dict:
+        return {
+            "destination": self.destination.as_dict(),
+            "style": self.style,
+            "caller_id_mode": self.caller_id_mode,
+            "caller_id": self.caller_id,
+            "hold_music": self.hold_music,
+            "hold_music_asset": self.hold_music_asset,
+            "require_human": self.require_human,
+            "whisper": self.whisper,
+            "three_way_message": self.three_way_message,
+            "events": list(self.events),
+        }
+
+
+def plan_transfer_v2(
+    tenant: Tenant,
+    call: Call,
+    *,
+    destination: str | None = None,
+    style: str = "whisper",
+    caller_id_mode: str = "agent",
+    hold_music: bool = True,
+    require_human: bool = True,
+    extensions: dict[str, str] | None = None,
+    whisper: str | None = None,
+    three_way_message: str | None = None,
+    reason: str = "caller asked for a person",
+) -> TransferV2Plan:
+    """Compute everything the provider call needs, without dialling."""
+    if style not in TRANSFER_STYLES:
+        raise TransferDestinationError("invalid_style", f"unknown transfer style {style!r}")
+    target = parse_transfer_destination(destination or tenant.escalation_number, extensions=extensions)
+    caller_id = caller_id_for(caller_id_mode, tenant, call)
+
+    whisper_text = three_way_text = None
+    if style == "whisper":
+        whisper_text = (
+            _safe_whisper_reason(whisper)
+            if whisper is not None
+            else _default_whisper(tenant, reason)
+        )
+    else:
+        three_way_text = _safe_whisper_reason(
+            three_way_message or f"Hi, this is the assistant for {tenant.name}. I have a caller who asked for a person."
+        )
+
+    use_hold = bool(hold_music) and hold_music_available()
+    return TransferV2Plan(
+        destination=target,
+        style=style,
+        caller_id_mode=caller_id_mode,
+        caller_id=caller_id,
+        hold_music=use_hold,
+        hold_music_asset=str(HOLD_MUSIC_PATH.name) if use_hold else None,
+        require_human=bool(require_human),
+        whisper=whisper_text,
+        three_way_message=three_way_text,
+        events=tuple(f"transfer.{stage}" for stage in TRANSFER_EVENTS_V2),
+    )
+
+
+async def record_transfer_v2_event(
+    session: AsyncSession, call: Call, stage: str, *, detail: str | None = None
+) -> Turn | None:
+    """Emit one `transfer.<stage>` event into the transcript.
+
+    The four stages are the same four the API reports, so a customer reading the
+    call log sees exactly the sequence the machine emitted.
+    """
+    if stage not in TRANSFER_EVENTS_V2:
+        raise TransferDestinationError("invalid_event", f"unknown transfer event {stage!r}")
+    label = {
+        "started": "Transfer started",
+        "bridged": "Caller connected to a person",
+        "cancelled": "Transfer cancelled",
+        "ended": "Transfer ended",
+    }[stage]
+    text = f"{label}{' — ' + detail if detail else ''}"
+    return await add_system_event(session, call, text)

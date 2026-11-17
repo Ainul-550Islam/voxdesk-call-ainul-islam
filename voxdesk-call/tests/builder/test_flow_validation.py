@@ -134,7 +134,22 @@ def test_valid_flow_passes_with_zero_errors() -> None:
     res = validate_flow(_valid_flow_dict())
     assert res.valid is True
     assert res.errors == []
-    assert len(FLOW_NODE_TYPES) == 10
+    # Name the types rather than counting them: a count silently rots every time a node type is
+    # added, which is exactly what happened when PART 12 added `code` and `component`.
+    assert FLOW_NODE_TYPES == {
+        "start",
+        "conversation",
+        "logic_split",
+        "function",
+        "transfer",
+        "press_digit",
+        "send_sms",
+        "extract_variables",
+        "end",
+        "subagent",
+        "code",
+        "component",
+    }
 
 
 def test_missing_and_multiple_start_nodes_reported() -> None:
@@ -241,14 +256,34 @@ def test_unreachable_global_node_without_trigger_detected() -> None:
     assert glob_errs[0].node_id == "n_bad_global"
 
 
+def test_flow_rejects_out_of_range_responsiveness_without_clamping() -> None:
+    flow = _valid_flow_dict()
+    flow["nodes"][1]["responsiveness_override"] = 1.25
+    graph = FlowGraph.from_dict(flow)
+    assert graph.node_map()["n_convo"].responsiveness_override == 1.25
+
+    result = validate_flow(flow)
+    assert any(issue.code == "RESPONSIVENESS_OUT_OF_RANGE" for issue in result.errors)
+
+
 def test_flow_graph_round_trip_and_json_schema_export() -> None:
     raw = _valid_flow_dict()
+    raw["nodes"][1]["responsiveness_override"] = 0.55
     graph = FlowGraph.from_dict(raw)
     serialized = graph.to_dict()
     rehydrated = FlowGraph.from_dict(serialized)
     assert rehydrated.to_dict() == serialized
+    assert rehydrated.node_map()["n_convo"].responsiveness_override == 0.55
 
     schema = export_flow_json_schema()
     assert schema["title"] == "VoxDeskConversationFlow"
+    assert schema["properties"]["mode"]["enum"] == ["flex", "rigid"]
     node_enum = schema["$defs"]["FlowNode"]["properties"]["type"]["enum"]
     assert set(node_enum) == set(FLOW_NODE_TYPES)
+    assert "responsiveness_override" in schema["$defs"]["FlowNode"]["properties"]
+    assert schema["$defs"]["EdgeCondition"]["properties"]["timing"]["enum"] == [
+        "after_user_response",
+        "skip_user_response",
+    ]
+    global_properties = schema["$defs"]["GlobalNodeConfig"]["properties"]
+    assert {"return_path", "cooldown_steps", "examples"} <= set(global_properties)

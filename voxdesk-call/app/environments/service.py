@@ -6,6 +6,8 @@ never from a request body. Production cannot be duplicated or archived.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import uuid
 from datetime import datetime
 
@@ -334,3 +336,91 @@ def describe_baseline(kind: str) -> dict:
         "summary": baseline.summary,
         "executes_deployment": False,
     }
+
+# ---------------------------------------------------------------------------
+# PART 12 (P12-26) — promoting a version between environments
+# ---------------------------------------------------------------------------
+
+class PromotionError(ValueError):
+    """A promotion that cannot be attempted."""
+
+
+@dataclass(frozen=True)
+class PromotionPlan:
+    """What a promotion would do, decided before anything is written."""
+
+    agent_id: str
+    version: int
+    from_env: str
+    to_env: str
+    allowed: bool
+    blockers: tuple[str, ...] = ()
+    variables_kept: tuple[str, ...] = ()
+    variables_overridden: tuple[str, ...] = ()
+    variables_added: tuple[str, ...] = ()
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "agent_id": self.agent_id,
+            "version": self.version,
+            "from_env": self.from_env,
+            "to_env": self.to_env,
+            "allowed": self.allowed,
+            "blockers": list(self.blockers),
+            "variables_kept": list(self.variables_kept),
+            "variables_overridden": list(self.variables_overridden),
+            "variables_added": list(self.variables_added),
+        }
+
+
+def plan_promotion(
+    *,
+    agent_id: str,
+    version: int,
+    from_env: str,
+    to_env: str,
+    source_variables: Mapping[str, Any] | None = None,
+    target_variables: Mapping[str, Any] | None = None,
+    required_facts: Sequence[str] = (),
+    target_facts_present: bool = True,
+) -> PromotionPlan:
+    """Decide whether one version may move from `from_env` to `to_env`.
+
+    Environment defaults deliberately survive a promotion: a staging agent promoted to production
+    must pick up production's `{{api_base_url}}`, not carry staging's. That is the whole reason the
+    defaults live on the environment rather than in the agent config.
+    """
+    if not from_env or not to_env:
+        raise PromotionError("both environments are required")
+    if from_env == to_env:
+        raise PromotionError("promotion needs two different environments")
+    if version < 1:
+        raise PromotionError("version must be positive")
+
+    blockers: list[str] = []
+    if not target_facts_present:
+        blockers.append(
+            "target environment is missing required facts: " + ", ".join(sorted(required_facts))
+        )
+
+    source = dict(source_variables or {})
+    target = dict(target_variables or {})
+    # Three distinct outcomes, named so an operator can predict them:
+    #   kept       the source value survives (the target has no opinion)
+    #   overridden the target environment's value wins — this is the point of env defaults
+    #   added      the target defines a variable the source never had
+    overridden = tuple(sorted(set(source) & set(target)))
+    kept = tuple(sorted(set(source) - set(target)))
+    added = tuple(sorted(set(target) - set(source)))
+    return PromotionPlan(
+        agent_id=str(agent_id),
+        version=int(version),
+        from_env=from_env,
+        to_env=to_env,
+        allowed=not blockers,
+        blockers=tuple(blockers),
+        variables_kept=kept,
+        variables_overridden=overridden,
+        variables_added=added,
+    )
+

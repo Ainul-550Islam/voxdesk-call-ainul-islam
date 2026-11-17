@@ -8,7 +8,7 @@
 ## Election of Transfer Structure (Schedule A)
 
 - **[ ] Option A — Exclusive IP Assignment (Full Acquisition / APA Closing):**
-  Upon receipt of full closing consideration under the executed Asset Purchase Agreement, Seller assigns all right, title, and interest in the first-party source code, database schemas, Alembic migrations, polyglot services (`app/`, `services/`, `dashboard/`, `dashboard-next/`, `sdk/`, `infra/`), test suites, and documentation of `voxdesk-call` to Buyer, subject solely to third-party open-source package licenses inventoried in `THIRD_PARTY_LICENSES.md` and `sbom/`.
+  Upon receipt of full closing consideration under the executed Asset Purchase Agreement, Seller assigns all right, title, and interest in the first-party source code, database schemas, Alembic migrations, polyglot services (`app/`, `services/`, `dashboard-next/`, `sdk/`, `infra/`), test suites, and documentation of `voxdesk-call` to Buyer, subject solely to third-party open-source package licenses inventoried in `THIRD_PARTY_LICENSES.md` and `sbom/`.
 - **[ ] Option B — Perpetual Commercial Source-Available License:**
   Upon payment in full of the license fee, Seller grants Buyer a perpetual, worldwide, non-exclusive, royalty-free license to modify, build, deploy, and operate the Software for internal use or hosted SaaS offerings for Buyer's end-customers, without source-code redistribution to third parties.
 

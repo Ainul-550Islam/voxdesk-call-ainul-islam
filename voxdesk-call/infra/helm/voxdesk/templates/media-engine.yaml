@@ -1,0 +1,182 @@
+{{- /*
+Media engine (services/realtime/media-engine-rs).
+
+Two listeners with different reasons to live:
+  * the control port (default 9001) is plain HTTP: /v1/health for probes,
+    /metrics for Prometheus, and the gateway's session-setup calls;
+  * the RTP/UDP port (default 5000) carries media, addressed by the SDP
+    candidate the engine advertises, so its Service must keep the node's
+    reachable address.
+
+`hostNetwork` is therefore a *choice* here, not a default: with it the engine
+advertises the node IP and UDP reaches it directly; without it, the operator
+must supply a routable address (LoadBalancer IP, or VOXDESK_PUBLIC_IP pointing
+at a node address). The chart refuses to render a non-hostNetwork engine with
+no public IP, because the failure mode — ICE with a private candidate — is
+invisible until a real call is placed.
+*/ -}}
+{{- $me := .Values.mediaEngine | default dict -}}
+{{- $image := $me.image | default dict -}}
+{{- $service := $me.service | default dict -}}
+{{- $pdb := $me.podDisruptionBudget | default dict -}}
+{{- $probes := $me.probes | default dict -}}
+{{- if $me.enabled | default false }}
+{{- if and (not ($me.hostNetwork | default false)) (not $me.publicIp) }}
+{{- fail "mediaEngine.publicIp is required when mediaEngine.hostNetwork is false: the SDP candidate must be reachable, and a Pod IP is not. Use hostNetwork, or set publicIp to a LoadBalancer/node address." }}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "voxdesk.fullname" . }}-media-engine
+  labels:
+    {{- include "voxdesk.labels" . | nindent 4 }}
+    app.kubernetes.io/component: media-engine
+spec:
+  # The engine holds live RTP state per room; a rolling update drops whatever
+  # that pod was carrying. Keep it at one replica by default and scale by
+  # node, not by this number, unless the signalling layer can re-home rooms.
+  replicas: {{ $me.replicaCount | default 1 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: {{ $me.maxUnavailable | default 1 }}
+      maxSurge: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "voxdesk.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: media-engine
+  template:
+    metadata:
+      labels:
+        {{- include "voxdesk.labels" . | nindent 8 }}
+        app.kubernetes.io/component: media-engine
+    spec:
+      terminationGracePeriodSeconds: {{ $me.terminationGracePeriodSeconds | default 30 }}
+      {{- if $me.hostNetwork }}
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+      {{- with $me.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $me.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: media-engine
+          image: "{{ required "mediaEngine.image.repository is required" $image.repository }}:{{ required "mediaEngine.image.tag is required" $image.tag }}"
+          imagePullPolicy: {{ $image.pullPolicy | default "IfNotPresent" }}
+          ports:
+            - name: rtp
+              containerPort: {{ $me.rtpPort | default 5000 }}
+              protocol: UDP
+            - name: control
+              containerPort: {{ $me.controlPort | default 9001 }}
+              protocol: TCP
+            {{- if and $me.hostNetwork $me.publicPort }}
+            # hostNetwork + a published port: the container may listen on a
+            # different port than the node's, and the SDP must advertise the
+            # node's.
+            {{- end }}
+          env:
+            - name: VOXDESK_PORT
+              value: {{ $me.rtpPort | default 5000 | quote }}
+            - name: VOXDESK_CONTROL_ADDR
+              value: {{ printf "0.0.0.0:%v" ($me.controlPort | default 9001) | quote }}
+            - name: VOXDESK_PUBLIC_IP
+              value: {{ $me.publicIp | default "" | quote }}
+            - name: VOXDESK_ENGINE_LABEL
+              value: {{ $me.label | default (include "voxdesk.fullname" .) | quote }}
+            - name: VOXDESK_MAX_PARTICIPANTS
+              value: {{ $me.maxParticipants | default 64 | quote }}
+            {{- if $me.dtlsFingerprint }}
+            - name: VOXDESK_DTLS_FINGERPRINT
+              value: {{ $me.dtlsFingerprint | quote }}
+            {{- end }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            # The engine writes nothing to disk: no recordings, no temp files.
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: {{ $me.runAsUser | default 10003 }}
+            runAsGroup: {{ $me.runAsUser | default 10003 }}
+            capabilities:
+              drop: ["ALL"]
+          # The health endpoint is on the control port, not the UDP port: a
+          # UDP socket cannot answer a probe.
+          startupProbe:
+            httpGet: {path: {{ $probes.startup | default "/v1/health" }}, port: control}
+            periodSeconds: 2
+            failureThreshold: 30
+            timeoutSeconds: 2
+          readinessProbe:
+            httpGet: {path: {{ $probes.readiness | default "/v1/health" }}, port: control}
+            periodSeconds: 5
+            failureThreshold: 2
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet: {path: {{ $probes.liveness | default "/v1/health" }}, port: control}
+            periodSeconds: 20
+            timeoutSeconds: 3
+          resources:
+            {{- toYaml ($me.resources | default dict) | nindent 12 }}
+      {{- if not $me.hostNetwork }}
+      # Without hostNetwork a LoadBalancer Service is the only way the
+      # advertised UDP address survives a pod restart.
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "voxdesk.fullname" . }}-media-engine
+  labels:
+    {{- include "voxdesk.labels" . | nindent 4 }}
+    app.kubernetes.io/component: media-engine
+  {{- if and ($service.loadBalancerIP) (not $me.hostNetwork) }}
+  annotations:
+    # UDP media cannot survive a shared ingress: the address in the SDP is
+    # the service address, so it has to be stable.
+    service.beta.kubernetes.io/azure-load-balancer-resource-group: {{ $service.resourceGroup | default "" | quote }}
+  {{- end }}
+spec:
+  type: {{ $service.type | default (ternary "ClusterIP" "LoadBalancer" $me.hostNetwork) }}
+  {{- if and $service.loadBalancerIP (not $me.hostNetwork) }}
+  loadBalancerIP: {{ $service.loadBalancerIP | quote }}
+  {{- end }}
+  selector:
+    app.kubernetes.io/name: {{ include "voxdesk.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: media-engine
+  ports:
+    - name: control
+      port: {{ $me.controlPort | default 9001 }}
+      targetPort: control
+      protocol: TCP
+    - name: rtp
+      port: {{ $me.rtpPort | default 5000 }}
+      targetPort: rtp
+      protocol: UDP
+{{- if $pdb.enabled | default false }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "voxdesk.fullname" . }}-media-engine
+  labels:
+    {{- include "voxdesk.labels" . | nindent 4 }}
+    app.kubernetes.io/component: media-engine
+spec:
+  minAvailable: {{ $pdb.minAvailable | default 1 }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "voxdesk.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: media-engine
+{{- end }}
+{{- end }}

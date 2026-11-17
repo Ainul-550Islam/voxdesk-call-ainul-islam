@@ -25,6 +25,7 @@ const AGENT_FACTORY_LINKS = [
 ];
 
 const OPERATIONS_LINKS = [
+  { href: "/dashboard/live", label: "Live Monitor", badge: "P15" },
   { href: "/dashboard/appointments", label: "Appointments" },
   { href: "/dashboard/campaigns", label: "Campaigns" },
   { href: "/dashboard/leads", label: "Leads" },
@@ -33,6 +34,8 @@ const OPERATIONS_LINKS = [
 ];
 
 const INTELLIGENCE_LINKS = [
+  { href: "/dashboard/conductor", label: "Conductor", badge: "P15" },
+  { href: "/dashboard/alerts", label: "Alerts", badge: "P15" },
   { href: "/dashboard/forecasting", label: "Forecasting", badge: "P1" },
   { href: "/dashboard/insight", label: "Insight", badge: "P1" },
   { href: "/dashboard/translation", label: "Translation", badge: "P0-P1" },

@@ -32,8 +32,24 @@ async def organization_event(
     ip_address: str = "",
     user_agent: str = "",
     commit: bool = False,
+    extra: dict | None = None,
 ) -> None:
+    """Stage an organization event.
+
+    ``extra`` carries the identifiers of the *other* side of a cross-organization
+    action (an agency copying an agent into a client, for example). It is merged
+    after the fixed keys so a caller cannot overwrite ``organization_id`` or
+    ``status`` by accident, and ``emit`` scrubs it like any other detail.
+    """
     action = _ACTIONS[kind]
+    detail = {
+        "organization_id": str(organization_id),
+        "status": status,
+        "event": f"organization.{kind}",
+    }
+    for key, value in (extra or {}).items():
+        if key not in detail:
+            detail[key] = value
     await emit(
         session,
         action,
@@ -42,10 +58,6 @@ async def organization_event(
         actor_email=actor_email,
         ip_address=ip_address,
         user_agent=user_agent,
-        detail={
-            "organization_id": str(organization_id),
-            "status": status,
-            "event": f"organization.{kind}",
-        },
+        detail=detail,
         commit=commit,
     )

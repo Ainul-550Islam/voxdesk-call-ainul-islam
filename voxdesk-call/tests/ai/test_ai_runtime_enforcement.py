@@ -336,7 +336,16 @@ async def test_voice_uses_the_governed_choice_and_not_a_disabled_provider(db, te
     call = await live_call(db, tenant_a, env)
     seen = {}
 
-    def fake_build(provider, model, temperature=0.6, max_tokens=120, *, allow_key_fallback=True):
+    def fake_build(
+        provider,
+        model,
+        temperature=0.6,
+        max_tokens=120,
+        *,
+        allow_key_fallback=True,
+        structured_output_schema=None,
+        structured_output_strict=True,
+    ):
         seen["provider"] = provider
         seen["model"] = model
         seen["fallback"] = allow_key_fallback

@@ -184,6 +184,7 @@ async def telnyx_inbound_voice(
     call = (
         await session.execute(select(Call).where(Call.call_sid == call_control_id))
     ).scalars().first()
+    created_call = call is None
     if call is None:
         call = Call(
             id=uuid.uuid4(),
@@ -196,6 +197,14 @@ async def telnyx_inbound_voice(
         )
         session.add(call)
         await session.flush()
+
+    if created_call and isinstance(payload, dict):
+        data = payload.get("data") if isinstance(payload.get("data"), dict) else {}
+        raw_overrides = payload.get("voxdesk_overrides") or data.get("voxdesk_overrides")
+        if raw_overrides:
+            from app.telephony.webhooks import apply_inbound_overrides_to_call
+
+            apply_inbound_overrides_to_call(call, raw_overrides)
 
     runtime_cfg = await resolve_runtime_config(session, call, tenant=tenant)
     call.language = runtime_cfg.language

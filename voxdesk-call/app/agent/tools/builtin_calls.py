@@ -18,11 +18,11 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 import structlog
+from pipecat.audio.dtmf.types import KeypadEntry
 from pipecat.frames.frames import (
     EndFrame,
     EndTaskFrame,
     Frame,
-    KeypadEntry,
     OutputAudioRawFrame,
     OutputDTMFFrame,
     OutputDTMFUrgentFrame,
@@ -247,11 +247,14 @@ async def execute_send_dtmf(
         res = await telephony_provider.send_dtmf(resolved_sid, validated)
         provider_result = res if isinstance(res, dict) else {"status": "sent"}
 
+    from app.agent.tools.user_dtmf import mask_digits
+
     log.info(
         "tool.send_dtmf.executed",
         call_sid=resolved_sid,
-        digits=validated,
-        emitted_buttons=emitted_buttons,
+        digits_masked=mask_digits(validated),
+        digit_count=len(validated),
+        emitted_button_count=len(emitted_buttons),
         pcm_bytes_emitted=pcm_bytes_emitted,
     )
     return {

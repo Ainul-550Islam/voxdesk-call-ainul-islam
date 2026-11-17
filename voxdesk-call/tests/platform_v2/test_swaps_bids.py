@@ -24,9 +24,22 @@ from tests.conftest import make_user
 from tests.platform_v2.conftest import PlatScope, seed_shift
 
 BASE = datetime(2026, 11, 2, 9, 0, tzinfo=UTC)
-# Offers cannot be recorded for a shift that has already started; keep seeded
-# offer/bid windows on a later Monday so the suite stays valid after BASE.
-OFFER_BASE = BASE + timedelta(days=7)
+
+
+def _next_monday_in_the_future(*, minimum_days_ahead: int = 3, hour: int = 9) -> datetime:
+    """The next Monday 09:00 that is comfortably ahead of the wall clock.
+
+    Offers cannot be recorded for a shift that has already started, so a fixed date here is a
+    time bomb: `BASE + 7 days` was a Monday in the future exactly until 2026-11-09 and a
+    guaranteed failure from 2026-11-10. Deriving the date keeps the suite valid for ever.
+    """
+    candidate = (datetime.now(UTC) + timedelta(days=minimum_days_ahead)).replace(
+        hour=hour, minute=0, second=0, microsecond=0
+    )
+    return candidate + timedelta(days=(7 - candidate.weekday()) % 7)
+
+
+OFFER_BASE = _next_monday_in_the_future()
 
 
 def window(

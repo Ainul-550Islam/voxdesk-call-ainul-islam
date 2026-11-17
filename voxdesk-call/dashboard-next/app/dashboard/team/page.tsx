@@ -37,12 +37,15 @@ export default function TeamPage() {
     <>
       <header className="page-head">
         <h1>Team</h1>
-        <p className="muted">Operators and the security events they generated.</p>
+        <p className="muted">
+          Operators and the security events they generated.{" "}
+          <a href="/dashboard/team/roles">Custom roles →</a>
+        </p>
       </header>
 
       <section className="card">
         <h2>Users ({users.length})</h2>
-        <div className="table-wrap">
+        <div className="table-wrap" tabIndex={0} role="region" aria-label="Data table">
           <table>
             <thead>
               <tr>
@@ -73,7 +76,7 @@ export default function TeamPage() {
         {audit.length === 0 ? (
           <div className="empty">No audit events.</div>
         ) : (
-          <div className="table-wrap">
+          <div className="table-wrap" tabIndex={0} role="region" aria-label="Data table">
             <table>
               <thead>
                 <tr>

@@ -67,7 +67,7 @@ What `scripts/dr_drill.sh` performs:
    alembic current
    alembic heads
    ```
-   Confirm `alembic current` matches the single repository head (`0069_voice_demo_sessions`).
+   Confirm `alembic current` matches the single repository head (`0091_call_debug_pcap_metadata`).
 5. **Resume Traffic**:
    Update `DATABASE_URL` in the secret store if failing over to a new host, restore replica counts, and verify `/health/ready` returns `200 OK`.
 

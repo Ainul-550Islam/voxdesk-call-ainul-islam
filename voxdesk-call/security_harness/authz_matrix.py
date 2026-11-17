@@ -95,6 +95,12 @@ PUBLIC_ROUTES: dict[str, str] = {
     "/telephony/status": "carrier status callback, provider signature verified",
     "/telephony/outbound-answer": "carrier answer callback, provider signature verified",
     "/telephony/transfer-status": "carrier transfer callback, provider signature verified",
+    "/telephony/transfer-hold-music": "public static hold audio; no tenant data or state changes",
+    "/telephony/transfer-session-target": "Twilio callback; request signature checked and session/transfer IDs are scoped",
+    "/telephony/transfer-session-status": "Twilio callback; request signature checked and session/transfer IDs are scoped",
+    "/telephony/transfer-session-target-status": "Twilio callback; request signature checked and session/transfer IDs are scoped",
+    "/telephony/transfer-session-conference": "Twilio callback; request signature checked and session/transfer IDs are scoped",
+    "/telephony/transfer-whisper": "Twilio callback; request signature checked and call ID is loaded server-side",
     "/telephony/telnyx/voice": "secondary carrier webhook, signature verified",
     "/telephony/web/offer": "browser softphone offer, widget session token",
     "/channels/status": "carrier status callback, verified by provider signature",
@@ -104,6 +110,7 @@ PUBLIC_ROUTES: dict[str, str] = {
     "/api/channels/webhook/telnyx": "inbound Telnyx messaging webhook, Ed25519/HMAC signature verified",
     "/api/channels/webhook/vonage": "inbound Vonage SMS webhook, Bearer HS256 JWT + payload_hash or HMAC-SHA256 verified",
     "/api/channels/webhook/status": "SMS status callback, signature verified",
+    "/api/messaging/webhooks/registration": "carrier registration callback; HMAC over the raw body is required and tenant is derived from the registration row",
     "/messaging/sms/twilio": "inbound SMS webhook, Twilio signature verified",
     "/messaging/sms/webhook": "inbound SMS webhook, signature verified",
     "/messaging/sms/status": "SMS status callback, signature verified",
@@ -112,6 +119,9 @@ PUBLIC_ROUTES: dict[str, str] = {
     "/api/v1/telephony/webhooks/{provider}/status": "provider webhook, signature verified",
     "/api/v1/telephony/webhooks/{provider}/dtmf": "provider webhook, signature verified",
     "/api/v1/telephony/webhooks/{provider}/recording": "provider webhook, signature verified",
+    # ---- service-to-service runtime configuration ------------------------
+    "/internal/telephony/sip-trunk-runtime-config": "internal SIP gateway endpoint; shared bearer is mandatory and trunk lookup is tenant-scoped",
+    "/internal/telephony/sip-inbound-route": "internal SIP gateway endpoint; shared bearer is mandatory and tenant/trunk/source-IP authorization gates the route response",
     # ---- carrier v2 (Batch 02) — Vonage voice NCCO + signed event callback ---
     # The carrier, not a signed-in user, is the caller. The NCCO answer webhook
     # and the event callback both verify the Vonage JWT/signature on the raw
@@ -127,6 +137,9 @@ PUBLIC_ROUTES: dict[str, str] = {
     "/webhooks/int2/slack/{connection_id}/interactions": "Slack interaction, request signature verified",
     "/webhooks/int2/slack/{connection_id}/interactivity": "Slack interactivity, request signature verified",
     "/webhooks/int2/slack/{connection_id}/slash": "Slack slash command, request signature verified",
+    # ---- signed, expiring bearer links ------------------------------------
+    "/api/calls/{call_id}/recording-access": "signed recording URL; HMAC covers the call ID and expiry",
+    "/api/calls/debug-artifacts/{storage_key:path}": "signed PCAP download URL; HMAC covers the storage key and expiry",
     # ---- third-party inbound webhooks (token in path + signature) ---------
     "/public/webhooks/{endpoint_id}": "inbound public webhook, endpoint token in the path",
     "/api/integrations/crm/inbound/{provider}/{token}": "CRM inbound webhook, path token verified",
@@ -277,9 +290,7 @@ def matrix(app: FastAPI) -> dict[str, Any]:
         "public": sum(1 for info in infos if info.public),
         "with_permission": sum(1 for info in infos if info.permission),
         "mutations": sum(1 for info in infos if info.mutating),
-        "mutations_with_permission": sum(
-            1 for info in infos if info.mutating and info.permission
-        ),
+        "mutations_with_permission": sum(1 for info in infos if info.mutating and info.permission),
         "rows": [info.as_dict() for info in infos],
     }
 
@@ -351,8 +362,7 @@ def run(app: FastAPI) -> HarnessReport:
         PASS,
         f"{snapshot['total']} operations, {snapshot['authenticated']} authenticated",
         evidence={
-            key: snapshot[key]
-            for key in ("total", "authenticated", "public", "with_permission")
+            key: snapshot[key] for key in ("total", "authenticated", "public", "with_permission")
         },
     )
 
@@ -399,9 +409,7 @@ def run(app: FastAPI) -> HarnessReport:
             f"{len(unguarded)} authenticated mutation(s) rely on session identity rather than a "
             "permission; each must be a self-service operation on the caller's own account",
             evidence={
-                "routes": [
-                    f"{'/'.join(info.methods_mutation)} {info.path}" for info in unguarded
-                ]
+                "routes": [f"{'/'.join(info.methods_mutation)} {info.path}" for info in unguarded]
             },
         )
     else:

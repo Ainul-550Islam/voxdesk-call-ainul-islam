@@ -62,6 +62,14 @@ def test_transfer_twiml_uses_requested_timeout_and_bridge_behavior():
     assert 'answerOnBridge="false"' in twiml
 
 
+def test_transfer_twiml_refuses_to_speak_private_whisper_on_parent_leg():
+    with pytest.raises(ValueError, match="called-party TwiML URL"):
+        transfer_twiml("+14155552671", whisper="private operator notes")
+
+    with pytest.raises(ValueError, match="human verification"):
+        transfer_twiml("+14155552671", require_human=True)
+
+
 # corrected: endpoint implemented in gap-fill — send_whisper and bulk_transfer are real
 # CallControlService operations while complete_transfer / fail_transfer refuse client-authored
 # outcomes with 403 and are omitted from OpenAPI.

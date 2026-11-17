@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import enum
 import re
+from dataclasses import dataclass
 from collections.abc import Awaitable, Callable
 from typing import Any
 
@@ -167,3 +168,146 @@ def build_voicemail_detector(
         await handler.on_voicemail_detected(processor)
 
     return detector
+
+# ---------------------------------------------------------------------------
+# PART 12 (P12-13) — configurable voicemail actions, word cap, PII guard
+# ---------------------------------------------------------------------------
+
+#: The three actions the specification exposes. `leave_message` is kept as an alias of
+#: `static_message` so the older configuration keeps working.
+VOICEMAIL_ACTIONS: tuple[str, ...] = ("hangup", "static_message", "generated_message")
+
+MAX_GENERATED_WORDS = 40
+
+#: Anything that looks like an identifier we must not read into a stranger's mailbox.
+_PII_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    ("email", re.compile(r"[\w.+-]+@[\w-]+\.[\w.]+")),
+    ("card", re.compile(r"\b(?:\d[ -]?){13,19}\b")),
+    ("ssn", re.compile(r"\b\d{3}-\d{2}-\d{4}\b")),
+    ("phone", re.compile(r"\+?\d{7,15}\b")),
+)
+
+
+def _pii_hits(text: str) -> list[str]:
+    return [label for label, pattern in _PII_PATTERNS if pattern.search(text or "")]
+
+
+def substitute_dynamic_variables(text: str, variables: dict[str, Any] | None = None) -> str:
+    """Replace `{{name}}` with a value; unknown names are left visible rather than blanked.
+
+    Leaving `{{appointment_time}}` in the text is ugly but honest — a blank tells the listener
+    nothing and hides a configuration mistake from the operator reading the transcript.
+    """
+    variables = variables or {}
+
+    def repl(match: re.Match[str]) -> str:
+        key = match.group(1).strip()
+        value = variables.get(key)
+        return str(value) if value not in (None, "") else match.group(0)
+
+    return re.sub(r"\{\{\s*([\w.]+)\s*\}\}", repl, text or "")
+
+
+def enforce_word_cap(text: str, *, limit: int = MAX_GENERATED_WORDS) -> tuple[str, bool]:
+    """Trim to `limit` words on a sentence boundary when possible. Returns `(text, trimmed)`."""
+    words = (text or "").split()
+    if len(words) <= limit:
+        return (text or "").strip(), False
+    clipped = " ".join(words[:limit])
+    for stop in (".", "!", "?"):
+        index = clipped.rfind(stop)
+        if index > len(clipped) // 2:
+            return clipped[: index + 1].strip(), True
+    return clipped.rstrip(",;:") + ".", True
+
+
+@dataclass(frozen=True)
+class VoicemailPlan:
+    """What the agent will do once voicemail is detected, decided before anything is said."""
+
+    action: str
+    message: str = ""
+    detection_window_s: float = 12.0
+    blocked_reason: str = ""
+    trimmed: bool = False
+    generated: bool = False
+
+    @property
+    def allowed(self) -> bool:
+        return self.action != "hangup" and not self.blocked_reason
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "action": self.action,
+            "message": self.message,
+            "detection_window_s": self.detection_window_s,
+            "blocked_reason": self.blocked_reason,
+            "trimmed": self.trimmed,
+            "generated": self.generated,
+            "allowed": self.allowed,
+        }
+
+
+def plan_voicemail_action(
+    *,
+    action: str = "hangup",
+    message: str = "",
+    variables: dict[str, Any] | None = None,
+    detection_window_s: float = 12.0,
+    generated_text: str = "",
+) -> VoicemailPlan:
+    """Resolve the configured voicemail action into a plan.
+
+    `generated_message` requires text produced by the LLM; if it is missing or leaks an identifier
+    the plan falls back to hangup with a stated reason instead of reading numbers into a machine.
+    """
+    resolved = str(action or "hangup").strip().lower()
+    if resolved == "leave_message":
+        resolved = "static_message"
+    if resolved not in VOICEMAIL_ACTIONS:
+        raise ValueError(
+            f"unknown voicemail action {action!r}; expected one of {list(VOICEMAIL_ACTIONS)}"
+        )
+    # `or 12.0` would turn an explicit 0 into the default, hiding a caller that asked for
+    # "no window at all"; only `None` means "use the default".
+    raw_window = 12.0 if detection_window_s is None else float(detection_window_s)
+    window = max(1.0, min(raw_window, 60.0))
+
+    if resolved == "hangup":
+        return VoicemailPlan(action="hangup", detection_window_s=window)
+
+    if resolved == "static_message":
+        spoken = substitute_dynamic_variables(message, variables).strip()
+        hits = _pii_hits(spoken)
+        if hits:
+            return VoicemailPlan(
+                action="hangup",
+                detection_window_s=window,
+                blocked_reason=f"static message contains {', '.join(hits)}",
+            )
+        spoken, trimmed = enforce_word_cap(spoken)
+        return VoicemailPlan(
+            action="static_message", message=spoken, detection_window_s=window, trimmed=trimmed
+        )
+
+    candidate = (generated_text or "").strip() or substitute_dynamic_variables(message, variables).strip()
+    if not candidate:
+        return VoicemailPlan(
+            action="hangup", detection_window_s=window, blocked_reason="no message was generated"
+        )
+    hits = _pii_hits(candidate)
+    if hits:
+        return VoicemailPlan(
+            action="hangup",
+            detection_window_s=window,
+            blocked_reason=f"generated message contains {', '.join(hits)}",
+        )
+    spoken, trimmed = enforce_word_cap(candidate)
+    return VoicemailPlan(
+        action="generated_message",
+        message=spoken,
+        detection_window_s=window,
+        trimmed=trimmed,
+        generated=True,
+    )
+

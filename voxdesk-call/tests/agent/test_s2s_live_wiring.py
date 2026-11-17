@@ -120,6 +120,16 @@ async def _setup_processor(processor: FrameProcessor) -> None:
     )
 
 
+async def _cleanup_processor(processor: FrameProcessor, *downstream: FrameProcessor) -> None:
+    """Stop S2S work and close Pipecat's per-processor frame tasks."""
+    try:
+        await processor.stop()
+    finally:
+        for child in reversed(downstream):
+            await child.cleanup()
+        await processor.cleanup()
+
+
 def _capture_pushes(processor) -> list:
     """Record every frame the processor pushes downstream."""
     pushed: list = []
@@ -412,38 +422,39 @@ async def test_the_provider_receives_the_audio_and_answers(monkeypatch, db) -> N
     processor = runtime.processor
     pushed = _capture_pushes(processor)
     await _setup_processor(processor)
-    await processor.process_frame(StartFrame(), FrameDirection.DOWNSTREAM)
-    assert created[0].started is True
+    try:
+        await processor.process_frame(StartFrame(), FrameDirection.DOWNSTREAM)
+        assert created[0].started is True
 
-    # The caller's audio goes to the provider.
-    await processor.process_frame(
-        InputAudioRawFrame(audio=b"\x01\x02" * 320, sample_rate=8000, num_channels=1),
-        FrameDirection.DOWNSTREAM,
-    )
-    from app.agent.s2s.s2s_audio import OPENAI_REALTIME_SAMPLE_RATE
-
-    assert created[0].audio, "the provider never received the caller audio"
-    assert created[0].rates == [OPENAI_REALTIME_SAMPLE_RATE]
-
-    # The provider's audio comes back as pipeline audio.
-    created[0]._output_bytes = 640
-    created[0].emit(
-        S2SEvent(
-            type=S2SEventType.AUDIO_OUT,
-            provider="openai_realtime",
-            audio=b"\x03\x04" * 320,
-            sample_rate=16000,
+        # The caller's audio goes to the provider.
+        await processor.process_frame(
+            InputAudioRawFrame(audio=b"\x01\x02" * 320, sample_rate=8000, num_channels=1),
+            FrameDirection.DOWNSTREAM,
         )
-    )
-    await asyncio_sleep()
+        from app.agent.s2s.s2s_audio import OPENAI_REALTIME_SAMPLE_RATE
 
-    audio_frames = [f for f in pushed if isinstance(f, OutputAudioRawFrame)]
-    assert audio_frames, "the provider audio never reached the pipeline"
-    assert audio_frames[0].sample_rate == 8000
-    started = [f for f in pushed if type(f).__name__ == "BotStartedSpeakingFrame"]
-    assert started, "the pipeline was never told the assistant started speaking"
+        assert created[0].audio, "the provider never received the caller audio"
+        assert created[0].rates == [OPENAI_REALTIME_SAMPLE_RATE]
 
-    await processor.stop()
+        # The provider's audio comes back as pipeline audio.
+        created[0]._output_bytes = 640
+        created[0].emit(
+            S2SEvent(
+                type=S2SEventType.AUDIO_OUT,
+                provider="openai_realtime",
+                audio=b"\x03\x04" * 320,
+                sample_rate=16000,
+            )
+        )
+        await asyncio_sleep()
+
+        audio_frames = [f for f in pushed if isinstance(f, OutputAudioRawFrame)]
+        assert audio_frames, "the provider audio never reached the pipeline"
+        assert audio_frames[0].sample_rate == 8000
+        started = [f for f in pushed if type(f).__name__ == "BotStartedSpeakingFrame"]
+        assert started, "the pipeline was never told the assistant started speaking"
+    finally:
+        await _cleanup_processor(processor)
 
 
 @pytest.mark.asyncio
@@ -471,48 +482,49 @@ async def test_the_transcripts_land_in_the_turn_table(monkeypatch, db) -> None:
     processor = runtime.processor
     pushed = _capture_pushes(processor)
     await _setup_processor(processor)
-    await processor.process_frame(StartFrame(), FrameDirection.DOWNSTREAM)
+    try:
+        await processor.process_frame(StartFrame(), FrameDirection.DOWNSTREAM)
 
-    created[0].emit(
-        S2SEvent(
-            type=S2SEventType.TRANSCRIPT_IN,
-            provider="openai_realtime",
-            text="I need an appointment",
+        created[0].emit(
+            S2SEvent(
+                type=S2SEventType.TRANSCRIPT_IN,
+                provider="openai_realtime",
+                text="I need an appointment",
+            )
         )
-    )
-    created[0].emit(
-        S2SEvent(
-            type=S2SEventType.TRANSCRIPT_OUT,
-            provider="openai_realtime",
-            text="Of course, when works for you?",
+        created[0].emit(
+            S2SEvent(
+                type=S2SEventType.TRANSCRIPT_OUT,
+                provider="openai_realtime",
+                text="Of course, when works for you?",
+            )
         )
-    )
-    await asyncio_sleep()
+        await asyncio_sleep()
 
-    # The pipeline saw both transcripts.
-    assert any(isinstance(f, TranscriptionFrame) for f in pushed)
-    assert any(isinstance(f, TextFrame) for f in pushed)
+        # The pipeline saw both transcripts.
+        assert any(isinstance(f, TranscriptionFrame) for f in pushed)
+        assert any(isinstance(f, TextFrame) for f in pushed)
 
-    # The conversation history carries both sides.
-    assert runtime.history == [
-        {"role": "user", "content": "I need an appointment"},
-        {"role": "assistant", "content": "Of course, when works for you?"},
-    ]
+        # The conversation history carries both sides.
+        assert runtime.history == [
+            {"role": "user", "content": "I need an appointment"},
+            {"role": "assistant", "content": "Of course, when works for you?"},
+        ]
 
-    # ... and the same text is persisted as turns.
-    await db.commit()
-    from sqlalchemy import select
+        # ... and the same text is persisted as turns.
+        await db.commit()
+        from sqlalchemy import select
 
-    turns = (
-        (await db.execute(select(Turn).where(Turn.call_id == call.id))).scalars().all()
-    )
-    assert len(turns) == 2
-    speakers = {row.speaker for row in turns}
-    assert speakers == {Speaker.USER, Speaker.ASSISTANT}
-    texts = {row.text for row in turns}
-    assert "I need an appointment" in texts
-
-    await processor.stop()
+        turns = (
+            (await db.execute(select(Turn).where(Turn.call_id == call.id))).scalars().all()
+        )
+        assert len(turns) == 2
+        speakers = {row.speaker for row in turns}
+        assert speakers == {Speaker.USER, Speaker.ASSISTANT}
+        texts = {row.text for row in turns}
+        assert "I need an appointment" in texts
+    finally:
+        await _cleanup_processor(processor)
 
 
 @pytest.mark.asyncio
@@ -677,21 +689,27 @@ async def test_a_provider_that_dies_mid_call_hands_over_the_audio_path(
 
     processor = runtime.processor
     await _setup_processor(processor)
-    await processor.process_frame(StartFrame(), FrameDirection.DOWNSTREAM)
-
     delegate = CaptureProcessor()
-    chain = [delegate]
-    assert await processor.activate_chain(chain) is True
-    assert processor.fallback_active is True
+    delegate_attached = False
+    try:
+        await processor.process_frame(StartFrame(), FrameDirection.DOWNSTREAM)
 
-    # The audio now belongs to the cascaded chain.
-    await processor.process_frame(
-        InputAudioRawFrame(audio=b"\x09" * 320, sample_rate=8000, num_channels=1),
-        FrameDirection.DOWNSTREAM,
-    )
-    assert delegate.frames, "the cascaded chain never received the caller audio"
+        chain = [delegate]
+        delegate_attached = await processor.activate_chain(chain)
+        assert delegate_attached is True
+        assert processor.fallback_active is True
 
-    await processor.stop()
+        # The audio now belongs to the cascaded chain.
+        await processor.process_frame(
+            InputAudioRawFrame(audio=b"\x09" * 320, sample_rate=8000, num_channels=1),
+            FrameDirection.DOWNSTREAM,
+        )
+        assert delegate.frames, "the cascaded chain never received the caller audio"
+    finally:
+        if delegate_attached:
+            await _cleanup_processor(processor, delegate)
+        else:
+            await _cleanup_processor(processor)
 
 
 # ---------------------------------------------------------------------------

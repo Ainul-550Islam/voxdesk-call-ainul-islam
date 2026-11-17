@@ -14,10 +14,10 @@ metrics in [`docs/STATS.json`](../STATS.json), and the verified feature rows in
 <!-- >>> voxdesk:repo-stats >>> -->
 ## Verified Repository Snapshot (`docs/STATS.json`)
 
-- **Source files**: `2123` (`435,242` physical lines)
-- **Registered FastAPI routes**: `1526` registered routes
-- **Collected pytest nodes**: `6781` collected tests (`1,329` passed JUnit executions across `evidence/junit/feature_evidence.xml` and `evidence/batch07/`)
-- **Alembic migration head**: `0069_voice_demo_sessions`
+- **Source files**: `1912` (`442,435` physical lines)
+- **Registered FastAPI routes**: `1662` registered routes
+- **Collected pytest nodes**: `8123` collected tests (`1,329` passed JUnit executions across `evidence/junit/feature_evidence.xml` and `evidence/batch07/`)
+- **Alembic migration head**: `0091_call_debug_pcap_metadata`
 - **Verified Feature Matrix**: `38` `LIVE` / `41` total (`1` `API_ONLY`, `1` `NOT_CONFIGURED`, `1` `PLANNED`)
 <!-- <<< voxdesk:repo-stats <<< -->
 
@@ -78,7 +78,7 @@ Gate statuses below mirror `gates.G0`–`gates.G9` in [`docs/STATS.json`](../STA
    clean runner to independently verify all test suites, truth guards, migrations,
    SBOMs, and SHA-256 checksums before releasing escrow funds.
 2. **Deliverables at Closing**:
-   - Full git repository (`voxdesk-call`) at migration head `0069_voice_demo_sessions`.
+   - Full git repository (`voxdesk-call`) at migration head `0091_call_debug_pcap_metadata`.
    - Signed due-diligence bundle (`scripts/make_due_diligence_pack.py` + `evidence/pack/SHA256SUMS`).
    - Static OpenAPI 3.1 reference (`docs/api/`), CycloneDX SBOMs (`sbom/*.cdx.json`),
      and third-party license ledger (`THIRD_PARTY_LICENSES.md`).

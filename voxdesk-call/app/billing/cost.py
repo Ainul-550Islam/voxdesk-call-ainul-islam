@@ -29,6 +29,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from app.billing import price_book as price_book_module
 from app.core import observability
 from app.core.config import settings
 from app.core.logging import log
@@ -159,4 +160,106 @@ async def call_cost_breakdown(session, call) -> dict[str, Any]:
         "voice_cost_known": line.known,
         "llm_tokens": "unavailable",   # operational metric, not a usage event
         "tts_characters": "unavailable",
+    }
+
+
+# ------------------------------------------- itemised, by component (P18-05) ---
+
+
+def _event_rows(usage_events, *, provider_hint: str | None = None) -> list[dict[str, Any]]:
+    """Shape usage rows into what ``price_book.usage_from_events`` expects.
+
+    The metering rows carry the metric and the quantity in the metric's smallest
+    unit; the country and model live in ``event_metadata`` because they are
+    context, not billing authority. This adapter is deliberately the only place
+    that knows both vocabularies.
+    """
+    rows: list[dict[str, Any]] = []
+    for event in usage_events:
+        metric = getattr(event.metric, "value", str(event.metric))
+        meta = dict(getattr(event, "event_metadata", {}) or {})
+        row: dict[str, Any] = {
+            "metric": metric,
+            "quantity": int(getattr(event, "quantity", 0) or 0),
+            "source": str(getattr(event, "source_reference", "") or ""),
+        }
+        if metric == "voice_minute":
+            row["country"] = meta.get("country") or meta.get("to_country")
+        if metric == "llm_token":
+            row["model"] = meta.get("model") or provider_hint
+            row["direction"] = meta.get("direction") or "input"
+        if "stt" in metric or metric == "stt_minute":
+            row["metric"] = "stt_minute"
+        rows.append(row)
+    return rows
+
+
+async def itemised_usage_cost(
+    session,
+    *,
+    tenant_id,
+    period,
+    price_book=None,
+) -> dict[str, Any]:
+    """Usage for a period, priced per component by the price book.
+
+    This is the number the operator wants and the plan overage rate cannot
+    produce: voice minutes split into media, STT and telephony; LLM tokens split
+    by model and direction; TTS by characters. Each line carries both cost and
+    charge, so the margin falls out of the same rows.
+    """
+    from sqlalchemy import select
+
+    from app.db.models import UsageEvent
+
+    events = (
+        await session.execute(
+            select(UsageEvent).where(
+                UsageEvent.tenant_id == tenant_id,
+                UsageEvent.billing_period == period.label,
+            )
+        )
+    ).scalars().all()
+
+    book = price_book or price_book_module.default_catalogue().for_moment(period.start)
+    components = price_book_module.usage_from_events(_event_rows(events))
+    invoice = price_book_module.price_usage(
+        book=book,
+        components=components,
+        tenant_id=str(tenant_id),
+        invoice_id=f"usage-{period.label}",
+        period_start=period.start,
+        period_end=period.end,
+    )
+    return invoice.as_dict()
+
+
+def usage_by_provider_and_day(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """Pivot usage into provider totals and a day-by-day series.
+
+    Both views come from the same rows, so the totals always equal the sum of
+    the series — the usual failure of a "usage by day" screen is that it is
+    computed by a second query with a different filter.
+    """
+    by_provider: dict[str, dict[str, float]] = {}
+    by_day: dict[str, dict[str, float]] = {}
+    for row in rows:
+        provider = str(row.get("provider") or "unknown")
+        day = str(row.get("day") or "")
+        metric = str(row.get("metric") or "")
+        quantity = float(row.get("quantity") or 0)
+        entry = by_provider.setdefault(provider, {})
+        entry[metric] = entry.get(metric, 0.0) + quantity
+        if day:
+            bucket = by_day.setdefault(day, {})
+            bucket[metric] = bucket.get(metric, 0.0) + quantity
+    return {
+        "by_provider": {
+            provider: {metric: round(value, 3) for metric, value in sorted(metrics.items())}
+            for provider, metrics in sorted(by_provider.items())
+        },
+        "by_day": {
+            day: {metric: round(value, 3) for metric, value in sorted(metrics.items())}
+            for day, metrics in sorted(by_day.items())
+        },
     }

@@ -46,6 +46,10 @@ async def create_widget_public_key(
     ctx: TenantContext = Depends(require_permission(Permission.TENANT_UPDATE)),
     session: AsyncSession = Depends(get_session),
 ) -> PublicWidgetKeyCreatedResponse:
+    """Create a public key for the embedded widget.
+
+    The plaintext key is returned **once**. Only its hash is stored, so a database dump cannot be used to impersonate a widget.
+    """
     return await create_public_key(
         session,
         tenant_id=ctx.tenant_id,
@@ -61,6 +65,10 @@ async def list_widget_public_keys(
     ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)),
     session: AsyncSession = Depends(get_session),
 ) -> list[PublicWidgetKeyRead]:
+    """List this workspace's widget public keys.
+
+    Never returns the key itself — only its prefix, label, allowed origins and last-used timestamp.
+    """
     return await list_public_keys(
         session,
         tenant_id=ctx.tenant_id,
@@ -74,6 +82,10 @@ async def get_widget_public_key(
     ctx: TenantContext = Depends(require_permission(Permission.TENANT_READ)),
     session: AsyncSession = Depends(get_session),
 ) -> PublicWidgetKeyRead:
+    """Read one widget public key by id.
+
+    Scoped to the caller's workspace; an id belonging to another workspace is a 404, not a 403, so the endpoint cannot be used to enumerate ids.
+    """
     return await get_public_key(
         session,
         tenant_id=ctx.tenant_id,
@@ -88,6 +100,7 @@ async def update_widget_public_key(
     ctx: TenantContext = Depends(require_permission(Permission.TENANT_UPDATE)),
     session: AsyncSession = Depends(get_session),
 ) -> PublicWidgetKeyRead:
+    """Update a key's label, allowed origins or agent binding."""
     return await update_public_key(
         session,
         tenant_id=ctx.tenant_id,
@@ -109,6 +122,10 @@ async def rotate_widget_public_key(
     ctx: TenantContext = Depends(require_permission(Permission.TENANT_UPDATE)),
     session: AsyncSession = Depends(get_session),
 ) -> PublicWidgetKeyCreatedResponse:
+    """Rotate a public key, returning the new plaintext once.
+
+    The previous key keeps working for a grace window so a tenant's live site does not break mid-deploy; revoke it explicitly to end that window early.
+    """
     req = payload or PublicWidgetKeyRotateRequest()
     return await rotate_public_key(
         session,
@@ -127,6 +144,10 @@ async def revoke_widget_public_key(
     ctx: TenantContext = Depends(require_permission(Permission.TENANT_UPDATE)),
     session: AsyncSession = Depends(get_session),
 ) -> PublicWidgetKeyRead:
+    """Revoke a public key immediately.
+
+    Idempotent: revoking an already-revoked key succeeds and changes nothing.
+    """
     req = payload or PublicWidgetKeyRevokeRequest()
     return await revoke_public_key(
         session,

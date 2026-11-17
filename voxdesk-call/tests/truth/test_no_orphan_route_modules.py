@@ -8,6 +8,7 @@ fails CI here instead of being discovered by a buyer.
 from __future__ import annotations
 
 import ast
+import importlib
 import textwrap
 from pathlib import Path
 
@@ -40,21 +41,30 @@ def test_route_module_population_is_classified():
     assert "orphan" not in counts, counts
 
 
-def test_every_allowlisted_module_exists_and_still_builds_a_router():
-    verdicts = {verdict.module: verdict for verdict in classify_modules(ROOT)}
-    for module in ALLOWLIST:
-        assert module in verdicts, f"{module} is allowlisted but no longer exists"
-        assert verdicts[module].defines_router, f"{module} no longer defines a router"
-        assert verdicts[module].status == "allowlisted", verdicts[module]
+def test_every_api_python_module_parses_and_imports():
+    """Catch both syntax-corrupted files and modules stranded outside import paths."""
+    files = sorted((ROOT / "app" / "api").rglob("*.py"))
+    assert files
+    imported: set[str] = set()
+    for path in files:
+        ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        parts = path.relative_to(ROOT / "app").with_suffix("").parts
+        if parts[-1] == "__init__":
+            parts = parts[:-1]
+        module = ".".join(("app", *parts))
+        importlib.import_module(module)
+        imported.add(module)
+    assert len(imported) == len(files)
 
 
-def test_allowlist_cannot_grow_without_editing_the_frozen_baseline():
-    assert set(ALLOWLIST) == set(ALLOWLIST_BASELINE)
+def test_no_dead_router_exceptions_remain():
+    assert ALLOWLIST == {}
+    assert ALLOWLIST_BASELINE == frozenset()
+    assert all(verdict.status != "allowlisted" for verdict in classify_modules(ROOT))
 
 
-def test_strict_mode_reports_the_known_backlog():
-    problems = [item for item in scan(ROOT, strict=True) if item["kind"] == "allowlisted_dead_router"]
-    assert {item["module"] for item in problems} == set(ALLOWLIST)
+def test_strict_mode_has_no_dead_router_backlog():
+    assert scan(ROOT, strict=True) == []
 
 
 def test_entrypoint_mounting_is_read_with_ast_not_imported():

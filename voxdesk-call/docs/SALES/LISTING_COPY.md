@@ -14,8 +14,8 @@ exclusively from the **`LIVE`** rows of [`docs/SALES/FEATURE_MATRIX_VERIFIED.md`
 
 **Summary**:
 VoxDesk (`voxdesk-call`) is a self-hosted, multi-tenant AI Voice & Omnichannel
-Contact Center platform built on FastAPI, PostgreSQL 16 (`323` registered tables at head
-migration `0069_voice_demo_sessions`), Pipecat 0.0.94, React 18 / Next.js 14,
+Contact Center platform built on FastAPI, PostgreSQL 16 (`356` registered tables at head
+migration `0091_call_debug_pcap_metadata`), Pipecat 0.0.94, React 18 / Next.js 14,
 Go realtime/signaling services, and a Rust RFC 5764 DTLS-SRTP media engine.
 Every advertised capability below is verified `LIVE` by automated JUnit test
 suites (`make verify-sale`).

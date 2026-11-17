@@ -30,6 +30,8 @@ from typing import Any, AsyncIterator, Callable, Coroutine
 from app.core.logging import log
 
 DEFAULT_QUEUE_MAXSIZE = 128
+#: Transcript lines kept per call for the live-calls list (`GET /api/calls/live`).
+TRANSCRIPT_TAIL_LINES = 3
 MAX_SUBSCRIBERS_PER_CALL = 5
 SESSION_KEY_PREFIX = "monitor:sessions:"
 CHANNEL_PREFIX = "monitor:call:"
@@ -55,7 +57,7 @@ def _now_iso() -> str:
 class MonitorEvent:
     """Single fan-out event emitted for a monitored call."""
 
-    kind: str  # "audio" | "transcript" | "guidance" | "call_ended" | "takeover" | "control"
+    kind: str  # "audio" | "transcript" | "guidance" | "score" | "call_ended" | "takeover" | "control"
     call_id: str
     speaker: str = "caller"  # "caller" | "agent" | "system" | "supervisor"
     pcm_bytes: bytes = b""
@@ -84,6 +86,11 @@ class MonitorEvent:
         elif self.kind in ("transcript", "guidance"):
             payload["text"] = self.text
             payload["is_final"] = self.is_final
+        elif self.kind == "score":
+            # A score event carries no text; the numbers are the payload and the
+            # metadata copy would only duplicate them.
+            for key in ("score", "band", "components", "sample_count", "reasons"):
+                payload[key] = self.metadata.get(key)
         if self.metadata:
             payload["metadata"] = dict(self.metadata)
         return payload
@@ -238,9 +245,37 @@ class MonitorBus:
         self._dropped_by_call: dict[str, int] = {}
         self._published_by_call: dict[str, int] = {}
         self._redis_tasks: dict[str, asyncio.Task[None]] = {}
+        # Last few transcript lines per call, for the live-calls list.
+        self._tail: dict[str, list[dict[str, Any]]] = {}
 
     def set_redis_client(self, redis_client: Any) -> None:
         self._redis = redis_client
+
+    def _remember_tail(self, call_id: str, speaker: str, text: str) -> None:
+        """Keep the last few transcript lines, capped and never persisted."""
+        bucket = self._tail.setdefault(call_id, [])
+        bucket.append(
+            {
+                "speaker": speaker,
+                "text": text.strip()[:280],
+                "at": _now_iso(),
+            }
+        )
+        del bucket[:-TRANSCRIPT_TAIL_LINES]
+
+    def transcript_tail(self, call_id: str | uuid.UUID, limit: int = TRANSCRIPT_TAIL_LINES) -> list[dict[str, Any]]:
+        """Most recent transcript lines for a call, oldest first.
+
+        In-memory only: this feeds a live list, not a transcript archive. The
+        archive is the database's job, and a supervisor who needs the full
+        transcript uses the monitor WebSocket or the recording.
+        """
+        lines = self._tail.get(str(call_id), [])
+        return list(lines[-max(1, int(limit)) :])
+
+    def forget_tail(self, call_id: str | uuid.UUID) -> None:
+        """Drop the tail when a call ends, so a long-lived process does not grow."""
+        self._tail.pop(str(call_id), None)
 
     def has_listeners(self, call_id: str | uuid.UUID) -> bool:
         """Fast synchronous check used by ``MonitorTap`` on every pipeline frame.
@@ -534,7 +569,13 @@ class MonitorBus:
     ) -> int:
         """Publish a transcript event if and only if listeners exist. Never logs transcript PII."""
         cid = str(call_id)
-        if not text or not text.strip() or not self.has_listeners(cid):
+        if not text or not text.strip():
+            return 0
+        # The tail is kept even with no listeners: the live-calls list is served
+        # from a different request than the one streaming to supervisors, and a
+        # list that only filled while somebody was watching would be useless.
+        self._remember_tail(cid, speaker, text)
+        if not self.has_listeners(cid):
             return 0
         event = MonitorEvent(
             kind="transcript",
@@ -543,6 +584,30 @@ class MonitorBus:
             text=text,
             is_final=bool(is_final),
             seq=int(seq) if seq is not None else self._next_seq(cid),
+        )
+        return await self._fanout_event(event)
+
+    async def publish_live_score(
+        self,
+        call_id: str | uuid.UUID,
+        score: dict[str, Any],
+    ) -> int:
+        """Publish a live quality score if and only if listeners exist.
+
+        The dict is the scorer's own explanation (`score`, `band`, `components`,
+        `weights`, `reasons`), so a supervisor sees why the number moved rather
+        than just that it moved.
+        """
+        cid = str(call_id)
+        if not score or not self.has_listeners(cid):
+            return 0
+        event = MonitorEvent(
+            kind="score",
+            call_id=cid,
+            speaker="system",
+            is_final=True,
+            seq=self._next_seq(cid),
+            metadata=dict(score),
         )
         return await self._fanout_event(event)
 
@@ -633,6 +698,7 @@ class MonitorBus:
         cid = str(call_id)
         if not self.has_listeners(cid):
             self._active_sessions.pop(cid, None)
+            self.forget_tail(cid)
             return 0
         event = MonitorEvent(
             kind="call_ended",

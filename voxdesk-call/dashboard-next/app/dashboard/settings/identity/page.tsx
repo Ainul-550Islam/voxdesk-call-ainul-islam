@@ -2,6 +2,7 @@
 
 import IdentityNav from "@/components/identity/identity-nav";
 import PolicyPanel from "@/components/identity/policy-panel";
+import { PosturePanel } from "@/components/identity/posture-panel";
 import { Dash } from "@/components/identity/badges";
 import { InlineFacts, Section } from "@/components/identity/fields";
 import { useLoader } from "@/components/identity/use-identity";
@@ -99,6 +100,8 @@ export default function IdentitySettingsPage() {
         />
       </Section>
 
+      <PosturePanel />
+
       <Section
         title="Recent identity events"
         description="Authentication, factors, sessions, credentials and domains — from the same audit log everything else writes to."
@@ -108,7 +111,7 @@ export default function IdentitySettingsPage() {
         {(events.data ?? []).length === 0 && !events.loading ? (
           <div className="empty">No identity events yet.</div>
         ) : (
-          <div className="table-wrap">
+          <div className="table-wrap" tabIndex={0} role="region" aria-label="Data table">
             <table>
               <thead>
                 <tr>

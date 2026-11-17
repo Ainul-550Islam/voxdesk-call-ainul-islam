@@ -196,21 +196,34 @@ async def test_the_processor_forwards_audio_and_emits_frames() -> None:
 
 @pytest.mark.asyncio
 async def test_the_processor_interrupts_the_provider_on_barge_in() -> None:
-    from pipecat.processors.frame_processor import FrameDirection
+    from pipecat.clocks.system_clock import SystemClock
+    from pipecat.frames.frames import InterruptionFrame, StartFrame
+    from pipecat.processors.frame_processor import FrameDirection, FrameProcessorSetup
+    from pipecat.utils.asyncio.task_manager import TaskManager, TaskManagerParams
 
     from app.agent.s2s.s2s_pipeline import S2SPipelineProcessor
 
     session = _FakeSession()
     processor = S2SPipelineProcessor(session=session)
     processor.push_frame = _noop_push  # type: ignore[method-assign]
-    await processor.start()
+    manager = TaskManager()
+    manager.setup(TaskManagerParams(loop=asyncio.get_running_loop()))
+    await processor.setup(
+        FrameProcessorSetup(clock=SystemClock(), task_manager=manager)
+    )
     try:
-        from pipecat.frames.frames import StartInterruptionFrame
-
-        await processor.process_frame(StartInterruptionFrame(), FrameDirection.DOWNSTREAM)
+        await processor.process_frame(StartFrame(), FrameDirection.DOWNSTREAM)
+        # Let the base processor's input/output workers start before interrupting.
+        await asyncio.sleep(0)
+        await processor.queue_frame(InterruptionFrame(), FrameDirection.DOWNSTREAM)
+        await asyncio.sleep(0.05)
         assert session.interrupts == 1
     finally:
         await processor.stop()
+        # Pipecat 0.0.94 wraps task coroutines; let a newly recreated interruption
+        # worker enter its wait before cleanup cancels it.
+        await asyncio.sleep(0)
+        await processor.cleanup()
 
 
 # ---------------------------------------------------------------------------

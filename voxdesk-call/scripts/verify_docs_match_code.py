@@ -48,7 +48,7 @@ if str(ROOT) not in sys.path:
 
 from scripts.pytest_collection_stats import measure_collected_pytest_nodes  # noqa: E402
 
-SOURCE_ROOTS = ("app", "services", "dashboard/src", "dashboard-next", "sdk")
+SOURCE_ROOTS = ("app", "services", "dashboard-next", "sdk")
 SOURCE_SUFFIXES = frozenset({".py", ".ts", ".tsx", ".js", ".rs", ".go", ".cpp", ".h", ".hpp"})
 SOURCE_SKIP_PARTS = frozenset({"node_modules", "target", "build", "dist", "vendor", "__pycache__", ".next"})
 SALES_DIR = "docs/SALES"

@@ -51,6 +51,17 @@ API_PREFIXES = ("/api",)
 #: Paths that are prefixes or documentation examples rather than real calls.
 IGNORED_VALUES = frozenset({"/api", "/api/", "/api/v1", "/api/v1/"})
 
+#: Common API-root constants need to be expanded at their call sites. Counting
+#: the declaration itself as a request creates false positives (for example a
+#: whitelabel API whose endpoints are all below ``/api/whitelabel/theme``).
+API_BASE_NAMES = frozenset({"BASE", "API_BASE", "API_ROOT", "API_PREFIX", "BASE_PATH", "API_BASE_PATH"})
+API_BASE_ASSIGNMENT_RE = re.compile(
+    r"\b(?:const|let|var)\s+(?P<name>[A-Za-z_$][\w$]*)\s*=\s*"
+    r"(?P<quote>['\"`])(?P<value>/api(?:/[^'\"`]*)?)(?P=quote)"
+)
+API_BASE_CALL_RE = re.compile(
+    r"\b(?:request|fetch)\b[^\n]*?\(\s*(?P<name>[A-Za-z_$][\w$]*)\s*(?:,|\))"
+)
 QUOTE_CHARS = "\"'`"
 
 
@@ -133,19 +144,43 @@ def iter_quoted_strings(line: str) -> Iterator[tuple[int, str, str]]:
 
 
 def extract_api_paths(text: str) -> list[tuple[int, str]]:
-    """Every API path literal in one file, with its line number."""
-    results: list[tuple[int, str]] = []
-    for line_no, line in enumerate(text.splitlines(), 1):
-        for _column, _quote, value in iter_quoted_strings(line):
-            value = value.strip()
-            if value in IGNORED_VALUES:
+    """Extract API literals and expand common API-base constants at call sites."""
+    lines = text.splitlines()
+    api_bases: dict[str, str] = {}
+    base_definition_literals: set[tuple[int, int]] = set()
+    for line_no, line in enumerate(lines, 1):
+        for match in API_BASE_ASSIGNMENT_RE.finditer(line):
+            name = match.group("name")
+            value = match.group("value").strip()
+            if name not in API_BASE_NAMES or not value.startswith(API_PREFIXES):
                 continue
+            if value.rstrip("/") in IGNORED_VALUES:
+                continue
+            api_bases[name] = value
+            base_definition_literals.add((line_no, match.start("quote")))
+
+    results: list[tuple[int, str]] = []
+    for line_no, line in enumerate(lines, 1):
+        for column, _quote, raw_value in iter_quoted_strings(line):
+            if (line_no, column) in base_definition_literals:
+                continue
+            value = raw_value.strip()
+            for name, base in api_bases.items():
+                value = value.replace(f"${{{name}}}", base)
             if not value.startswith(API_PREFIXES):
                 continue
-            # A bare prefix with no path segment is not a callable endpoint.
             if value.rstrip("/") in IGNORED_VALUES:
                 continue
             results.append((line_no, value))
+
+        # The root itself can be a real endpoint (for example the agent
+        # template catalog), so resolve request(BASE) rather than treating the
+        # declaration as a request or discarding it as a prefix.
+        for match in API_BASE_CALL_RE.finditer(line):
+            name = match.group("name")
+            value = api_bases.get(name)
+            if value is not None and value.rstrip("/") not in IGNORED_VALUES:
+                results.append((line_no, value))
     return results
 
 

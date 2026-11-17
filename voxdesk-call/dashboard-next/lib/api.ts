@@ -39,7 +39,17 @@ import type {
   User,
 } from "./types";
 
-const RAW_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+// Same-origin by default (PART 17A, P17A-04).
+//
+// The shipped topology puts the Next app and the API on one host behind Caddy:
+// Caddy routes `/api/*` to the API and everything else to the Next server. In
+// that deployment `NEXT_PUBLIC_API_BASE_URL` is unset and every call must be a
+// relative path, so the browser talks to the origin that served the page. The
+// previous default was the literal `http://localhost:8000`, which in a shipped
+// image means "the user's own machine": it would break the app for every visitor
+// and turn every API call into a cross-origin request that the CORS allowlist
+// has to be widened for. Development overrides it explicitly in `.env.local`.
+const RAW_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 export const BASE_URL = RAW_BASE_URL.replace(/\/+$/, "");
 
 export class ApiError extends Error {
@@ -1207,11 +1217,18 @@ export const api = {
     return request<Array<Record<string, unknown>>>(`/api/agents${q ? `?${q}` : ""}`);
   },
 
+  // POST /api/agents takes AgentConfigPayload, which is `extra="forbid"`: any
+  // field the route does not declare is a 422, not an ignored key. So this
+  // signature lists only declared fields — no `initial_config`, no
+  // `template_key`. Engine mode is applied afterwards through the flow
+  // endpoint, which is where `mode` actually lives.
   createAgent(payload: {
     name: string;
     description?: string;
-    template_key?: string;
-    initial_config?: Record<string, unknown>;
+    greeting?: string;
+    system_prompt?: string;
+    persona?: string;
+    enabled_tools?: string[];
   }): Promise<Record<string, unknown>> {
     return request<Record<string, unknown>>("/api/agents", {
       method: "POST",

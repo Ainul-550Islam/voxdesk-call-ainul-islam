@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 #: The trees the delivery contract names explicitly. ``realtime-engine`` was a
 #: retired duplicate of ``services/realtime`` and is only checked when present.
-SCANNED_ROOTS = ("app", "services", "realtime-engine", "dashboard/src")
+SCANNED_ROOTS = ("app", "services", "realtime-engine", "dashboard-next/app")
 
 
 def test_product_source_trees_hold_no_zero_byte_or_nul_only_files():

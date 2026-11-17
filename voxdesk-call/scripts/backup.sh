@@ -20,6 +20,16 @@ FILE="${OUT_DIR}/voxdesk-${STAMP}.dump"
 
 mkdir -p "${OUT_DIR}"
 
+# Residency gate (PART 16 / P16-07). A nightly dump is a copy of customer data,
+# so it must land where the tenant pinned their region -- and this deployment
+# configures no region at all, which means a pinned tenant's backup is refused
+# by name rather than written somewhere expedient. Unpinned deployments keep
+# working: the check exits 0 and says what it could not prove.
+python3 "$(dirname "$0")/backup_target_check.py" --out-dir "${OUT_DIR}" || {
+    echo "backup refused: region pin not honoured (see above)" >&2
+    exit 3
+}
+
 DB_USER="${POSTGRES_USER:-voxdesk}"
 DB_NAME="${POSTGRES_DB:-voxdesk}"
 DB_HOST="${PGHOST:-db}"

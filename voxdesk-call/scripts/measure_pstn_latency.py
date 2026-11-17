@@ -3,13 +3,16 @@
 
 Supports two real-only modes (`provider_fakes: false`):
 1. Offline WAV analysis (`--wav path/to/dual_channel.wav`): reads a 2-channel PCM WAV
-   (channel 0 = caller leg, channel 1 = agent leg at the carrier bridge by default),
+   (default channel 0 = caller and channel 1 = agent; override with the channel flags),
    detects caller speech segments and trailing end-of-speech timestamps, locates the
    first subsequent agent audio onset on the caller-heard leg, and emits JSON with
    `provider`, `model`, `region`, `codec`, `turns`, and `p50_ms` / `p95_ms` / `p99_ms`.
-2. Live PSTN capture (`--live`): places real Twilio dual-channel recorded calls,
-   downloads the carrier `.wav` recording for each call, runs `analyze_dual_channel_wav`,
-   deletes temporary carrier recordings unless `--keep-recordings` is set, and emits JSON.
+2. Live PSTN capture (`--live`): creates real Twilio calls through the authenticated
+   VoxDesk outbound API, downloads each dual-channel carrier recording, analyzes it,
+   deletes the recording after analysis, and emits JSON. Live mode requires an explicit
+   `VOXDESK_REAL_INTEGRATION=1` opt-in and a controlled test callee. Channel direction
+   is an assumption until a controlled live calibration confirms it; reports mark the
+   mapping unverified by default.
 """
 
 from __future__ import annotations
@@ -24,7 +27,6 @@ from pathlib import Path
 import struct
 import sys
 import tempfile
-import time
 from typing import Any
 import wave
 
@@ -35,6 +37,13 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from app.agent.latency import percentile  # noqa: E402
+from scripts.real_pstn_support import (  # noqa: E402
+    create_voxdesk_outbound_call,
+    missing_live_pstn_env,
+    wait_for_dual_channel_recordings,
+    wait_for_twilio_terminal,
+    wait_for_voxdesk_transcript,
+)
 
 
 def _rms_pcm16(samples: list[int]) -> float:
@@ -248,82 +257,132 @@ async def run_live_dual_channel_capture(
     model: str,
     region: str,
     codec: str,
+    caller_channel: int = 0,
+    agent_channel: int = 1,
 ) -> dict[str, Any]:
-    required = [
-        "TWILIO_ACCOUNT_SID",
-        "TWILIO_AUTH_TOKEN",
-        "TWILIO_PHONE_NUMBER",
-        "TWILIO_TEST_TO_NUMBER",
-        "VOXDESK_PUBLIC_BASE_URL",
-    ]
-    missing = [k for k in required if not (os.environ.get(k) or "").strip()]
+    missing = missing_live_pstn_env()
     if missing:
         raise RuntimeError(
-            "Live PSTN dual-channel capture requires carrier credentials; missing: "
+            "Live PSTN capture requires explicit opt-in, VoxDesk API access, and carrier credentials; missing: "
             + ", ".join(missing)
         )
+    if provider.strip().lower() != "twilio":
+        raise RuntimeError("Live PSTN dual-channel capture currently supports only Twilio")
 
     sid = os.environ["TWILIO_ACCOUNT_SID"].strip()
-    tok = os.environ["TWILIO_AUTH_TOKEN"].strip()
+    auth = (sid, os.environ["TWILIO_AUTH_TOKEN"].strip())
     from_num = os.environ["TWILIO_PHONE_NUMBER"].strip()
     to_num = os.environ["TWILIO_TEST_TO_NUMBER"].strip()
-    pub_base = os.environ["VOXDESK_PUBLIC_BASE_URL"].strip().rstrip("/")
+    public_base = os.environ["VOXDESK_PUBLIC_BASE_URL"].strip().rstrip("/")
+    api_key = os.environ["VOXDESK_REAL_API_KEY"].strip()
     api_base = f"https://api.twilio.com/2010-04-01/Accounts/{sid}"
-    auth = (sid, tok)
 
     all_turn_latencies: list[float] = []
     call_reports: list[dict[str, Any]] = []
+    failures: list[dict[str, Any]] = []
 
-    async with httpx.AsyncClient(timeout=30.0, auth=auth) as client:
+    async with (
+        httpx.AsyncClient(timeout=30.0, auth=auth) as twilio_client,
+        httpx.AsyncClient(timeout=45.0) as voxdesk_client,
+    ):
         for idx in range(calls):
-            resp = await client.post(
-                f"{api_base}/Calls.json",
-                data={
-                    "From": from_num,
-                    "To": to_num,
-                    "Url": f"{pub_base}/telephony/voice",
-                    "Record": "true",
-                    "RecordingChannels": "dual",
-                    "Timeout": "25",
-                },
-            )
-            resp.raise_for_status()
-            call_sid = str(resp.json()["sid"])
-
-            deadline = time.monotonic() + 120.0
-            while time.monotonic() < deadline:
-                poll = await client.get(f"{api_base}/Calls/{call_sid}.json")
-                poll.raise_for_status()
-                st = str(poll.json().get("status") or "").lower()
-                if st in {"completed", "failed", "busy", "no-answer", "canceled"}:
-                    break
-                await asyncio.sleep(2.0)
-
-            rec_list = await client.get(f"{api_base}/Calls/{call_sid}/Recordings.json")
-            rec_list.raise_for_status()
-            recs = rec_list.json().get("recordings") or []
-            if not recs:
-                continue
-            rec_sid = str(recs[0]["sid"])
-            wav_resp = await client.get(f"{api_base}/Recordings/{rec_sid}.wav?RequestedChannels=2")
-            wav_resp.raise_for_status()
-
-            with tempfile.NamedTemporaryFile(suffix=".wav", delete=True) as tmp:
-                tmp.write(wav_resp.content)
-                tmp.flush()
-                analysis = analyze_dual_channel_wav(
-                    tmp.name,
-                    provider=provider,
-                    model=model,
-                    region=region,
-                    codec=codec,
+            call_sid = ""
+            call_id = ""
+            terminal = False
+            recording_sids: list[str] = []
+            try:
+                call = await create_voxdesk_outbound_call(
+                    voxdesk_client,
+                    public_base_url=public_base,
+                    api_key=api_key,
+                    to_number=to_num,
+                    from_number=from_num,
+                    timeout_seconds=25,
+                    idempotency_key=f"real-pstn-measure-{idx + 1}-{os.urandom(8).hex()}",
                 )
-            analysis["call_index"] = idx + 1
-            analysis["call_sid"] = call_sid
-            call_reports.append(analysis)
-            for t in analysis["turns"]:
-                all_turn_latencies.append(float(t["caller_leg_latency_ms"]))
-            await client.delete(f"{api_base}/Recordings/{rec_sid}.json")
+                call_sid = call["call_sid"]
+                call_id = call["id"]
+                final_doc = await wait_for_twilio_terminal(
+                    twilio_client,
+                    api_base=api_base,
+                    call_sid=call_sid,
+                    timeout_seconds=150.0,
+                    poll_seconds=2.0,
+                )
+                status = str(final_doc.get("status") or "").lower()
+                terminal = True
+                if status != "completed":
+                    raise RuntimeError(f"PSTN call ended with status {status!r}")
+
+                recordings = await wait_for_dual_channel_recordings(
+                    twilio_client,
+                    api_base=api_base,
+                    call_sid=call_sid,
+                )
+                recording_sids = [str(row["sid"]) for row in recordings]
+                recording_sid = recording_sids[0]
+                wav_resp = await twilio_client.get(
+                    f"{api_base}/Recordings/{recording_sid}.wav?RequestedChannels=2"
+                )
+                if wav_resp.status_code != 200:
+                    raise RuntimeError(f"Twilio recording download returned HTTP {wav_resp.status_code}")
+
+                with tempfile.NamedTemporaryFile(suffix=".wav", delete=True) as tmp:
+                    tmp.write(wav_resp.content)
+                    tmp.flush()
+                    analysis = analyze_dual_channel_wav(
+                        tmp.name,
+                        provider=provider,
+                        model=model,
+                        region=region,
+                        codec=codec,
+                        caller_channel=caller_channel,
+                        agent_channel=agent_channel,
+                    )
+                if not analysis["matched_turns"]:
+                    raise RuntimeError("Recording contained no matched caller-to-agent speech turn")
+                replay = await wait_for_voxdesk_transcript(
+                    voxdesk_client,
+                    public_base_url=public_base,
+                    api_key=api_key,
+                    call_id=call_id,
+                )
+                transcript_turns = [
+                    event
+                    for event in replay.get("timeline") or []
+                    if isinstance(event, dict) and event.get("event") == "transcript_turn"
+                ]
+                analysis.update(
+                    {
+                        "call_index": idx + 1,
+                        "call_id": call_id,
+                        "call_sid": call_sid,
+                        "call_status": status,
+                        "transcript_turns": len(transcript_turns),
+                    }
+                )
+                call_reports.append(analysis)
+                all_turn_latencies.extend(
+                    float(turn["caller_leg_latency_ms"]) for turn in analysis["turns"]
+                )
+            except Exception as exc:
+                failures.append(
+                    {"call_index": idx + 1, "call_id": call_id, "call_sid": call_sid, "reason": str(exc)}
+                )
+            finally:
+                for recording_sid in recording_sids:
+                    try:
+                        await twilio_client.delete(f"{api_base}/Recordings/{recording_sid}.json")
+                    except httpx.HTTPError:
+                        pass
+                if call_sid and not terminal:
+                    try:
+                        await twilio_client.post(
+                            f"{api_base}/Calls/{call_sid}.json",
+                            data={"Status": "completed"},
+                        )
+                    except httpx.HTTPError:
+                        pass
 
     return {
         "schema": "voxdesk.pstn_caller_leg_latency/v1",
@@ -334,11 +393,20 @@ async def run_live_dual_channel_capture(
         "model": model,
         "region": region,
         "codec": codec,
+        "channel_mapping": {
+            "caller_channel": caller_channel,
+            "agent_channel": agent_channel,
+            "verified_by_live_calibration": False,
+        },
+        "calls_requested": calls,
+        "calls_attempted": len(call_reports) + len(failures),
         "calls_completed": len(call_reports),
+        "calls_failed": len(failures),
         "total_turns": len(all_turn_latencies),
         "p50_ms": round(percentile(all_turn_latencies, 50), 2) if all_turn_latencies else None,
         "p95_ms": round(percentile(all_turn_latencies, 95), 2) if all_turn_latencies else None,
         "p99_ms": round(percentile(all_turn_latencies, 99), 2) if all_turn_latencies else None,
+        "failures": failures,
         "calls": call_reports,
     }
 
@@ -346,8 +414,8 @@ async def run_live_dual_channel_capture(
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--wav", type=Path, help="Dual-channel PCM16 WAV recording to analyze.")
-    parser.add_argument("--live", action="store_true", help="Place live Twilio dual-channel calls.")
-    parser.add_argument("--calls", type=int, default=5, help="Number of live PSTN calls when --live is set.")
+    parser.add_argument("--live", action="store_true", help="Place paid live Twilio calls through VoxDesk (requires explicit opt-in).")
+    parser.add_argument("--calls", type=int, default=1, help="Number of controlled test calls when --live is set.")
     parser.add_argument("--provider", default=os.environ.get("VOXDESK_TELEPHONY_PROVIDER", "twilio"))
     parser.add_argument("--model", default=os.environ.get("OPENAI_MODEL", "gpt-4o-mini"))
     parser.add_argument("--region", default=os.environ.get("AWS_REGION", "us-east-1"))
@@ -372,18 +440,22 @@ def main(argv: list[str] | None = None) -> int:
             min_silence_ms=args.min_silence_ms,
         )
     elif args.live:
+        if args.calls < 1:
+            parser.error("--calls must be at least 1 for a live study")
         try:
             report = asyncio.run(
                 run_live_dual_channel_capture(
-                    calls=max(1, args.calls),
+                    calls=args.calls,
                     provider=args.provider,
                     model=args.model,
                     region=args.region,
                     codec=args.codec,
+                    caller_channel=args.caller_channel,
+                    agent_channel=args.agent_channel,
                 )
             )
-        except RuntimeError as exc:
-            print(f"SKIP: {exc}", file=sys.stderr)
+        except (RuntimeError, TimeoutError) as exc:
+            print(f"REFUSED/FAILED: {exc}", file=sys.stderr)
             return 2
     else:
         parser.error("Pass --wav <dual_channel.wav> or --live")
@@ -394,6 +466,8 @@ def main(argv: list[str] | None = None) -> int:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(serialized, encoding="utf-8")
     print(serialized, end="")
+    if args.live and (not report.get("calls_completed") or report.get("calls_failed")):
+        return 1
     return 0
 
 

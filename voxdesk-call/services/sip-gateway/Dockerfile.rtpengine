@@ -1,0 +1,16 @@
+# Userspace RTPEngine for the isolated SIP edge. The image has no kernel-module
+# dependency; the Compose stack publishes only the configured media UDP range.
+FROM debian:trixie-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3-minimal \
+    rtpengine-daemon \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY rtpengine.conf /etc/rtpengine/rtpengine.conf.template
+COPY rtpengine-entrypoint.sh /usr/local/bin/rtpengine-entrypoint
+RUN chmod 0755 /usr/local/bin/rtpengine-entrypoint
+
+USER rtpengine
+EXPOSE 10000-20000/udp 22222/udp
+ENTRYPOINT ["/usr/local/bin/rtpengine-entrypoint"]

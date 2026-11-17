@@ -1,5 +1,23 @@
 # VoxDesk TLS reverse proxy (Caddy v2).
 #
+# PART 17A (P17A-03) split the single upstream into three:
+#
+#   /realtime/ws        -> realtime-gateway:8790   (durable dashboard WebSocket)
+#   API prefixes        -> api:8000                (JSON + WebSocket + docs)
+#   everything else     -> web:3000                (dashboard-next, Node server)
+#
+# `web` is the Next.js standalone server built from stage `web` of the
+# Dockerfile. It serves every document: the marketing site, the console, login,
+# the public share link. The API no longer serves HTML at all, so the old
+# "API answers / and falls back to index.html" arrangement is gone.
+#
+# The API prefix list below is exhaustive on purpose — a prefix that is missing
+# here does not silently fall back to the API, it lands on the Next server and
+# 404s, which is a visible bug rather than a security hole. It was generated from
+# the mounted FastAPI routes and must be regenerated if a new top-level router is
+# added. `/docs` is deliberately NOT in the list: the Next app has its own `/docs`
+# page, and the interactive API explorer stays at `/redoc` and `/openapi.json`.
+#
 # Automatic HTTPS: when DOMAIN is a real public hostname, Caddy obtains and
 # renews Let's Encrypt certificates with zero config and redirects HTTP -> HTTPS
 # on the same site. Leave DOMAIN unset to serve plain HTTP on :80 (behind your
@@ -67,11 +85,25 @@
 		reverse_proxy realtime-gateway:8790
 	}
 
-	# Everything else goes to the API on 8000 inside the compose network.
-	# Two upstreams total, both enumerated above — there is still no
-	# wildcard/arbitrary upstream path.
-	handle {
+	# API surface: every top-level router mounted in app/main.py except `/docs`.
+	# Grouped so a new API area is added in exactly one place.
+	@api path /api/* /auth/* /channels/* /health /health/* /messaging/* \
+		/public/* /scim/* /telephony/* /webhooks/* /widget/* /ws /ws/* \
+		/.well-known/* /openapi.json /redoc /redoc/* /robots.txt /sitemap.xml /security.txt
+	handle @api {
 		reverse_proxy api:8000
+	}
+
+	# Immutable, content-addressed Next assets. Safe to cache forever: the file
+	# name contains the build hash, so a new build produces new names.
+	@next_static path /_next/static/*
+	header @next_static Cache-Control "public, max-age=31536000, immutable"
+
+	# Everything else is a document: the marketing site, the console, login, share
+	# links. Next answers 404 for paths it does not have, which is the correct
+	# answer — there is no SPA catch-all rewriting unknown URLs to the home page.
+	handle {
+		reverse_proxy web:3000
 	}
 }
 

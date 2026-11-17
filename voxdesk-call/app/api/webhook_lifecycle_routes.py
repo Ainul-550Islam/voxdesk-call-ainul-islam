@@ -522,5 +522,14 @@ async def idempotency_stats(ctx: Reader, session: Session):
 
 @router.delete("/idempotency/cache")
 async def clear_idempotency(ctx: Writer, session: Session):
-    # Clearing durable receipts would admit duplicate external effects.
-    raise HTTPException(409, detail="UNSUPPORTED_CAPABILITY: durable receipts cannot be cleared as a cache")
+    # Clearing durable receipts would admit duplicate external effects. A 409
+    # (permanent rule) rather than 501: nothing an operator configures makes
+    # this endpoint's answer change, and a 501 would read as "not yet".
+    raise HTTPException(
+        409,
+        detail={
+            "code": "UNSUPPORTED_CAPABILITY",
+            "capability": "idempotency_cache_clear",
+            "message": "Durable receipts cannot be cleared as a cache; deleting them would admit duplicate external effects.",
+        },
+    )

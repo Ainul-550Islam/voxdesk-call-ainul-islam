@@ -110,7 +110,28 @@ def safe_reference(value: str | None) -> str | None:
     return value
 
 
-def put_bytes(tenant_id: uuid.UUID, recording_id: uuid.UUID, data: bytes) -> tuple[str, str, int]:
+def put_bytes(
+    tenant_id: uuid.UUID,
+    recording_id: uuid.UUID,
+    data: bytes,
+    *,
+    region: str | None = None,
+    pinned_region: str | None = None,
+) -> tuple[str, str, int]:
+    """Store recording bytes for a tenant.
+
+    ``region`` is where this deployment would write them and ``pinned_region`` is
+    what the tenant asked for (PART 16 / P16-07). With no pin nothing is claimed;
+    with a pin, a mismatch, an unstated target or an unconfigured region raises
+    ``ResidencyDenied`` *before* a byte is written. Defaulting both to ``None``
+    deliberately keeps every existing caller honest rather than quietly assuming
+    a region.
+    """
+    from app.tenancy import data_residency
+
+    data_residency.enforce_artifact_write(
+        artifact="recording", pinned=pinned_region, target=region
+    )
     root = (settings.telephony_media_dir or "").strip()
     if not root:
         raise RuntimeError("Recording media directory is not configured")

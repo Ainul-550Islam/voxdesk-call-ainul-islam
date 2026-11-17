@@ -1,0 +1,15 @@
+{
+  "name": "@voxdesk/cli",
+  "version": "1.0.0",
+  "description": "VoxDesk command line: agents, calls, workflows and knowledge from a terminal",
+  "bin": { "voxdesk": "bin/voxdesk.js" },
+  "main": "src/index.js",
+  "type": "commonjs",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "test": "node --test test/",
+    "lint": "node --check src/index.js && node --check bin/voxdesk.js"
+  },
+  "license": "UNLICENSED",
+  "private": true
+}

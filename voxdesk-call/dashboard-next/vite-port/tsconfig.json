@@ -1,0 +1,22 @@
+{
+  "//": "Type settings for the verbatim Vite marketing tree (PART 17A). The copied components were written under `strict: false` with `allowJs`; changing that here would mean rewriting 8k lines of marketing UI to satisfy a checker they were never written for. They are checked in their own project (`npm run typecheck:port`) and excluded from the strict app tsconfig, so the strict gate still means what it says for new code.",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "checkJs": false,
+    "skipLibCheck": true,
+    "strict": false,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "baseUrl": "..",
+    "paths": { "@/*": ["./*"] }
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["node_modules"]
+}

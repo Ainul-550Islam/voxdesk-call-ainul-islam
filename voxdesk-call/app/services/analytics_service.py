@@ -12,11 +12,12 @@ Computes tenant-scoped call & quality metrics:
 
 from __future__ import annotations
 
+import json
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import app.db.models as _db_models  # noqa: F401 — import before telephony_models
@@ -932,3 +933,298 @@ async def snapshot(
         points=(point,),
     )
 
+
+
+# ---------------------------------------------------------------------------
+# PART 15 (P15-06) — analytics unification
+#
+# Four questions the dashboard could not answer before:
+#   * how many calls were in flight at once, over the last day;
+#   * what the provider mix actually costs;
+#   * why calls ended;
+#   * what chat and SMS did, next to voice.
+# Each returns a series or a breakdown computed from stored rows; none of them
+# extrapolates a value it does not have.
+# ---------------------------------------------------------------------------
+
+ANALYSIS_GROUP_PREFIX = "analysis:"
+
+#: A day of one-minute buckets. The sampler writes at most one point per minute,
+#: so a denser line would be interpolation dressed as data.
+CONCURRENCY_BUCKET_SECONDS = 60
+
+
+def _as_naive_utc(value: datetime) -> datetime:
+    if value.tzinfo is not None:
+        return value.astimezone(timezone.utc).replace(tzinfo=None)
+    return value
+
+
+async def concurrency_series_24h(
+    db: AsyncSession,
+    tenant_id: uuid.UUID,
+    *,
+    end: datetime | None = None,
+    bucket_seconds: int = CONCURRENCY_BUCKET_SECONDS,
+) -> dict[str, Any]:
+    """Concurrent calls per minute for the last 24 hours.
+
+    Computed from call start/end times rather than from a live counter: a
+    counter answers "now", and a chart of "now" is a chart of one point. A call
+    with no `ended_at` is treated as still running up to `end` -- which is what
+    makes the line drop when the calls actually finish.
+    """
+    end_at = _as_naive_utc(end) if end is not None else datetime.now(timezone.utc).replace(tzinfo=None)
+    start_at = end_at - timedelta(hours=24)
+    rows = list(
+        (
+            await db.scalars(
+                select(Call.id, Call.started_at, Call.ended_at).where(
+                    Call.tenant_id == tenant_id,
+                    Call.started_at.is_not(None),
+                    Call.started_at < end_at,
+                    or_(Call.ended_at.is_(None), Call.ended_at > start_at),
+                )
+            )
+        ).all()
+    )
+    events: list[tuple[datetime, int]] = []
+    for _call_id, started_at, ended_at in rows:
+        begin = max(_as_naive_utc(started_at), start_at)
+        finish = min(_as_naive_utc(ended_at) if ended_at else end_at, end_at)
+        if finish <= begin:
+            continue
+        events.append((begin, 1))
+        events.append((finish, -1))
+    events.sort(key=lambda item: (item[0], item[1]))
+
+    buckets: list[dict[str, Any]] = []
+    index = 0
+    running = 0
+    cursor = start_at
+    step = max(60, int(bucket_seconds))
+    while cursor < end_at:
+        while index < len(events) and events[index][0] <= cursor:
+            running += events[index][1]
+            index += 1
+        buckets.append(
+            {
+                "at": cursor.isoformat(),
+                "concurrent": running,
+            }
+        )
+        cursor += timedelta(seconds=step)
+    peak = max((bucket["concurrent"] for bucket in buckets), default=0)
+    return {
+        "points": buckets,
+        "peak": peak,
+        "samples": len(rows),
+        "bucket_seconds": step,
+        "window_start": start_at.isoformat(),
+        "window_end": end_at.isoformat(),
+    }
+
+
+async def cost_by_provider(
+    db: AsyncSession,
+    tenant_id: uuid.UUID,
+    *,
+    start: datetime | None = None,
+    end: datetime | None = None,
+) -> dict[str, Any]:
+    """Estimated provider cost per LLM provider, with the call counts behind it.
+
+    The estimate comes from :func:`_estimate_call_cost_usd`, which already falls
+    back to a documented per-minute rate when a provider price is unknown. The
+    response says which providers are priced and which are not, so a total is
+    never read as more precise than it is.
+    """
+    from app.ai import costs as _costs
+
+    s = _as_naive_utc(start) if start is not None else None
+    e = _as_naive_utc(end) if end is not None else None
+    stmt = select(Call).where(Call.tenant_id == tenant_id)
+    if s is not None:
+        stmt = stmt.where(Call.started_at >= s)
+    if e is not None:
+        stmt = stmt.where(Call.started_at < e)
+    rows = list((await db.scalars(stmt)).all())
+
+    totals: dict[str, dict[str, float]] = {}
+    for call in rows:
+        provider = _extract_provider(call)
+        bucket = totals.setdefault(provider, {"calls": 0.0, "cost_usd": 0.0, "seconds": 0.0})
+        bucket["calls"] += 1
+        bucket["seconds"] += float(call.duration_seconds or 0.0)
+        bucket["cost_usd"] += _estimate_call_cost_usd(call)
+
+    breakdown = []
+    for provider, bucket in sorted(totals.items(), key=lambda item: -item[1]["cost_usd"]):
+        pricing = _costs.get_pricing(provider) if hasattr(_costs, "get_pricing") else {}
+        breakdown.append(
+            {
+                "provider": provider,
+                "calls": int(bucket["calls"]),
+                "seconds": round(bucket["seconds"], 1),
+                "cost_usd": round(bucket["cost_usd"], 6),
+                "priced": bool(pricing),
+            }
+        )
+    return {
+        "providers": breakdown,
+        "total_usd": round(sum(item["cost_usd"] for item in breakdown), 6),
+        "priced_providers": [item["provider"] for item in breakdown if item["priced"]],
+        "unpriced_providers": [item["provider"] for item in breakdown if not item["priced"]],
+    }
+
+
+async def disconnection_reasons(
+    db: AsyncSession,
+    tenant_id: uuid.UUID,
+    *,
+    start: datetime | None = None,
+    end: datetime | None = None,
+) -> dict[str, Any]:
+    """Why calls ended, using the same classifier the KPI breakdown uses."""
+    s = _as_naive_utc(start) if start is not None else None
+    e = _as_naive_utc(end) if end is not None else None
+    stmt = select(Call).where(Call.tenant_id == tenant_id)
+    if s is not None:
+        stmt = stmt.where(Call.started_at >= s)
+    if e is not None:
+        stmt = stmt.where(Call.started_at < e)
+    rows = list((await db.scalars(stmt)).all())
+
+    counts: dict[str, int] = {}
+    for call in rows:
+        vm_ids: set[uuid.UUID] = set()
+        reason = _classify_disconnect_reason(call, _is_call_voicemail(call, vm_ids))
+        counts[reason] = counts.get(reason, 0) + 1
+    total = sum(counts.values())
+    reasons = [
+        {
+            "reason": reason,
+            "calls": count,
+            "share": _pct(count, total),
+        }
+        for reason, count in sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+    ]
+    return {"reasons": reasons, "total_calls": total}
+
+
+async def channel_summary(
+    db: AsyncSession,
+    tenant_id: uuid.UUID,
+    *,
+    start: datetime | None = None,
+    end: datetime | None = None,
+) -> dict[str, Any]:
+    """Voice, chat and SMS in one shape.
+
+    Chat comes from ``chat_sessions``/``chat_messages``; SMS comes from metered
+    ``usage_events`` (SMS_SEGMENT), because that is where a segment is counted
+    and billed. Voice is the call table. The three counts are not directly
+    comparable -- a chat session with twenty messages is one session -- so each
+    row states its own unit.
+    """
+    from app.db.retell_models import ChatMessage, ChatSession
+
+    s = _as_naive_utc(start) if start is not None else None
+    e = _as_naive_utc(end) if end is not None else None
+
+    call_stmt = select(func.count(Call.id)).where(Call.tenant_id == tenant_id)
+    session_stmt = select(func.count(ChatSession.id)).where(ChatSession.tenant_id == tenant_id)
+    message_stmt = select(func.count(ChatMessage.id)).where(ChatMessage.tenant_id == tenant_id)
+    sms_stmt = select(func.coalesce(func.sum(UsageEvent.quantity), 0)).where(
+        UsageEvent.tenant_id == tenant_id, UsageEvent.metric == UsageMetric.SMS_SEGMENT
+    )
+    if s is not None:
+        call_stmt = call_stmt.where(Call.started_at >= s)
+        session_stmt = session_stmt.where(ChatSession.started_at >= s)
+        message_stmt = message_stmt.where(ChatMessage.created_at >= s)
+        sms_stmt = sms_stmt.where(UsageEvent.created_at >= s)
+    if e is not None:
+        call_stmt = call_stmt.where(Call.started_at < e)
+        session_stmt = session_stmt.where(ChatSession.started_at < e)
+        message_stmt = message_stmt.where(ChatMessage.created_at < e)
+        sms_stmt = sms_stmt.where(UsageEvent.created_at < e)
+
+    voice = int(await db.scalar(call_stmt) or 0)
+    sessions = int(await db.scalar(session_stmt) or 0)
+    messages = int(await db.scalar(message_stmt) or 0)
+    sms_segments = int(await db.scalar(sms_stmt) or 0)
+
+    channels = [
+        {"channel": "voice", "unit": "calls", "count": voice},
+        {"channel": "chat", "unit": "sessions", "count": sessions},
+        {"channel": "chat", "unit": "messages", "count": messages},
+        {"channel": "sms", "unit": "segments", "count": sms_segments},
+    ]
+    return {
+        "channels": channels,
+        "total_interactions": voice + sessions + sms_segments,
+        "as_of": (e or datetime.now(timezone.utc).replace(tzinfo=None)).isoformat(),
+    }
+
+
+async def group_by_analysis_field(
+    db: AsyncSession,
+    tenant_id: uuid.UUID,
+    field: str,
+    *,
+    start: datetime | None = None,
+    end: datetime | None = None,
+    max_groups: int = 100,
+) -> dict[str, Any]:
+    """Group calls by the value of one field inside a stored analysis result.
+
+    The JSON is read in Python and the value is stringified, because the field
+    names are tenant-defined: there is no column to group on, and a JSON path
+    query would still be untyped. Values are sorted by count and the response
+    reports how many distinct values it collapsed into ``other``.
+    """
+    from app.db.enterprise_models import AnalysisResult
+
+    name = (field or "").strip()
+    if not name:
+        raise ValueError("analysis field name is required")
+
+    s = _as_naive_utc(start) if start is not None else None
+    e = _as_naive_utc(end) if end is not None else None
+    stmt = select(AnalysisResult.call_id, AnalysisResult.result).where(
+        AnalysisResult.tenant_id == tenant_id
+    )
+    if s is not None:
+        stmt = stmt.where(AnalysisResult.created_at >= s)
+    if e is not None:
+        stmt = stmt.where(AnalysisResult.created_at < e)
+    rows = list((await db.execute(stmt)).all())
+
+    counts: dict[str, int] = {}
+    missing = 0
+    seen_calls: set[uuid.UUID] = set()
+    for call_id, payload in rows:
+        if call_id in seen_calls:
+            # One value per call: the newest result wins, and older schema
+            # versions must not double-count the same call.
+            continue
+        seen_calls.add(call_id)
+        if not isinstance(payload, dict) or name not in payload:
+            missing += 1
+            continue
+        raw = payload.get(name)
+        key = raw if isinstance(raw, str) else json.dumps(raw, default=str, sort_keys=True)
+        counts[key[:200]] = counts.get(key[:200], 0) + 1
+
+    ordered = sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+    limit = max(1, min(max_groups, 500))
+    groups = [{"value": value, "calls": count} for value, count in ordered[:limit]]
+    collapsed = len(ordered) - len(groups)
+    return {
+        "group_by": f"{ANALYSIS_GROUP_PREFIX}{name}",
+        "field": name,
+        "groups": groups,
+        "collapsed": collapsed,
+        "missing_field": missing,
+        "calls": len(seen_calls),
+    }

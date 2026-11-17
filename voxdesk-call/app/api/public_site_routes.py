@@ -78,6 +78,7 @@ async def public_site_manifest(
     request: Request,
     session: AsyncSession = Depends(get_session),
 ) -> PublicSiteManifest:
+    """Public route manifest for the marketing site."""
     return await get_public_site_manifest(
         session,
         canonical_origin=_canonical_origin_from_request(request),
@@ -89,6 +90,7 @@ async def public_site_manifest(
 async def public_site_pricing(
     session: AsyncSession = Depends(get_session),
 ) -> list[PublicPricingTier]:
+    """Public pricing data, generated from the plan catalogue so the page cannot quote a price the product will not charge."""
     return await get_public_pricing_tiers(session)
 
 
@@ -97,6 +99,7 @@ async def public_site_status(
     request: Request,
     session: AsyncSession = Depends(get_session),
 ) -> PublicSiteStatusSummary:
+    """Public status summary. Component names and up/degraded only — never internals, never tenant data."""
     return await get_public_status_summary(session, request.app)
 
 
@@ -106,6 +109,7 @@ async def public_route_boundary_check(
     authenticated: bool = Query(False),
     next: str | None = Query(None, max_length=512),
 ) -> PublicAuthBoundaryDecision:
+    """Whether a path belongs to the marketing site or the application, so the edge never shows a marketing page to a signed-in user."""
     return evaluate_route_boundary(
         path=path,
         is_authenticated=authenticated,
@@ -123,6 +127,7 @@ async def submit_contact_sales(
     request: Request,
     session: AsyncSession = Depends(get_session),
 ) -> PublicContactSalesRead:
+    """Contact-sales submission, rate limited per IP."""
     ip = client_ip_from_request(request)
     await _check_contact_sales_rate_limit(ip)
     origin = extract_request_origin(

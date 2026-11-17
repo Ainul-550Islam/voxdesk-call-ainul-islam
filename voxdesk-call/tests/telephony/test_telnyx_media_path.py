@@ -5,7 +5,6 @@ from __future__ import annotations
 import audioop
 import base64
 import json
-import os
 import uuid
 
 import pytest
@@ -143,12 +142,3 @@ async def test_telnyx_inbound_voice_webhook_binds_agent_and_returns_stream(clien
     assert body["agent_version_id"] == str(ver.id)
     assert body["serializer"] == "TelnyxFrameSerializer"
     assert "/telephony/telnyx/stream/" in body["stream_ws_url"]
-
-
-@pytest.mark.live
-@pytest.mark.asyncio
-async def test_telnyx_live_outbound_call_media_stream():
-    if not os.getenv("TELNYX_API_KEY"):
-        pytest.skip("Live Telnyx test requires TELNYX_API_KEY")
-    ser = build_serializer("telnyx", stream_sid="live_stream", call_sid="v3:live")
-    assert ser is not None

@@ -1,0 +1,123 @@
+id: customer_support
+name: Customer Support
+vertical: support
+summary: >-
+  Answers from the knowledge base with citations, escalates to a human when the answer is not in the corpus, and never improvises a policy.
+config:
+  voice: configured-default
+  language: en-US
+  first_message: >-
+    I can help with that. What's going on?
+  llm_model: gpt-4o-mini
+  max_call_seconds: 900
+  end_call_after_silence_seconds: 12
+
+tools:
+  - name: search_knowledge_base
+    description: Retrieve passages from the tenant's own knowledge base, with article ids.
+    params:
+      query: {type: string}
+      limit: {type: number}
+
+dynamic_variables:
+  - name: issue_summary
+    type: string
+    purpose: >-
+      The customer's own words for the problem; the retrieval query and the ticket title.
+    required: true
+    examples: ['"my invoice is wrong"', '"can not log in"']
+  - name: account_owner
+    type: boolean
+    purpose: >-
+      Whether the caller is the account owner. Gates any account-specific action.
+    required: true
+    examples: [true, false]
+  - name: cited_articles
+    type: string
+    purpose: >-
+      Which KB articles the answer used, so the transcript can be audited later.
+    required: false
+    examples: ['"billing-invoices, refund-policy"']
+
+flow:
+  mode: rigid
+  nodes:
+    - id: start
+      node_type: start
+      params: {}
+    - id: greet
+      node_type: conversation
+      params:
+        prompt: "Ask what the problem is, and whether they are the account owner."
+    - id: capture
+      node_type: extract_variables
+      params:
+        variables:
+          - {'name': 'issue_summary', 'type': 'string', 'required': True}
+          - {'name': 'account_owner', 'type': 'boolean', 'required': True}
+    - id: lookup
+      node_type: function
+      params:
+        tool_name: search_knowledge_base
+    - id: answer
+      node_type: conversation
+      params:
+        prompt: "Answer only from the retrieved passages, and cite the article title. If nothing relevant was retrieved, say so and escalate."
+    - id: escalate
+      node_type: transfer
+      params:
+        destination: "support-tier-2"
+        transfer_mode: "warm"
+    - id: end
+      node_type: end
+      params: {}
+  edges:
+    - id: e1
+      source_id: start
+      target_id: greet
+    - id: e2
+      source_id: greet
+      target_id: capture
+    - id: e3
+      source_id: capture
+      target_id: lookup
+    - id: e4
+      source_id: lookup
+      target_id: answer
+    - id: e5
+      source_id: answer
+      target_id: escalate
+    - id: e6
+      source_id: answer
+      target_id: end
+    - id: e7
+      source_id: escalate
+      target_id: end
+
+analysis_schema:
+  fields:
+    - name: resolved
+      type: boolean
+    - name: escalated
+      type: boolean
+    - name: cited_articles
+      type: string
+
+simulation_cases:
+  - name: answers from the corpus and cites it
+    turns:
+      - "my invoice is wrong"
+      - "yes I own the account"
+    expect_node: answer
+  - name: escalates when nothing relevant is retrieved
+    turns:
+      - "something nobody documented"
+    expect_node: escalate
+
+kb_placeholders:
+  - "support-articles.md — the actual knowledge base; empty until the tenant supplies it"
+  - "escalation-matrix.md — which tier owns which problem"
+
+compliance_notes:
+  - "No answer may be improvised. If the corpus does not contain it, the agent escalates — that behaviour is the product, not a limitation."
+  - "Customer data in the transcript: confirm with counsel whether the tenant's DPA covers storing the summary."

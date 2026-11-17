@@ -258,7 +258,7 @@ export default function WorkflowsPage() {
           <button onClick={() => { setSelectedWf(null); setNodes([]); setEdges([]); }} className="btn-secondary" style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #ccc", cursor: "pointer" }}>+ New Workflow</button>
         </div>
         {selectedWf && (
-          <div className="table-wrap">
+          <div className="table-wrap" tabIndex={0} role="region" aria-label="Data table">
             <table>
               <thead><tr><th>Name</th><th>Status</th><th>Version</th><th>Nodes</th><th>Edges</th><th>Updated</th></tr></thead>
               <tbody>

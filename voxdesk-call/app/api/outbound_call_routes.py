@@ -25,7 +25,7 @@ import re
 import uuid
 from datetime import datetime, timezone, timedelta
 from enum import Enum as PyEnum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Header, Query, Request
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -43,6 +43,7 @@ from app.db.models import (
     Lead,
     LeadStatus,
     RequestIdempotencyReceipt,
+    Turn,
 )
 from app.db.session import get_session
 from app.environments.membership import resolve as resolve_environment_membership
@@ -126,6 +127,10 @@ class OutboundCallRequest(_Strict):
     provider: Optional[str] = Field(default=None, description="Provider override: twilio/telnyx/mock")
     timeout_seconds: int = Field(default=25, ge=5, le=60)
     record: bool = Field(default=True)
+    recording_channels: Literal["mono", "dual"] = Field(
+        default="mono",
+        description="Twilio recording layout; `dual` separates caller and agent legs.",
+    )
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("to")
@@ -241,14 +246,42 @@ class WebCallListOut(_Strict):
     limit: int
     offset: int
 
+#: How many transcript turns `/analytics` inlines. Five is enough for a
+#: dashboard preview and small enough that the response stays a summary; the
+#: true total travels alongside as `turn_count`.
+MAX_EXCERPT_TURNS = 5
+
+
+def _provider_from_call_sid(call_sid: Optional[str]) -> Optional[str]:
+    """Name the carrier from the call SID prefix, or say `unknown`.
+
+    Twilio SIDs start with ``CA`` (voice call). Any other shape means the call
+    was created by a different wiring, and this function refuses to guess:
+    reporting the wrong carrier is worse than reporting none, because the
+    operator would check the wrong vendor's dashboard during an incident.
+    """
+    if not call_sid:
+        return None
+    sid = call_sid.strip()
+    if sid.upper().startswith("CA") and len(sid) >= 32:
+        return "twilio"
+    return "unknown"
+
+
 class CallAnalyticsOut(_Strict):
     call_id: str
     duration_seconds: Optional[int] = None
     status: str
     provider: Optional[str] = None
     cost_cents: Optional[int] = None
+    #: Why cost_cents is null. Present so a client can distinguish "not priced"
+    #: from "not computed yet" — a bare null cannot.
+    cost_basis: Optional[str] = None
     recording_url: Optional[str] = None
     transcript_excerpt: Optional[str] = None
+    #: How many turns exist in total, and whether the excerpt above is shorter.
+    turn_count: int = 0
+    transcript_truncated: bool = False
 
 # ---------------------------------------------------------------------------
 # Helpers — time, idempotency, rate limit, phone, audit
@@ -431,6 +464,7 @@ async def _claim_route_idempotency(
         raise HTTPException(status_code=400, detail="Idempotency-Key is invalid") from None
 
 def _call_to_out(call: Call, agent_id: Optional[str] = None, lead_id: Optional[str] = None, provider: Optional[str] = None, idem_key: Optional[str] = None) -> OutboundCallOut:
+    resolved_agent_id = agent_id or (str(call.agent_id) if call.agent_id else None)
     return OutboundCallOut(
         id=str(call.id),
         call_sid=call.call_sid,
@@ -438,7 +472,7 @@ def _call_to_out(call: Call, agent_id: Optional[str] = None, lead_id: Optional[s
         from_number=call.from_number,
         direction=call.direction.value if hasattr(call.direction, "value") else str(call.direction),
         status=call.status.value if hasattr(call.status, "value") else str(call.status),
-        agent_id=agent_id,
+        agent_id=resolved_agent_id,
         lead_id=lead_id,
         created_at=call.started_at.isoformat() if call.started_at else _now_iso(),
         provider=provider,
@@ -633,12 +667,14 @@ async def _attempt_provider_dial(
     from_number: str,
     timeout_seconds: int = 25,
     record: bool = True,
+    recording_channels: str = "mono",
     lead_id: Optional[uuid.UUID] = None,
     provider_override: Optional[str] = None,
     *,
     agent_id: Optional[str] = None,
     environment_id: Optional[uuid.UUID] = None,
     idempotency_key: Optional[str] = None,
+    dynamic_variables: Optional[dict[str, Any]] = None,
 ) -> str:
     """Dial via the versioned ``TelephonyRuntimeService`` (when ``agent_id`` is bound) or carrier adapter."""
     del call
@@ -669,6 +705,7 @@ async def _attempt_provider_dial(
                     provider=TelephonyProviderName(provider.value.upper()),
                     idempotency_key=runtime_key,
                     is_simulation=False,
+                    dynamic_variables=dict(dynamic_variables or {}),
                     metadata={"legacy_route": True, "lead_id": str(lead_id) if lead_id else None},
                 ),
             )
@@ -754,11 +791,10 @@ async def _attempt_provider_dial(
             from_=from_number,
             url=answer_url,
             status_callback=status_url,
-            status_callback_event=[
-                "initiated", "ringing", "answered", "completed", "no-answer", "busy", "failed"
-            ],
+            status_callback_event=["initiated", "ringing", "answered", "completed"],
             timeout=timeout_seconds,
             record=record,
+            recording_channels=recording_channels if record else "mono",
         )
     except Exception as exc:
         _audit(
@@ -860,6 +896,11 @@ async def create_outbound_call(
             raise HTTPException(status_code=404, detail="campaign or lead not found in this environment")
         if not campaign.is_active:
             raise HTTPException(status_code=409, detail="campaign is not active")
+        if payload.recording_channels == "dual":
+            raise HTTPException(
+                status_code=422,
+                detail="dual-channel recording is not supported for campaign dialing",
+            )
 
     idem_key = payload.idempotency_key or x_idempotency_key
     if payload.idempotency_key and x_idempotency_key and payload.idempotency_key != x_idempotency_key:
@@ -872,6 +913,17 @@ async def create_outbound_call(
     caller_id = None
     if campaign is None:
         provider = _provider_from_request(payload.provider)
+        if payload.recording_channels == "dual":
+            if not payload.record:
+                raise HTTPException(
+                    status_code=422,
+                    detail="recording_channels='dual' requires record=true",
+                )
+            if provider != OutboundProvider.TWILIO or payload.agent_id:
+                raise HTTPException(
+                    status_code=422,
+                    detail="dual-channel recording is supported only for direct Twilio calls without agent_id",
+                )
         if not payload.agent_id:
             _require_provider_ready(provider)
         elif provider == OutboundProvider.TWILIO:
@@ -905,6 +957,10 @@ async def create_outbound_call(
                 )
 
     request_data = payload.model_dump(mode="json", exclude={"idempotency_key"})
+    if payload.recording_channels == "mono":
+        # Preserve idempotency replay compatibility with receipts created before
+        # this optional field was added to the request contract.
+        request_data.pop("recording_channels", None)
     request_data.update({"environment_id": str(scope.id), "destination_normalized": to_normalized})
     try:
         claim = await claim_request(
@@ -1044,11 +1100,13 @@ async def create_outbound_call(
             caller_id,
             payload.timeout_seconds,
             payload.record,
+            payload.recording_channels,
             payload.lead_id,
             provider.value,
             agent_id=payload.agent_id,
             environment_id=scope.id,
             idempotency_key=idem_key,
+            dynamic_variables=payload.custom_fields,
         )
     except HTTPException as exc:
         if exc.status_code == 502:
@@ -1059,19 +1117,71 @@ async def create_outbound_call(
         await session.commit()
         raise
 
-    call = Call(
-        id=pending_call_id,
-        tenant_id=ctx.tenant_id,
-        environment_id=scope.id,
-        call_sid=real_sid,
-        from_number=caller_id,
-        to_number=to_normalized,
-        status=CallStatus.RINGING,
-        direction=CallDirection.OUTBOUND,
-        lead_id=payload.lead_id,
+    call = await session.scalar(
+        select(Call).where(
+            Call.call_sid == real_sid,
+            Call.tenant_id == ctx.tenant_id,
+            Call.environment_id == scope.id,
+        )
     )
-    session.add(call)
+    if call is None:
+        conflicting_call = await session.scalar(
+            select(Call.id).where(Call.call_sid == real_sid)
+        )
+        if conflicting_call is not None:
+            claim.receipt.error_category = "provider_call_id_scope_conflict"
+            await session.commit()
+            raise HTTPException(
+                status_code=502,
+                detail={
+                    "code": "telephony_call_record_conflict",
+                    "message": "Provider returned a call identifier already bound to another call scope; reconciliation is required.",
+                },
+            )
+        call = Call(
+            id=pending_call_id,
+            tenant_id=ctx.tenant_id,
+            environment_id=scope.id,
+            call_sid=real_sid,
+            from_number=caller_id,
+            to_number=to_normalized,
+            status=CallStatus.RINGING,
+            direction=CallDirection.OUTBOUND,
+            lead_id=payload.lead_id,
+            transfer_context={
+                "channel": "phone",
+                "direction": "outbound",
+                "dynamic_variables": dict(payload.custom_fields or {}),
+                "metadata": dict(payload.metadata or {}),
+            },
+        )
+        session.add(call)
+    else:
+        # The versioned runtime may have created the Twilio compatibility row
+        # before returning from the provider. Enrich that durable row rather
+        # than inserting a duplicate unique call_sid; preserve any state a fast
+        # webhook already wrote while carrying forward this route's variables.
+        call.from_number = caller_id
+        call.to_number = to_normalized
+        call.direction = CallDirection.OUTBOUND
+        call.lead_id = payload.lead_id
+        call.transfer_context = {
+            **dict(call.transfer_context or {}),
+            "channel": "phone",
+            "direction": "outbound",
+            "dynamic_variables": dict(payload.custom_fields or {}),
+            "metadata": dict(payload.metadata or {}),
+        }
     await session.flush()
+    from app.runtime.agent_config_resolver import resolve_runtime_config
+
+    await resolve_runtime_config(
+        session,
+        call,
+        tenant=tenant,
+        agent_id=payload.agent_id,
+        environment=scope.id,
+    )
     from app.webhooks.call_event_bridge import publish_call_event
     await publish_call_event(session, call, "call_started")
     await _record_call_audit(
@@ -1792,23 +1902,79 @@ async def get_call_analytics(
     ctx: TenantContext = Depends(require_permission(Permission.CALL_READ)),
     session: AsyncSession = Depends(get_session),
 ):
-    """GET /api/calls/{id}/analytics — Call analytics stub."""
+    """GET /api/calls/{id}/analytics — what this call actually cost and said.
+
+    The route used to be a stub that computed a duration and then returned
+    ``provider=None, cost_cents=None, recording_url=None,
+    transcript_excerpt=None`` — four fields that were *already stored* on the
+    call and its turns. A field that is always null is worse than a field that
+    is absent: a client cannot tell "this call had no recording" from "this
+    endpoint does not implement recordings", and the dashboard rendered the
+    second as if it were the first.
+
+    What is derived here and from where:
+
+    * ``duration_seconds`` — the stored column, falling back to
+      ``ended_at - started_at`` for rows written before the column existed.
+    * ``recording_url`` — ``Call.recording_url``, verbatim. It is the stored
+      provider URL (call_search_export_routes signs it for public export;
+      this endpoint is authenticated and tenant-scoped, and returns it as-is).
+    * ``cost_cents`` — **null with a stated reason**, because nothing in this
+      codebase prices a call: there is no cost column, no rate card, and no
+      provider-billing import. Computing one from a hard-coded rate would be
+      inventing a number that a finance report would then trust. The field
+      stays in the contract and stays honest.
+    * ``provider`` — derived from the call's provider-side identifiers. A
+      ``call_sid`` that starts ``CA`` is a Twilio SID; anything else is
+      reported as ``unknown`` rather than guessed.
+    * ``transcript_excerpt`` — the first ``MAX_EXCERPT_TURNS`` turns, so a
+      caller sees what was said without downloading the whole transcript.
+    * ``turns`` / ``analysis_present`` — counts, so a client can tell "no
+      transcript yet" from "transcript truncated here".
+    """
     call = await _get_call(session, ctx, call_id)
-    duration = None
-    if call.started_at and call.ended_at:
-        try:
-            duration = int((call.ended_at - call.started_at).total_seconds())
-        except Exception:
-            __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
-            duration = None
+
+    duration = call.duration_seconds
+    if duration is None and call.started_at and call.ended_at:
+        duration = int((call.ended_at - call.started_at).total_seconds())
+
+    # First N turns + the true total: an excerpt that silently stops at five is
+    # indistinguishable from a five-turn call.
+    turn_rows = (
+        await session.execute(
+            select(Turn)
+            .where(Turn.call_id == call.id)
+            .order_by(Turn.created_at.asc(), Turn.id.asc())
+            .limit(MAX_EXCERPT_TURNS)
+        )
+    ).scalars().all()
+    turn_count = int(
+        (
+            await session.execute(
+                select(func.count()).select_from(Turn).where(Turn.call_id == call.id)
+            )
+        ).scalar_one()
+        or 0
+    )
+    excerpt = " | ".join(
+        f"{t.speaker.value if hasattr(t.speaker, 'value') else t.speaker}: {t.text}"
+        for t in turn_rows
+        if (t.text or "").strip()
+    ) or None
+
     return CallAnalyticsOut(
         call_id=str(call.id),
         duration_seconds=duration,
         status=call.status.value if hasattr(call.status, "value") else str(call.status),
-        provider=None,
+        provider=_provider_from_call_sid(call.call_sid),
+        # No pricing exists anywhere in this codebase. Null + the note in
+        # `cost_basis` is the honest answer; see the docstring.
         cost_cents=None,
-        recording_url=None,
-        transcript_excerpt=None,
+        cost_basis="unpriced: no rate card or provider-billing import exists in this deployment",
+        recording_url=call.recording_url,
+        transcript_excerpt=excerpt,
+        turn_count=turn_count,
+        transcript_truncated=turn_count > len(turn_rows),
     )
 
 # ---------------------------------------------------------------------------

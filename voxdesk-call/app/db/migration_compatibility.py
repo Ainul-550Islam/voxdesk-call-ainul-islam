@@ -29,6 +29,7 @@ LEGACY_REVISION_ALIASES: dict[str, str] = {
     "0036_runtime_deployment_observability": "0036_runtime_deployment_observ",
     "0038_agent_chat_contact_conductor": "0038_agent_chat_conductor",
     "0045_request_idempotency_receipts": "0045_request_idem_receipts",
+    "0090_telephony_phone_number_routing": "0090_telephony_phone_routing",
 }
 
 

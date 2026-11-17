@@ -206,6 +206,17 @@ def test_the_cli_is_executable_end_to_end(tmp_path: Path) -> None:
 def test_this_repository_tracks_no_generated_artifacts() -> None:
     if shutil.which("git") is None:
         pytest.skip("git is not available")
+    probe = subprocess.run(
+        ["git", "rev-parse", "--is-inside-work-tree"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+    )
+    if probe.returncode != 0:
+        pytest.skip(
+            "no git working tree: a `git archive` export tracks nothing, so this "
+            "gate has no subject"
+        )
     violations = module.find_violations(REPO_ROOT)
     assert violations == [], (
         f"{len(violations)} generated artifact(s) are tracked; run "

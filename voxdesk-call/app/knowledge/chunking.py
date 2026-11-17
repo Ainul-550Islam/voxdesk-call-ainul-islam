@@ -252,3 +252,125 @@ def chunk_sections(
 def chunk_text(text: str, config: ChunkingConfig | None = None) -> list[Chunk]:
     """Convenience wrapper for text with no section structure."""
     return chunk_sections([Section(text=text, metadata={})], config)
+
+
+# ---------------------------------------------------------------------------
+# PART 14 / P14-08 -- table-aware chunking.
+#
+# A price list or an opening-hours grid loses its meaning the moment it is split
+# as prose: "Saturday 10:00" says nothing without the column header, and a
+# retrieved chunk that begins mid-table reads as a random fact. These functions
+# keep every row attached to its header, and put the caption on every chunk, so
+# a retrieved table chunk is self-describing.
+# ---------------------------------------------------------------------------
+
+
+def table_row_text(headers: list[str], row: dict) -> str:
+    """One row as `header: value` pairs. Missing cells are omitted, not faked."""
+    parts = []
+    for header in headers:
+        value = row.get(header)
+        if value in (None, ""):
+            continue
+        parts.append(f"{header}: {value}")
+    return "; ".join(parts)
+
+
+def rows_from_csv(csv_text: str) -> tuple[list[str], list[dict]]:
+    """Parse a CSV (RFC 4180, quoted fields) into headers and rows."""
+    import csv
+    import io
+
+    reader = csv.reader(io.StringIO(csv_text or ""))
+    try:
+        headers = next(reader)
+    except StopIteration:
+        return [], []
+    headers = [header.strip() for header in headers]
+    rows: list[dict] = []
+    for values in reader:
+        if not any(value.strip() for value in values):
+            continue
+        rows.append({header: (values[index].strip() if index < len(values) else "") for index, header in enumerate(headers)})
+    return headers, rows
+
+
+def chunk_table(
+    rows: list[dict],
+    *,
+    headers: list[str] | None = None,
+    caption: str = "",
+    index_start: int = 0,
+    max_chars: int = 1800,
+    prefix: str = "table",
+) -> list[Chunk]:
+    """Chunk a table so each chunk repeats the caption and header, never a bare row.
+
+    Chunk boundaries fall on row boundaries. Splitting a row would produce a
+    chunk like "Friday 09:00" with no idea what it belongs to.
+    """
+    if not rows:
+        return []
+    field_names = list(headers or rows[0].keys())
+    header_line = caption.strip() if caption else ""
+    preamble = f"{header_line}\n" if header_line else ""
+    chunks: list[Chunk] = []
+    buffer: list[str] = []
+    size = len(preamble)
+
+    def flush() -> None:
+        nonlocal buffer, size
+        if not buffer:
+            return
+        text = preamble + "\n".join(buffer)
+        chunks.append(
+            Chunk(
+                text=text,
+                index=index_start + len(chunks),
+                metadata={
+                    "table": True,
+                    "caption": header_line,
+                    "columns": field_names,
+                    # A chunk that is part of a bigger table says so, so a
+                    # citation can read "price list, rows 21-40".
+                    "part": len(chunks) + 1,
+                    "source_kind": prefix,
+                },
+            )
+        )
+        buffer = []
+        size = len(preamble)
+
+    for row in rows:
+        line = table_row_text(field_names, row)
+        if not line:
+            continue
+        if buffer and size + len(line) + 1 > max_chars:
+            flush()
+        buffer.append(line)
+        size += len(line) + 1
+    flush()
+
+    total = len(chunks)
+    for chunk in chunks:
+        chunk.metadata["part_count"] = total
+    return chunks
+
+
+def chunk_csv(
+    csv_text: str,
+    *,
+    caption: str = "",
+    index_start: int = 0,
+    max_chars: int = 1800,
+) -> list[Chunk]:
+    """Convenience wrapper: CSV text in, self-describing table chunks out."""
+    headers, rows = rows_from_csv(csv_text)
+    return chunk_table(
+        rows,
+        headers=headers,
+        caption=caption,
+        index_start=index_start,
+        max_chars=max_chars,
+        prefix="csv",
+    )

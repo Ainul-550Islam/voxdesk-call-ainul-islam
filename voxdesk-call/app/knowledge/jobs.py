@@ -149,3 +149,61 @@ async def process_pending(limit: int = 5) -> int:
     for document_id in ids:
         await run_ingestion(document_id)
     return len(ids)
+
+
+# ---------------------------------------------------------------------------
+# PART 14 / P14-08 -- diff-aware re-crawl.
+#
+# `plan_recrawl` (app.knowledge.sitemap) decides *what* to fetch; this decides
+# *how* to apply it: a page that vanished is archived, not purged, so an
+# operator can see what a bad sitemap would have deleted before it is gone.
+# ---------------------------------------------------------------------------
+
+
+def recrawl_summary(plan: list[dict]) -> dict[str, int]:
+    """Counts by action, for the sync report the dashboard shows."""
+    counts: dict[str, int] = {"ingest": 0, "refetch": 0, "delete": 0}
+    for item in plan:
+        action = str(item.get("action") or "")
+        if action in counts:
+            counts[action] += 1
+    counts["total"] = sum(counts.values())
+    return counts
+
+
+async def apply_recrawl(
+    *,
+    plan: list[dict],
+    fetch: "callable",
+    ingest: "callable",
+    archive: "callable",
+    limit: int = 100,
+) -> dict:
+    """Apply a re-crawl plan. One failing page never aborts the run.
+
+    `fetch`, `ingest` and `archive` are injected so this is testable without a
+    network and without a database, and so a dry run can pass no-op callables.
+    """
+    applied = {"ingested": 0, "refetched": 0, "archived": 0, "failed": []}
+    for item in plan[:limit]:
+        url = str(item.get("url") or "")
+        action = str(item.get("action") or "")
+        try:
+            if action == "delete":
+                await _maybe_await(archive(url))
+                applied["archived"] += 1
+            elif action in ("ingest", "refetch"):
+                body = await _maybe_await(fetch(url))
+                await _maybe_await(ingest(url, body))
+                applied["ingested" if action == "ingest" else "refetched"] += 1
+        except Exception as exc:  # a single 404 must not stop a 400-page crawl
+            applied["failed"].append({"url": url, "error": str(exc)[:200]})
+    return applied
+
+
+async def _maybe_await(value):
+    import inspect
+
+    if inspect.isawaitable(value):
+        return await value
+    return value

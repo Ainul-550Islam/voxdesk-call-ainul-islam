@@ -1,16 +1,28 @@
 # VoxDesk — 10-Minute Buyer Due-Diligence Demo Script & Recording Manifest
 
+> **Recording status (measured 2026-11-09).** The eight files in `evidence/demo/` are
+> **synthetic pipeline traces**, not carrier calls: every trace carries
+> `"provider_fakes": true` and all eight share the identical
+> `captured_at_utc` (`2026-10-08T18:04:35.448063+00:00`) with no `call_sid`, which is
+> the signature of a generated fixture set. They exercise the real FastAPI/WebSocket
+> code path against deterministic fake STT/LLM/TTS providers. **No PSTN leg, no real
+> audio.** Replacing them with eight real recordings is PART 11 task **P11-05** and
+> needs owner carrier + provider keys.
+
 This document provides the 10-minute technical walkthrough script for prospective
 buyers and technical due-diligence reviewers, together with the manifest of the
-**8 required real recordings and execution traces** captured in `evidence/demo/`
-and bundled into `dist/due-diligence-<date>.zip`.
+**8 required recordings and execution traces** in `evidence/demo/`, bundled into
+`dist/due-diligence-<date>.zip`.
 
 Every step in this script exercises only capabilities verified as `LIVE` in
 [`docs/SALES/FEATURE_MATRIX_VERIFIED.md`](../SALES/FEATURE_MATRIX_VERIFIED.md).
 
 ---
 
-## Part 1 — Required Real Recordings to Capture (8 Headline Features)
+## Part 1 — Required Recordings to Capture (8 Headline Features)
+
+> Status column: `SYNTHETIC` = a fixture trace is tracked today; `REAL — PENDING` = must be
+> captured with real providers before any buyer sees it.
 
 | # | Recording / Artifact | Matrix IDs | Tracked Trace & Transcript (`evidence/demo/`) | Release Audio Asset (`v1.0.0-demo-audio`) | What to Capture (Screen + Audio + Trace) |
 |---|---|---|---|---|---|

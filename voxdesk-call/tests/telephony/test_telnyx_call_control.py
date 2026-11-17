@@ -3,8 +3,8 @@
 The transport here is a scripted HTTP stub, which is the right level: what is
 under test is *this* adapter's decision -- retry or do not retry, reuse the key or
 mint a new one, refuse the call or issue the command. No assertion claims a real
-Telnyx API round trip; the live round trip is covered by the ``live``-marked tests
-that skip without ``TELNYX_API_KEY``.
+Telnyx API round trip. The separately gated ``tests/real/test_telnyx_live.py``
+smoke test covers Call Control only; it does not prove media-WebSocket audio.
 """
 
 from __future__ import annotations

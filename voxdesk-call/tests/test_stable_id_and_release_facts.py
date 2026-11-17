@@ -98,8 +98,7 @@ def test_missing_parts_is_a_programming_error_not_a_silent_collision():
 def test_migration_heads_reports_a_single_head():
     heads = facts.migration_heads(VERSIONS_DIR)
     assert len(heads) == 1, f"migration chain must stay linear, got heads: {heads}"
-    # corrected: migration 0069_voice_demo_sessions is now the current sole head.
-    assert heads == ("0069_voice_demo_sessions",)
+    assert heads == ("0091_call_debug_pcap_metadata",)
 
 
 def test_annotated_revisions_are_parsed():

@@ -23,17 +23,27 @@ type Credentials struct {
 // Handler receives an inbound SIP request.
 type Handler func(request *Message, remote *net.UDPAddr)
 
+// PacketCaptureHandler observes one SIP datagram associated with a SIP Call-ID.
+type PacketCaptureHandler func(
+	callID string,
+	source *net.UDPAddr,
+	destination *net.UDPAddr,
+	payload []byte,
+	direction string,
+)
+
 // Client is a UDP SIP user agent: it sends requests, matches responses to
 // their transactions and hands inbound requests to a handler.
 type Client struct {
 	conn    *net.UDPConn
 	timeout time.Duration
 
-	mu       sync.Mutex
-	pending  map[string]chan *Message
-	sequence int
-	handler  Handler
-	closed   bool
+	mu             sync.Mutex
+	pending        map[string]chan *Message
+	sequence       int
+	handler        Handler
+	captureHandler PacketCaptureHandler
+	closed         bool
 }
 
 // NewClient binds a UDP socket for the user agent.
@@ -70,6 +80,42 @@ func (c *Client) SetHandler(handler Handler) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.handler = handler
+}
+
+// SetCaptureHandler installs the per-call SIP packet observer.
+func (c *Client) SetCaptureHandler(handler PacketCaptureHandler) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.captureHandler = handler
+}
+
+func (c *Client) recordPacket(message *Message, remote *net.UDPAddr, payload []byte, direction string) {
+	if message == nil || remote == nil {
+		return
+	}
+	callID := strings.TrimSpace(message.Header("call-id"))
+	if callID == "" {
+		return
+	}
+	c.mu.Lock()
+	handler := c.captureHandler
+	c.mu.Unlock()
+	if handler == nil {
+		return
+	}
+	local := c.LocalAddr()
+	if direction == "outbound" {
+		handler(callID, local, copyUDPAddr(remote), payload, direction)
+		return
+	}
+	handler(callID, copyUDPAddr(remote), local, payload, direction)
+}
+
+func copyUDPAddr(addr *net.UDPAddr) *net.UDPAddr {
+	if addr == nil {
+		return nil
+	}
+	return &net.UDPAddr{IP: append(net.IP(nil), addr.IP...), Port: addr.Port, Zone: addr.Zone}
 }
 
 // Close shuts the socket down.
@@ -111,6 +157,7 @@ func (c *Client) Serve(ctx context.Context) error {
 		if err != nil {
 			continue
 		}
+		c.recordPacket(message, remote, payload, "inbound")
 		if message.IsResponse {
 			c.deliver(message)
 			continue
@@ -129,7 +176,11 @@ func (c *Client) Send(message *Message, target *net.UDPAddr) error {
 	if target == nil {
 		return fmt.Errorf("sipua: no target address")
 	}
-	_, err := c.conn.WriteToUDP(message.Render(), target)
+	payload := message.Render()
+	_, err := c.conn.WriteToUDP(payload, target)
+	if err == nil {
+		c.recordPacket(message, target, payload, "outbound")
+	}
 	return err
 }
 
@@ -244,26 +295,72 @@ func (c *Client) NextSequence() int {
 	return c.sequence
 }
 
-// ParseTarget turns "host:port" into a UDP address.
+// ParseTarget resolves an explicit SIP URI or host[:port] to a UDP peer.
+//
+// This small user agent only transports SIP over UDP. SIPS and SIP URI
+// transport parameters that request TCP/TLS are rejected rather than silently
+// sent over the wrong transport.
 func ParseTarget(target string, defaultPort int) (*net.UDPAddr, error) {
 	value := strings.TrimSpace(target)
 	if value == "" {
 		return nil, fmt.Errorf("sipua: empty target")
 	}
-	if !strings.Contains(value, ":") {
-		return &net.UDPAddr{IP: net.ParseIP(value), Port: defaultPort}, nil
+	if defaultPort < 1 || defaultPort > 65535 {
+		defaultPort = 5060
 	}
-	host, portText, err := net.SplitHostPort(value)
+
+	lowered := strings.ToLower(value)
+	if strings.HasPrefix(lowered, "sips:") {
+		return nil, fmt.Errorf("sipua: SIPS/TLS targets are not supported by the UDP gateway")
+	}
+	if strings.HasPrefix(lowered, "sip:") {
+		rest := value[len("sip:"):]
+		if strings.ContainsAny(rest, ";?#") {
+			return nil, fmt.Errorf("sipua: SIP URI parameters, query and fragment are not supported")
+		}
+		user, hostPort, found := strings.Cut(rest, "@")
+		if !found || strings.TrimSpace(user) == "" || strings.Contains(hostPort, "@") {
+			return nil, fmt.Errorf("sipua: target %q is not a sip:user@host URI", target)
+		}
+		value = hostPort
+	}
+
+	host := value
+	port := defaultPort
+	if strings.HasPrefix(value, "[") {
+		if strings.HasSuffix(value, "]") {
+			host = value[1 : len(value)-1]
+		} else {
+			parsedHost, portText, err := net.SplitHostPort(value)
+			if err != nil {
+				return nil, fmt.Errorf("sipua: malformed target %q: %w", target, err)
+			}
+			host = parsedHost
+			port, err = strconv.Atoi(portText)
+			if err != nil {
+				return nil, fmt.Errorf("sipua: malformed port in %q", target)
+			}
+		}
+	} else if strings.Count(value, ":") == 1 {
+		parsedHost, portText, err := net.SplitHostPort(value)
+		if err != nil {
+			return nil, fmt.Errorf("sipua: malformed target %q: %w", target, err)
+		}
+		host = parsedHost
+		port, err = strconv.Atoi(portText)
+		if err != nil {
+			return nil, fmt.Errorf("sipua: malformed port in %q", target)
+		}
+	} else if strings.Contains(value, ":") {
+		return nil, fmt.Errorf("sipua: IPv6 targets must be bracketed")
+	}
+
+	if host == "" || port < 1 || port > 65535 {
+		return nil, fmt.Errorf("sipua: target %q has an invalid host or port", target)
+	}
+	address, err := net.ResolveUDPAddr("udp", net.JoinHostPort(host, strconv.Itoa(port)))
 	if err != nil {
-		return nil, fmt.Errorf("sipua: malformed target %q: %w", target, err)
-	}
-	port, err := strconv.Atoi(portText)
-	if err != nil {
-		return nil, fmt.Errorf("sipua: malformed port in %q", target)
-	}
-	address := &net.UDPAddr{Port: port}
-	if host != "" {
-		address.IP = net.ParseIP(host)
+		return nil, fmt.Errorf("sipua: cannot resolve target %q: %w", target, err)
 	}
 	return address, nil
 }

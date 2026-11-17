@@ -13,19 +13,21 @@ from __future__ import annotations
 
 import re
 import uuid
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import PlainTextResponse
 from sqlalchemy import select
+
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.logging import log
 from app.db.enterprise_models import DncEntry, MessageChannel
-from app.db.models import Agent, AgentVersion, Lead, LeadStatus, MessageWebhookReceipt, Tenant
+from app.db.models import Agent, AgentVersion, MessageWebhookReceipt, Tenant
 from app.db.retell_models import ChatAgent, ChatAgentStatusEnum, ChatSession, ChatSessionStatusEnum
 from app.db.session import get_session
 from app.domain.chat_agent_models import (
@@ -279,35 +281,18 @@ async def record_sms_opt_out(
             )
             session.add(dnc_row)
             await session.flush()
-        lead_rows = list(
-            (
-                await session.execute(
-                    select(Lead).where(
-                        Lead.tenant_id == tenant.id,
-                        Lead.phone.in_([norm_phone, raw_phone]),
-                    )
-                )
-            )
-            .scalars()
-            .all()
-        )
-        for lead_row in lead_rows:
-            setattr(lead_row, "status", LeadStatus.DNC)
-        await session.flush()
     else:
         if dnc_row is not None and dnc_row.source.startswith("sms"):
             await session.delete(dnc_row)
             await session.flush()
             dnc_row = None
 
-    # Also update Lead consent if a production environment exists for the tenant
-    try:
-        from app.channels.messaging import set_opt_out
+    # Update consent and LeadStatus through the canonical environment-scoped
+    # lifecycle path. Let failures abort the webhook transaction: the direct
+    # DNC entry must never hide a missing consent/history transition.
+    from app.channels.messaging import set_opt_out
 
-        await set_opt_out(session, tenant, norm_phone, opted_out)
-    except Exception:
-        __import__("logging").getLogger(__name__).debug("suppressed_exception", exc_info=True)
-        pass
+    await set_opt_out(session, tenant, norm_phone, opted_out)
 
     return dnc_row
 
@@ -893,45 +878,258 @@ async def twilio_sms_status_webhook(
     return PlainTextResponse("", media_type="application/xml")
 
 
-@router.post("/send")
-async def send_sms_endpoint(
-    payload: dict[str, Any],
-    session: AsyncSession = Depends(get_session),
-) -> dict[str, Any]:
-    """Direct SMS send helper that fails closed with HTTP 501 NOT_CONFIGURED without credentials."""
-    tenant_id_raw = payload.get("tenant_id")
-    to_number = str(payload.get("to") or "").strip()
-    message = str(payload.get("message") or "").strip()
-    if not tenant_id_raw or not to_number or not message:
-        raise HTTPException(
-            status_code=422, detail="tenant_id, to, and message are required"
-        )
-    t_id = uuid.UUID(str(tenant_id_raw))
-    ch = (
-        await session.execute(
-            select(MessageChannel)
-            .where(
-                MessageChannel.tenant_id == t_id,
-                MessageChannel.channel_type == "sms",
-                MessageChannel.is_active.is_(True),
+# ===========================================================================
+# PART 13 / P13-08 — outbound SMS guard
+# ===========================================================================
+#
+# Every outbound message through this guard passes the applicable checks before
+# a provider is called:
+#
+# 1. **registration** -- pending/denied A2P states block SMS (not WhatsApp);
+# 2. **destination and DNC** -- invalid numbers and do-not-contact recipients
+#    never reach the adapter;
+# 3. **quiet hours** -- marketing messages are blocked during the configured
+#    quiet window.
+#
+# The guard returns a decision instead of raising, because the API needs to tell
+# the operator *which* gate stopped the message. `send_outbound_message` raises
+# from that decision so nothing slips through a caller that forgot to check.
+#
+# MMS media links are validated here too: they are stored with the message and
+# appear in the transcript, so a `file://` or a private S3 URL would be both a
+# broken image and a data leak.
+
+MMS_MAX_MEDIA = 10
+MMS_MAX_BYTES = 5 * 1024 * 1024
+MMS_SCHEMES = ("https://",)
+MMS_TYPES = ("image/jpeg", "image/png", "image/gif", "video/mp4", "audio/mpeg", "audio/ogg")
+#: 21:00 to 08:00 local time is quiet unless the tenant says otherwise.
+DEFAULT_QUIET_START = "21:00"
+DEFAULT_QUIET_END = "08:00"
+
+
+@dataclass(frozen=True)
+class SendDecision:
+    allowed: bool
+    code: str
+    message: str
+
+    def as_dict(self) -> dict[str, Any]:
+        return {"allowed": self.allowed, "code": self.code, "message": self.message}
+
+
+def _minutes(hhmm: str) -> int:
+    hour, _, minute = (hhmm or "00:00").partition(":")
+    return int(hour) * 60 + int(minute or 0)
+
+
+def in_quiet_hours(
+    moment: datetime,
+    *,
+    start: str = DEFAULT_QUIET_START,
+    end: str = DEFAULT_QUIET_END,
+) -> bool:
+    """Whether a local wall-clock time falls inside the quiet window."""
+    current = moment.hour * 60 + moment.minute
+    begin, finish = _minutes(start), _minutes(end)
+    if begin == finish:
+        return False
+    if begin < finish:
+        return begin <= current < finish
+    # Window crosses midnight (the normal case).
+    return current >= begin or current < finish
+
+
+def validate_media(media_urls: list[str] | None) -> SendDecision:
+    urls = list(media_urls or [])
+    if len(urls) > MMS_MAX_MEDIA:
+        return SendDecision(False, "too_many_media", f"an MMS may carry at most {MMS_MAX_MEDIA} files")
+    for url in urls:
+        if not url or not any(url.startswith(scheme) for scheme in MMS_SCHEMES):
+            return SendDecision(
+                False, "invalid_media_url", "media must be an https URL the carrier can fetch"
             )
-            .limit(1)
+        if any(token in url for token in ("X-Amz-Signature", "token=", "sig=")):
+            return SendDecision(
+                False,
+                "signed_media_url",
+                "media URLs are stored with the message; a signed URL would expire in the transcript",
+            )
+    return SendDecision(True, "ok", "")
+
+
+async def _sms_consent_granted(
+    session: AsyncSession, tenant_id: uuid.UUID, normalized_phone: str, raw_phone: str
+) -> bool:
+    """Require an explicit, current SMS grant for a marketing recipient.
+
+    STOP is also represented in the tenant DNC list; this separate check keeps
+    a missing consent record from being mistaken for permission. A denial on
+    any matching lead wins, and a grant in one environment is never confused
+    with a different tenant's contact.
+    """
+    from app.leads.models import LeadConsent, LeadIdentity
+    from app.db.models import Lead
+
+    leads = list(
+        (
+            await session.execute(
+                select(Lead).where(
+                    Lead.tenant_id == tenant_id,
+                    Lead.phone.in_({normalized_phone, raw_phone}),
+                )
+            )
         )
-    ).scalar_one_or_none()
+        .scalars()
+        .all()
+    )
+    identity_rows = (
+        await session.execute(
+            select(LeadIdentity.lead_id).where(
+                LeadIdentity.tenant_id == tenant_id,
+                LeadIdentity.phone_normalized == normalized_phone,
+            )
+        )
+    ).all()
+    lead_ids = {lead.id for lead in leads}
+    lead_ids.update(row[0] for row in identity_rows)
+    if not lead_ids:
+        return False
+
+    consent_rows = (
+        await session.execute(
+            select(LeadConsent)
+            .where(
+                LeadConsent.tenant_id == tenant_id,
+                LeadConsent.lead_id.in_(lead_ids),
+                LeadConsent.channel == "sms",
+            )
+            .order_by(LeadConsent.version.desc())
+        )
+    ).scalars().all()
+    latest: dict[uuid.UUID, str] = {}
+    for consent in consent_rows:
+        latest.setdefault(consent.lead_id, consent.decision)
+    if "denied" in latest.values():
+        return False
+    return "granted" in latest.values()
+
+
+def quiet_hours_decision(
+    moment: datetime,
+    *,
+    marketing: bool,
+    start: str = DEFAULT_QUIET_START,
+    end: str = DEFAULT_QUIET_END,
+) -> SendDecision:
+    """Transactional messages are exempt; marketing ones are not."""
+    if not marketing:
+        return SendDecision(True, "ok", "")
+    if in_quiet_hours(moment, start=start, end=end):
+        return SendDecision(
+            False,
+            "quiet_hours",
+            f"marketing messages are not sent between {start} and {end} local time",
+        )
+    return SendDecision(True, "ok", "")
+
+
+async def check_outbound_allowed(
+    session: AsyncSession,
+    *,
+    tenant_id: uuid.UUID,
+    to_number: str,
+    channel_type: str = "sms",
+    marketing: bool = False,
+    now: datetime | None = None,
+    media_urls: list[str] | None = None,
+) -> SendDecision:
+    """The full gate list, in the order a reviewer would check it."""
+    from app.telephony.messaging_registration import sms_send_permitted
+    from app.db.telephony_models import MessagingRegistration
+
+    media = validate_media(media_urls)
+    if not media.allowed:
+        return media
+
+    if (channel_type or "sms").strip().lower() == "sms":
+        rows = (
+            await session.execute(
+                select(MessagingRegistration).where(
+                    MessagingRegistration.tenant_id == tenant_id
+                )
+            )
+        ).scalars().all()
+        states = {row.kind: row.state for row in rows}
+        if rows:
+            permitted, reason = sms_send_permitted(states)
+            if not permitted:
+                return SendDecision(False, "registration_not_approved", reason)
+        # A tenant with no registration rows at all is *not* blocked here: the
+        # gate enforces a registration that was started and is pending. Blocking
+        # all sends would also block an in-product credentials test.
+
+    raw_to = strip_channel_prefix(to_number)
     try:
-        if ch is None:
-            raise SmsNotConfiguredError()
-        res = await send_outbound_message(
-            session,
-            tenant_id=t_id,
-            channel=ch,
-            to_number=to_number,
-            message=message,
-        )
-        await session.commit()
-        return res
-    except SmsNotConfiguredError as exc:
-        raise HTTPException(
-            status_code=501,
-            detail={"code": "NOT_CONFIGURED", "message": exc.message},
-        ) from exc
+        norm_to = dnc.normalize_phone(raw_to)
+    except phone_util.InvalidPhoneNumber:
+        return SendDecision(False, "invalid_destination", "the destination is not a dialable number")
+
+    blocked, reason = await dnc.is_blocked(session, tenant_id, norm_to)
+    if blocked:
+        return SendDecision(False, "dnc_blocked", f"destination is on the do-not-contact list ({reason})")
+
+    if (channel_type or "sms").strip().lower() == "sms" and marketing:
+        if not await _sms_consent_granted(session, tenant_id, norm_to, raw_to):
+            return SendDecision(
+                False,
+                "sms_consent_required",
+                "an explicit SMS opt-in is required before sending marketing messages",
+            )
+
+    quiet = quiet_hours_decision(_now() if now is None else now, marketing=marketing)
+    if not quiet.allowed:
+        return quiet
+    return SendDecision(True, "ok", "")
+
+
+async def send_outbound_guarded(
+    session: AsyncSession,
+    *,
+    tenant_id: uuid.UUID,
+    channel: MessageChannel,
+    to_number: str,
+    message: str,
+    metadata: dict[str, Any] | None = None,
+    marketing: bool = False,
+    media_urls: list[str] | None = None,
+    now: datetime | None = None,
+) -> dict[str, Any]:
+    """`send_outbound_message` with the PART 13 gates in front of it."""
+    decision = await check_outbound_allowed(
+        session,
+        tenant_id=tenant_id,
+        to_number=to_number,
+        channel_type=channel.channel_type,
+        marketing=marketing,
+        now=now,
+        media_urls=media_urls,
+    )
+    if not decision.allowed:
+        raise ValueError(f"{decision.code}: {decision.message}")
+    payload = dict(metadata or {})
+    if media_urls:
+        payload["media_urls"] = list(media_urls)
+    result = await send_outbound_message(
+        session,
+        tenant_id=tenant_id,
+        channel=channel,
+        to_number=to_number,
+        message=message,
+        metadata=payload,
+    )
+    # The transcript is the record of the conversation; an MMS with no media
+    # links in it reads like a mis-sent SMS to whoever reviews the call.
+    if media_urls:
+        result["media_urls"] = list(media_urls)
+    return result

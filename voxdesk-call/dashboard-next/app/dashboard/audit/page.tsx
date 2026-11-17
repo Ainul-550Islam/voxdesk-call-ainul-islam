@@ -44,7 +44,7 @@ export default function AuditPage() {
         {audit.length === 0 ? (
           <div className="empty">No audit events.</div>
         ) : (
-          <div className="table-wrap">
+          <div className="table-wrap" tabIndex={0} role="region" aria-label="Data table">
             <table>
               <thead>
                 <tr>

@@ -1,0 +1,142 @@
+{{- /*
+Backup CronJob — the Kubernetes equivalent of the compose `backup` service.
+
+The compose service runs `pg_dump -Fc`, refuses to keep a dump that
+`pg_restore --list` cannot read, keeps the last 14, and optionally copies to an
+off-host location. This template keeps every one of those properties; what it
+does *not* do is invent a destination. `backup.remote` is empty by default, so
+a stock install writes to a PersistentVolume and says so in the logs — an
+off-host copy is a decision the operator makes, not a default the chart fakes.
+
+A failed dump must be visible. The Job exits non-zero, and the accompanying
+PrometheusRule alerts on `kube_job_status_failed{job_name=~".*-backup"}` so a
+silent backup failure becomes a page rather than a surprise during a restore.
+*/ -}}
+{{- $bk := .Values.backup | default dict -}}
+{{- $pdb := $bk.persistentVolume | default dict -}}
+{{- if $bk.enabled | default false }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "voxdesk.fullname" . }}-backup
+  labels:
+    {{- include "voxdesk.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backup
+spec:
+  # 02:00 in the operator's cluster timezone. A backup window that lines up
+  # with the busiest hour of business is a self-inflicted incident.
+  schedule: {{ $bk.schedule | default "0 2 * * *" | quote }}
+  timeZone: {{ $bk.timeZone | default "Etc/UTC" | quote }}
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 3600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: {{ $bk.activeDeadlineSeconds | default 3600 }}
+      template:
+        metadata:
+          labels:
+            {{- include "voxdesk.labels" . | nindent 12 }}
+            app.kubernetes.io/component: backup
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: {{ $bk.runAsUser | default 10004 }}
+            runAsGroup: {{ $bk.runAsUser | default 10004 }}
+            fsGroup: {{ $bk.runAsUser | default 10004 }}
+            seccompProfile: {type: RuntimeDefault}
+          containers:
+            - name: backup
+              image: {{ $bk.image | default "postgres:16-alpine" | quote }}
+              imagePullPolicy: IfNotPresent
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -eu
+                  DUMP="/backups/voxdesk-$(date +%Y-%m-%dT%H%M%S).dump"
+                  echo "backup: writing $DUMP"
+                  pg_dump -h {{ $bk.host | default (printf "%s-db" (include "voxdesk.fullname" .)) }} \
+                          -p {{ $bk.port | default 5432 }} \
+                          -U "$POSTGRES_USER" -Fc "$POSTGRES_DB" > "$DUMP"
+                  # A dump that pg_restore cannot list is not a backup. Fail the
+                  # Job rather than keep a file that looks like one.
+                  if [ ! -s "$DUMP" ]; then echo "backup: FAILED (empty dump)" >&2; exit 1; fi
+                  if ! pg_restore --list "$DUMP" > /dev/null 2>&1; then
+                    echo "backup: FAILED (dump unreadable by pg_restore)" >&2
+                    exit 1
+                  fi
+                  echo "backup: ok $(stat -c %s "$DUMP") bytes; $(pg_restore --list "$DUMP" | grep -c 'Table\|SEQUENCE' || true) objects"
+                  # Retention: keep the newest N, delete the rest.
+                  ls -1t /backups/*.dump | tail -n +$(({{ $bk.retain | default 14 }} + 1)) | xargs -r rm -f
+                  {{- if $bk.remote }}
+                  # Off-host copy. rclone is not in the postgres image, so the
+                  # operator supplies an image that has it (backup.image) when
+                  # this is set.
+                  rclone copy /backups {{ $bk.remote | quote }} --include "*.dump" || {
+                    echo "backup: off-host copy FAILED ($REMOTE); local dump kept" >&2
+                    exit 1
+                  }
+                  {{- else }}
+                  echo "backup: remote copy disabled (backup.remote is empty) — this dump exists only on the volume"
+                  {{- end }}
+              env:
+                - name: POSTGRES_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ required "backup.secretName or secrets.existingSecret is required" ($bk.secretName | default .Values.secrets.existingSecret) }}
+                      key: {{ $bk.userKey | default "POSTGRES_USER" }}
+                - name: POSTGRES_DB
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $bk.secretName | default .Values.secrets.existingSecret }}
+                      key: {{ $bk.databaseKey | default "POSTGRES_DB" }}
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $bk.secretName | default .Values.secrets.existingSecret }}
+                      key: {{ $bk.passwordKey | default "POSTGRES_PASSWORD" }}
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                {{- toYaml ($bk.resources | default dict) | nindent 16 }}
+              volumeMounts:
+                - name: backups
+                  mountPath: /backups
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: backups
+              # Always a real PVC: an emptyDir would delete the dump with the
+              # Job pod, which is the one failure mode a backup must not have.
+              {{- if and (not $pdb.existingClaim) (not $pdb.create) }}
+              {{- fail "backup.persistentVolume.create is false and no existingClaim is set: a backup with nowhere durable to write is not a backup" }}
+              {{- end }}
+              persistentVolumeClaim:
+                claimName: {{ $pdb.existingClaim | default (printf "%s-backups" (include "voxdesk.fullname" .)) | quote }}
+            - name: tmp
+              emptyDir: {}
+{{- if not $pdb.existingClaim }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "voxdesk.fullname" . }}-backups
+  labels:
+    {{- include "voxdesk.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backup
+spec:
+  accessModes: ["ReadWriteOnce"]
+  {{- with $pdb.storageClassName }}
+  storageClassName: {{ . | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ $pdb.size | default "20Gi" }}
+{{- end }}
+{{- end }}

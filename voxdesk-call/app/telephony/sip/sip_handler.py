@@ -26,11 +26,11 @@ import time
 import uuid
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from pipecat.audio.dtmf.types import KeypadEntry
 from pipecat.frames.frames import (
     Frame,
     InputAudioRawFrame,
     InputDTMFFrame,
-    KeypadEntry,
     OutputAudioRawFrame,
 )
 from pipecat.serializers.base_serializer import FrameSerializer, FrameSerializerType
@@ -240,7 +240,9 @@ async def sip_media_bridge(websocket: WebSocket) -> None:
 
     headers = websocket.headers
     bearer = str(headers.get("authorization") or "")
-    presented_bearer = bearer.split(" ", 1)[1].strip() if bearer.lower().startswith("bearer ") else ""
+    presented_bearer = (
+        bearer.split(" ", 1)[1].strip() if bearer.lower().startswith("bearer ") else ""
+    )
     if not presented_bearer or not hmac.compare_digest(presented_bearer, secret):
         log.warning("sip.ws.rejected_bad_bearer")
         await _safe_close(websocket, 1008)
@@ -276,10 +278,25 @@ async def sip_media_bridge(websocket: WebSocket) -> None:
         await _safe_close(websocket, 1008)
         return
 
-    from_number = str(start.get("from") or "").strip() or "+10000000000"
+    from_number = str(start.get("from") or "").strip()
     to_number = str(start.get("to") or "").strip()
+    claimed_tenant_id = str(start.get("tenant_id") or "").strip()
+    claimed_trunk_id = str(start.get("trunk_id") or "").strip()
+    claimed_environment_id = str(start.get("environment_id") or "").strip()
+    claimed_source_ip = str(start.get("source_ip") or "").strip()
+    direction_name = str(start.get("direction") or "inbound").strip().lower()
+    if direction_name not in {CallDirection.INBOUND.value, CallDirection.OUTBOUND.value}:
+        await _safe_close(websocket, 1008)
+        return
+    direction = (
+        CallDirection.INBOUND
+        if direction_name == CallDirection.INBOUND.value
+        else CallDirection.OUTBOUND
+    )
+    if direction is CallDirection.INBOUND and not from_number:
+        from_number = "+10000000000"
     codec = str(start.get("codec") or "PCMU").strip().upper()
-    if codec not in {"PCMU", "PCMA"}:
+    if not from_number or not to_number or codec not in {"PCMU", "PCMA"}:
         await _safe_close(websocket, 1008)
         return
 
@@ -287,44 +304,109 @@ async def sip_media_bridge(websocket: WebSocket) -> None:
     from app.runtime.agent_config_resolver import resolve_runtime_config
 
     async with get_sessionmaker()() as session:
-        tenant = await find_tenant_for_called_number(session, to_number)
+        if direction is CallDirection.INBOUND:
+            if (
+                not claimed_tenant_id
+                or not claimed_trunk_id
+                or not claimed_environment_id
+                or not claimed_source_ip
+            ):
+                log.warning("sip.ws.rejected_unscoped_inbound_call", call_sid=call_id)
+                await _safe_close(websocket, 1008)
+                return
+            from app.db.models import Tenant
+            from app.telephony.exceptions import SipConfigurationError
+            from app.telephony.sip.connection import SipConnectionService
+
+            try:
+                route = await SipConnectionService(session).resolve_inbound_sip_route(
+                    to_uri=to_number,
+                    from_uri=from_number,
+                    sip_call_id=call_id,
+                    source_ip=claimed_source_ip,
+                )
+            except SipConfigurationError as exc:
+                log.warning(
+                    "sip.ws.rejected_inbound_route",
+                    call_sid=call_id,
+                    error_code=exc.code,
+                )
+                await _safe_close(websocket, 1008)
+                return
+            route_environment_id = str(route.get("environment_id") or "")
+            if (
+                str(route.get("call_id") or "") != call_id
+                or str(route.get("tenant_id") or "") != claimed_tenant_id
+                or str(route.get("trunk_id") or "") != claimed_trunk_id
+                or route_environment_id != claimed_environment_id
+                or str(route.get("from_number") or "") != from_number
+                or str(route.get("to_number") or "") != to_number
+            ):
+                log.warning("sip.ws.rejected_inbound_identity_mismatch", call_sid=call_id)
+                await _safe_close(websocket, 1008)
+                return
+            tenant = await session.get(Tenant, uuid.UUID(claimed_tenant_id))
+        else:
+            # For an outbound SIP call, the owned caller-ID (`From`) is the
+            # tenant anchor; the destination is external and must never be
+            # used for tenant lookup.
+            tenant = await find_tenant_for_called_number(session, from_number)
+
+        tenant_number = to_number if direction is CallDirection.INBOUND else from_number
         if tenant is None or not tenant.is_active:
-            log.warning("sip.ws.unknown_destination", to=to_number[-6:])
+            log.warning(
+                "sip.ws.unknown_number",
+                direction=direction.value,
+                number_suffix=tenant_number[-6:],
+            )
             await _safe_close(websocket, 1008)
             return
 
         call = (
             await session.execute(select(Call).where(Call.call_sid == call_id))
         ).scalar_one_or_none()
-        if call is None:
-            call = Call(
-                id=uuid.uuid4(),
-                tenant_id=tenant.id,
-                call_sid=call_id,
-                from_number=from_number,
-                to_number=to_number,
-                direction=CallDirection.INBOUND,
-                status=CallStatus.IN_PROGRESS,
-            )
-            session.add(call)
-            try:
-                await session.flush()
-                await resolve_runtime_config(session, call, tenant=tenant)
-                await session.commit()
-            except IntegrityError:
-                await session.rollback()
-                call = (
-                    await session.execute(select(Call).where(Call.call_sid == call_id))
-                ).scalar_one_or_none()
-                if call is None:
-                    await _safe_close(websocket, 1008)
-                    return
-        else:
-            await session.commit()
+        if call is not None:
+            # A call SID is single-use: replaying an otherwise valid session
+            # token must not start a second voice pipeline for the same row.
+            if (
+                call.tenant_id != tenant.id
+                or call.from_number != from_number
+                or call.to_number != to_number
+                or call.direction != direction
+            ):
+                log.warning("sip.ws.rejected_call_identity_mismatch", call_sid=call_id)
+            else:
+                log.warning("sip.ws.rejected_duplicate_call", call_sid=call_id)
+            await _safe_close(websocket, 1008)
+            return
 
-        serializer = SipG711Serializer(
-            stream_sid=call_id, call_sid=call_id, codec=codec
-        )
+        call_values = {
+            "id": uuid.uuid4(),
+            "tenant_id": tenant.id,
+            "call_sid": call_id,
+            "from_number": from_number,
+            "to_number": to_number,
+            "direction": direction,
+            "status": CallStatus.IN_PROGRESS,
+        }
+        if direction is CallDirection.INBOUND:
+            # Carry the exact authorized environment resolved before SIP 200;
+            # do not let the ORM silently choose a different default scope.
+            call_values["environment_id"] = uuid.UUID(route_environment_id)
+        call = Call(**call_values)
+        session.add(call)
+        try:
+            await session.flush()
+            await resolve_runtime_config(session, call, tenant=tenant)
+            await session.commit()
+        except IntegrityError:
+            await session.rollback()
+            # The unique call SID is the final replay arbiter if two sockets
+            # race after both checked that the row was absent.
+            await _safe_close(websocket, 1008)
+            return
+
+        serializer = SipG711Serializer(stream_sid=call_id, call_sid=call_id, codec=codec)
         runtime_cfg = await resolve_runtime_config(session, call, tenant=tenant)
         params = build_voice_transport_params(runtime_cfg, serializer)
         transport = SipWebsocketTransport(websocket=websocket, params=params)

@@ -60,7 +60,7 @@ This checklist governs the technical, cryptographic, infrastructure, and operati
 
 ## 5. Data Stores, Backups & Disaster Recovery
 
-- [ ] **PostgreSQL 16+ & pgvector:** Run `make migrate` (`alembic upgrade head`) and confirm single head (`0069_voice_demo_sessions`).
+- [ ] **PostgreSQL 16+ & pgvector:** Run `make migrate` (`alembic upgrade head`) and confirm single head (`0091_call_debug_pcap_metadata`).
 - [ ] **Redis 7+:** Verify persistence/AOF settings and private network binding (no public host port in `docker-compose.prod.yml`).
 - [ ] **Off-Host Encrypted Backups:** Configure `RCLONE_REMOTE` for S3/R2/GCS replication and schedule `scripts/backup.sh`; verify restore readiness with `scripts/restore.sh` and `scripts/dr_drill.sh`.
 

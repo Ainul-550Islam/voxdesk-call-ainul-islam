@@ -1,10 +1,16 @@
 """SIP outbound call origination adapter backed by the SIP gateway control API (Capability 7).
 
-Wraps ``POST /v1/calls`` on the Kamailio + RTPEngine SIP media gateway with:
-- Bearer token authentication + HMAC-SHA256 request signing (``X-VoxDesk-Signature``),
-- ``Idempotency-Key`` propagation so gateway retries never place duplicate INVITEs,
-- bounded exponential retry on 5xx / network timeouts and zero retry on 4xx client errors,
+Wraps ``POST /v1/calls`` on the machine-wide SIP gateway with:
+- bearer token authentication and an extra HMAC-SHA256 header (the current Go
+  API verifies the bearer token but does not verify this HMAC),
+- ``Idempotency-Key`` propagation (the current Go API does not deduplicate it),
+- no automatic retries for mutating requests: a timeout or 5xx may have an
+  ambiguous outcome, so replaying a call, DTMF, or transfer could repeat it,
 - clean ``ProviderConfigurationError`` (``NOT_CONFIGURED``) when gateway URL or token is missing.
+
+This adapter does not select tenant-scoped Python ``SipTrunk`` records. Those
+calls require a configured machine-wide route; see
+``docs/SIP_TRUNK_GATEWAY_INTEGRATION.md``.
 """
 
 from __future__ import annotations
@@ -190,12 +196,13 @@ class SipOutboundAdapter(TelephonyAdapter):
         )
 
         last_exc: Exception | None = None
+        retry_safe = method.upper() in {"GET", "HEAD", "OPTIONS"}
         for attempt in range(_MAX_ATTEMPTS):
             try:
                 status_code, parsed = await self._send(method, url, headers, payload)
             except (ProviderTimeoutError, ProviderUnavailableError) as exc:
                 last_exc = exc
-                if attempt + 1 >= _MAX_ATTEMPTS:
+                if not retry_safe or attempt + 1 >= _MAX_ATTEMPTS:
                     raise
                 delay = self._backoff_seconds[min(attempt, len(self._backoff_seconds) - 1)]
                 if delay > 0:
@@ -204,15 +211,15 @@ class SipOutboundAdapter(TelephonyAdapter):
 
             if status_code >= 500:
                 last_exc = _map_gateway_error(status_code, parsed)
-                if attempt + 1 < _MAX_ATTEMPTS:
-                    delay = self._backoff_seconds[min(attempt, len(self._backoff_seconds) - 1)]
-                    if delay > 0:
-                        await asyncio.sleep(delay)
-                    continue
-                raise last_exc
+                if not retry_safe or attempt + 1 >= _MAX_ATTEMPTS:
+                    raise last_exc
+                delay = self._backoff_seconds[min(attempt, len(self._backoff_seconds) - 1)]
+                if delay > 0:
+                    await asyncio.sleep(delay)
+                continue
 
             if status_code < 200 or status_code >= 300:
-                # 4xx errors are deterministic caller/configuration errors; never retry.
+                # Client errors are deterministic and must not be retried.
                 raise _map_gateway_error(status_code, parsed)
 
             return parsed
@@ -258,6 +265,7 @@ class SipOutboundAdapter(TelephonyAdapter):
         to_number: str,
         from_number: str,
         answer_url: str = "",
+        status_callback_url: str = "",
         idempotency_key: str = "",
         headers: dict[str, str] | None = None,
         codec: str = "PCMU",

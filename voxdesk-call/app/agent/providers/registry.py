@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Mapping
 
 from app.agent.errors import ProviderConfigurationError
 from app.core.config import settings
@@ -44,282 +44,71 @@ class ProviderSpec:
     aliases: tuple[str, ...] = field(default_factory=tuple)
 
 
-STT_PROVIDER_CATALOG: dict[str, ProviderSpec] = {
-    "deepgram": ProviderSpec(
-        category="stt",
-        provider="deepgram",
-        display_name="Deepgram Nova",
-        default_model="nova-3",
-        models=("nova-3", "nova-2", "nova-2-medical", "nova-2-phonecall"),
-        required_env=("DEEPGRAM_API_KEY",),
-        settings_attrs=("deepgram_api_key",),
-        est_ttfb_ms=95,
-        notes="Lowest latency streaming WebSocket STT with keyword boosting (`keywords=word:boost`).",
-    ),
-    "assemblyai": ProviderSpec(
-        category="stt",
-        provider="assemblyai",
-        display_name="AssemblyAI Universal Streaming",
-        default_model="universal-2",
-        models=("universal-2", "best", "nano"),
-        required_env=("ASSEMBLYAI_API_KEY",),
-        settings_attrs=("assemblyai_api_key",),
-        est_ttfb_ms=140,
-        notes="High-accuracy streaming transcription with built-in endpointing.",
-    ),
-    "openai_whisper": ProviderSpec(
-        category="stt",
-        provider="openai_whisper",
-        display_name="OpenAI Whisper / GPT-4o Transcribe",
-        default_model="gpt-4o-transcribe",
-        models=("gpt-4o-transcribe", "gpt-4o-mini-transcribe", "whisper-1"),
-        required_env=("OPENAI_API_KEY",),
-        settings_attrs=("openai_api_key",),
-        est_ttfb_ms=220,
-        aliases=("openai", "whisper"),
-        notes="OpenAI segmented/streaming transcription across 50+ languages.",
-    ),
-    "azure": ProviderSpec(
-        category="stt",
-        provider="azure",
-        display_name="Azure Cognitive Services Speech STT",
-        default_model="default",
-        models=("default", "conversation", "dictation"),
-        required_env=("AZURE_SPEECH_KEY", "AZURE_SPEECH_REGION"),
-        settings_attrs=("azure_speech_key", "azure_speech_region"),
-        est_ttfb_ms=150,
-        notes="Enterprise Azure Speech real-time recognition.",
-    ),
-    "google": ProviderSpec(
-        category="stt",
-        provider="google",
-        display_name="Google Cloud Speech-to-Text v2",
-        default_model="chirp_2",
-        models=("chirp_2", "latest_short", "telephony"),
-        required_env=("GOOGLE_API_KEY",),
-        settings_attrs=("google_api_key",),
-        est_ttfb_ms=165,
-        notes="Google Cloud Speech / Chirp 2 streaming recognition.",
-    ),
-    "whisper_local": ProviderSpec(
-        category="stt",
-        provider="whisper_local",
-        display_name="Local Whisper (Faster-Whisper / MLX)",
-        default_model="base",
-        models=("tiny", "base", "small", "medium", "large-v3-turbo"),
-        required_env=("WHISPER_LOCAL_ENABLED",),
-        settings_attrs=(),
-        est_ttfb_ms=260,
-        aliases=("local_whisper",),
-        notes="Self-hosted air-gapped Whisper transcription.",
-    ),
-}
+def _catalog(category: str, *rows: tuple) -> dict[str, ProviderSpec]:
+    """Build a provider catalogue from rows.
 
-TTS_PROVIDER_CATALOG: dict[str, ProviderSpec] = {
-    "elevenlabs": ProviderSpec(
-        category="tts",
-        provider="elevenlabs",
-        display_name="ElevenLabs",
-        default_model="eleven_flash_v2_5",
-        models=("eleven_flash_v2_5", "eleven_turbo_v2_5", "eleven_multilingual_v2"),
-        required_env=("ELEVENLABS_API_KEY",),
-        settings_attrs=("elevenlabs_api_key",),
-        supports_voice_cloning=True,
-        est_ttfb_ms=135,
-        notes="Ultra-low-latency expressive WebSocket TTS with instant voice cloning.",
-    ),
-    "openai": ProviderSpec(
-        category="tts",
-        provider="openai",
-        display_name="OpenAI Audio TTS",
-        default_model="gpt-4o-mini-tts",
-        models=("gpt-4o-mini-tts", "tts-1", "tts-1-hd"),
-        required_env=("OPENAI_API_KEY",),
-        settings_attrs=("openai_api_key",),
-        est_ttfb_ms=180,
-        notes="OpenAI natural voices (alloy, ash, coral, echo, fable, onyx, nova, sage, shimmer).",
-    ),
-    "deepgram": ProviderSpec(
-        category="tts",
-        provider="deepgram",
-        display_name="Deepgram Aura",
-        default_model="aura-asteria-en",
-        models=("aura-asteria-en", "aura-luna-en", "aura-stella-en", "aura-orion-en"),
-        required_env=("DEEPGRAM_API_KEY",),
-        settings_attrs=("deepgram_api_key",),
-        est_ttfb_ms=110,
-        notes="Sub-120ms TTFB conversational telephony TTS.",
-    ),
-    "playht": ProviderSpec(
-        category="tts",
-        provider="playht",
-        display_name="PlayHT",
-        default_model="Play3.0-mini",
-        models=("Play3.0-mini", "PlayDialog", "PlayHT2.0-turbo"),
-        required_env=("PLAYHT_API_KEY", "PLAYHT_USER_ID"),
-        settings_attrs=("playht_api_key", "playht_user_id"),
-        supports_voice_cloning=True,
-        est_ttfb_ms=160,
-        notes="Expressive conversational TTS and instant voice cloning.",
-    ),
-    "cartesia": ProviderSpec(
-        category="tts",
-        provider="cartesia",
-        display_name="Cartesia Sonic",
-        default_model="sonic-2",
-        models=("sonic-2", "sonic-english", "sonic-multilingual"),
-        required_env=("CARTESIA_API_KEY",),
-        settings_attrs=("cartesia_api_key",),
-        supports_voice_cloning=True,
-        est_ttfb_ms=90,
-        notes="State-space model TTS with sub-100ms first-byte latency.",
-    ),
-    "azure": ProviderSpec(
-        category="tts",
-        provider="azure",
-        display_name="Azure Neural TTS",
-        default_model="en-US-AvaMultilingualNeural",
-        models=("en-US-AvaMultilingualNeural", "en-US-AndrewMultilingualNeural", "en-US-JennyNeural"),
-        required_env=("AZURE_SPEECH_KEY", "AZURE_SPEECH_REGION"),
-        settings_attrs=("azure_speech_key", "azure_speech_region"),
-        est_ttfb_ms=155,
-        notes="Microsoft Azure Neural Speech synthesis with SSML prosody controls.",
-    ),
-    "google": ProviderSpec(
-        category="tts",
-        provider="google",
-        display_name="Google Cloud Text-to-Speech",
-        default_model="en-US-Journey-F",
-        models=("en-US-Journey-F", "en-US-Journey-D", "en-US-Neural2-F"),
-        required_env=("GOOGLE_API_KEY",),
-        settings_attrs=("google_api_key",),
-        est_ttfb_ms=170,
-        notes="Google Journey & Neural2 streaming synthesis.",
-    ),
-}
+    Row shape: ``(provider, display_name, default_model, models, required_env, settings_attrs,
+    {extras})``. A table instead of eleven near-identical ``ProviderSpec(category=..., ...)``
+    blocks: the repetition tripped the repository's own anti-filler guard in
+    ``tests/truth/test_no_filler.py``, and the guard was right.
+    """
+    catalog: dict[str, ProviderSpec] = {}
+    for row in rows:
+        provider, display_name, default_model, models, required_env, settings_attrs, *rest = row
+        extras = dict(rest[0]) if rest and isinstance(rest[0], Mapping) else {}
+        catalog[provider] = ProviderSpec(
+            category=category,
+            provider=provider,
+            display_name=display_name,
+            default_model=default_model,
+            models=tuple(models),
+            required_env=tuple(required_env),
+            settings_attrs=tuple(settings_attrs),
+            **extras,
+        )
+    return catalog
 
-LLM_PROVIDER_CATALOG: dict[str, ProviderSpec] = {
-    "openai": ProviderSpec(
-        category="llm",
-        provider="openai",
-        display_name="OpenAI",
-        default_model="gpt-4o-mini",
-        models=("gpt-4o-mini", "gpt-4o", "gpt-4.1-mini", "gpt-4.1"),
-        required_env=("OPENAI_API_KEY",),
-        settings_attrs=("openai_api_key",),
-        supports_tool_calling=True,
-        est_ttfb_ms=210,
-        notes="Fastest tool-calling and structured output for voice agents.",
-    ),
-    "anthropic": ProviderSpec(
-        category="llm",
-        provider="anthropic",
-        display_name="Anthropic Claude",
-        default_model="claude-haiku-4-5-20251001",
-        models=("claude-haiku-4-5-20251001", "claude-3-5-haiku-latest", "claude-3-5-sonnet-latest", "claude-sonnet-4-5"),
-        required_env=("ANTHROPIC_API_KEY",),
-        settings_attrs=("anthropic_api_key",),
-        supports_tool_calling=True,
-        est_ttfb_ms=240,
-        notes="Natural conversational tone and strong instruction adherence.",
-    ),
-    "google": ProviderSpec(
-        category="llm",
-        provider="google",
-        display_name="Google Gemini",
-        default_model="gemini-2.0-flash",
-        models=("gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-pro"),
-        required_env=("GOOGLE_API_KEY",),
-        settings_attrs=("google_api_key",),
-        supports_tool_calling=True,
-        est_ttfb_ms=220,
-        notes="Low-cost multimodal & multilingual reasoning.",
-    ),
-    "groq": ProviderSpec(
-        category="llm",
-        provider="groq",
-        display_name="Groq LPU",
-        default_model="llama-3.3-70b-versatile",
-        models=("llama-3.3-70b-versatile", "llama-3.1-8b-instant", "qwen-2.5-32b"),
-        required_env=("GROQ_API_KEY",),
-        settings_attrs=("groq_api_key",),
-        supports_tool_calling=True,
-        est_ttfb_ms=110,
-        notes="Ultra-low-latency LPU inference with OpenAI-compatible tool calling.",
-    ),
-    "azure_openai": ProviderSpec(
-        category="llm",
-        provider="azure_openai",
-        display_name="Azure OpenAI",
-        default_model="gpt-4o-mini",
-        models=("gpt-4o-mini", "gpt-4o"),
-        required_env=("AZURE_OPENAI_API_KEY", "AZURE_OPENAI_ENDPOINT"),
-        settings_attrs=("azure_openai_api_key", "azure_openai_endpoint"),
-        supports_tool_calling=True,
-        est_ttfb_ms=220,
-        aliases=("azure",),
-        notes="Enterprise Azure-hosted OpenAI deployments.",
-    ),
-    "bedrock": ProviderSpec(
-        category="llm",
-        provider="bedrock",
-        display_name="AWS Bedrock",
-        default_model="anthropic.claude-3-5-haiku-20241022-v1:0",
-        models=(
-            "anthropic.claude-3-5-haiku-20241022-v1:0",
-            "anthropic.claude-3-5-sonnet-20241022-v2:0",
-            "amazon.nova-lite-v1:0",
-        ),
-        required_env=("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"),
-        settings_attrs=("aws_access_key_id", "aws_secret_access_key"),
-        supports_tool_calling=True,
-        est_ttfb_ms=260,
-        aliases=("aws_bedrock",),
-        notes="AWS Bedrock Converse streaming API.",
-    ),
-    "custom_openai": ProviderSpec(
-        category="llm",
-        provider="custom_openai",
-        display_name="Custom OpenAI-Compatible Endpoint",
-        default_model="default",
-        models=("default",),
-        required_env=("CUSTOM_OPENAI_API_KEY", "CUSTOM_OPENAI_BASE_URL"),
-        settings_attrs=("custom_openai_api_key", "custom_openai_base_url"),
-        supports_tool_calling=True,
-        est_ttfb_ms=250,
-        aliases=("custom", "vllm", "together", "fireworks"),
-        notes="Any vLLM, Together, Fireworks, or self-hosted OpenAI-compatible server.",
-    ),
-}
 
-S2S_PROVIDER_CATALOG: dict[str, ProviderSpec] = {
-    "openai_realtime": ProviderSpec(
-        category="s2s",
-        provider="openai_realtime",
-        display_name="OpenAI Realtime API (Speech-to-Speech)",
-        default_model="gpt-4o-realtime-preview",
-        models=("gpt-4o-realtime-preview", "gpt-4o-mini-realtime-preview"),
-        required_env=("OPENAI_API_KEY",),
-        settings_attrs=("openai_api_key",),
-        supports_tool_calling=True,
-        est_ttfb_ms=160,
-        aliases=("openai_s2s",),
-        notes="Direct audio-in/audio-out WebSocket Speech-to-Speech model.",
-    ),
-    "gemini_live": ProviderSpec(
-        category="s2s",
-        provider="gemini_live",
-        display_name="Google Gemini Multimodal Live (Speech-to-Speech)",
-        default_model="gemini-2.0-flash-exp",
-        models=("gemini-2.0-flash-exp",),
-        required_env=("GOOGLE_API_KEY",),
-        settings_attrs=("google_api_key",),
-        supports_tool_calling=True,
-        est_ttfb_ms=180,
-        aliases=("google_s2s", "gemini_multimodal_live"),
-        notes="Bidirectional low-latency audio streaming with Gemini 2.0.",
-    ),
-}
+STT_PROVIDER_CATALOG: dict[str, ProviderSpec] = _catalog(
+    "stt",
+    ('deepgram', 'Deepgram Nova', 'nova-3', ('nova-3', 'nova-2', 'nova-2-medical', 'nova-2-phonecall'), ('DEEPGRAM_API_KEY',), ('deepgram_api_key',), {'est_ttfb_ms': 95, 'notes': 'Lowest latency streaming WebSocket STT with keyword boosting (`keywords=word:boost`).'}),
+    ('assemblyai', 'AssemblyAI Universal Streaming', 'universal-2', ('universal-2', 'best', 'nano'), ('ASSEMBLYAI_API_KEY',), ('assemblyai_api_key',), {'est_ttfb_ms': 140, 'notes': 'High-accuracy streaming transcription with built-in endpointing.'}),
+    ('openai_whisper', 'OpenAI Whisper / GPT-4o Transcribe', 'gpt-4o-transcribe', ('gpt-4o-transcribe', 'gpt-4o-mini-transcribe', 'whisper-1'), ('OPENAI_API_KEY',), ('openai_api_key',), {'est_ttfb_ms': 220, 'notes': 'OpenAI segmented/streaming transcription across 50+ languages.', 'aliases': ('openai', 'whisper')}),
+    ('azure', 'Azure Cognitive Services Speech STT', 'default', ('default', 'conversation', 'dictation'), ('AZURE_SPEECH_KEY', 'AZURE_SPEECH_REGION'), ('azure_speech_key', 'azure_speech_region'), {'est_ttfb_ms': 150, 'notes': 'Enterprise Azure Speech real-time recognition.'}),
+    ('google', 'Google Cloud Speech-to-Text v2', 'chirp_2', ('chirp_2', 'latest_short', 'telephony'), ('GOOGLE_API_KEY',), ('google_api_key',), {'est_ttfb_ms': 165, 'notes': 'Google Cloud Speech / Chirp 2 streaming recognition.'}),
+    ('soniox', 'Soniox real-time', 'stt-rt-v3', ('stt-rt-v3', 'stt-rt-v3-medical'), ('SONIOX_API_KEY',), ('soniox_api_key',), {'est_ttfb_ms': 110, 'notes': 'Real-time WebSocket STT with explicit endpoint tokens and medical vocabulary hints.'}),
+    ('whisper_local', 'Local Whisper (Faster-Whisper / MLX)', 'base', ('tiny', 'base', 'small', 'medium', 'large-v3-turbo'), ('WHISPER_LOCAL_ENABLED',), (), {'est_ttfb_ms': 260, 'notes': 'Self-hosted air-gapped Whisper transcription.', 'aliases': ('local_whisper',)}),
+)
+
+TTS_PROVIDER_CATALOG: dict[str, ProviderSpec] = _catalog(
+    "tts",
+    ('elevenlabs', 'ElevenLabs', 'eleven_flash_v2_5', ('eleven_flash_v2_5', 'eleven_turbo_v2_5', 'eleven_multilingual_v2', 'eleven_v3'), ('ELEVENLABS_API_KEY',), ('elevenlabs_api_key',), {'supports_voice_cloning': True, 'est_ttfb_ms': 135, 'notes': 'Ultra-low-latency expressive WebSocket TTS with instant voice cloning.'}),
+    ('openai', 'OpenAI Audio TTS', 'gpt-4o-mini-tts', ('gpt-4o-mini-tts', 'tts-1', 'tts-1-hd'), ('OPENAI_API_KEY',), ('openai_api_key',), {'est_ttfb_ms': 180, 'notes': 'OpenAI natural voices (alloy, ash, coral, echo, fable, onyx, nova, sage, shimmer).'}),
+    ('deepgram', 'Deepgram Aura', 'aura-asteria-en', ('aura-asteria-en', 'aura-luna-en', 'aura-stella-en', 'aura-orion-en'), ('DEEPGRAM_API_KEY',), ('deepgram_api_key',), {'est_ttfb_ms': 110, 'notes': 'Sub-120ms TTFB conversational telephony TTS.'}),
+    ('playht', 'PlayHT', 'Play3.0-mini', ('Play3.0-mini', 'PlayDialog', 'PlayHT2.0-turbo'), ('PLAYHT_API_KEY', 'PLAYHT_USER_ID'), ('playht_api_key', 'playht_user_id'), {'supports_voice_cloning': True, 'est_ttfb_ms': 160, 'notes': 'Expressive conversational TTS and instant voice cloning.'}),
+    ('cartesia', 'Cartesia Sonic', 'sonic-2', ('sonic-2', 'sonic-3', 'sonic-english', 'sonic-multilingual'), ('CARTESIA_API_KEY',), ('cartesia_api_key',), {'supports_voice_cloning': True, 'est_ttfb_ms': 90, 'notes': 'State-space model TTS with sub-100ms first-byte latency.'}),
+    ('minimax', 'MiniMax Speech', 'speech-02-hd', ('speech-02-hd', 'speech-02-turbo', 'speech-01-turbo'), ('MINIMAX_API_KEY',), ('minimax_api_key',), {'est_ttfb_ms': 180, 'notes': 'MiniMax speech-02 with emotion parameter; requires a group id in the URL.'}),
+    ('fish_audio', 'Fish Audio', 'fish-speech-1.5', ('fish-speech-1.5', 'fish-speech-1'), ('FISH_AUDIO_API_KEY',), ('fish_audio_api_key',), {'supports_voice_cloning': True, 'est_ttfb_ms': 210, 'notes': 'Fish Audio speech with reference-id cloning; emotion via reference, not a parameter.'}),
+    ('azure', 'Azure Neural TTS', 'en-US-AvaMultilingualNeural', ('en-US-AvaMultilingualNeural', 'en-US-AndrewMultilingualNeural', 'en-US-JennyNeural'), ('AZURE_SPEECH_KEY', 'AZURE_SPEECH_REGION'), ('azure_speech_key', 'azure_speech_region'), {'est_ttfb_ms': 155, 'notes': 'Microsoft Azure Neural Speech synthesis with SSML prosody controls.'}),
+    ('google', 'Google Cloud Text-to-Speech', 'en-US-Journey-F', ('en-US-Journey-F', 'en-US-Journey-D', 'en-US-Neural2-F'), ('GOOGLE_API_KEY',), ('google_api_key',), {'est_ttfb_ms': 170, 'notes': 'Google Journey & Neural2 streaming synthesis.'}),
+)
+
+LLM_PROVIDER_CATALOG: dict[str, ProviderSpec] = _catalog(
+    "llm",
+    ('openai', 'OpenAI', 'gpt-4o-mini', ('gpt-4o-mini', 'gpt-4o', 'gpt-4.1-mini', 'gpt-4.1'), ('OPENAI_API_KEY',), ('openai_api_key',), {'supports_tool_calling': True, 'est_ttfb_ms': 210, 'notes': 'Fastest tool-calling and structured output for voice agents.'}),
+    ('anthropic', 'Anthropic Claude', 'claude-haiku-4-5-20251001', ('claude-haiku-4-5-20251001', 'claude-3-5-haiku-latest', 'claude-3-5-sonnet-latest', 'claude-sonnet-4-5'), ('ANTHROPIC_API_KEY',), ('anthropic_api_key',), {'supports_tool_calling': True, 'est_ttfb_ms': 240, 'notes': 'Natural conversational tone and strong instruction adherence.'}),
+    ('google', 'Google Gemini', 'gemini-2.0-flash', ('gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-pro'), ('GOOGLE_API_KEY',), ('google_api_key',), {'supports_tool_calling': True, 'est_ttfb_ms': 220, 'notes': 'Low-cost multimodal & multilingual reasoning.'}),
+    ('groq', 'Groq LPU', 'llama-3.3-70b-versatile', ('llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'qwen-2.5-32b'), ('GROQ_API_KEY',), ('groq_api_key',), {'supports_tool_calling': True, 'est_ttfb_ms': 110, 'notes': 'Ultra-low-latency LPU inference with OpenAI-compatible tool calling.'}),
+    ('azure_openai', 'Azure OpenAI', 'gpt-4o-mini', ('gpt-4o-mini', 'gpt-4o'), ('AZURE_OPENAI_API_KEY', 'AZURE_OPENAI_ENDPOINT'), ('azure_openai_api_key', 'azure_openai_endpoint'), {'supports_tool_calling': True, 'est_ttfb_ms': 220, 'notes': 'Enterprise Azure-hosted OpenAI deployments.', 'aliases': ('azure',)}),
+    ('bedrock', 'AWS Bedrock', 'anthropic.claude-3-5-haiku-20241022-v1:0', ('anthropic.claude-3-5-haiku-20241022-v1:0', 'anthropic.claude-3-5-sonnet-20241022-v2:0', 'amazon.nova-lite-v1:0'), ('AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'), ('aws_access_key_id', 'aws_secret_access_key'), {'supports_tool_calling': True, 'est_ttfb_ms': 260, 'notes': 'AWS Bedrock Converse streaming API.', 'aliases': ('aws_bedrock',)}),
+    ('custom_openai', 'Custom OpenAI-Compatible Endpoint', 'default', ('default',), ('CUSTOM_OPENAI_API_KEY', 'CUSTOM_OPENAI_BASE_URL'), ('custom_openai_api_key', 'custom_openai_base_url'), {'supports_tool_calling': True, 'est_ttfb_ms': 250, 'notes': 'Any vLLM, Together, Fireworks, or self-hosted OpenAI-compatible server.', 'aliases': ('custom', 'vllm', 'together', 'fireworks')}),
+)
+
+S2S_PROVIDER_CATALOG: dict[str, ProviderSpec] = _catalog(
+    "s2s",
+    ('openai_realtime', 'OpenAI Realtime API (Speech-to-Speech)', 'gpt-4o-realtime-preview', ('gpt-4o-realtime-preview', 'gpt-4o-mini-realtime-preview'), ('OPENAI_API_KEY',), ('openai_api_key',), {'supports_tool_calling': True, 'est_ttfb_ms': 160, 'notes': 'Direct audio-in/audio-out WebSocket Speech-to-Speech model.', 'aliases': ('openai_s2s',)}),
+    ('gemini_live', 'Google Gemini Multimodal Live (Speech-to-Speech)', 'gemini-2.0-flash-exp', ('gemini-2.0-flash-exp',), ('GOOGLE_API_KEY',), ('google_api_key',), {'supports_tool_calling': True, 'est_ttfb_ms': 180, 'notes': 'Bidirectional low-latency audio streaming with Gemini 2.0.', 'aliases': ('google_s2s', 'gemini_multimodal_live')}),
+)
 
 _CATALOGS: dict[str, dict[str, ProviderSpec]] = {
     "stt": STT_PROVIDER_CATALOG,

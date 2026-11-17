@@ -1,0 +1,21 @@
+{
+  "schema": "voxdesk.live_evidence/v1",
+  "provider": "sip",
+  "check": "sip.gateway-health",
+  "group": "sip",
+  "summary": "The SIP gateway's /healthz answers and reports its registration state.",
+  "status": "skipped",
+  "started_at": "2026-10-29T18:50:17Z",
+  "finished_at": "2026-10-29T18:50:17Z",
+  "commit_sha": "554fb1f9602d1dd0a62d407b9b3f991c41e369e1",
+  "raw_log": "evidence/live/raw/sip-sip-gateway-health-20261029T185017Z.log",
+  "raw_log_sha256": "43620f7d1e57934950ce89fcf42b75460206e2315cb9af603ff50d4cc5650186",
+  "raw_log_bytes": 359,
+  "cost_guard": null,
+  "detail": {
+    "missing_env": [
+      "VOXDESK_SIP_GATEWAY_URL"
+    ]
+  },
+  "skip_reason": "credentials absent: VOXDESK_SIP_GATEWAY_URL \u2014 the check was not attempted, so it proves nothing"
+}

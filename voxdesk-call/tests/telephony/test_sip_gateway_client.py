@@ -1,9 +1,8 @@
-"""The SIP gateway control client: originating a call, hanging up,
-transferring and sending DTMF against the gateway HTTP API.
+"""The SIP gateway control client: originating, controlling and reading calls.
 
 The gateway API is mocked with respx, so the tests exercise the real HTTP
-path: the bearer credential, the idempotency header, the request bodies and
-the retries.
+path, bearer credentials, idempotency-header propagation, request bodies, and
+the safe-read-only retry policy.
 """
 
 from __future__ import annotations
@@ -18,6 +17,7 @@ from app.telephony.provider_errors import (
     ProviderAuthenticationError,
     ProviderNotFoundError,
     ProviderTimeoutError,
+    ProviderUnavailableError,
     ProviderValidationError,
 )
 from app.telephony.sip.sip_gateway_client import SipGatewayClient
@@ -45,7 +45,10 @@ def no_sleep(monkeypatch):
 
 @pytest.mark.asyncio
 @respx.mock
-async def test_originate_sends_the_bearer_token() -> None:
+async def test_originate_sends_the_bearer_token(monkeypatch) -> None:
+    # Exercise the request contract while explicitly bypassing the production
+    # capability gate; the default client remains fail-closed for tenant trunks.
+    monkeypatch.setattr(SipGatewayClient, "supports_tenant_trunks", True)
     route = respx.post(f"{GATEWAY}/v1/calls").mock(
         return_value=Response(
             201, json={"id": "call-1", "status": "active", "to": "+1", "from": "+2"}
@@ -53,7 +56,12 @@ async def test_originate_sends_the_bearer_token() -> None:
     )
     client = _client()
     call = await client.originate(
-        to_number="+15550001111", from_number="+15550002222", idempotency_key="k-1"
+        to_number="+15550001111",
+        from_number="+15550002222",
+        idempotency_key="k-1",
+        tenant_id="tenant-1",
+        trunk_id="trunk-1",
+        environment_id="env-1",
     )
     assert call.id == "call-1"
 
@@ -66,6 +74,10 @@ async def test_originate_sends_the_bearer_token() -> None:
     assert body["to"] == "+15550001111"
     assert body["from"] == "+15550002222"
     assert body["codec"] == "PCMU"
+    assert body["tenant_id"] == "tenant-1"
+    assert body["trunk_id"] == "trunk-1"
+    assert body["environment_id"] == "env-1"
+    assert "password" not in body and "auth_secret_ref" not in body
 
 
 @pytest.mark.asyncio
@@ -120,10 +132,63 @@ async def test_an_attended_transfer_carries_the_second_call() -> None:
 
 
 @pytest.mark.asyncio
+@respx.mock
+async def test_capture_sends_only_supported_options() -> None:
+    route = respx.post(f"{GATEWAY}/v1/calls/call-1/pcap").mock(
+        return_value=Response(200, json={"packet_count": 0, "truncated": False})
+    )
+    client = _client()
+
+    await client.capture(
+        {
+            "tenant_id": "tenant-1",
+            "call_id": "call-1",
+            "duration_seconds": 1,
+            "snaplen": 262,
+            "direction": "both",
+        }
+    )
+
+    assert json.loads(route.calls[0].request.content) == {
+        "tenant_id": "tenant-1",
+        "call_id": "call-1",
+        "duration_seconds": 1,
+        "snaplen": 262,
+        "direction": "both",
+    }
+
+
+@pytest.mark.asyncio
+async def test_capture_rejects_unsupported_filter_before_requesting_the_gateway() -> None:
+    client = _client()
+    with pytest.raises(ProviderValidationError, match="filters are unsupported"):
+        await client.capture(
+            {
+                "tenant_id": "tenant-1",
+                "call_id": "call-1",
+                "duration_seconds": 1,
+                "filter": "udp port 5060",
+            }
+        )
+
+
+@pytest.mark.asyncio
 async def test_the_client_refuses_to_work_without_a_token() -> None:
     client = SipGatewayClient(base_url=GATEWAY, token="")
     with pytest.raises(ProviderValidationError):
         await client.hangup("call-1")
+
+
+@pytest.mark.asyncio
+async def test_the_client_fails_closed_on_tenant_trunks_until_secure_support_exists() -> None:
+    client = _client()
+    with pytest.raises(ProviderValidationError, match="verified TLS/SRTP"):
+        await client.originate(
+            to_number="+15550001111",
+            from_number="+15550002222",
+            tenant_id="tenant-1",
+            trunk_id="trunk-1",
+        )
 
 
 @pytest.mark.asyncio
@@ -135,15 +200,27 @@ async def test_the_client_rejects_non_numeric_dtmf() -> None:
 
 @pytest.mark.asyncio
 @respx.mock
-async def test_a_server_error_is_retried(no_sleep) -> None:
+async def test_mutating_server_error_is_not_retried(no_sleep) -> None:
     route = respx.post(f"{GATEWAY}/v1/calls").mock(
+        return_value=Response(503, json={"error": "unavailable"})
+    )
+    client = _client()
+    with pytest.raises(ProviderUnavailableError):
+        await client.originate(to_number="+1", from_number="+2")
+    assert len(route.calls) == 1
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_safe_read_retries_a_server_error(no_sleep) -> None:
+    route = respx.get(f"{GATEWAY}/v1/calls/call-1").mock(
         side_effect=[
             Response(503, json={"error": "unavailable"}),
             Response(200, json={"id": "call-1", "status": "active"}),
         ]
     )
     client = _client()
-    call = await client.originate(to_number="+1", from_number="+2")
+    call = await client.call_status("call-1")
     assert call.id == "call-1"
     assert len(route.calls) == 2
 
@@ -188,7 +265,7 @@ async def test_an_unknown_call_is_reported_as_not_found(no_sleep) -> None:
 
 @pytest.mark.asyncio
 @respx.mock
-async def test_a_timeout_is_typed_and_retried(no_sleep) -> None:
+async def test_mutating_timeout_is_typed_and_not_retried(no_sleep) -> None:
     import httpx
 
     route = respx.post(f"{GATEWAY}/v1/calls/call-1/hangup").mock(
@@ -197,4 +274,21 @@ async def test_a_timeout_is_typed_and_retried(no_sleep) -> None:
     client = _client()
     with pytest.raises(ProviderTimeoutError):
         await client.hangup("call-1")
-    assert len(route.calls) == 3
+    assert len(route.calls) == 1
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_safe_read_timeout_is_retried(no_sleep) -> None:
+    import httpx
+
+    route = respx.get(f"{GATEWAY}/v1/calls/call-1").mock(
+        side_effect=[
+            httpx.ReadTimeout("the gateway did not answer"),
+            Response(200, json={"id": "call-1", "status": "active"}),
+        ]
+    )
+    client = _client()
+    call = await client.call_status("call-1")
+    assert call.id == "call-1"
+    assert len(route.calls) == 2

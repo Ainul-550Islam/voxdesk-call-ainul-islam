@@ -1,0 +1,141 @@
+id: appointment_setter
+name: Appointment Setter
+vertical: scheduling
+summary: >-
+  Books, moves and confirms appointments against real availability. Confirms the time back to the caller digit by digit and sends an SMS confirmation.
+config:
+  voice: configured-default
+  language: en-US
+  first_message: >-
+    I can book that for you. What day works best?
+  llm_model: gpt-4o-mini
+  max_call_seconds: 420
+  end_call_after_silence_seconds: 12
+
+tools:
+  - name: find_available_slots
+    description: Read real availability from the calendar for a service and day.
+    params:
+      service: {type: string}
+      day: {type: string}
+  - name: book_appointment
+    description: Create the booking. Fails loudly if the slot was taken meanwhile.
+    params:
+      service: {type: string}
+      slot: {type: string}
+      caller_number: {type: string}
+
+dynamic_variables:
+  - name: service
+    type: string
+    purpose: >-
+      What the caller is booking; selects the calendar and the slot length.
+    required: true
+    examples: ['"dental checkup"', '"oil change"']
+  - name: preferred_day
+    type: string
+    purpose: >-
+      Requested day in words; resolved against the calendar, never assumed.
+    required: true
+    examples: ['"next Tuesday"', '"the 14th"']
+  - name: confirmed_slot
+    type: string
+    purpose: >-
+      The slot actually booked, echoed back in the SMS.
+    required: false
+    examples: ['"Tue 14 Oct 10:30"']
+
+flow:
+  mode: rigid
+  initial_variables:
+    confirmed_slot: '""'
+  nodes:
+    - id: start
+      node_type: start
+      params: {}
+    - id: greet
+      node_type: conversation
+      params:
+        prompt: "Ask what they would like to book, and for which day."
+    - id: capture
+      node_type: extract_variables
+      params:
+        variables:
+          - {'name': 'service', 'type': 'string', 'required': True}
+          - {'name': 'preferred_day', 'type': 'string', 'required': True}
+    - id: check
+      node_type: function
+      params:
+        tool_name: find_available_slots
+    - id: offer
+      node_type: conversation
+      params:
+        prompt: "Offer the two soonest available slots by date and time. Never invent a slot."
+    - id: book
+      node_type: function
+      params:
+        tool_name: book_appointment
+    - id: notify
+      node_type: send_sms
+      params:
+        message: "Your appointment with {{service}} is confirmed for {{confirmed_slot}}."
+        set_from_tool_result: book_appointment
+    - id: end
+      node_type: end
+      params: {}
+  edges:
+    - id: e1
+      source_id: start
+      target_id: greet
+    - id: e2
+      source_id: greet
+      target_id: capture
+    - id: e3
+      source_id: capture
+      target_id: check
+    - id: e4
+      source_id: check
+      target_id: offer
+    - id: e5
+      source_id: offer
+      target_id: book
+    - id: e6
+      source_id: book
+      target_id: notify
+    - id: e7
+      source_id: notify
+      target_id: end
+
+analysis_schema:
+  fields:
+    - name: service
+      type: string
+    - name: confirmed_slot
+      type: string
+    - name: outcome
+      type: enum
+      values: [booked, no_availability, declined]
+
+simulation_cases:
+  - name: books the soonest slot the calendar returns
+    turns:
+      - "I need a checkup"
+      - "next Tuesday"
+      - "the first one"
+    expect_node: book
+    expect_variables:
+      service: checkup
+  - name: confirms by SMS after booking
+    turns:
+      - "oil change"
+      - "Friday"
+      - "10am"
+    expect_node: notify
+
+kb_placeholders:
+  - "services.md — services, durations and which calendar each belongs to"
+  - "booking-policy.md — cancellation window and no-show rule"
+
+compliance_notes:
+  - "SMS consent: the confirmation SMS must only be sent where the caller has consented in this call or under an existing policy; counsel must confirm the wording of the consent line."
+  - "Do not confirm a slot that the calendar did not return. A guessed appointment is a missed customer."

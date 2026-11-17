@@ -14,12 +14,12 @@ import base64
 import json
 from typing import Any
 
+from pipecat.audio.dtmf.types import KeypadEntry
 from pipecat.frames.frames import (
     AudioRawFrame,
     Frame,
     InputAudioRawFrame,
     InputDTMFFrame,
-    KeypadEntry,
     OutputAudioRawFrame,
 )
 from pipecat.serializers.base_serializer import FrameSerializer, FrameSerializerType

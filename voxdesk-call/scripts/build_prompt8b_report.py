@@ -28,7 +28,7 @@ def main() -> None:
     baseline = json.loads((E / "baseline-hashes.json").read_text(encoding="utf-8"))
     previous = json.loads((VALIDATION_DIR / "modified-files.json").read_text(encoding="utf-8"))
     changed = set(previous)
-    roots = ["app", "tests", "scripts", "docs", "alembic", "dashboard/src", "services/control-plane/crates"]
+    roots = ["app", "tests", "scripts", "docs", "alembic", "dashboard-next", "experimental/control-plane/crates"]
     for directory in roots:
         for path in (ROOT / directory).rglob("*"):
             if not path.is_file() or "__pycache__" in path.parts:

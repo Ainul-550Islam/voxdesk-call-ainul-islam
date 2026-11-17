@@ -119,8 +119,8 @@ class VonageAdapter(TelephonyAdapter):
         )
 
     @property
-    def supports_ai_media_stream(self) -> bool:
-        """True only when the complete Vonage media credential set exists."""
+    def media_stream_credentials_ready(self) -> bool:
+        """Whether credentials exist; this is not a customer-facing capability."""
         carrier = _carrier_settings()
         return bool(
             (carrier.vonage_api_key or settings.vonage_api_key or "").strip()
@@ -130,15 +130,14 @@ class VonageAdapter(TelephonyAdapter):
             and self._signature_secret()
         )
 
+    @property
+    def supports_ai_media_stream(self) -> bool:
+        """False until ADR-004 is revised after a passing real media test."""
+        return False
+
     def require_media_streaming(self) -> None:
-        """Raise ``UnsupportedCapability`` when the media path is unavailable."""
-        if not self.supports_ai_media_stream:
-            raise UnsupportedCapability(
-                "Vonage AI media streaming requires a complete credential set "
-                "(API key, API secret, application id, RS256 private key and "
-                "signature secret)",
-                provider=self.name,
-            )
+        """Refuse AI media streaming per ADR-004, regardless of credentials."""
+        raise UnsupportedCapability(unsupported_capability("ai_media_stream"), provider=self.name)
 
     def media_stream_capability(self) -> dict:
         """Structured capability probe matching ``TelnyxAdapter.media_stream_capability``."""
@@ -154,15 +153,17 @@ class VonageAdapter(TelephonyAdapter):
             missing.append("VONAGE_PRIVATE_KEY")
         if not self._signature_secret():
             missing.append("VONAGE_SIGNATURE_SECRET")
-        ready = len(missing) == 0
+        credentials_ready = len(missing) == 0
         return {
             "provider": self.name,
-            "supports_ai_media_stream": ready,
-            "state": "READY" if ready else "NOT_CONFIGURED",
-            "serializer": "VonageFrameSerializer" if ready else None,
-            "encodings": ["audio/l16;rate=16000"] if ready else [],
-            "sample_rates": [16000] if ready else [],
+            "supports_ai_media_stream": False,
+            "state": "UNSUPPORTED",
+            "serializer": None,
+            "encodings": [],
+            "sample_rates": [],
             "missing": missing,
+            "credentials_ready": credentials_ready,
+            "reason": unsupported_capability("ai_media_stream"),
         }
 
     def health(self) -> HealthResult:
@@ -228,6 +229,7 @@ class VonageAdapter(TelephonyAdapter):
         to_number: str,
         from_number: str,
         answer_url: str = "",
+        status_callback_url: str = "",
         ncco: list | None = None,
         idempotency_key: str = "",
     ) -> CallResult:
@@ -614,6 +616,43 @@ class VonageAdapter(TelephonyAdapter):
         return HttpResult(response.status_code, body)
 
 
+# PART 13 / P13-03 — see docs/adr/ADR-004-vonage-scope.md.
+#
+# Vonage is a voice + call-control carrier here, not a parity carrier. The two
+# sets below are the reviewable answer to "what do you support on Vonage?", and
+# `unsupported_capability()` is what the routes raise when a caller asks for
+# something in the second set. Keeping the list in code means the ADR and the
+# refusal message cannot drift apart.
+VONAGE_SUPPORTED_CAPABILITIES = frozenset(
+    {
+        "voice",
+        "call_control",
+        "ncco",
+        "recording",
+        "dtmf",
+        "webhook_signature",
+    }
+)
+VONAGE_UNSUPPORTED_CAPABILITIES: dict[str, str] = {
+    "ai_media_stream": (
+        "Vonage media streaming is not enabled for this deployment; see ADR-004."
+    ),
+    "whatsapp": (
+        "WhatsApp is a Messages API capability, not a Voice one; use the messaging "
+        "channel for it."
+    ),
+    "number_provisioning": "Number provisioning on Vonage is not implemented; buy numbers on a supported carrier.",
+    "sms_registration": "A2P registration is implemented for Twilio 10DLC and toll-free only.",
+}
+
+
+def unsupported_capability(name: str) -> str:
+    """The refusal message for a capability Vonage does not offer."""
+    return VONAGE_UNSUPPORTED_CAPABILITIES.get(
+        name, f"Vonage does not offer {name!r}"
+    )
+
+
 def vonage_media_capabilities() -> dict[str, dict]:
     """The Vonage media capability row for the carrier capability table."""
     adapter = VonageAdapter()
@@ -625,10 +664,15 @@ def vonage_media_capabilities() -> dict[str, dict]:
             "encodings": ["audio/l16;rate=16000"] if ready else [],
             "sample_rates": [16000] if ready else [],
             "reason": (
-                "Vonage Voice API credentials are present."
+                "Vonage Voice API credentials are present; call control, NCCO and "
+                "recording are supported (ADR-004)."
                 if ready
-                else "Vonage media streaming is not enabled: the credential set is incomplete."
+                else unsupported_capability("ai_media_stream")
             ),
+            # ADR-004: the full picture, so the dashboard can show what is and is
+            # not claimed instead of inferring it from one boolean.
+            "supported_capabilities": sorted(VONAGE_SUPPORTED_CAPABILITIES),
+            "unsupported_capabilities": dict(VONAGE_UNSUPPORTED_CAPABILITIES),
         }
     }
 

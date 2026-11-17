@@ -131,7 +131,7 @@ export default function CompliancePage() {
       <section className="card">
         <h2>Frameworks ({frameworks.length})</h2>
         {frameworks.length === 0 ? <p className="muted">No frameworks. Backend has QMS/OCG/Healthcare/Manufacturing/Retail active.</p> : (
-          <div className="table-wrap">
+          <div className="table-wrap" tabIndex={0} role="region" aria-label="Data table">
             <table>
               <thead><tr><th>Name</th><th>Type</th><th>Status</th></tr></thead>
               <tbody>

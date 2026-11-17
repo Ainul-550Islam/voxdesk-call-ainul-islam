@@ -593,3 +593,98 @@ async def test_e2e_flow_published_bound_to_number_drives_call_timeline_and_w12_b
     assert visited_Target_Nodes == ["n_conversation", "n_function", "n_transfer"]
     assert any(name == "verify_account" for name, _ in dummy_handlers.calls)
     assert any(name == "warm_transfer" for name, _ in dummy_handlers.calls)
+
+
+def _flow_with_workflow_trigger() -> dict:
+    return {
+        "nodes": [
+            {"id": "start", "type": "start"},
+            {"id": "end", "type": "end"},
+        ],
+        "edges": [
+            {
+                "id": "finish",
+                "source": "start",
+                "target": "end",
+                "condition": {"kind": "always"},
+            }
+        ],
+    }
+
+
+def test_flow_trigger_missing_handler_is_not_reported_as_triggered() -> None:
+    runner = FlowRunner(
+        _flow_with_workflow_trigger(),
+        workflow_triggers=[
+            {"id": "trigger-1", "workflow_id": "workflow-1", "event_type": "flow_completed"}
+        ],
+    )
+
+    result = asyncio.run(runner.start())
+    end_action = next(action for action in result.actions if action.action_type == "end")
+    assert end_action.ok is False
+    assert "triggered_workflows" not in end_action.output
+    assert end_action.output["failed_workflows"] == [
+        {"workflow_id": "workflow-1", "error": "workflow_trigger_runtime_unavailable"}
+    ]
+
+
+def test_flow_trigger_is_recorded_only_after_handler_success() -> None:
+    async def trigger_handler(trigger, variables):
+        assert trigger["workflow_id"] == "workflow-1"
+        assert isinstance(variables, dict)
+        return {"ok": True, "job_id": "job-1"}
+
+    runner = FlowRunner(
+        _flow_with_workflow_trigger(),
+        workflow_triggers=[
+            {"id": "trigger-1", "workflow_id": "workflow-1", "event_type": "flow_completed"}
+        ],
+        workflow_trigger_handler=trigger_handler,
+    )
+
+    result = asyncio.run(runner.start())
+    end_action = next(action for action in result.actions if action.action_type == "end")
+    assert end_action.ok is True
+    assert end_action.output["triggered_workflows"] == ["workflow-1"]
+
+
+def test_flow_trigger_handler_failure_is_recorded_without_raising() -> None:
+    async def trigger_handler(_trigger, _variables):
+        return {"ok": False, "error": "queue_unavailable"}
+
+    runner = FlowRunner(
+        _flow_with_workflow_trigger(),
+        workflow_triggers=[
+            {"id": "trigger-1", "workflow_id": "workflow-1", "event_type": "flow_completed"}
+        ],
+        workflow_trigger_handler=trigger_handler,
+    )
+
+    result = asyncio.run(runner.start())
+    end_action = next(action for action in result.actions if action.action_type == "end")
+    assert end_action.ok is False
+    assert "triggered_workflows" not in end_action.output
+    assert end_action.output["failed_workflows"] == [
+        {"workflow_id": "workflow-1", "error": "queue_unavailable"}
+    ]
+
+
+def test_flow_trigger_handler_exception_is_captured() -> None:
+    async def trigger_handler(_trigger, _variables):
+        raise RuntimeError("private diagnostic detail")
+
+    runner = FlowRunner(
+        _flow_with_workflow_trigger(),
+        workflow_triggers=[
+            {"id": "trigger-1", "workflow_id": "workflow-1", "event_type": "flow_completed"}
+        ],
+        workflow_trigger_handler=trigger_handler,
+    )
+
+    result = asyncio.run(runner.start())
+    end_action = next(action for action in result.actions if action.action_type == "end")
+    assert end_action.ok is False
+    assert end_action.output["failed_workflows"] == [
+        {"workflow_id": "workflow-1", "error": "workflow_trigger_execution_failed"}
+    ]

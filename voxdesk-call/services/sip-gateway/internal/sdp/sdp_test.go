@@ -56,6 +56,115 @@ func TestParseReadsMediaAndFormats(t *testing.T) {
 	}
 }
 
+func TestValidatePlainRTPAllowsOnlyTheUnsecuredEdgeProfile(t *testing.T) {
+	plain, err := Parse(offer)
+	if err != nil {
+		t.Fatalf("parse plain RTP SDP: %v", err)
+	}
+	media, _ := plain.Audio()
+	if err := plain.ValidatePlainRTP(media); err != nil {
+		t.Fatalf("plain RTP/AVP offer should be accepted: %v", err)
+	}
+
+	for _, test := range []struct {
+		name              string
+		proto             string
+		attributes        []string
+		sessionAttributes []string
+	}{
+		{name: "SDES SRTP profile", proto: "RTP/SAVP"},
+		{name: "DTLS SRTP profile", proto: "UDP/TLS/RTP/SAVPF"},
+		{name: "crypto attribute", proto: "RTP/AVP", attributes: []string{"crypto:1 AES_CM_128_HMAC_SHA1_80 inline:abc"}},
+		{name: "DTLS fingerprint", proto: "RTP/AVP", attributes: []string{"fingerprint:sha-256 AA:BB"}},
+		{name: "DTLS setup", proto: "RTP/AVP", attributes: []string{"setup:actpass"}},
+		{name: "ICE session attribute", proto: "RTP/AVP", sessionAttributes: []string{"ice-ufrag:abcd"}},
+		{name: "ICE lite mode", proto: "RTP/AVP", sessionAttributes: []string{"ice-lite"}},
+		{name: "ICE candidate", proto: "RTP/AVP", attributes: []string{"candidate:1 1 UDP 1 192.0.2.10 40000 typ host"}},
+		{name: "ICE nominated pair", proto: "RTP/AVP", attributes: []string{"remote-candidates:1 192.0.2.10 40000"}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			session := &Session{Attributes: test.sessionAttributes}
+			if err := session.ValidatePlainRTP(Media{Proto: test.proto, Attributes: test.attributes}); err == nil {
+				t.Fatal("media requiring unsupported secure transport or ICE must be rejected")
+			}
+		})
+	}
+}
+
+func TestMediaEndpointUsesMediaConnectionBeforeSessionConnection(t *testing.T) {
+	media := Media{
+		Kind:       "audio",
+		Port:       40000,
+		Connection: "IN IP4 198.51.100.20",
+	}
+	endpoint, err := media.Endpoint("IN IP4 192.0.2.10")
+	if err != nil {
+		t.Fatalf("parse media endpoint: %v", err)
+	}
+	if endpoint.IP.String() != "198.51.100.20" || endpoint.Port != 40000 {
+		t.Fatalf("unexpected media endpoint: %v", endpoint)
+	}
+}
+
+func TestParseSeparatesSessionAndMediaConnectionAddresses(t *testing.T) {
+	raw := "v=0\r\n" +
+		"o=alice 1 1 IN IP4 192.0.2.10\r\n" +
+		"s=-\r\n" +
+		"c=IN IP4 192.0.2.10\r\n" +
+		"t=0 0\r\n" +
+		"m=audio 40000 RTP/AVP 0\r\n" +
+		"c=IN IP4 198.51.100.20\r\n"
+	session, err := Parse(raw)
+	if err != nil {
+		t.Fatalf("parse SDP: %v", err)
+	}
+	if session.Connection != "IN IP4 192.0.2.10" || session.Medias[0].Connection != "IN IP4 198.51.100.20" {
+		t.Fatalf("session/media c= lines were not kept separately: session=%q media=%q", session.Connection, session.Medias[0].Connection)
+	}
+	endpoint, err := session.Medias[0].Endpoint(session.Connection)
+	if err != nil {
+		t.Fatalf("resolve media endpoint: %v", err)
+	}
+	if endpoint.IP.String() != "198.51.100.20" {
+		t.Fatalf("media-level c= should override the session-level address, got %s", endpoint.IP)
+	}
+}
+
+func TestMediaEndpointFallsBackToSessionConnectionAndSupportsIPv6(t *testing.T) {
+	media := Media{Kind: "audio", Port: 40002}
+	endpoint, err := media.Endpoint("IN IP6 2001:db8::8")
+	if err != nil {
+		t.Fatalf("parse session-level IPv6 endpoint: %v", err)
+	}
+	if endpoint.IP.String() != "2001:db8::8" || endpoint.Port != 40002 {
+		t.Fatalf("unexpected media endpoint: %v", endpoint)
+	}
+}
+
+func TestMediaEndpointRejectsUnroutableOrAmbiguousTargets(t *testing.T) {
+	for _, test := range []struct {
+		name       string
+		port       int
+		connection string
+	}{
+		{name: "missing connection", port: 40000},
+		{name: "rejected media", port: 0, connection: "IN IP4 192.0.2.10"},
+		{name: "port too large", port: 65536, connection: "IN IP4 192.0.2.10"},
+		{name: "hostname", port: 40000, connection: "IN IP4 media.example"},
+		{name: "unspecified", port: 40000, connection: "IN IP4 0.0.0.0"},
+		{name: "multicast", port: 40000, connection: "IN IP4 224.0.0.1"},
+		{name: "multicast suffix", port: 40000, connection: "IN IP4 224.0.0.1/127"},
+		{name: "address family mismatch", port: 40000, connection: "IN IP6 192.0.2.10"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			_, err := (Media{Port: test.port, Connection: test.connection}).Endpoint("")
+			if err == nil {
+				t.Fatal("expected an unusable media endpoint to be rejected")
+			}
+		})
+	}
+}
+
 func TestParseRejectsGarbage(t *testing.T) {
 	if _, err := Parse("not an sdp"); err == nil {
 		t.Fatal("expected an error for a malformed line")

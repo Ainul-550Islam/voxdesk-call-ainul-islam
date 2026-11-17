@@ -136,25 +136,28 @@ def extract_api_literals(text: str) -> list[tuple[int, str]]:
 
 
 def collect_frontend_files() -> list[Path]:
+    """Every module in the shipped console that can build an API path.
+
+    PART 17A retired `dashboard/src`; the vendored pages under
+    `dashboard-next/vite-port/src/api` are still frontend code that calls the
+    backend, so they are scanned instead of being dropped from the check.
+    """
     files = (
-        sorted((ROOT / "dashboard/src/api").rglob("*.ts"))
-        + sorted((ROOT / "dashboard/src/hooks").rglob("*.ts"))
-        + sorted((ROOT / "dashboard/src/lib").glob("*.ts"))
-        + sorted((ROOT / "dashboard/src/lib").glob("*.js"))
-        + [
-            ROOT / "dashboard-next/lib/api.ts",
-            ROOT / "dashboard-next/lib/identity.ts",
-        ]
+        sorted((ROOT / "dashboard-next/lib").glob("*.ts"))
+        + sorted((ROOT / "dashboard-next/vite-port/src/api").rglob("*.ts"))
+        + sorted((ROOT / "dashboard-next/vite-port/src/lib").glob("*.js"))
     )
     return [p for p in files if p.exists() and p.is_file()]
 
 
 def scan_silent_catches() -> list[dict[str, Any]]:
     catches: list[dict[str, Any]] = []
-    api_dir = ROOT / "dashboard/src/api"
+    api_dir = ROOT / "dashboard-next" / "vite-port" / "src" / "api"
     for f in sorted(api_dir.rglob("*.ts")):
         rel = str(f.relative_to(ROOT))
-        if rel == "dashboard/src/api/client.ts":
+        # client.ts readErrorBody parses optional JSON error bodies on non-2xx
+        # responses before throwing ApiError.
+        if rel.endswith("api/client.ts"):
             continue
         code = BLOCK_COMMENT_RE.sub("", f.read_text(encoding="utf-8"))
         code = "\n".join(LINE_COMMENT_RE.sub("", ln) for ln in code.splitlines())

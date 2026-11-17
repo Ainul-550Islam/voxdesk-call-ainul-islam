@@ -175,6 +175,13 @@ def loader_script(config: dict[str, Any]) -> str:
         "  frame.src = '/widget/' + encodeURIComponent(config.public_key) + '/frame';\n"
         "  frame.addEventListener('load', function () {\n"
         "    frame.contentWindow.postMessage({ type: 'voxdesk:config', config: config }, window.location.origin);\n"
+        # The frame already receives the resolved theme through the
+        # `voxdesk:config` message above; the loader also puts the product
+        # name and brand colour on the element itself so a host page can style
+        # the launcher without reading a message it never asked for.
+        "  frame.title = config.product_name || frame.title;\n"
+        "  frame.setAttribute('data-product-name', config.product_name || '');\n"
+        "  frame.setAttribute('data-primary', (config.theme || {}).primary || '');\n"
         "  });\n"
         "  document.body.appendChild(frame);\n"
         "})();\n"

@@ -69,16 +69,34 @@ export default function AgentsListPage() {
     setError(null);
     setStatusMessage(null);
     try {
+      // Only fields the API declares: the create payload is extra="forbid", so
+      // sending `initial_config` was a hard 422 and no agent was ever created.
       const created = await api.createAgent({
         name: newName.trim(),
         description: newDescription.trim(),
-        initial_config: {
-          mode: newMode,
-        },
       });
+      const createdId = String(created.id ?? "");
+      const displayName = String(created.name ?? newName.trim());
       setNewName("");
       setNewDescription("");
-      setStatusMessage(`Created agent "${String(created.name ?? newName.trim())}".`);
+
+      // Engine mode is not a field of the agent record — it lives on the draft
+      // flow (GET/PUT /api/agents/{id}/flow). Apply it there. A failure leaves
+      // a perfectly valid single-prompt agent behind, so it is reported, not
+      // treated as a failed creation.
+      let modeNote = "";
+      if (newMode === "flow" && createdId) {
+        try {
+          const current = await api.getAgentFlow(createdId);
+          const flow = (current.flow ?? {}) as Record<string, unknown>;
+          await api.putAgentFlow(createdId, { mode: "flow", flow });
+        } catch (err) {
+          modeNote = ` Flow mode could not be applied (${
+            err instanceof Error ? err.message : "unknown error"
+          }); the agent starts in single-prompt mode.`;
+        }
+      }
+      setStatusMessage(`Created agent "${displayName}".${modeNote}`);
       await loadAgents();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create agent");

@@ -366,10 +366,12 @@ async def test_messaging_stop_and_start_never_reverse_the_voice_dnc_for_the_dial
             .order_by(LeadConsent.recorded_at, LeadConsent.version)
         )
     ).scalars().all()
-    assert [(c.channel, c.decision, c.source) for c in consents] == [
+    assert len(consents) == 3
+    assert {(c.channel, c.decision, c.source) for c in consents} == {
+        ("sms", "denied", "messaging:stop"),
         ("voice", "denied", "messaging:stop"),
         ("sms", "granted", "messaging:start"),
-    ]
+    }
 
     # The dialer and the lifecycle agree with the consent ledger.
     campaign = await _campaign_row(db, tenant, env.id)

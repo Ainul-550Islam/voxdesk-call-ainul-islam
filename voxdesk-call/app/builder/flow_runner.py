@@ -30,7 +30,9 @@ from typing import Any, Awaitable, Callable, Mapping
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.builder.code_node_runtime import CodeNodePolicy, run_code_node
 from app.builder.node import (
+    MAX_FLEX_NODES,
     EdgeCondition,
     FlowEdge,
     FlowGraph,
@@ -38,6 +40,11 @@ from app.builder.node import (
     VariableSpec,
 )
 from app.core.logging import log
+
+#: Nodes that hand the conversation to the caller and therefore wait for a reply.
+INTERACTIVE_NODE_TYPES: frozenset[str] = frozenset(
+    {"conversation", "prompt", "llm_response", "wait_for_input"}
+)
 
 _TEMPLATE_VAR_RE = re.compile(r"\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}\}")
 
@@ -50,6 +57,8 @@ AUTO_ADVANCE_NODE_TYPES: frozenset[str] = frozenset(
         "function",
         "function_call",
         "webhook",
+        "code",
+        "subagent",
         "press_digit",
         "send_sms",
     }
@@ -283,6 +292,11 @@ class FlowRunner:
         subagent_handler: Callable[[str, dict[str, Any]], Awaitable[dict[str, Any]] | dict[str, Any]] | None = None,
         workflow_trigger_handler: Callable[[dict[str, Any], dict[str, Any]], Awaitable[dict[str, Any]] | dict[str, Any]] | None = None,
         max_auto_steps: int = 10,
+        flex_selector: Callable[[list[str], str], Awaitable[str] | str] | None = None,
+        component_registry: Any | None = None,
+        code_runner: Any | None = None,
+        code_policy: CodeNodePolicy | None = None,
+        agent_id: str = "",
     ) -> None:
         self.graph: FlowGraph = (
             graph if isinstance(graph, FlowGraph) else FlowGraph.from_dict(graph)
@@ -303,6 +317,29 @@ class FlowRunner:
         self.subagent_handler = subagent_handler
         self.workflow_trigger_handler = workflow_trigger_handler
         self.max_auto_steps = max(1, int(max_auto_steps))
+        self.code_runner = code_runner
+        self.code_policy = code_policy or CodeNodePolicy()
+
+        # PART 12 (P12-20): components are expanded before the graph is indexed, so every later
+        # code path sees ordinary nodes. A binding that cannot be resolved is a hard error at
+        # construction time rather than a mystery at turn 12.
+        self.component_registry = component_registry
+        self.agent_id = agent_id
+        has_components = any(node.node_type == "component" for node in self.graph.nodes)
+        if has_components and component_registry is None:
+            raise ValueError(
+                "component_registry is required to run flows containing component nodes"
+            )
+        if component_registry is not None and has_components:
+            expanded = component_registry.expand(self.graph.to_dict(), agent_id=agent_id)
+            self.graph = FlowGraph.from_dict(expanded)
+
+        # PART 12 (P12-19): flex navigation.
+        self.flex_selector = flex_selector
+
+        # PART 12 (P12-19): global-node bookkeeping — a return stack plus per-node cooldowns.
+        self._return_stack: list[str] = []
+        self._global_last_fired: dict[str, int] = {}
 
         self.variables: dict[str, Any] = {}
         for spec in self.graph.variables:
@@ -445,7 +482,13 @@ class FlowRunner:
             return await res
         return res
 
-    async def _evaluate_prompt_condition(self, prompt_condition: str, utterance: str) -> bool:
+    async def _evaluate_prompt_condition(
+        self,
+        prompt_condition: str,
+        utterance: str,
+        *,
+        examples: list[str] | None = None,
+    ) -> bool:
         """Evaluate a natural-language edge/global condition using the injected judge with timeout."""
         interpolated_cond = interpolate_template(prompt_condition or "", self.variables).strip()
         if not interpolated_cond:
@@ -463,6 +506,14 @@ class FlowRunner:
                     out = await self._call_maybe_async(self.judge, interpolated_cond)
                 elif param_count == 2:
                     out = await self._call_maybe_async(self.judge, interpolated_cond, utterance)
+                elif param_count >= 4:
+                    out = await self._call_maybe_async(
+                        self.judge,
+                        interpolated_cond,
+                        utterance,
+                        dict(self.variables),
+                        list(examples or []),
+                    )
                 else:
                     out = await self._call_maybe_async(
                         self.judge, interpolated_cond, utterance, dict(self.variables)
@@ -515,6 +566,17 @@ class FlowRunner:
 
         for edge in edges:
             cond = edge.condition or EdgeCondition(kind="always")
+            # PART 12 (P12-17): leaving an *interactive* node on an `after_user_response` edge
+            # requires the caller to have said something this turn. Auto nodes (start, logic_split,
+            # function) are not waiting for anyone, so they advance either way — applying the gate
+            # to them would strand every flow at its start node.
+            if (
+                cond.timing == "after_user_response"
+                and node.node_type in INTERACTIVE_NODE_TYPES
+                and not (utterance or "").strip()
+                and self.turn_index == 0
+            ):
+                continue
             if cond.kind == "equation":
                 equation_edges.append(edge)
             elif cond.kind == "prompt":
@@ -552,13 +614,130 @@ class FlowRunner:
             gcfg = g_node.global_config
             if gcfg is None or not gcfg.enabled:
                 continue
+            # PART 12 (P12-19): a global node that fired recently stays quiet for
+            # `cooldown_steps` turns — otherwise the turn that answered a reminder re-triggers it.
+            last_fired = self._global_last_fired.get(g_node.node_id)
+            if (
+                gcfg.cooldown_steps
+                and last_fired is not None
+                and self.turn_index - last_fired < gcfg.cooldown_steps
+            ):
+                continue
             if gcfg.condition_type == "equation":
                 if gcfg.equations and all(eq.evaluate(self.variables) for eq in gcfg.equations):
+                    self._remember_global(g_node)
                     return g_node
             elif gcfg.condition_type == "prompt" and gcfg.prompt:
-                if await self._evaluate_prompt_condition(gcfg.prompt, utterance):
+                if await self._evaluate_prompt_condition(
+                    gcfg.prompt,
+                    utterance,
+                    examples=gcfg.examples,
+                ):
+                    self._remember_global(g_node)
                     return g_node
         return None
+
+    def _remember_global(self, node: FlowNode) -> None:
+        """Mark a global node as fired and remember where to come back to."""
+        self._global_last_fired[node.node_id] = self.turn_index
+        gcfg = node.global_config
+        target = (gcfg.return_path if gcfg and gcfg.return_path else self.current_node_id)
+        if target and target != node.node_id:
+            self._return_stack.append(target)
+
+    def resume_after_global(self) -> str | None:
+        """Pop the return stack (PART 12, P12-19).
+
+        `return_path` on the global node wins; otherwise we go back where we came from. An empty
+        stack means the global node was entered from nowhere — the caller stays put and the flow
+        continues from the current node.
+        """
+        if not self._return_stack:
+            return None
+        target = self._return_stack.pop()
+        if target in self._node_map:
+            self.current_node_id = target
+            return target
+        return None
+
+    @property
+    def return_stack(self) -> list[str]:
+        return list(self._return_stack)
+
+    # ------------------------------------------------------------------
+    # PART 12 (P12-19) — flex navigation
+    # ------------------------------------------------------------------
+    def flex_candidates(self) -> list[str]:
+        """Return interactive nodes graph-reachable from the current node.
+
+        Flex mode lets the selector choose the next conversational destination, but it must not
+        expose disconnected nodes. Walk the declared graph in stable edge-priority order; include
+        reachable conversation/end nodes and traverse through non-interactive routing/action nodes.
+        """
+        if self.graph.mode != "flex":
+            return []
+
+        candidate_types = INTERACTIVE_NODE_TYPES | {"end"}
+        candidates: list[str] = []
+        visited = {self.current_node_id}
+        pending = [self.current_node_id]
+        while pending:
+            source_id = pending.pop(0)
+            for edge in self.graph.outgoing_edges(source_id):
+                target_id = edge.target_id
+                if target_id not in self._node_map or target_id in visited:
+                    continue
+                visited.add(target_id)
+                target = self._node_map[target_id]
+                if target.node_type in candidate_types:
+                    candidates.append(target_id)
+                pending.append(target_id)
+        return candidates
+
+    async def flex_next_node(self, utterance: str) -> str | None:
+        """Ask the selector which reachable node to enter next.
+
+        A flex flow with more than `MAX_FLEX_NODES` nodes is refused: past that size the choice is
+        a coin toss dressed as intelligence, and the failure mode (a call that wanders) is invisible
+        in testing.
+        """
+        if self.graph.mode != "flex":
+            return None
+        if len(self.graph.nodes) > MAX_FLEX_NODES:
+            raise ValueError(
+                f"flex mode is limited to {MAX_FLEX_NODES} nodes; this flow has {len(self.graph.nodes)}"
+            )
+        candidates = self.flex_candidates()
+        if not candidates:
+            return None
+        if self.flex_selector is None:
+            return None
+        try:
+            choice = await asyncio.wait_for(
+                self._call_maybe_async(self.flex_selector, candidates, utterance),
+                timeout=self.judge_timeout_seconds,
+            )
+        except asyncio.TimeoutError:
+            log.warning(
+                "flow_runner.flex_selector_timeout",
+                node_id=self.current_node_id,
+                timeout_s=self.judge_timeout_seconds,
+            )
+            return None
+        except Exception as exc:
+            log.warning(
+                "flow_runner.flex_selector_error",
+                node_id=self.current_node_id,
+                error=str(exc)[:160],
+            )
+            return None
+        chosen = str(choice or "").strip()
+        if chosen not in candidates:
+            # A selector that names something unreachable is ignored rather than trusted.
+            return None
+        if chosen != self.current_node_id:
+            self.current_node_id = chosen
+        return chosen
 
     async def _extract_node_variables(self, node: FlowNode, utterance: str) -> dict[str, Any]:
         """Extract declared variables for ``extract_variables`` or ``conversation`` nodes."""
@@ -623,6 +802,69 @@ class FlowRunner:
             )
             self.executed_actions.append(res)
             return res, speak_text
+
+        if ntype == "code":
+            source = str(node.params.get("code") or node.params.get("source") or "")
+            raw_input = node.params.get("input", node.params.get("payload"))
+
+            def _render_code_value(value: Any) -> Any:
+                if isinstance(value, str):
+                    return interpolate_template(value, self.variables)
+                if isinstance(value, Mapping):
+                    return {str(key): _render_code_value(item) for key, item in value.items()}
+                if isinstance(value, (list, tuple)):
+                    return [_render_code_value(item) for item in value]
+                return value
+
+            if raw_input is not None and not isinstance(raw_input, Mapping):
+                code_output: dict[str, Any] = {
+                    "ok": False,
+                    "error": "code node input must be a JSON object",
+                    "source_hash": "",
+                    "engine": "",
+                    "duration_ms": 0.0,
+                }
+            else:
+                payload = dict(self.variables)
+                if isinstance(raw_input, Mapping):
+                    payload.update(_render_code_value(raw_input))
+                code_result = await asyncio.to_thread(
+                    run_code_node,
+                    source,
+                    payload,
+                    policy=self.code_policy,
+                    runner=self.code_runner,
+                    node_id=node.node_id,
+                )
+                code_output = {
+                    "ok": code_result.ok,
+                    "source_hash": code_result.source_hash,
+                    "engine": code_result.engine,
+                    "duration_ms": code_result.duration_ms,
+                }
+                if code_result.ok:
+                    code_output["result"] = dict(code_result.output)
+                else:
+                    code_output["error"] = code_result.error
+
+            ok = bool(code_output["ok"])
+            self.variables["code_ok"] = ok
+            self.variables["code_result"] = code_output.get("result", {})
+            self.variables["code_error"] = str(code_output.get("error") or "")
+            self.variables["tool_ok"] = ok
+            self.variables["tool_result"] = code_output
+            result_variable = node.params.get("result_variable") or node.params.get("output_variable")
+            if result_variable and str(result_variable).strip() and ok:
+                self.variables[str(result_variable).strip()] = code_output["result"]
+
+            action = NodeActionResult(
+                action_type="code",
+                node_id=node.node_id,
+                ok=ok,
+                output=code_output,
+            )
+            self.executed_actions.append(action)
+            return action, speak_text
 
         if ntype in {"function", "function_call", "webhook"}:
             tool_name = str(
@@ -764,21 +1006,51 @@ class FlowRunner:
                 "agent_id": target_agent,
                 "version": node.params.get("version"),
                 "variables": dict(self.variables) if node.params.get("pass_context", True) else {},
+                # PART 12 (P12-18): the subagent answers in *this* turn — its prompt and its
+                # functions travel with the delegation instead of waiting for a second exchange.
+                "prompt": interpolate_template(
+                    str(node.params.get("prompt") or node.params.get("system_prompt") or ""),
+                    self.variables,
+                ),
+                "tools": list(node.params.get("tools") or node.params.get("node_tools") or []),
+                "utterance": utterance,
             }
-            output = {**sub_payload, "ok": True}
-            if self.subagent_handler is not None:
-                handler_out = await self._call_maybe_async(
-                    self.subagent_handler, target_agent, sub_payload
-                )
-                if isinstance(handler_out, Mapping):
-                    output.update(handler_out)
-            self.variables["active_subagent_id"] = target_agent
-            if bool(node.params.get("terminal", True)) and not self.graph.outgoing_edges(node.node_id):
+            output = {**sub_payload, "ok": False}
+            if self.subagent_handler is None:
+                output["error"] = "subagent_runtime_unavailable"
+            else:
+                try:
+                    handler_out = await self._call_maybe_async(
+                        self.subagent_handler, target_agent, sub_payload
+                    )
+                    if isinstance(handler_out, Mapping):
+                        output.update(handler_out)
+                    else:
+                        output.update({"ok": False, "error": "invalid_subagent_result"})
+                except Exception as exc:
+                    log.warning(
+                        "flow_runner.subagent_error",
+                        node_id=node.node_id,
+                        error=str(exc)[:160],
+                    )
+                    output.update({"ok": False, "error": "subagent_execution_failed"})
+
+            ok = bool(output.get("ok", False))
+            self.variables["subagent_ok"] = ok
+            self.variables["subagent_result"] = output
+            self.variables["tool_ok"] = ok
+            self.variables["tool_result"] = output
+            if ok:
+                self.variables["active_subagent_id"] = target_agent
+                delegated_reply = output.get("reply") or output.get("speak_text")
+                if isinstance(delegated_reply, str) and delegated_reply.strip():
+                    speak_text = delegated_reply.strip()
+            if ok and bool(node.params.get("terminal", True)) and not self.graph.outgoing_edges(node.node_id):
                 self.ended = True
             res = NodeActionResult(
                 action_type="subagent",
                 node_id=node.node_id,
-                ok=bool(output.get("ok", True)),
+                ok=ok,
                 output=output,
             )
             self.executed_actions.append(res)
@@ -788,24 +1060,58 @@ class FlowRunner:
             self.ended = True
             reason = str(node.params.get("reason") or "flow_ended")
             output = {"reason": reason, "ok": True}
-            # Fire any bound WorkflowTrigger rows (W-12)
+            # Fire any bound WorkflowTrigger rows (W-12). Record success only after a
+            # production handler confirms it; otherwise the timeline must not claim a trigger ran.
             triggered_ids: list[str] = []
+            failed_triggers: list[dict[str, str]] = []
             for trig in self.workflow_triggers:
                 if not trig.get("is_enabled", True):
                     continue
                 ev_type = str(trig.get("event_type") or "")
-                if ev_type in {"flow_completed", "call_ended", "*"}:
-                    triggered_ids.append(str(trig.get("workflow_id") or trig.get("id")))
-                    if self.workflow_trigger_handler is not None:
-                        await self._call_maybe_async(
-                            self.workflow_trigger_handler, trig, dict(self.variables)
+                if ev_type not in {"flow_completed", "call_ended", "*"}:
+                    continue
+
+                workflow_id = str(trig.get("workflow_id") or trig.get("id") or "")
+                if self.workflow_trigger_handler is None:
+                    failed_triggers.append(
+                        {"workflow_id": workflow_id, "error": "workflow_trigger_runtime_unavailable"}
+                    )
+                    continue
+                try:
+                    handler_out = await self._call_maybe_async(
+                        self.workflow_trigger_handler, trig, dict(self.variables)
+                    )
+                    if not isinstance(handler_out, Mapping):
+                        failed_triggers.append(
+                            {"workflow_id": workflow_id, "error": "invalid_workflow_trigger_result"}
                         )
+                    elif bool(handler_out.get("ok", True)):
+                        triggered_ids.append(workflow_id)
+                    else:
+                        failed_triggers.append(
+                            {
+                                "workflow_id": workflow_id,
+                                "error": str(handler_out.get("error") or "workflow_trigger_failed")[:160],
+                            }
+                        )
+                except Exception as exc:
+                    log.warning(
+                        "flow_runner.workflow_trigger_error",
+                        workflow_id=workflow_id,
+                        error=type(exc).__name__,
+                    )
+                    failed_triggers.append(
+                        {"workflow_id": workflow_id, "error": "workflow_trigger_execution_failed"}
+                    )
             if triggered_ids:
                 output["triggered_workflows"] = triggered_ids
+            if failed_triggers:
+                output["failed_workflows"] = failed_triggers
+                output["ok"] = False
             res = NodeActionResult(
                 action_type="end",
                 node_id=node.node_id,
-                ok=True,
+                ok=not failed_triggers,
                 output=output,
             )
             self.executed_actions.append(res)
@@ -969,43 +1275,67 @@ class FlowRunner:
             self.history.append(ev)
             turn_transitions.append(ev)
         else:
-            # 2. Evaluate outgoing edges from current node
-            edge, reason = await self._select_outgoing_edge(curr, user_utterance)
-            if edge is not None and edge.target_id in self._node_map:
-                next_node = self._node_map[edge.target_id]
+            # In flex mode an injected selector may choose any graph-reachable
+            # conversational destination. Missing/invalid selector output falls
+            # back to the ordinary deterministic edge rules.
+            flex_target_id = None
+            if self.graph.mode == "flex" and curr.node_type in INTERACTIVE_NODE_TYPES:
+                flex_target_id = await self.flex_next_node(user_utterance)
+
+            if flex_target_id is not None:
+                next_node = self._node_map[flex_target_id]
                 ev = NodeTransitionEvent(
                     from_node_id=curr.node_id,
                     to_node_id=next_node.node_id,
                     to_node_type=next_node.node_type,
-                    edge_id=edge.edge_id,
-                    reason=reason,
-                    turn_index=self.turn_index,
-                    variables_snapshot=dict(self.variables),
-                )
-                self.current_node_id = next_node.node_id
-                self.history.append(ev)
-                turn_transitions.append(ev)
-            elif (
-                curr.is_global
-                and curr.global_config is not None
-                and curr.global_config.return_to_previous
-                and self._previous_non_global_node_id
-                and self._previous_non_global_node_id in self._node_map
-            ):
-                ret_node = self._node_map[self._previous_non_global_node_id]
-                ev = NodeTransitionEvent(
-                    from_node_id=curr.node_id,
-                    to_node_id=ret_node.node_id,
-                    to_node_type=ret_node.node_type,
                     edge_id=None,
-                    reason="return_to_previous",
+                    reason="flex_selector",
                     turn_index=self.turn_index,
                     variables_snapshot=dict(self.variables),
                 )
-                self.current_node_id = ret_node.node_id
-                self._previous_non_global_node_id = None
                 self.history.append(ev)
                 turn_transitions.append(ev)
+            else:
+                # 2. Evaluate outgoing edges from current node
+                edge, reason = await self._select_outgoing_edge(curr, user_utterance)
+                if edge is not None and edge.target_id in self._node_map:
+                    next_node = self._node_map[edge.target_id]
+                    ev = NodeTransitionEvent(
+                        from_node_id=curr.node_id,
+                        to_node_id=next_node.node_id,
+                        to_node_type=next_node.node_type,
+                        edge_id=edge.edge_id,
+                        reason=reason,
+                        turn_index=self.turn_index,
+                        variables_snapshot=dict(self.variables),
+                    )
+                    self.current_node_id = next_node.node_id
+                    self.history.append(ev)
+                    turn_transitions.append(ev)
+                elif curr.is_global:
+                    ret_node_id = self.resume_after_global()
+                    if (
+                        ret_node_id is None
+                        and curr.global_config is not None
+                        and curr.global_config.return_to_previous
+                        and self._previous_non_global_node_id in self._node_map
+                    ):
+                        ret_node_id = self._previous_non_global_node_id
+                    if ret_node_id is not None and ret_node_id in self._node_map:
+                        ret_node = self._node_map[ret_node_id]
+                        ev = NodeTransitionEvent(
+                            from_node_id=curr.node_id,
+                            to_node_id=ret_node.node_id,
+                            to_node_type=ret_node.node_type,
+                            edge_id=None,
+                            reason="return_from_global",
+                            turn_index=self.turn_index,
+                            variables_snapshot=dict(self.variables),
+                        )
+                        self.current_node_id = ret_node.node_id
+                        self._previous_non_global_node_id = None
+                        self.history.append(ev)
+                        turn_transitions.append(ev)
 
         speak_text: str | None = None
         if turn_transitions:

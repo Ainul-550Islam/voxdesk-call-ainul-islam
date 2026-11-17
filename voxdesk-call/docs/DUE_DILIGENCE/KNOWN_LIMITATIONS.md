@@ -9,10 +9,10 @@ buyers have complete visibility before acquisition.
 
 ## Verified Repository Baseline (`docs/STATS.json`)
 
-- **Source files**: `2123` (`435,242` physical lines)
-- **Registered FastAPI routes**: `1526`
-- **Collected pytest nodes**: `6,781` (collection count; `1,329` passed JUnit test executions recorded in `docs/STATS.json`)
-- **Alembic migration head**: `0069_voice_demo_sessions`
+- **Source files**: `1912` (`442,435` physical lines)
+- **Registered FastAPI routes**: `1662`
+- **Collected pytest nodes**: `8,123` (collection count; `1,329` passed JUnit test executions recorded in `docs/STATS.json`)
+- **Alembic migration head**: `0091_call_debug_pcap_metadata`
 
 ---
 
@@ -89,10 +89,10 @@ checkout. Neither is presented as a pass.
 
 | Evidence | Required | Artifact | Status | Age (days) | Generated (UTC) |
 |---|---|---|---|---|---|
-| `test` | yes | `reports/TEST_EVIDENCE_SUMMARY.json` | **PRESENT** | 8.04 | 2026-10-30T05:47:28Z |
-| `polyglot` | yes | `reports/POLYGLOT_EVIDENCE_SUMMARY.json` | **PRESENT** | 8.04 | 2026-10-30T05:54:23Z |
-| `security` | yes | `reports/SECURITY_EVIDENCE_SUMMARY.json` | **PRESENT** | 8.68 | 2026-10-29T14:30:10Z |
-| `deploy-assets` | yes | `reports/deploy_asset_validation.json` | **PRESENT** | 8.04 | 2026-10-30T05:56:29Z |
+| `test` | yes | `reports/TEST_EVIDENCE_SUMMARY.json` | **PRESENT** | 9.76 | 2026-10-30T05:47:28Z |
+| `polyglot` | yes | `reports/POLYGLOT_EVIDENCE_SUMMARY.json` | **PRESENT** | 9.75 | 2026-10-30T05:54:23Z |
+| `security` | yes | `reports/SECURITY_EVIDENCE_SUMMARY.json` | **PRESENT** | 10.4 | 2026-10-29T14:30:10Z |
+| `deploy-assets` | yes | `reports/deploy_asset_validation.json` | **PRESENT** | 9.75 | 2026-10-30T05:56:29Z |
 | `staging` | yes | `evidence/staging` | **MISSING** | — | — |
 | `live` | no (opt-in) | `evidence/live` | **MISSING** | — | — |
 

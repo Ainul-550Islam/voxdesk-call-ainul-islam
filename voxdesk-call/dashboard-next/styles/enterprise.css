@@ -9,7 +9,8 @@
    prefers-reduced-motion — No cheap neon overload, no toy SaaS styling
    ========================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+/* Remote webfont removed: blocked by the CSP in production and a layout-shift
+   source during the swap. The system stack renders identically. */
 
 :root {
   /* ---- Enterprise Core ---- */

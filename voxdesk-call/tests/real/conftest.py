@@ -21,6 +21,7 @@ PROVIDER_ENV_GATES: dict[str, tuple[str, ...]] = {
         "TWILIO_PHONE_NUMBER",
         "TWILIO_TEST_TO_NUMBER",
         "VOXDESK_PUBLIC_BASE_URL",
+        "VOXDESK_REAL_API_KEY",
     ),
     "deepgram": ("DEEPGRAM_API_KEY",),
     "elevenlabs": ("ELEVENLABS_API_KEY",),
@@ -36,6 +37,19 @@ PROVIDER_ENV_GATES: dict[str, tuple[str, ...]] = {
         "TELNYX_TO_NUMBER",
         "VOXDESK_PUBLIC_BASE_URL",
     ),
+    "sip_gateway_pcap": (
+        "VOXDESK_SIP_GATEWAY_URL",
+        "VOXDESK_SIP_GATEWAY_TOKEN",
+        "VOXDESK_SIP_CAPTURE_TENANT_ID",
+        "VOXDESK_SIP_CAPTURE_CALL_ID",
+    ),
+    "sip_gateway_s3": (
+        "VOXDESK_REAL_PCAP_S3_BUCKET",
+        "VOXDESK_REAL_PCAP_S3_REGION",
+        "VOXDESK_REAL_PCAP_S3_SIGNING_SECRET",
+        "AWS_ACCESS_KEY_ID",
+        "AWS_SECRET_ACCESS_KEY",
+    ),
     "salesforce": (
         "SALESFORCE_CLIENT_ID",
         "SALESFORCE_CLIENT_SECRET",
@@ -43,7 +57,11 @@ PROVIDER_ENV_GATES: dict[str, tuple[str, ...]] = {
         "SALESFORCE_INSTANCE_URL",
     ),
     "hubspot": ("VOXDESK_REAL_HUBSPOT_TOKEN",),
-    "webhook_receiver": ("VOXDESK_REAL_WEBHOOK_RECEIVER_URL",),
+    "webhook_receiver": (
+        "VOXDESK_REAL_WEBHOOK_RECEIVER_URL",
+        "VOXDESK_REAL_WEBHOOK_INSPECT_URL",
+        "VOXDESK_REAL_WEBHOOK_SECRET",
+    ),
 }
 
 
@@ -125,6 +143,27 @@ class RealEvidenceWriter:
             "details": dict(details or {}),
         }
         doc["providers"][provider] = entry
+        # The ledger must describe the run, not just the plan: a file whose twelve entries are
+        # all SKIPPED_NO_CREDENTIALS is not "fresh real evidence", and every reader downstream
+        # (docs/EVIDENCE_STATUS.md, the feature matrix) needs to see that without counting.
+        statuses = [str((item or {}).get("status") or "MISSING") for item in doc["providers"].values()]
+        passed = sum(1 for status in statuses if status == "PASS")
+        failed = sum(1 for status in statuses if status == "FAIL")
+        skipped = sum(1 for status in statuses if status == "SKIPPED_NO_CREDENTIALS")
+        doc["counts"] = {
+            "total": len(statuses),
+            "pass": passed,
+            "fail": failed,
+            "skipped_no_credentials": skipped,
+            "other": len(statuses) - passed - failed - skipped,
+        }
+        doc["run_status"] = (
+            "ALL_PASS"
+            if statuses and passed == len(statuses)
+            else "NO_PROVIDER_RAN"
+            if passed == 0 and failed == 0
+            else "PARTIAL"
+        )
         self.json_path.write_text(json.dumps(doc, indent=2, sort_keys=False) + "\n", encoding="utf-8")
         return entry
 

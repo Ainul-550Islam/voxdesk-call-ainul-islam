@@ -68,7 +68,7 @@ export default function IntegrationsPage() {
         {integrations.integrations.length === 0 ? (
           <div className="empty">No CRM integrations connected.</div>
         ) : (
-          <div className="table-wrap">
+          <div className="table-wrap" tabIndex={0} role="region" aria-label="Data table">
             <table>
               <thead>
                 <tr>
@@ -116,7 +116,7 @@ export default function IntegrationsPage() {
 
       <section className="card">
         <h2>Available providers</h2>
-        <div className="table-wrap">
+        <div className="table-wrap" tabIndex={0} role="region" aria-label="Data table">
           <table>
             <thead>
               <tr>
@@ -143,7 +143,7 @@ export default function IntegrationsPage() {
         {syncs.syncs.length === 0 ? (
           <div className="empty">No CRM sync attempts recorded.</div>
         ) : (
-          <div className="table-wrap">
+          <div className="table-wrap" tabIndex={0} role="region" aria-label="Data table">
             <table>
               <thead>
                 <tr>

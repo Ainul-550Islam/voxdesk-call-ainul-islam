@@ -95,7 +95,7 @@ export default function CampaignsPage() {
                 </div>
               </dl>
               {result ? (
-                <div className="table-wrap">
+                <div className="table-wrap" tabIndex={0} role="region" aria-label="Data table">
                   <table>
                     <thead>
                       <tr>

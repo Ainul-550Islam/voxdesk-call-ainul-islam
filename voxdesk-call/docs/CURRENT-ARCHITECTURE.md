@@ -32,16 +32,18 @@ Browser
 - Wired in `docker-compose.prod.yml`: api → realtime-gateway → media-engine
 - Health: gateway health reflects engine availability
 
-**SHADOW / DIFFERENTIAL / ROADMAP PATHS (NOT in production compose):**
-- `services/signal-go` (Go 1.27) — differential signaling hub, counterpart to Rust control-plane signal crate, CI-tested in polyglot.yml
-- `services/control-plane` (Rust 1.90 per CI, README previously said 1.98+ — fixed to 1.90) — roadmap Phase 2, session/broadcast/ratelimit/registry/retry/scheduler/usage, shadow-parity path
-- `services/media-plane` (C++17) — DSP foundation (jitter_buffer, consistent_hash_router, fft, spectral_denoise, g711, vad), NOT full production WebRTC stack per its own README (missing MediaControl RPC, streaming denoiser wrapper, Opus, DTLS-SRTP, congestion control)
+**EXPERIMENTAL (NOT on the call path, NOT in production compose):**
+Since PART 17B these four live under `experimental/` — see
+`experimental/README.md` and `docs/adr/ADR-003-polyglot-scope.md`:
+- `experimental/signal-go` (Go 1.27) — differential signaling hub, counterpart to Rust control-plane signal crate, CI-tested in polyglot.yml
+- `experimental/control-plane` (Rust 1.90 per CI) — roadmap Phase 2, session/broadcast/ratelimit/registry/retry/scheduler/usage, shadow-parity path
+- `experimental/media-plane` (C++17) — DSP foundation (jitter_buffer, consistent_hash_router, fft, spectral_denoise, g711, vad), NOT full production WebRTC stack per its own README (missing MediaControl RPC, streaming denoiser wrapper, Opus, DTLS-SRTP, congestion control)
+- `experimental/ops` (Go 1.27) — `voxops` CLI, operator tooling
 
 ```
 Canonical: Browser --WebSocket--> gateway-go --control--> media-engine-rs --UDP--> Browser (ICE)
-Shadow:    Browser --WebSocket--> signal-go (differential)
-           Rust control-plane (roadmap shadow parity)
-           C++ media-plane (DSP primitives)
+           Carrier --SIP--> sip-gateway --G.711/ws--> api (Pipecat)   [when SIP_GATEWAY_URL set]
+Experimental (no runtime path): signal-go, control-plane, media-plane, ops
 ```
 
 ## Organization Access (Preserved Existing Logic)
@@ -88,10 +90,15 @@ API-key or service-account restriction.
 |---|---|---|---|---|
 | gateway-go | Go | 1.27 | YES | WebSocket edge |
 | media-engine-rs | Rust | 1.90 | YES | SFU/media |
-| signal-go | Go | 1.27 | NO (shadow) | Differential signaling |
-| control-plane | Rust | 1.90 | NO (roadmap) | Shadow parity control |
-| media-plane | C++17 | g++ 14 | NO (foundation) | DSP primitives |
-| ops (voxops) | Go | 1.27 | NO (tooling) | Backup/ops |
+| sip-gateway | Go + Kamailio | 1.27 | CONFIG-GATED | SIP ingress (PART 13) |
+| signal-go | Go | 1.27 | NO — `experimental/` | Differential signaling |
+| control-plane | Rust | 1.90 | NO — `experimental/` | Shadow parity control |
+| media-plane | C++17 | g++ 14 | NO — `experimental/` | DSP primitives |
+| ops (voxops) | Go | 1.27 | NO — `experimental/` | Backup/ops |
+
+The three rows marked YES/CONFIG-GATED are the only non-Python components with a
+deployment path. `docs/adr/ADR-003-polyglot-scope.md` is the authority on this
+split and on the evidence required to promote a service out of `experimental/`.
 
 ## Verification
 

@@ -39,6 +39,36 @@ spec:
           envFrom:
             - secretRef:
                 name: {{ required "secrets.existingSecret is required" .Values.secrets.existingSecret }}
+          # Until PART 17B the scheduler container had NO securityContext: the
+          # pod-level `runAsNonRoot` stopped a root container from being
+          # scheduled, and nothing stopped this one from escalating or writing
+          # to its own image. Same block as the api container, same reason.
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          # The scheduler is a background process with no HTTP API. Its only
+          # listener is the prometheus_client metrics exporter on
+          # SCHEDULER_METRICS_PORT (app/core/config.py:8001), which answers any
+          # path, so /metrics doubles as the probe. Without these a hung
+          # scheduler looked healthy to Kubernetes: the pod stays Running, the
+          # reminders stop, and nothing pages until a customer notices.
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.scheduler.metricsPort | default 8001 }}
+          startupProbe:
+            httpGet: {path: /metrics, port: metrics}
+            periodSeconds: 3
+            failureThreshold: 20
+            timeoutSeconds: 2
+          readinessProbe:
+            httpGet: {path: /metrics, port: metrics}
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet: {path: /metrics, port: metrics}
+            periodSeconds: 30
+            failureThreshold: 3
+            timeoutSeconds: 3
           resources:
             {{- toYaml .Values.scheduler.resources | nindent 12 }}
 {{- if and .Values.scheduler.podDisruptionBudget .Values.scheduler.podDisruptionBudget.enabled }}

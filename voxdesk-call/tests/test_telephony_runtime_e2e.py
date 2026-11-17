@@ -214,14 +214,17 @@ async def test_sip_connection_validation_secret_hashing_and_test_probe(
     assert sip_data["credential_reference"].startswith("sec_ref_sha256_")
     assert raw_secret not in create_sip.text
 
-    # 3. Testing reachable SIP connection transitions status to READY
+    # 3. A syntactically valid endpoint is not a successful OPTIONS probe.
+    # Until tenant-scoped TLS/SRTP routing is implemented and verified, keep
+    # the trunk CONFIGURED rather than making a false READY claim.
     ok_test = await client.post(
         f"/api/v1/telephony/sip-connections/{sip_id}/test",
         json={},
         headers=headers,
     )
     assert ok_test.status_code == 200, ok_test.text
-    assert ok_test.json()["status"] == "READY"
+    assert ok_test.json()["status"] == "CONFIGURED"
+    assert "readiness cannot be confirmed" in ok_test.json()["last_error"]
 
     # 4. Testing unreachable SIP endpoint fails honestly and marks status FAILED
     fail_test = await client.post(

@@ -60,7 +60,7 @@ from app.api.service_account_routes import (
 from app.api.service_account_routes import router as service_account_router
 
 #: Composed, unprefixed: the two sub-routers already carry ``/api``.
-router = APIRouter(tags=["identity"])
+router = APIRouter()
 router.include_router(api_key_router)
 router.include_router(service_account_router)
 

@@ -85,6 +85,14 @@ class TenantContext:
     #: ``active`` when no membership row exists (legacy). ``revoked`` never
     #: reaches a handler. ``suspended`` keeps read permissions only.
     membership_status: str = "active"
+    #: PART 16 / P16-01: permissions granted by the tenant's own roles, on top of
+    #: the built-in role. Empty for a tenant that has never created one, which is
+    #: the common case (and the only case that costs no query — see
+    #: ``_custom_role_permissions``).
+    custom_permissions: frozenset[Permission] = frozenset()
+    #: The custom roles behind those permissions, for the "effective
+    #: permissions" preview and for audit rows.
+    custom_roles: tuple[str, ...] = ()
 
     @property
     def tenant_id(self) -> uuid.UUID:
@@ -103,12 +111,17 @@ class TenantContext:
         return self.auth_method in ("api_key", "service_account", "scim")
 
     def can(self, permission: Permission) -> bool:
-        """Role, scope, and membership status. A key can only narrow further."""
+        """Role ∪ custom roles, then scopes, then membership status.
+
+        Order matters: a machine credential's ``scopes`` can only *narrow* the
+        result, so a custom role can never widen an API key beyond what it was
+        issued for.
+        """
         if self.membership_status in ("revoked", "expired"):
             return False
         if self.membership_status == "suspended" and not is_read_permission(permission):
             return False
-        if not has_permission(self.role, permission):
+        if not (has_permission(self.role, permission) or permission in self.custom_permissions):
             return False
         if self.scopes is None:
             return True
@@ -305,6 +318,34 @@ async def get_current_tenant(
     return tenant
 
 
+async def _custom_role_grants(
+    session: AsyncSession,
+    tenant: Tenant,
+    user: User,
+    *,
+    service_account_id: uuid.UUID | None = None,
+) -> tuple[frozenset[Permission], tuple[str, ...]]:
+    """Custom-role permissions for this subject (PART 16, P16-01).
+
+    One cached read per tenant per ``custom_roles.CACHE_TTL_SECONDS``; a tenant
+    with no custom roles pays nothing after the first request in the window. A
+    write through ``/api/auth/custom-roles`` invalidates the entry in this
+    process immediately, and every other worker picks it up when the entry
+    expires — which is stated in the module docstring rather than hidden.
+    """
+    from app.auth import custom_roles as policy
+
+    held, permissions = await policy.grants_for_user(
+        session,
+        tenant.id,
+        user_id=user.id,
+        service_account_id=service_account_id,
+    )
+    if not held:
+        return frozenset(), ()
+    return frozenset(permissions), tuple(role.name for role in held)
+
+
 async def get_context(
     request: Request,
     user: User = Depends(get_current_user),
@@ -317,6 +358,10 @@ async def get_context(
     await set_tenant_context(session, tenant.id)
     membership_status = getattr(request.state, "membership_status", "active")
     principal: AuthenticatedPrincipal | None = getattr(request.state, "principal", None)
+    custom_permissions: frozenset[Permission] = frozenset()
+    custom_roles: tuple[str, ...] = ()
+    if principal is None:
+        custom_permissions, custom_roles = await _custom_role_grants(session, tenant, user)
     if principal is not None:
         environment_role = None
         if principal.environment_id is not None:
@@ -336,6 +381,9 @@ async def get_context(
             if not access.allowed or access.role is None:
                 raise _forbidden("Credential has no access to its bound environment")
             environment_role = access.role
+        custom_permissions, custom_roles = await _custom_role_grants(
+            session, tenant, user, service_account_id=principal.service_account_id
+        )
         return TenantContext(
             user=user,
             tenant=tenant,
@@ -348,6 +396,8 @@ async def get_context(
             environment_id=principal.environment_id,
             environment_role=environment_role,
             membership_status=membership_status,
+            custom_permissions=custom_permissions,
+            custom_roles=custom_roles,
         )
     return TenantContext(
         user=user,
@@ -355,6 +405,8 @@ async def get_context(
         session_id=getattr(request.state, "session_id", None) or None,
         organization_id=getattr(tenant, "organization_id", None),
         membership_status=membership_status,
+        custom_permissions=custom_permissions,
+        custom_roles=custom_roles,
     )
 
 

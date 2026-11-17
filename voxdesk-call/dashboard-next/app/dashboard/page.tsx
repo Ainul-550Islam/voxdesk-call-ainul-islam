@@ -276,14 +276,14 @@ export default function OverviewPage() {
             <span style={{ width: 28, height: 28, borderRadius: 8, background: "linear-gradient(135deg, #10b981, #059669)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>📊</span>
             Conversion — Glass Metrics 3D
           </h2>
-          <div className="kv">
+          <dl className="kv">
             {Object.entries(conversion).map(([key, value]) => (
               <div key={key} className="glass">
                 <dt>{key}</dt>
                 <dd>{String(value)}</dd>
               </div>
             ))}
-          </div>
+          </dl>
           <p style={{ marginTop: 16, fontSize: 11, color: "var(--muted)" }}><small>Definitions: docs/DASHBOARD.md — booking_rate = booked/eligible (not total), capped at 100% • Glassmorphism + 3D + Metrics</small></p>
         </section>
 
@@ -292,14 +292,14 @@ export default function OverviewPage() {
             <span style={{ width: 28, height: 28, borderRadius: 8, background: "linear-gradient(135deg, #f59e0b, #d97706)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>⚙️</span>
             Operations — World System Ultra
           </h2>
-          <div className="kv">
+          <dl className="kv">
             {Object.entries(operations).map(([key, value]) => (
               <div key={key} className="glass">
                 <dt>{key}</dt>
                 <dd>{String(value)}</dd>
               </div>
             ))}
-          </div>
+          </dl>
           <div style={{ marginTop: 16, display: "flex", gap: 8, flexWrap: "wrap" }}>
             <span className="api-status connected"><span className="dot" /> Operations Live</span>
             <span className="api-status connected"><span className="dot" /> 3D Glass Metrics</span>

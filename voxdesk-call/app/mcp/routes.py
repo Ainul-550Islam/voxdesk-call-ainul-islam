@@ -155,3 +155,138 @@ async def call_tool(
     except McpError as exc:
         raise HTTPException(502, str(exc)) from exc
     return result
+
+
+# ---------------------------------------------------------------------------
+# PART 14 / P14-07 -- the *server* half, per tenant.
+#
+# The routes above make VoxDesk an MCP *client* (it can call other MCP servers).
+# This block exposes VoxDesk itself as an MCP server over the same authenticated,
+# permission-scoped surface: a JSON-RPC request in, a JSON-RPC response out.
+#
+# The tenant is taken from the authenticated context and never from the request
+# body, and each tool maps to the same RBAC permission the equivalent REST route
+# uses. That is the whole point: an MCP client must not get a wider surface than
+# the API key it presents.
+# ---------------------------------------------------------------------------
+
+from typing import Any as _Any  # noqa: E402
+
+from app.db.models import Agent, Call  # noqa: E402
+from app.mcp.server import CallContext, MCPServer, ToolSpec  # noqa: E402
+
+#: The advertised surface. Handlers are bound per request (they need the caller's
+#: session and tenant), so this instance is only used for `tools/list`.
+_ADVERTISED = MCPServer()
+
+
+def _tenant_tools(session: AsyncSession, ctx: TenantContext) -> MCPServer:
+    """A server bound to this request's session and tenant."""
+
+    async def list_agents(arguments: dict, _context: CallContext) -> dict:
+        rows = (
+            (await session.execute(select(Agent).where(Agent.tenant_id == ctx.tenant_id)))
+            .scalars()
+            .all()
+        )
+        return {
+            "agents": [
+                {
+                    "agent_id": getattr(row, "agent_id", None) or str(row.id),
+                    "name": getattr(row, "name", ""),
+                    "status": getattr(row, "status", ""),
+                }
+                for row in rows[:100]
+            ]
+        }
+
+    async def get_call(arguments: dict, _context: CallContext) -> dict:
+        try:
+            call_id = uuid.UUID(str(arguments.get("call_id")))
+        except (ValueError, TypeError):
+            raise ValueError("call_id must be a UUID")
+        row = (
+            await session.execute(
+                select(Call).where(Call.id == call_id, Call.tenant_id == ctx.tenant_id)
+            )
+        ).scalar_one_or_none()
+        if row is None:
+            # Deliberately the same message for "does not exist" and "another
+            # tenant's call": a tenancy boundary must not be enumerable.
+            raise ValueError("no such call")
+        return {
+            "call_id": str(row.id),
+            "status": str(getattr(row.status, "value", row.status)),
+            "duration_seconds": float(row.duration_seconds or 0.0),
+            "summary": row.summary,
+            "intent": row.intent,
+        }
+
+    server = MCPServer()
+    for spec in _ADVERTISED.tools():
+        handler = {"list_agents": list_agents, "get_call": get_call}.get(spec.name)
+        server.register(
+            ToolSpec(
+                spec.name,
+                spec.description,
+                spec.input_schema,
+                handler=handler,
+                scopes=spec.scopes,
+            )
+        )
+    return server
+
+
+class McpRpcRequest(BaseModel):
+    jsonrpc: str = "2.0"
+    id: int | str | None = None
+    method: str
+    params: dict = Field(default_factory=dict)
+
+
+@router.get("/voxdesk/tools")
+async def voxdesk_tools(
+    ctx: TenantContext = Depends(require_permission(Permission.MCP_READ)),
+):
+    """What an MCP client would see from `tools/list`."""
+    scopes = ("agents:read", "calls:read")
+    return {
+        "server": {"name": "voxdesk-mcp", "version": "1.0.0"},
+        "tools": [spec.as_dict() for spec in _ADVERTISED.tools()],
+        "granted_scopes": list(scopes),
+    }
+
+
+@router.post("/voxdesk/rpc")
+async def voxdesk_rpc(
+    payload: McpRpcRequest,
+    ctx: TenantContext = Depends(require_permission(Permission.MCP_READ)),
+    session: AsyncSession = Depends(get_session),
+) -> _Any:
+    """One JSON-RPC message against the tenant's own tools.
+
+    Only the tools this endpoint implements are registered; the rest return
+    `isError` with an explicit "not available on this endpoint" message, which is
+    better than an unknown-tool error that a client cannot act on.
+    """
+    server = _tenant_tools(session, ctx)
+    context = CallContext(
+        tenant_id=ctx.tenant_id,
+        scopes=("agents:read", "calls:read"),
+        request_id=str(payload.id or ""),
+        client="http",
+    )
+    reply = await server.handle(
+        {
+            "jsonrpc": "2.0",
+            "id": payload.id,
+            "method": payload.method,
+            "params": payload.params,
+        },
+        context,
+    )
+    if reply is None:
+        # A notification (no response by spec). Returning an empty result keeps
+        # the HTTP contract simple for clients that expect one.
+        return {"jsonrpc": "2.0", "id": payload.id, "result": {}}
+    return reply

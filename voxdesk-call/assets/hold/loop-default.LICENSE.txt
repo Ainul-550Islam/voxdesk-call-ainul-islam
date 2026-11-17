@@ -1,0 +1,17 @@
+loop-default.ogg — default hold-music loop
+===========================================
+
+Licence: CC0 1.0 Universal (public domain dedication)
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Provenance: synthesised for this repository from a four-chord pad (Am7 - Fmaj7 -
+Cmaj7 - G6) using sine partials and a slow tremolo. No third-party recording,
+sample library or MIDI file was used, so there is no upstream licence to honour
+beyond this dedication.
+
+Technical: 30.0 s, mono, 44.1 kHz, Ogg Vorbis (q4). The first and last 0.5 s are
+crossfaded so a looping player does not click at the seam.
+
+Regenerating: `scripts/make_hold_music.py` rebuilds the file byte-for-byte from
+the same sine partials; it needs numpy and an ffmpeg binary (imageio-ffmpeg
+provides one).

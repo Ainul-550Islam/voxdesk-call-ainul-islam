@@ -150,8 +150,7 @@ def _registered_tables() -> frozenset[str]:
 
 def test_there_is_exactly_one_head():
     heads = _script_directory().get_heads()
-    # corrected: head advanced from 0068_platform_v2 to 0069_voice_demo_sessions
-    assert heads == ["0069_voice_demo_sessions"], heads
+    assert heads == ["0091_call_debug_pcap_metadata"], heads
 
 
 def test_the_history_is_a_single_linear_chain():

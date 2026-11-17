@@ -54,6 +54,17 @@ type Message struct {
 	To string `json:"to,omitempty"`
 	// Codec is the negotiated audio codec: PCMU or PCMA.
 	Codec string `json:"codec,omitempty"`
+	// Direction identifies the call's owning side in the application.
+	Direction string `json:"direction,omitempty"`
+	// TenantID, TrunkID, and EnvironmentID bind inbound media to the route
+	// authorized by the application before the SIP call was answered.
+	TenantID      string `json:"tenant_id,omitempty"`
+	TrunkID       string `json:"trunk_id,omitempty"`
+	EnvironmentID string `json:"environment_id,omitempty"`
+	// SourceIP is the carrier source address used for inbound authorization:
+	// the direct SIP UDP peer, or a header asserted only by a configured trusted
+	// edge. The Python application repeats the per-connection ACL check.
+	SourceIP string `json:"source_ip,omitempty"`
 	// Digit is a single DTMF digit.
 	Digit string `json:"digit,omitempty"`
 }
@@ -111,6 +122,40 @@ func (b *WSBridge) Dial(
 	to string,
 	codec string,
 ) error {
+	return b.DialWithDirection(ctx, callID, from, to, codec, "inbound")
+}
+
+// DialWithDirection connects to the application's media socket and identifies
+// whether the call is inbound or outbound from the tenant's perspective.
+func (b *WSBridge) DialWithDirection(
+	ctx context.Context,
+	callID string,
+	from string,
+	to string,
+	codec string,
+	direction string,
+) error {
+	return b.DialWithRoute(ctx, callID, from, to, codec, direction, "", "", "", "")
+}
+
+// DialWithRoute authenticates the media socket and carries the application-
+// authorized tenant/trunk binding in the start frame.
+func (b *WSBridge) DialWithRoute(
+	ctx context.Context,
+	callID string,
+	from string,
+	to string,
+	codec string,
+	direction string,
+	tenantID string,
+	trunkID string,
+	environmentID string,
+	sourceIP string,
+) error {
+	direction = strings.ToLower(strings.TrimSpace(direction))
+	if direction != "inbound" && direction != "outbound" {
+		return fmt.Errorf("bridge: unsupported call direction %q", direction)
+	}
 	timestamp := time.Now().Unix()
 	nonce := Nonce()
 	headers := http.Header{}
@@ -134,12 +179,17 @@ func (b *WSBridge) Dial(
 	b.mu.Unlock()
 
 	start := Message{
-		Type:   EventStart,
-		Event:  EventStart,
-		CallID: callID,
-		From:   from,
-		To:     to,
-		Codec:  codec,
+		Type:          EventStart,
+		Event:         EventStart,
+		CallID:        callID,
+		From:          from,
+		To:            to,
+		Codec:         codec,
+		Direction:     direction,
+		TenantID:      tenantID,
+		TrunkID:       trunkID,
+		EnvironmentID: environmentID,
+		SourceIP:      sourceIP,
 	}
 	return b.write(start)
 }

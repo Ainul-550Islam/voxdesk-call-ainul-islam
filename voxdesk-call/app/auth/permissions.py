@@ -192,6 +192,17 @@ class Permission(str, enum.Enum):
     MOBILE_WRITE = "mobile:write"
     MOBILE_PUSH_SEND = "mobile:push_send"
 
+    # PART13:telephony_permissions
+    # Telephony parity (PART 13). `telephony.manage` covers trunks, concurrency
+    # entitlements, country policy and messaging registration because all four
+    # change what the business is allowed to do on the PSTN; `calls.debug` is
+    # separate and narrower because a packet capture contains caller content.
+    TELEPHONY_READ = "telephony:read"
+    TELEPHONY_MANAGE = "telephony:manage"
+    CALLS_DEBUG = "calls:debug"
+    MESSAGING_READ = "messaging:read"
+    MESSAGING_WRITE = "messaging:write"
+
 
 # Convenience bundles used when composing roles. Kept here so `rbac.py` reads
 # as a policy document rather than a wall of enum members.

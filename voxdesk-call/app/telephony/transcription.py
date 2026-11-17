@@ -235,8 +235,20 @@ async def record_turn(
     text: str,
     latency_ms: float | None = None,
     agent_id: str | uuid.UUID | None = None,
+    region: str | None = None,
 ) -> Turn:
-    """Persist a ``Turn`` row after applying policy-governed PII redaction."""
+    """Persist a ``Turn`` row after applying policy-governed PII redaction.
+
+    ``region`` is where this deployment would store the turn. A tenant that has
+    pinned a region gets its transcripts checked against that pin before the row
+    is added (PART 16 / P16-07): a refused transcript is a `ResidencyDenied`
+    before anything is flushed, not a row discovered later by an auditor.
+    """
+    from app.tenancy import data_residency
+
+    await data_residency.enforce_tenant_write(
+        session, call.tenant_id, artifact="transcript", target=region
+    )
     clean_text = await redact_turn_text(session, call, text, agent_id=agent_id)
     turn = Turn(
         call_id=call.id,

@@ -14,7 +14,13 @@ from uuid import UUID
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import Agent, Call, Environment
+from app.db.models import (
+    Agent,
+    Call,
+    CallDirection as LegacyCallDirection,
+    CallStatus,
+    Environment,
+)
 from app.services.experiment_service import assign_call_to_experiment
 from app.telephony.agent_version import (
     AgentVersionResolutionError,
@@ -60,11 +66,14 @@ from app.resilience.idempotency import (
     complete_request,
 )
 from app.telephony.media_gateway import media_gateway_manager
+from app.telephony.number_routing import build_routing
 from app.telephony.providers.base import SimulatedTelephonyAdapter, TelephonyAdapter
 from app.telephony.providers.telnyx import TelnyxAdapter
 from app.telephony.providers.twilio import TwilioAdapter
 from app.telephony.providers.vonage import VonageAdapter
 from app.telephony.sip.sip_outbound import SipOutboundAdapter
+from app.telephony.country_policy import decide_for_session as decide_country_policy_for_session
+from app.telephony import concurrency_policy
 from app.telephony.schemas import (
     CallDtmfRequest,
     CallDtmfResponse,
@@ -249,9 +258,28 @@ class TelephonyRuntimeService:
                 "Either a registered phone_number_id or a valid E.164 from_number is required."
             )
 
-        resolved_agent_id = payload.agent_id or (
-            phone_row.outbound_agent_id if phone_row is not None else None
-        )
+        number_routing_decision: dict[str, Any] | None = None
+        resolved_agent_id = payload.agent_id
+        if resolved_agent_id is None and phone_row is not None:
+            routing = build_routing(
+                phone_row.routing,
+                legacy_inbound_agent_id=str(phone_row.inbound_agent_id or ""),
+                legacy_outbound_agent_id=str(phone_row.outbound_agent_id or ""),
+            )
+            candidates = routing.entries_for("outbound")
+            if candidates:
+                salt = f"{phone_row.e164_number}|outbound"
+                resolved_agent_id = routing.select(
+                    "outbound", caller=to_e164, salt=salt
+                )
+                number_routing_decision = {
+                    "phone_number_id": str(phone_row.id),
+                    "number": phone_row.e164_number,
+                    "channel": "outbound",
+                    "selected_agent_id": resolved_agent_id,
+                    "bucket": routing.bucket("outbound", caller=to_e164, salt=salt),
+                    "candidate_count": len(candidates),
+                }
         if not resolved_agent_id:
             raise TelephonyConfigurationError(
                 "Outbound calling requires an agent_id or an agent bound to the phone number.",
@@ -322,6 +350,20 @@ class TelephonyRuntimeService:
                     detail={"provider": resolved_provider},
                 )
 
+            if resolved_provider == TelephonyProviderName.SIP.value:
+                raise TelephonyConfigurationError(
+                    "Production SIP origination is disabled until a tenant-scoped trunk can be routed through a gateway with verified TLS/SRTP support.",
+                    code="SIP_BYOC_NOT_READY",
+                    detail={"provider": resolved_provider, "state": "UNSUPPORTED_CAPABILITY"},
+                )
+
+        # PART 13 / P13-06: a country the tenant has denied never reaches a
+        # provider. This is checked here, before the dial, because a refusal
+        # after origination still costs a call attempt.
+        await self._enforce_country_policy(
+            tenant_uuid, to_e164, phone_row=phone_row, agent_row=agent_row
+        )
+
         try:
             agent_version = await resolve_telephony_agent_version(
                 self.session,
@@ -372,6 +414,7 @@ class TelephonyRuntimeService:
                 "agent_version_resolved": agent_version_number,
                 "agent_version_id_resolved": str(agent_version.id),
                 "is_simulation_resolved": is_simulation,
+                "number_routing": number_routing_decision,
             }
         )
         try:
@@ -443,12 +486,14 @@ class TelephonyRuntimeService:
                 **(payload.metadata or {}),
                 "idempotency_receipt_id": str(claim.receipt.id),
                 "provider_outcome": "pending",
+                "dynamic_variables": dict(payload.dynamic_variables or {}),
                 "resolved_agent_version_id": str(agent_version.id),
                 "resolved_agent_version_number": agent_version_number,
                 "resolved_agent_version_status": str(agent_version.status),
                 "agent_version_resolution_source": (
                     "request_pin" if payload.agent_version_number is not None else "current_published_pointer"
                 ),
+                **({"number_routing": number_routing_decision} if number_routing_decision else {}),
             },
             created_at=now,
             updated_at=now,
@@ -484,10 +529,44 @@ class TelephonyRuntimeService:
         if exp_assignment is not None:
             call_session.experiment_id = UUID(exp_assignment["experiment_id"])
             call_session.variant_id = UUID(exp_assignment["variant_id"])
-        # Durable intent is visible to every worker before a phone provider is
-        # contacted. If the next operation has an ambiguous outcome, this row
-        # and its in-progress receipt remain available for reconciliation.
-        await self.session.commit()
+
+        lease = None
+        if not is_simulation:
+            try:
+                lease = await concurrency_policy.acquire_call_slot(
+                    self.session,
+                    tenant_uuid,
+                    call_id,
+                    direction="outbound",
+                    allow_burst=True,
+                )
+            except concurrency_policy.ConcurrencyError as exc:
+                await self.session.rollback()
+                raise TelephonyRuntimeError(
+                    "The tenant's outbound concurrency allowance is exhausted.",
+                    status_code=429,
+                    code="TELEPHONY_CONCURRENCY_EXHAUSTED",
+                    detail={"reason": exc.code},
+                ) from exc
+            metadata = dict(call_session.metadata_json or {})
+            metadata["concurrency_lease"] = {
+                "direction": lease.direction,
+                "burst": lease.burst,
+                "billable_overage": lease.billable_overage,
+                "base": lease.base,
+                "ceiling": lease.ceiling,
+            }
+            call_session.metadata_json = metadata
+
+        # Durable intent and its counter lease are visible before contacting a
+        # provider. Ambiguous provider outcomes keep the lease until a terminal
+        # webhook (or its safety TTL) reconciles the call.
+        try:
+            await self.session.commit()
+        except Exception:
+            if lease is not None:
+                await concurrency_policy.release_call_slot(tenant_uuid, call_id)
+            raise
 
         manager = CallSessionManager(self.session)
         if is_simulation:
@@ -524,7 +603,17 @@ class TelephonyRuntimeService:
                 "to_number": to_e164,
                 "from_number": from_e164,
             }
-            if resolved_provider == TelephonyProviderName.SIP.value:
+            if resolved_provider == TelephonyProviderName.TWILIO.value:
+                from app.core.config import settings as _app_settings
+
+                pub_base = str(_app_settings.public_base_url or "").rstrip("/")
+                outbound_kwargs["answer_url"] = (
+                    f"{pub_base}/telephony/outbound-answer?call_session_id={call_id}"
+                )
+                outbound_kwargs["status_callback_url"] = (
+                    f"{pub_base}/telephony/status?call_session_id={call_id}"
+                )
+            elif resolved_provider == TelephonyProviderName.SIP.value:
                 outbound_kwargs["idempotency_key"] = idem_key
             elif resolved_provider == TelephonyProviderName.VONAGE.value:
                 from app.core.config import settings as _app_settings
@@ -568,22 +657,93 @@ class TelephonyRuntimeService:
                 detail={"call_id": str(call_id), "provider": resolved_provider},
             ) from None
 
+        call_session = (
+            await self.session.execute(
+                select(TelephonyCallSession)
+                .where(TelephonyCallSession.id == call_id)
+                .with_for_update()
+                .execution_options(populate_existing=True)
+            )
+        ).scalar_one()
+        if call_session.provider_call_id not in {pending_id, external_id}:
+            call_session.metadata_json = {
+                **(call_session.metadata_json or {}),
+                "provider_outcome": "unknown",
+                "provider_error_category": "call_id_changed_during_origination",
+            }
+            await self.session.commit()
+            raise TelephonyRuntimeError(
+                "The provider call was accepted but its callback identifier conflicts with the stored session.",
+                status_code=502,
+                code="TELEPHONY_PROVIDER_OUTCOME_UNKNOWN",
+                detail={"call_id": str(call_id), "provider": resolved_provider},
+            )
         call_session.provider_call_id = external_id
+        if resolved_provider == TelephonyProviderName.TWILIO.value:
+            # The current Twilio Media Streams worker is backed by the legacy
+            # Call row. Keep that row explicitly linked to the authoritative
+            # TelephonyCallSession instead of letting the webhook/websocket
+            # split create a live call that cannot resume after transfer.
+            legacy_call = (
+                await self.session.execute(
+                    select(Call)
+                    .where(Call.call_sid == external_id)
+                    .with_for_update()
+                    .execution_options(populate_existing=True)
+                )
+            ).scalar_one_or_none()
+            if legacy_call is not None and (
+                legacy_call.tenant_id != tenant_uuid
+                or legacy_call.environment_id != resolved_env
+            ):
+                call_session.metadata_json = {
+                    **(call_session.metadata_json or {}),
+                    "provider_outcome": "unknown",
+                    "provider_error_category": "legacy_call_scope_conflict",
+                }
+                await self.session.commit()
+                raise TelephonyRuntimeError(
+                    "The provider call identifier is already bound to another call scope.",
+                    status_code=502,
+                    code="TELEPHONY_PROVIDER_OUTCOME_UNKNOWN",
+                    detail={"call_id": str(call_id), "provider": resolved_provider},
+                )
+            if legacy_call is None:
+                legacy_call = Call(
+                    id=uuid.uuid4(),
+                    tenant_id=tenant_uuid,
+                    environment_id=resolved_env,
+                    call_sid=external_id,
+                    from_number=from_e164,
+                    to_number=to_e164,
+                    status=CallStatus.RINGING,
+                    direction=LegacyCallDirection.OUTBOUND,
+                    agent_id=agent_row.id,
+                    agent_version_id=agent_version.id,
+                    experiment_id=call_session.experiment_id,
+                    variant_id=call_session.variant_id,
+                    started_at=call_session.started_at or now,
+                )
+                self.session.add(legacy_call)
+                await self.session.flush()
+            call_session.legacy_call_id = legacy_call.id
+
         call_session.metadata_json = {
             **(call_session.metadata_json or {}),
             "provider_outcome": "accepted",
             "provider_status": str(provider_result.status or "accepted")[:64],
         }
-        await manager.transition_state(
-            call_session,
-            TelephonyCallState.DIALING,
-            occurred_at=datetime.now(timezone.utc),
-            event_detail={
-                "provider_call_id": external_id,
-                "provider_status": str(provider_result.status or "accepted")[:64],
-                "execution_kind": "PRODUCTION",
-            },
-        )
+        if call_session.status == TelephonyCallState.CREATED.value:
+            await manager.transition_state(
+                call_session,
+                TelephonyCallState.DIALING,
+                occurred_at=datetime.now(timezone.utc),
+                event_detail={
+                    "provider_call_id": external_id,
+                    "provider_status": str(provider_result.status or "accepted")[:64],
+                    "execution_kind": "PRODUCTION",
+                },
+            )
         await complete_request(
             self.session,
             claim.receipt,
@@ -592,6 +752,39 @@ class TelephonyRuntimeService:
         )
         await self.session.commit()
         return serialize_call_session(call_session)
+
+    async def _enforce_country_policy(
+        self,
+        tenant_id: UUID,
+        destination: str,
+        *,
+        phone_row=None,
+        agent_row=None,
+    ) -> None:
+        """Refuse a dial the tenant's country policy denies.
+
+        A tenant with no rules has nothing to enforce, and the check returns
+        without a provider call, so the cost of the feature for a tenant that
+        never used it is one indexed query.
+        """
+        decision = await decide_country_policy_for_session(
+            self.session,
+            tenant_id,
+            destination,
+            stage="dial",
+            number_id=str(getattr(phone_row, "id", "") or "") or None,
+            agent_id=str(getattr(agent_row, "id", "") or "") or None,
+        )
+        if not decision.allowed:
+            raise TelephonyConfigurationError(
+                "This destination country is not allowed for this account.",
+                code="COUNTRY_NOT_ALLOWED",
+                detail={
+                    "country": decision.country,
+                    "matched_scope": decision.matched_scope,
+                    "reason": decision.reason,
+                },
+            )
 
     async def hangup_call(
         self,
@@ -608,6 +801,10 @@ class TelephonyRuntimeService:
 
         current_state = TelephonyCallState(call_session.status)
         if current_state in TERMINAL_CALL_STATES:
+            # Even an idempotent hangup commits before releasing a possibly stale
+            # lease; the release must never get ahead of durable terminal state.
+            await self.session.commit()
+            await concurrency_policy.release_call_slot(tenant_id, call_session.id)
             return serialize_call_session(call_session)
 
         now = datetime.now(timezone.utc)
@@ -641,6 +838,10 @@ class TelephonyRuntimeService:
                 event_detail={"reason": req.reason},
             )
 
+        # Persist the terminal state before releasing its external Redis lease;
+        # if commit fails, the call remains counted until reconciliation.
+        await self.session.commit()
+        await concurrency_policy.release_call_slot(tenant_id, call_session.id)
         return serialize_call_session(call_session)
 
     async def send_call_dtmf(
@@ -731,6 +932,13 @@ class TelephonyRuntimeService:
             ).scalar_one()
             or 0
         )
+        from app.telephony.sip.sip_gateway_client import SipGatewayClient
+
+        sip_tenant_trunks_ready = bool(SipGatewayClient.supports_tenant_trunks)
+        if not sip_tenant_trunks_ready:
+            # A configured row or reachable control API is not proof of a
+            # tenant-isolated TLS/SRTP call path.
+            ready_sip = 0
         active_calls = int(
             (
                 await self.session.execute(
@@ -756,8 +964,11 @@ class TelephonyRuntimeService:
             adapter.validate_configuration() for adapter in adapters
         ]
 
+        ready_provider_names = {"TWILIO", "TELNYX", "VONAGE"}
+        if sip_tenant_trunks_ready:
+            ready_provider_names.add("SIP")
         any_live_provider_ready = any(
-            p.configured and p.provider in {"TWILIO", "TELNYX", "VONAGE", "SIP"}
+            p.configured and p.provider in ready_provider_names
             for p in provider_statuses
         )
         if ready_numbers > 0 or ready_sip > 0 or any_live_provider_ready:
@@ -772,7 +983,9 @@ class TelephonyRuntimeService:
                 (
                     p.provider
                     for p in provider_statuses
-                    if p.configured and p.provider != "SIMULATED"
+                    if p.configured
+                    and p.provider != "SIMULATED"
+                    and (p.provider != "SIP" or sip_tenant_trunks_ready)
                 ),
                 None,
             )

@@ -95,9 +95,12 @@ func main() {
 				logger.Printf("the inbound INVITE was refused: %v", err)
 			}
 		case "BYE":
-			if callID := request.Header("call-id"); callID != "" {
-				_ = manager.Hangup(callID)
+			callID := request.Header("call-id")
+			response := sipua.BuildResponse(request, 481, "Call/Transaction Does Not Exist")
+			if manager.RemoteHangup(callID) {
+				response = sipua.BuildResponse(request, 200, "OK")
 			}
+			_ = client.Send(response, remote)
 		case "OPTIONS":
 			response := sipua.BuildResponse(request, 200, "OK")
 			_ = client.Send(response, remote)

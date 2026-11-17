@@ -55,15 +55,27 @@ services:
     command: python -m scripts.scheduler
     restart: unless-stopped
 
+  # Development frontend: the Next dev server on the same tree the production
+  # image builds (PART 17A). The retired Vite app used to live here on :5173.
+  #
+  # It runs from the source mount rather than the image because hot reload is the
+  # point of this file; `npm run dev` binds 0.0.0.0 so the port reaches the host.
+  # API calls are relative (`/api/…`), so the browser needs one origin: open
+  # http://localhost:3000 and let this container talk to `api` over the compose
+  # network. Set NEXT_PUBLIC_API_BASE_URL=http://localhost:8000 only if you are
+  # browsing a static build served by something other than this app.
   dashboard:
     image: node:20-alpine
-    working_dir: /srv
-    volumes: ["./dashboard:/srv"]
-    ports: ["5173:5173"]
-    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    working_dir: /srv/dashboard-next
+    volumes:
+      - ./dashboard-next:/srv/dashboard-next
+      - ./sdk/web:/srv/sdk/web
+    ports: ["3000:3000"]
+    command: sh -c "npm install --no-audit --no-fund && npm run dev"
     depends_on: [api]
     environment:
-      VOXDESK_ALLOW_ALL_HOSTS: "true"
+      NEXT_TELEMETRY_DISABLED: "1"
+      HOSTNAME: 0.0.0.0
 
   livekit:
     image: livekit/livekit-server:latest

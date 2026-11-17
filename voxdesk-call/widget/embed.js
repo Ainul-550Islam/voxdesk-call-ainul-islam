@@ -601,6 +601,42 @@
   }
 
   var scriptEl = findWidgetScript();
+
+  /**
+   * The loader iframe, when the tenant used the hosted loader rather than the
+   * bare script tag. It carries `data-product-name` / `data-primary` resolved
+   * from the tenant's brand theme, which is the only way this script can know
+   * the product's name without an API call of its own.
+   */
+  var frameEl =
+    typeof document !== "undefined" && document.querySelector
+      ? document.querySelector("iframe[data-voxdesk-widget]")
+      : null;
+
+  /**
+   * `data-mode="voice" | "chat" | "both"`. An unknown value falls back to
+   * `voice`, because a typo must not leave a customer with no widget at all.
+   */
+  function resolveMode(el) {
+    var raw = el ? (el.getAttribute("data-mode") || "voice") : "voice";
+    var value = String(raw).toLowerCase().trim();
+    if (value === "chat" || value === "both" || value === "voice") {
+      return value;
+    }
+    return "voice";
+  }
+
+  function resolveChatSrc(el) {
+    var src = el && el.getAttribute("src") ? el.getAttribute("src") : "";
+    if (!src) {
+      return "";
+    }
+    var cut = src.lastIndexOf("/");
+    return (cut >= 0 ? src.slice(0, cut + 1) : "") + "chat.js";
+  }
+
+  var mode = resolveMode(scriptEl);
+
   var defaultOptions = {
     publicKey: scriptEl
       ? scriptEl.getAttribute("data-public-key") ||
@@ -613,21 +649,28 @@
         ""
       : "",
     apiBase: resolveApiBase(scriptEl),
-    primaryColor: scriptEl
-      ? scriptEl.getAttribute("data-primary-color") ||
-        scriptEl.getAttribute("data-theme-color") ||
-        "#2563eb"
-      : "#2563eb",
+    // Precedence: an explicit data attribute on the snippet, then the theme the
+    // loader resolved from the tenant's brand (stamped on the frame), then the
+    // platform default. Without the middle step a white-labelled deployment
+    // keeps the vendor's blue on every customer site.
+    primaryColor:
+      (scriptEl &&
+        (scriptEl.getAttribute("data-primary-color") ||
+          scriptEl.getAttribute("data-theme-color"))) ||
+      (frameEl && frameEl.getAttribute("data-primary")) ||
+      "#2563eb",
     position: scriptEl
       ? scriptEl.getAttribute("data-position") || "bottom-right"
       : "bottom-right",
-    title: scriptEl
-      ? scriptEl.getAttribute("data-title") || "Voice Widget"
-      : "Voice Widget",
+    title:
+      (scriptEl && scriptEl.getAttribute("data-title")) ||
+      (frameEl && frameEl.getAttribute("data-product-name")) ||
+      "Voice Widget",
     subtitle: scriptEl
       ? scriptEl.getAttribute("data-subtitle") ||
         "Start a live voice call"
       : "Start a live voice call",
+    mode: mode,
     greeting: scriptEl
       ? scriptEl.getAttribute("data-greeting") ||
         "Hello! Click Start Voice Call to speak with our AI agent."
@@ -635,20 +678,52 @@
   };
 
   var instance = createWidgetInstance(defaultOptions);
+  var wantsVoice = mode === "voice" || mode === "both";
+  var wantsChat = mode === "chat" || mode === "both";
+
+  function mountChat() {
+    var target = document.getElementById("voxdesk-chat");
+    if (!target) {
+      // No container supplied: create one beside the voice launcher rather than
+      // silently doing nothing, which reads as "the chat widget is broken".
+      target = document.createElement("div");
+      target.id = "voxdesk-chat";
+      document.body.appendChild(target);
+    }
+    var chatSrc = resolveChatSrc(scriptEl);
+    if (!chatSrc) {
+      return;
+    }
+    var tag = document.createElement("script");
+    tag.src = chatSrc;
+    tag.async = true;
+    tag.setAttribute("data-public-key", defaultOptions.publicKey);
+    target.setAttribute("data-mount-ready", "1");
+    document.head.appendChild(tag);
+  }
+
   if (typeof document !== "undefined") {
+    var start = function () {
+      if (!defaultOptions.publicKey) {
+        return;
+      }
+      if (wantsVoice) {
+        instance.mount();
+      }
+      if (wantsChat) {
+        mountChat();
+      }
+    };
     if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", function () {
-        if (defaultOptions.publicKey) {
-          instance.mount();
-        }
-      });
-    } else if (defaultOptions.publicKey) {
-      instance.mount();
+      document.addEventListener("DOMContentLoaded", start);
+    } else {
+      start();
     }
   }
 
   global.VoxDeskWidget = {
     __initialized: true,
+    mode: mode,
     create: createWidgetInstance,
     instance: instance,
     encodePipecatAudioFrame: encodePipecatAudioFrame,

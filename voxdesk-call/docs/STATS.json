@@ -1,10 +1,10 @@
 {
   "schema": "voxdesk.repo_stats/v1",
-  "generated_date": "2026-11-07",
-  "source_files": 2123,
-  "source_physical_lines": 435242,
-  "registered_routes": 1526,
-  "collected_pytest_nodes": 6781,
+  "generated_date": "2026-11-08",
+  "source_files": 1912,
+  "source_physical_lines": 442435,
+  "registered_routes": 1662,
+  "collected_pytest_nodes": 8123,
   "junit_passed_tests": 1329,
   "junit_failed_tests": 0,
   "junit_skipped_tests": 17,
@@ -38,7 +38,7 @@
       "skipped": 10
     }
   },
-  "alembic_head": "0069_voice_demo_sessions",
+  "alembic_head": "0091_call_debug_pcap_metadata",
   "feature_matrix": {
     "total": 41,
     "LIVE": 38,

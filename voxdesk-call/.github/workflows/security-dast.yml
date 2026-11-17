@@ -1,0 +1,75 @@
+# OWASP ZAP baseline against the running API (PART 16, P16-04).
+#
+# The dependency / secret / container scans already live in security-scan.yml and
+# are untouched. This workflow adds the *running* surface: it boots the API, waits
+# for it to answer, runs the baseline scan, and uploads the report as an artifact.
+#
+# Two deliberate choices:
+#
+# * the job fails when the scan cannot run (exit 2 from the script) — a DAST job
+#   that is green because ZAP was missing is worse than no DAST job;
+# * the report is uploaded even on failure, because the artifact is what a ticket
+#   gets written from.
+name: security-dast
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 4 * * 1"          # Mondays, 04:00 UTC
+  pull_request:
+    paths:
+      - "app/**"
+      - "scripts/run_zap_baseline.sh"
+      - ".github/workflows/security-dast.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-dast-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  zap-baseline:
+    name: zap baseline scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Start the API on SQLite
+        env:
+          DATABASE_URL: sqlite+aiosqlite:///./dast.db
+          JWT_SECRET: dast-only-not-a-secret
+          ENVIRONMENT: ci
+        run: |
+          pip install -q -r requirements.txt
+          python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 > dast-server.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -fsS -m 2 -o /dev/null http://127.0.0.1:8000/health; then
+              echo "api up after ${i}s"; break
+            fi
+            sleep 1
+          done
+          curl -fsS -m 5 http://127.0.0.1:8000/health > /dev/null
+
+      - name: Run the ZAP baseline
+        env:
+          ZAP_TARGET: http://127.0.0.1:8000
+          ZAP_FAIL_ON: High
+        run: bash scripts/run_zap_baseline.sh http://127.0.0.1:8000
+
+      - name: Upload the DAST report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dast-report
+          path: |
+            reports/dast/
+            dast-server.log
+          retention-days: 90
+          if-no-files-found: warn

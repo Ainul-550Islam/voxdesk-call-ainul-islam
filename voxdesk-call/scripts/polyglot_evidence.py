@@ -35,13 +35,13 @@ ROOT = Path(__file__).resolve().parents[1]
 #: exactly. Anything unrecognised is still parsed by extension and reported
 #: under its filename.
 KNOWN_SERVICES: tuple[tuple[str, str, str], ...] = (
-    ("signal-go", "services/signal-go", "go"),
-    ("ops-go", "services/ops", "go"),
+    ("signal-go", "experimental/signal-go", "go"),
+    ("ops-go", "experimental/ops", "go"),
     ("sip-gateway", "services/sip-gateway", "go"),
     ("gateway-go", "services/realtime/gateway-go", "go"),
-    ("control-plane", "services/control-plane", "rust"),
+    ("control-plane", "experimental/control-plane", "rust"),
     ("media-engine-rs", "services/realtime/media-engine-rs", "rust"),
-    ("media-plane", "services/media-plane", "cpp"),
+    ("media-plane", "experimental/media-plane", "cpp"),
 )
 
 # Rust: "test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; ...

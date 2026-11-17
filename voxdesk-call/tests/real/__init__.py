@@ -3,7 +3,9 @@
 Every test in this package requires `VOXDESK_REAL_INTEGRATION=1` plus the
 specific upstream provider credentials (`TWILIO_*`, `DEEPGRAM_*`, `OPENAI_*`,
 `ANTHROPIC_*`, `ELEVENLABS_*`, `CARTESIA_*`, `GOOGLE_API_KEY`, `TELNYX_*`,
-`SALESFORCE_*`, `VOXDESK_REAL_HUBSPOT_TOKEN`, `VOXDESK_REAL_WEBHOOK_RECEIVER_URL`).
+`SALESFORCE_*`, `VOXDESK_REAL_HUBSPOT_TOKEN`, and the webhook receiver URL,
+inspection URL, and signing secret. The Twilio case also requires an authenticated
+VoxDesk API key and a controlled destination that answers and speaks during the call.
 Missing credentials never fake a pass: the test writes a structured
 `SKIPPED_NO_CREDENTIALS` entry with `provider_fakes: false` via `evidence_writer`
 and skips with the exact missing variable names.

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE scenario SYSTEM "sipp.dtd">
+<!--
+  PART 13 / P13-01 — the far end hangs up.
+
+  Answers, waits two seconds, BYE. Our side must end the session, release the
+  concurrency lease and write a history row with `caller_hangup` (inbound) or
+  `normal` (outbound).
+-->
+<scenario name="remote-hangup">
+  <recv request="INVITE" timeout="10000" />
+  <send>
+    <![CDATA[
+      SIP/2.0 200 OK
+      [last_Via:]
+      [last_From:]
+      [last_To:];tag=[pid]SIPpTag06[call_number]
+      [last_Call-ID:]
+      [last_CSeq:]
+      Contact: <sip:callee@[local_ip]:[local_port]>
+      Content-Type: application/sdp
+      Content-Length: [len]
+
+      v=0
+      o=sipp 2 2 IN IP[local_ip_type] [local_ip]
+      s=-
+      c=IN IP[media_ip_type] [media_ip]
+      t=0 0
+      m=audio [media_port] RTP/AVP 0
+      a=rtpmap:0 PCMU/8000
+    ]]>
+  </send>
+  <recv request="ACK" timeout="5000" optional="true" />
+  <pause milliseconds="2000" />
+  <send>
+    <![CDATA[
+      BYE sip:[service]@[remote_ip]:[remote_port] SIP/2.0
+      Via: SIP/2.0/[transport] [local_ip]:[local_port];branch=[branch]
+      From: <sip:callee@[remote_ip]:[remote_port]>;tag=[pid]SIPpTag06[call_number]
+      To: [last_To]
+      Call-ID: [call_id]
+      CSeq: 2 BYE
+      Content-Length: 0
+
+    ]]>
+  </send>
+</scenario>

@@ -78,6 +78,9 @@ probes:
   dependencies: /health/dependencies
 scheduler:
   enabled: true
+  # Must match SCHEDULER_METRICS_PORT; the probe and the ServiceMonitor both
+  # address this port.
+  metricsPort: 8001
   terminationGracePeriodSeconds: 45
   drain:
     timeoutSeconds: 15
@@ -88,3 +91,264 @@ scheduler:
   resources:
     requests: {cpu: 100m, memory: 256Mi}
     limits: {cpu: "1", memory: 1Gi}
+
+# ---------------------------------------------------------------------------
+# Realtime edge (PART 17B / P17B-01)
+#
+# Off by default in the base values so a bare `helm template` renders exactly
+# what it rendered before this PART; every shipped environment (values-prod,
+# values-staging) turns it on. A front end without this gateway shows no live
+# calls: the page loads and every call event is missing.
+# ---------------------------------------------------------------------------
+realtimeGateway:
+  enabled: false
+  port: 8790
+  replicaCount: 2
+  logLevel: info
+  maxConnections: 10000
+  maxConnectionsPerTenant: 256
+  allowedOrigins: ""
+  mediaEngineTimeoutSeconds: "1.5"
+  engineSteer: "off"
+  # memory | redis. Redis is required for multi-replica fan-out: with the
+  # memory broker each pod only knows its own sockets, so two browser tabs
+  # served by different pods do not see each other's events.
+  broker: memory
+  redisUrl: ""
+  # Keys inside secrets.existingSecret. The gateway refuses to boot without
+  # JWT_SECRET and REALTIME_GATEWAY_INGEST_SECRET (>=16 chars, not a
+  # placeholder), so these are required, not optional.
+  jwtSecretKey: JWT_SECRET
+  ingestSecretKey: REALTIME_GATEWAY_INGEST_SECRET
+  metricsTokenKey: METRICS_TOKEN
+  jwtIssuer: voxdesk
+  jwtAudience: voxdesk-api
+  terminationGracePeriodSeconds: 60
+  preStopSleepSeconds: 5
+  antiAffinity: true
+  podAnnotations: {}
+  nodeSelector: {}
+  tolerations: {}
+  image:
+    repository: ghcr.io/voxdesk/voxdesk-realtime-gateway
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+  probes:
+    startup: /healthz
+    readiness: /readyz
+    liveness: /healthz
+  resources:
+    requests: {cpu: 200m, memory: 128Mi}
+    limits: {cpu: "2", memory: 512Mi}
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    # Average concurrent sockets per pod. Set only when the Prometheus adapter
+    # exposes voxdesk_gateway_connections_active; an HPA metric with no series
+    # stalls at minReplicas rather than scaling.
+    targetConnectionsPerPod: ""
+    scaleDownStabilizationWindowSeconds: 600
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+
+# ---------------------------------------------------------------------------
+# Media engine (PART 17B / P17B-01)
+#
+# One replica by default: the engine holds live RTP state per room, and a
+# second replica is not a second copy of the same rooms.
+# ---------------------------------------------------------------------------
+mediaEngine:
+  enabled: false
+  replicaCount: 1
+  rtpPort: 5000
+  controlPort: 9001
+  # hostNetwork lets the SDP candidate be the node address without any cloud
+  # load-balancer wiring. When it is false, publicIp is REQUIRED — the chart
+  # fails rather than render an engine that advertises a Pod IP.
+  hostNetwork: true
+  publicIp: ""
+  label: ""
+  maxParticipants: 64
+  dtlsFingerprint: ""
+  terminationGracePeriodSeconds: 30
+  maxUnavailable: 1
+  nodeSelector: {}
+  tolerations: {}
+  image:
+    repository: ghcr.io/voxdesk/voxdesk-media-engine
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+  service:
+    type: ""
+    loadBalancerIP: ""
+    resourceGroup: ""
+  probes:
+    startup: /v1/health
+    readiness: /v1/health
+    liveness: /v1/health
+  resources:
+    requests: {cpu: 500m, memory: 256Mi}
+    limits: {cpu: "4", memory: 1Gi}
+  podDisruptionBudget:
+    enabled: false
+    minAvailable: 1
+
+# ---------------------------------------------------------------------------
+# Frontend (PART 17A built it; PART 17B puts it in the chart)
+# ---------------------------------------------------------------------------
+frontend:
+  enabled: false
+  port: 3000
+  replicaCount: 2
+  terminationGracePeriodSeconds: 30
+  publicApiBaseUrl: ""
+  nodeSelector: {}
+  tolerations: {}
+  image:
+    repository: ghcr.io/voxdesk/voxdesk-call
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 3000
+  ingress:
+    enabled: false
+    className: ""
+    host: ""
+    paths:
+      - path: /
+        pathType: Prefix
+    annotations: {}
+    tls: []
+  probes:
+    startup: /
+    readiness: /
+    liveness: /
+  resources:
+    requests: {cpu: 100m, memory: 128Mi}
+    limits: {cpu: "1", memory: 512Mi}
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+
+# ---------------------------------------------------------------------------
+# Pre-upgrade migration Job (PART 17B / P17B-01)
+# ---------------------------------------------------------------------------
+migrateJob:
+  enabled: false
+  backoffLimit: 1
+  activeDeadlineSeconds: 900
+  ttlSecondsAfterFinished: 3600
+
+# ---------------------------------------------------------------------------
+# Backup CronJob (PART 17B / P17B-01)
+# ---------------------------------------------------------------------------
+backup:
+  enabled: false
+  schedule: "0 2 * * *"
+  timeZone: Etc/UTC
+  image: postgres:16-alpine
+  host: ""
+  port: 5432
+  retain: 14
+  # Empty means "no off-host copy"; the Job logs that fact on every run so a
+  # single-volume backup is never mistaken for a disaster-recovery one.
+  remote: ""
+  activeDeadlineSeconds: 3600
+  # Keys inside the Secret. The compose service reads the same three names.
+  secretName: ""
+  userKey: POSTGRES_USER
+  databaseKey: POSTGRES_DB
+  passwordKey: POSTGRES_PASSWORD
+  resources:
+    requests: {cpu: 100m, memory: 128Mi}
+    limits: {cpu: "1", memory: 512Mi}
+  persistentVolume:
+    create: true
+    existingClaim: ""
+    size: 20Gi
+    storageClassName: ""
+
+# ---------------------------------------------------------------------------
+# NetworkPolicy (PART 17B / P17B-01)
+#
+# Default-deny ingress for every pod in the release, then the few flows that
+# exist: ingress-controller -> web/api, web -> api, gateway -> media-engine,
+# everything -> db/redis, Prometheus -> metrics ports. Egress stays open by
+# default because the API calls five external providers by name; restricting
+# egress correctly needs DNS pinning and is not something to fake.
+# ---------------------------------------------------------------------------
+networkPolicy:
+  enabled: false
+  # Namespace/selector of the ingress controller allowed to reach web + api.
+  ingressController:
+    namespace: ingress-nginx
+    podSelector:
+      matchLabels:
+        app.kubernetes.io/name: ingress-nginx
+  # Database and Redis are usually managed services outside the cluster; when
+  # they are in-cluster, name their selectors here to allow the flows.
+  database:
+    podSelector: {}
+    port: 5432
+  redis:
+    podSelector: {}
+    port: 6379
+  monitoring:
+    namespace: monitoring
+    podSelector:
+      matchLabels:
+        app.kubernetes.io/name: prometheus
+
+# ---------------------------------------------------------------------------
+# ServiceMonitor / PrometheusRule (PART 17B / P17B-01)
+#
+# PrometheusRule is rendered from observability/alerts.yml — the file the
+# compose stack already mounts — so the Kubernetes install and the compose
+# install fire exactly the same alerts. Editing alerts.yml changes both.
+# ---------------------------------------------------------------------------
+serviceMonitor:
+  enabled: false
+  interval: 15s
+  scrapeTimeout: 10s
+  labels: {}
+  prometheusRule:
+    enabled: false
+    labels: {}
+    # Emit the platform's own rules (up, job staleness, backup failures) in
+    # addition to observability/alerts.yml.
+    includePlatformRules: true
+
+# ---------------------------------------------------------------------------
+# External Secrets (PART 17B / P17B-01)
+#
+# Optional: when enabled, an ExternalSecret pulls the runtime Secret from the
+# operator's secret manager instead of `kubectl create secret`. The chart
+# never renders credential values either way, which is why this is a pointer
+# to a store, not a place to put secrets.
+# ---------------------------------------------------------------------------
+externalSecrets:
+  enabled: false
+  secretStoreRef:
+    name: ""
+    kind: ClusterSecretStore
+  refreshInterval: 1h
+  # Keys copied from the store into the runtime Secret. Defaults match the
+  # keys the api/gateway templates read.
+  data:
+    - secretKey: JWT_SECRET
+      remoteRef:
+        key: voxdesk/jwt-secret
+    - secretKey: REALTIME_GATEWAY_INGEST_SECRET
+      remoteRef:
+        key: voxdesk/realtime-ingest-secret

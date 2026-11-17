@@ -63,7 +63,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build and run both suites
-        working-directory: services/media-plane
+        working-directory: experimental/media-plane
         run: |
           set -o pipefail
           make test 2>&1 | tee /tmp/cpp-tests.log
@@ -88,7 +88,7 @@ jobs:
           components: rustfmt, clippy
 
       - name: Rust gates
-        working-directory: services/control-plane
+        working-directory: experimental/control-plane
         run: |
           cargo fmt --all -- --check
           cargo check --workspace
@@ -106,7 +106,7 @@ jobs:
           if-no-files-found: error
 
   # Go real-time signaling hub — the differential counterpart of
-  # `services/control-plane/crates/signal`.
+  # `experimental/control-plane/crates/signal`.
   signal-go:
     runs-on: ubuntu-latest
     steps:
@@ -115,10 +115,10 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "1.27"
-          cache-dependency-path: services/signal-go/go.sum
+          cache-dependency-path: experimental/signal-go/go.sum
 
       - name: Go gates
-        working-directory: services/signal-go
+        working-directory: experimental/signal-go
         run: |
           test -z "$(gofmt -l .)"
           go vet ./...
@@ -143,10 +143,10 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "1.27"
-          cache-dependency-path: services/ops/go.mod
+          cache-dependency-path: experimental/ops/go.mod
 
       - name: Go gates
-        working-directory: services/ops
+        working-directory: experimental/ops
         run: |
           test -z "$(gofmt -l .)"
           go vet ./...

@@ -64,7 +64,9 @@ ALLOWED_EXPORT_FIELDS = {
     "id", "call_sid", "from_number", "to_number", "direction", "status",
     "agent_id", "campaign_id", "lead_id", "duration_seconds", "started_at",
     "ended_at", "created_at", "outcome", "transfer_state", "provider",
-    "recording_url", "transcript_excerpt", "cost_cents", "metadata"
+    "recording_url", "transcript_excerpt", "cost_cents", "metadata",
+    # PART 15 (P15-07) custom columns
+    "environment_id", "agent_version_id", "transfer_agent", "transfer_reason",
 }
 PRIVACY_FIELDS = {"from_number", "to_number", "recording_url"}
 REDACTED_PLACEHOLDER = "***REDACTED***"
@@ -105,6 +107,20 @@ class CallSearchRequest(_Strict):
     offset: int = Field(default=0, ge=0)
     sort_by: str = Field(default="started_at", pattern="^(started_at|ended_at|duration|created_at)$")
     sort_order: str = Field(default="desc", pattern="^(asc|desc)$")
+    # -- PART 15 (P15-07) filters -----------------------------------------
+    #: A per-call context variable, matched inside the call's JSON context
+    #: (`calls.transfer_context`), optionally pinned to one value.
+    dynamic_variable: Optional[str] = Field(default=None, max_length=80)
+    dynamic_variable_value: Optional[str] = Field(default=None, max_length=200)
+    #: A field inside a stored analysis result (`analysis_results.result`).
+    analysis_field: Optional[str] = Field(default=None, max_length=80)
+    analysis_value: Optional[str] = Field(default=None, max_length=200)
+    #: Analysis presence: "exists" / "not_exists". Not the same question as
+    #: has_analysis, which only looks at the call's own columns.
+    analysis: Optional[str] = Field(default=None, pattern="^(exists|not_exists)$")
+    transfer_agent: Optional[str] = Field(default=None, max_length=120)
+    environment_tag: Optional[str] = Field(default=None, max_length=80)
+    agent_version_id: Optional[uuid.UUID] = None
 
 class CallSearchResponse(_Strict):
     calls: List[Dict[str, Any]]
@@ -122,6 +138,11 @@ class CallExportRequest(_Strict):
     filters: CallSearchRequest = Field(default_factory=CallSearchRequest)
     redact_pii: bool = Field(default=True)
     include_headers: bool = Field(default=True)
+    #: Replace the provider's recording URL with a platform-signed, expiring
+    #: one. The raw URL is a bearer token in disguise; a signed export row is
+    #: shareable and revocable on a clock.
+    sign_recordings: bool = Field(default=False)
+    recording_url_ttl_seconds: int = Field(default=900, ge=60, le=86400)
 
 class CallReplayResponse(_Strict):
     id: str
@@ -254,14 +275,58 @@ def _apply_privacy(row: Dict[str, Any], redact_pii: bool) -> Dict[str, Any]:
                 redacted[f] = REDACTED_PLACEHOLDER
     return redacted
 
+def _json_contains(column: Any, needle: str) -> Any:
+    """Portable "JSON text contains" predicate.
+
+    The tests run on SQLite and production runs on Postgres; both can cast JSON
+    to text, neither agrees on the JSON operators. A LIKE on the cast is coarse
+    but it is the same predicate in both places, and a match is then confirmed
+    by the caller.
+    """
+    from sqlalchemy import cast, String as _String
+
+    return cast(column, _String).ilike(f"%{needle}%")
+
+
+def _context_match(call: Call, name: str, value: Optional[str]) -> bool:
+    """Does the call's JSON context carry this variable (and value)?"""
+    context = call.transfer_context if isinstance(call.transfer_context, dict) else {}
+    buckets = [
+        context.get("dynamic_variables"),
+        context.get("variables"),
+        context.get("facts"),
+        context,
+    ]
+    for bucket in buckets:
+        if not isinstance(bucket, dict):
+            continue
+        if name not in bucket:
+            continue
+        if value is None:
+            return True
+        raw = bucket[name]
+        if isinstance(raw, (dict, list)):
+            return value.lower() in json.dumps(raw, default=str).lower()
+        return str(raw).lower() == value.lower()
+    return False
+
+
 def _build_search_filters(tenant_id: uuid.UUID, req: CallSearchRequest) -> List[Any]:
-    filters = [Call.tenant_id == tenant_id]
+    """Every SQL-side filter.
+
+    The agent filter used to require *both* an agent match and a substring match
+    on `call_sid`/`to_number`; that made `agent_id` silently match nothing on
+    real data. It is now a plain equality on the column, with the substring
+    search kept only for the free-text `search` field where it belongs.
+    """
+    filters: List[Any] = [Call.tenant_id == tenant_id]
     if req.agent_id:
-        # Agent filter may be in Call model or metadata
-        filters.append(Call.call_sid.ilike(f"%{req.agent_id}%") | Call.to_number.ilike(f"%{req.agent_id}%"))
-        # More precise if agent_id column exists
-        if hasattr(Call, "agent_id"):
-            filters.append(getattr(Call, "agent_id") == req.agent_id)
+        # `calls.agent_id` is a UUID column; an agent id that is not a UUID is a
+        # miss, not a 500.
+        try:
+            filters.append(Call.agent_id == uuid.UUID(str(req.agent_id)))
+        except (ValueError, TypeError):
+            filters.append(Call.id.is_(None))
     if req.phone:
         frag = f"%{req.phone}%"
         filters.append(or_(Call.to_number.ilike(frag), Call.from_number.ilike(frag)))
@@ -277,10 +342,111 @@ def _build_search_filters(tenant_id: uuid.UUID, req: CallSearchRequest) -> List[
         filters.append(Call.started_at >= req.start_date)
     if req.end_date:
         filters.append(Call.started_at <= req.end_date)
+    if req.booked is not None:
+        filters.append(Call.booked.is_(req.booked))
+    if req.escalated is not None:
+        filters.append(Call.escalated.is_(req.escalated))
+    if req.transfer_state:
+        filters.append(Call.transfer_state == req.transfer_state)
+    if req.provider:
+        filters.append(Call.llm_used.ilike(f"%{req.provider}%"))
+    if req.outcome:
+        filters.append(or_(Call.intent.ilike(f"%{req.outcome}%"), Call.failure_reason.ilike(f"%{req.outcome}%")))
+    # PART 15 filters with a real column behind them.
+    if req.transfer_agent:
+        filters.append(Call.transfer_destination.ilike(f"%{req.transfer_agent}%"))
+    if req.environment_tag:
+        filters.append(_environment_filter(tenant_id, req.environment_tag))
+    if req.agent_version_id:
+        filters.append(Call.agent_version_id == req.agent_version_id)
+    if req.dynamic_variable:
+        needle = req.dynamic_variable if req.dynamic_variable_value is None else (
+            f'{req.dynamic_variable}%{req.dynamic_variable_value}'
+        )
+        filters.append(_json_contains(Call.transfer_context, needle.split("%")[0]))
     if req.search:
         frag = f"%{req.search}%"
         filters.append(or_(Call.call_sid.ilike(frag), Call.to_number.ilike(frag), Call.from_number.ilike(frag)))
     return filters
+
+
+def _environment_filter(tenant_id: uuid.UUID, tag: str) -> Any:
+    """Environment tag filter, resolved to ids first.
+
+    `environments` is keyed by id, so the tag has to be looked up. The lookup is
+    emitted as a subquery so the search stays one round trip.
+    """
+    from sqlalchemy import select as _select
+
+    from app.db.models import Environment
+
+    return Call.environment_id.in_(
+        _select(Environment.id).where(
+            Environment.tenant_id == tenant_id,
+            or_(Environment.slug == tag, Environment.name == tag),
+        )
+    )
+
+
+async def _analysis_call_ids(
+    session: AsyncSession, tenant_id: uuid.UUID, req: CallSearchRequest
+) -> Optional[set[uuid.UUID]]:
+    """Call ids selected by the analysis filters, or ``None`` when unused.
+
+    Returning ``None`` (rather than "all calls") is what keeps the "not_exists"
+    case honest: the caller decides whether an empty set means "no rows" or
+    "no filter".
+    """
+    from app.db.enterprise_models import AnalysisResult
+
+    needs_presence = req.analysis is not None
+    needs_value = bool(req.analysis_field)
+    if not needs_presence and not needs_value:
+        return None
+
+    query = select(AnalysisResult.call_id).where(AnalysisResult.tenant_id == tenant_id)
+    if needs_value:
+        needle = req.analysis_field or ""
+        if req.analysis_value is not None:
+            needle = f"{needle}%{req.analysis_value}"
+        query = query.where(_json_contains(AnalysisResult.result, needle.split("%")[0]))
+        if req.analysis_value is not None:
+            # Confirm the coarse LIKE with a real key/value comparison.
+            rows = (await session.execute(query)).all()
+            wanted = req.analysis_value.lower()
+            confirmed: set[uuid.UUID] = set()
+            for (call_id,) in rows:
+                result = (
+                    await session.execute(
+                        select(AnalysisResult.result).where(AnalysisResult.call_id == call_id)
+                    )
+                ).scalars().all()
+                for payload in result:
+                    if not isinstance(payload, dict):
+                        continue
+                    raw = payload.get(req.analysis_field)
+                    if raw is None:
+                        continue
+                    if str(raw).lower() == wanted or wanted in json.dumps(raw, default=str).lower():
+                        confirmed.add(call_id)
+            return confirmed
+        return {call_id for (call_id,) in (await session.execute(query)).all()}
+    return {call_id for (call_id,) in (await session.execute(query)).all()}
+
+
+def _apply_analysis_presence(
+    rows: List[Any], req: CallSearchRequest, with_analysis: Optional[set[uuid.UUID]]
+) -> List[Any]:
+    """Apply the analysis filters in memory, alongside the SQL filters."""
+    if req.analysis is None and not req.analysis_field:
+        return rows
+    present = with_analysis or set()
+    if req.analysis == "exists":
+        return [row for row in rows if row.id in present]
+    if req.analysis == "not_exists":
+        return [row for row in rows if row.id not in present]
+    return [row for row in rows if row.id in present]
+
 
 def _call_to_dict(call: Call) -> Dict[str, Any]:
     duration = None
@@ -302,6 +468,14 @@ def _call_to_dict(call: Call) -> Dict[str, Any]:
         "started_at": call.started_at.isoformat() if call.started_at else None,
         "ended_at": call.ended_at.isoformat() if call.ended_at else None,
         "created_at": call.started_at.isoformat() if call.started_at else None,
+        # PART 15 (P15-07): the columns the new filters filter on are also
+        # selectable columns, otherwise a filterable field is invisible.
+        "agent_id": call.agent_id,
+        "environment_id": str(call.environment_id) if call.environment_id else None,
+        "agent_version_id": str(call.agent_version_id) if call.agent_version_id else None,
+        "transfer_agent": call.transfer_destination,
+        "transfer_reason": call.transfer_reason,
+        "recording_url": call.recording_url,
     }
 
 # ---------------------------------------------------------------------------
@@ -321,6 +495,18 @@ async def search_calls(
         await _check_rate(ctx.tenant_id, "call_search", 60)
 
         filters = _build_search_filters(ctx.tenant_id, payload)
+        # Analysis filters are resolved to call ids first: `NOT IN` on ids keeps
+        # the total count honest, which a post-filter on one page would not.
+        analysis_ids = await _analysis_call_ids(session, ctx.tenant_id, payload)
+        if analysis_ids is not None:
+            from sqlalchemy import true as _true
+
+            if payload.analysis == "not_exists":
+                filters.append(Call.id.notin_(analysis_ids) if analysis_ids else _true())
+            else:
+                # No matches means no rows; an impossible predicate says that
+                # without a second round trip.
+                filters.append(Call.id.in_(analysis_ids) if analysis_ids else Call.id.is_(None))
 
         # Duration filter requires post-processing or computed column
         # We'll apply in memory if needed for simplicity, but also attempt DB filter if duration column exists
@@ -345,7 +531,9 @@ async def search_calls(
         )
         rows = rows_q.scalars().all()
 
-        # Duration post-filter
+        # Duration and dynamic-variable post-filters. The variable filter is a
+        # LIKE prefilter in SQL plus an exact key/value check here, because a
+        # JSON cast is coarse: "vip:true" also matches "vip:true_ish".
         filtered_rows = []
         for r in rows:
             d = _call_to_dict(r)
@@ -353,6 +541,10 @@ async def search_calls(
             if payload.duration_min is not None and dur is not None and dur < payload.duration_min:
                 continue
             if payload.duration_max is not None and dur is not None and dur > payload.duration_max:
+                continue
+            if payload.dynamic_variable and not _context_match(
+                r, payload.dynamic_variable, payload.dynamic_variable_value
+            ):
                 continue
             filtered_rows.append(d)
 
@@ -407,6 +599,15 @@ async def export_calls(
     fields = _validate_export_fields(payload.fields)
 
     filters = _build_search_filters(ctx.tenant_id, payload.filters)
+    analysis_ids = await _analysis_call_ids(session, ctx.tenant_id, payload.filters)
+    if analysis_ids is not None:
+        from sqlalchemy import true as _true
+
+        if payload.filters.analysis == "not_exists":
+            filters.append(Call.id.notin_(analysis_ids) if analysis_ids else _true())
+        else:
+            filters.append(Call.id.in_(analysis_ids) if analysis_ids else Call.id.is_(None))
+
     rows_q = await session.execute(
         select(Call).where(*filters).order_by(Call.started_at.desc()).offset(payload.offset).limit(payload.limit)
     )
@@ -415,10 +616,15 @@ async def export_calls(
     exported = []
     for r in rows:
         d = _call_to_dict(r)
-        # Filter fields
+        # Custom columns: the caller chooses the order, the allowlist decides
+        # what exists. A field that is not allowed is rejected above, not dropped
+        # here -- a silently missing column is a wrong export, not a smaller one.
         filtered = {k: v for k, v in d.items() if k in fields}
-        # Privacy
-        filtered = _apply_privacy(filtered, payload.redact_pii)
+        if payload.sign_recordings and "recording_url" in filtered:
+            filtered["recording_url"] = sign_recording_url(
+                r.id, ttl_seconds=payload.recording_url_ttl_seconds
+            ) if r.recording_url else None
+        filtered = _apply_privacy(filtered, payload.redact_pii and not payload.sign_recordings)
         exported.append(filtered)
 
     if payload.format == "json":
@@ -1107,3 +1313,203 @@ async def policies_health(
         "status": "healthy",
         "at": _now_iso(),
     }
+
+
+# ---------------------------------------------------------------------------
+# PART 15 (P15-07) — signed recording access and saved views
+#
+# A recording URL from the provider is a bearer token in disguise: anyone who
+# has the string has the audio. Export therefore hands out a URL signed by this
+# platform with an expiry, and the raw URL never leaves the server.
+# ---------------------------------------------------------------------------
+
+RECORDING_ACCESS_PATH = "/api/calls/{call_id}/recording-access"
+
+
+def _recording_signature(call_id: uuid.UUID, expires_at: int) -> str:
+    """HMAC-SHA256 over ``call_id:expiry`` with the deployment secret."""
+    import hashlib
+    import hmac
+
+    from app.core.config import settings
+
+    message = f"{call_id}:{expires_at}".encode()
+    return hmac.new(settings.secret_key.encode(), message, hashlib.sha256).hexdigest()
+
+
+def sign_recording_url(call_id: uuid.UUID, *, ttl_seconds: int = 900) -> str:
+    """Build a signed, expiring access path for one call's recording."""
+    import time
+
+    expires_at = int(time.time()) + max(60, int(ttl_seconds))
+    signature = _recording_signature(call_id, expires_at)
+    return (
+        RECORDING_ACCESS_PATH.format(call_id=call_id)
+        + f"?expires={expires_at}&signature={signature}"
+    )
+
+
+def verify_recording_signature(call_id: uuid.UUID, expires_at: int, signature: str) -> bool:
+    """Constant-time check plus expiry. A bad signature and an expired one fail the same way."""
+    import time
+
+    if expires_at < int(time.time()):
+        return False
+    return hmac_compare(_recording_signature(call_id, expires_at), signature)
+
+
+def hmac_compare(expected: str, provided: str) -> bool:
+    import hmac
+
+    return hmac.compare_digest(expected, provided or "")
+
+
+@router.get("/{call_id}/recording-access")
+async def get_recording_access(
+    call_id: uuid.UUID,
+    expires: int = Query(ge=0),
+    signature: str = Query(min_length=16, max_length=128),
+    session: AsyncSession = Depends(get_session),
+):
+    """Exchange a signed path for the provider's recording URL.
+
+    Deliberately unauthenticated: the signature *is* the credential, it expires,
+    and it is scoped to one call id. Requiring a bearer token here would make the
+    link useless to the browser's audio element, which is the point of signing.
+    """
+    from fastapi.responses import RedirectResponse
+
+    if not verify_recording_signature(call_id, expires, signature):
+        raise HTTPException(
+            status_code=403, detail={"code": "invalid_signature", "message": "signature invalid or expired"}
+        )
+    row = await session.get(Call, call_id)
+    if row is None or not row.recording_url:
+        raise HTTPException(status_code=404, detail={"code": "not_found", "message": "no recording"})
+    return RedirectResponse(url=row.recording_url, status_code=302)
+
+
+class SavedViewBody(BaseModel):
+    model_config = ConfigDict(extra="forbid", protected_namespaces=())
+
+    name: str = Field(min_length=1, max_length=120)
+    filters: Dict[str, Any] = Field(default_factory=dict)
+    columns: List[str] = Field(default_factory=list)
+    shared: bool = False
+
+
+def _saved_view_dict(row: Any) -> Dict[str, Any]:
+    return {
+        "id": str(row.id),
+        "name": row.name,
+        "filters": dict(row.filters or {}),
+        "columns": list(row.columns or []),
+        "shared": bool(row.shared),
+        "owner_user_id": str(row.owner_user_id) if row.owner_user_id else None,
+        "created_at": row.created_at.isoformat() if row.created_at else None,
+        "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+    }
+
+
+@router.get("/saved-views")
+async def list_saved_views(
+    ctx: TenantContext = Depends(require_permission(Permission.CALL_READ)),
+    session: AsyncSession = Depends(get_session),
+):
+    """Views the caller saved, plus the shared ones."""
+    from app.db.monitoring_models import CallSavedView
+
+    rows = (
+        await session.scalars(
+            select(CallSavedView)
+            .where(
+                CallSavedView.tenant_id == ctx.tenant_id,
+                or_(
+                    CallSavedView.shared.is_(True),
+                    CallSavedView.owner_user_id == ctx.user_id,
+                    CallSavedView.owner_user_id.is_(None),
+                ),
+            )
+            .order_by(CallSavedView.name)
+        )
+    ).all()
+    return {"views": [_saved_view_dict(row) for row in rows]}
+
+
+@router.post("/saved-views", status_code=201)
+async def create_saved_view(
+    payload: SavedViewBody,
+    ctx: TenantContext = Depends(require_permission(Permission.CALL_READ)),
+    session: AsyncSession = Depends(get_session),
+):
+    """Save the current filter set.
+
+    The filters are validated by constructing a ``CallSearchRequest`` from them,
+    so a saved view can never store a filter the search endpoint would reject.
+    """
+    from app.db.monitoring_models import CallSavedView
+
+    try:
+        CallSearchRequest(**payload.filters)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=422,
+            detail={"code": "invalid_filters", "message": str(exc)[:300]},
+        ) from None
+    invalid = [column for column in payload.columns if column not in ALLOWED_EXPORT_FIELDS]
+    if invalid:
+        raise HTTPException(
+            status_code=422,
+            detail={"code": "invalid_columns", "message": f"unknown columns: {invalid}"},
+        )
+    existing = await session.scalar(
+        select(CallSavedView).where(
+            CallSavedView.tenant_id == ctx.tenant_id, CallSavedView.name == payload.name
+        )
+    )
+    if existing is not None:
+        if existing.owner_user_id not in (None, ctx.user_id):
+            raise HTTPException(
+                status_code=409,
+                detail={"code": "name_taken", "message": "another user saved a view with this name"},
+            )
+        existing.filters = dict(payload.filters)
+        existing.columns = list(payload.columns)
+        existing.shared = payload.shared
+        await session.commit()
+        await session.refresh(existing)
+        return _saved_view_dict(existing)
+
+    row = CallSavedView(
+        tenant_id=ctx.tenant_id,
+        owner_user_id=ctx.user_id,
+        name=payload.name.strip(),
+        filters=dict(payload.filters),
+        columns=list(payload.columns),
+        shared=payload.shared,
+    )
+    session.add(row)
+    await session.commit()
+    await session.refresh(row)
+    return _saved_view_dict(row)
+
+
+@router.delete("/saved-views/{view_id}", status_code=204)
+async def delete_saved_view(
+    view_id: uuid.UUID,
+    ctx: TenantContext = Depends(require_permission(Permission.CALL_READ)),
+    session: AsyncSession = Depends(get_session),
+):
+    from app.db.monitoring_models import CallSavedView
+
+    row = await session.get(CallSavedView, view_id)
+    if row is None or row.tenant_id != ctx.tenant_id:
+        raise HTTPException(status_code=404, detail={"code": "not_found"})
+    if row.owner_user_id not in (None, ctx.user_id):
+        raise HTTPException(
+            status_code=403,
+            detail={"code": "not_owner", "message": "only the owner may delete a saved view"},
+        )
+    await session.delete(row)
+    await session.commit()
+    return None

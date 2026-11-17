@@ -1,0 +1,2915 @@
+{
+  "info": {
+    "_postman_id": "c82622e4-69ac-5d87-b494-33e32e2a35c7",
+    "name": "VoxDesk Published API",
+    "description": "Generated from the FastAPI OpenAPI schema: 93 published operations. Internal endpoints are excluded. Set baseUrl and accessToken before use; public widget/demo endpoints have their own key and abuse-gate requirements.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "asset_id",
+      "value": "replace-me",
+      "type": "string"
+    },
+    {
+      "key": "domain_id",
+      "value": "replace-me",
+      "type": "string"
+    },
+    {
+      "key": "key_id",
+      "value": "replace-me",
+      "type": "string"
+    },
+    {
+      "key": "name",
+      "value": "replace-me",
+      "type": "string"
+    },
+    {
+      "key": "provider",
+      "value": "replace-me",
+      "type": "string"
+    },
+    {
+      "key": "public_key",
+      "value": "replace-me",
+      "type": "string"
+    },
+    {
+      "key": "sender_id",
+      "value": "replace-me",
+      "type": "string"
+    },
+    {
+      "key": "session_id",
+      "value": "replace-me",
+      "type": "string"
+    },
+    {
+      "key": "slug",
+      "value": "dental-receptionist",
+      "type": "string"
+    },
+    {
+      "key": "template_id",
+      "value": "receptionist",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "replace-me",
+      "type": "string"
+    },
+    {
+      "key": "version_id",
+      "value": "replace-me",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "/api/v1/public",
+      "item": [
+        {
+          "name": "GET /api/v1/public/analytics/summary — Get Public Analytics Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public/analytics/summary"
+            },
+            "description": "Get Public Analytics Summary\n\nKeep tenant-private metrics out of the public endpoint; no synthetic zeros."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/public/chat/budget — Budget",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public/chat/budget",
+              "query": [
+                {
+                  "key": "public_key",
+                  "value": "replace-me",
+                  "description": "",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Budget\n\nToday's counters for this key. Read-only; consumes nothing."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/public/chat/session — Create Chat Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public/chat/session"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"captcha_token\": \"03AGdBq...\",\n  \"origin\": \"https://acme.example.com\",\n  \"public_key\": \"vd_pk_live_9f2c...\",\n  \"visitor_id\": \"v-8f21\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Create Chat Session\n\nOpen a chat session for the embedded chat widget.\n\nGates run cheapest-first — key and origin, then toll-fraud heuristics, then captcha, then the daily budget — so a bot cannot make the server do expensive work before being refused.\n\nReview example values and replace placeholders before sending."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/public/contact-sales — Submit Contact Sales",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public/contact-sales"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"{{full_name}}\",\n  \"work_email\": \"{{work_email}}\",\n  \"company_name\": \"{{company_name}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Submit Contact Sales\n\nContact-sales submission, rate limited per IP.\n\nReview example values and replace placeholders before sending."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/public/demo — Demo Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public/demo"
+            },
+            "description": "Demo Status\n\nEverything the public page needs, and nothing about any tenant."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/public/demo/call — Create Demo Call",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public/demo/call"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"captcha_token\": \"03AGdBq...\",\n  \"consent\": true,\n  \"consent_version\": \"2026-11-08\",\n  \"number\": \"+15550100111\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Create Demo Call\n\nPlace one demo call, or explain precisely why not.\n\nReview example values and replace placeholders before sending."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/public/demo/verification — Request Verification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public/demo/verification"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"number\": \"+15550100111\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Request Verification\n\nSend a one-time code to a number the visitor claims to control.\n\nNothing is dialled until that code is confirmed, which is what stops the demo being pointed at somebody else's phone.\n\nReview example values and replace placeholders before sending."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/public/demo/verification/confirm — Confirm Verification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public/demo/verification/confirm"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"482913\",\n  \"number\": \"+15550100111\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Confirm Verification\n\nConfirm the code and add the number to the demo allow-list.\n\nSingle use, expires in 15 minutes, and five wrong attempts lock the number until a new code is requested.\n\nReview example values and replace placeholders before sending."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/public/health — Public Health",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public/health"
+            },
+            "description": "Public Health\n\nReport this endpoint's liveness without implying DB/cache/provider readiness."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/public/home — Get Public Home",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public/home"
+            },
+            "description": "Get Public Home\n\nReturn public labels and route-registration evidence, not runtime readiness."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/public/share/session/verify — Verify",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public/share/session/verify"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{token}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Verify\n\nValidate a session token minted by `/redeem`.\n\nThe voice and chat bootstraps call this instead of trusting the browser's\ncopy of the claims: an expired or tampered token has to be refused by the\nserver, not by a client that had already given up.\n\nReview example values and replace placeholders before sending."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/public/share/{token} — Describe",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public/share/{{token}}"
+            },
+            "description": "Describe\n\nWhat this link is, without consuming a use."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/public/share/{token}/redeem — Redeem",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public/share/{{token}}/redeem"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"passcode\": \"{{passcode}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Redeem\n\nConsume one use and return a short-lived session token.\n\nReview example values and replace placeholders before sending."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/public/site/manifest — Public Site Manifest",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public/site/manifest"
+            },
+            "description": "Public Site Manifest\n\nPublic route manifest for the marketing site."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/public/site/pricing — Public Site Pricing",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public/site/pricing"
+            },
+            "description": "Public Site Pricing\n\nPublic pricing data, generated from the plan catalogue so the page cannot quote a price the product will not charge."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/public/site/route-boundary — Public Route Boundary Check",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public/site/route-boundary",
+              "query": [
+                {
+                  "key": "path",
+                  "value": "/",
+                  "description": "",
+                  "disabled": true
+                },
+                {
+                  "key": "authenticated",
+                  "value": "False",
+                  "description": "",
+                  "disabled": true
+                },
+                {
+                  "key": "next",
+                  "value": "replace-me",
+                  "description": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Public Route Boundary Check\n\nWhether a path belongs to the marketing site or the application, so the edge never shows a marketing page to a signed-in user."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/public/site/status — Public Site Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public/site/status"
+            },
+            "description": "Public Site Status\n\nPublic status summary. Component names and up/degraded only — never internals, never tenant data."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/public/use-cases — List Use Cases",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public/use-cases",
+              "query": [
+                {
+                  "key": "q",
+                  "value": "replace-me",
+                  "description": "Search query",
+                  "disabled": true
+                },
+                {
+                  "key": "category",
+                  "value": "replace-me",
+                  "description": "Category filter",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "",
+                  "disabled": true
+                },
+                {
+                  "key": "page_size",
+                  "value": "24",
+                  "description": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "List Use Cases\n\nGET /api/v1/public/use-cases — Public catalog with search, category filter, pagination.\nQuery params validated via UseCaseQuery schema, safe, no tenant data."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/public/use-cases/categories — List Categories",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public/use-cases/categories"
+            },
+            "description": "List Categories\n\nGET /api/v1/public/use-cases/categories — Backend-driven category list, no invented counts."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/public/use-cases/health — Health",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public/use-cases/health"
+            },
+            "description": "Health\n\nPublic health check"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/public/use-cases/{slug} — Get Use Case Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public/use-cases/{{slug}}"
+            },
+            "description": "Get Use Case Detail\n\nGET /api/v1/public/use-cases/{slug} — Detail page, supports direct deep links.\nSlug validated, safe, no tenant leakage."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/public/voice-demo/session — Create Voice Demo Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public/voice-demo/session"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenant_id\": \"{{tenant_id}}\",\n  \"metadata\": {},\n  \"ttl_seconds\": 5.0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Create Voice Demo Session\n\nCreate a durable DB-backed public voice demo session with an HMAC session token.\n\nReview example values and replace placeholders before sending."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/public/voice-demo/session/{session_id} — Get Voice Demo Session",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Demo-Session-Token",
+                "value": "replace-me",
+                "description": ""
+              },
+              {
+                "key": "Authorization",
+                "value": "replace-me",
+                "description": ""
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public/voice-demo/session/{{session_id}}",
+              "query": [
+                {
+                  "key": "token",
+                  "value": "replace-me",
+                  "description": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get Voice Demo Session\n\nReturn durable public demo session state (requires valid HMAC session token)."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/public/voice-demo/session/{session_id}/end — End Voice Demo Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Demo-Session-Token",
+                "value": "replace-me",
+                "description": ""
+              },
+              {
+                "key": "Authorization",
+                "value": "replace-me",
+                "description": ""
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public/voice-demo/session/{{session_id}}/end",
+              "query": [
+                {
+                  "key": "token",
+                  "value": "replace-me",
+                  "description": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "End Voice Demo Session\n\nTerminate an active public voice demo session."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/public/voice-demo/session/{session_id}/event — Post Voice Demo Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Demo-Session-Token",
+                "value": "replace-me",
+                "description": ""
+              },
+              {
+                "key": "Authorization",
+                "value": "replace-me",
+                "description": ""
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public/voice-demo/session/{{session_id}}/event",
+              "query": [
+                {
+                  "key": "token",
+                  "value": "replace-me",
+                  "description": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"start\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Post Voice Demo Event\n\nProcess a verified voice-demo lifecycle event (start/turn/interrupt/stop) against PostgreSQL/SQLite.\n\nReview example values and replace placeholders before sending."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/public/voice-demo/session/{session_id}/turn — Post Voice Demo Turn",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Demo-Session-Token",
+                "value": "replace-me",
+                "description": ""
+              },
+              {
+                "key": "Authorization",
+                "value": "replace-me",
+                "description": ""
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public/voice-demo/session/{{session_id}}/turn",
+              "query": [
+                {
+                  "key": "token",
+                  "value": "replace-me",
+                  "description": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"{{text}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Post Voice Demo Turn\n\nProcess one conversational demo turn against the persisted session.\n\nReview example values and replace placeholders before sending."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/public/widget/chat.js — Get Widget Chat Js",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public/widget/chat.js"
+            },
+            "description": "Get Widget Chat Js\n\nServe the text chat widget (`widget/chat.js`).\n\nSame origin, same headers as `embed.js`: a customer embedding the chat\nwidget must not have to whitelist a second host, and the file must not be\nsniffed into another type."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/public/widget/config — Get Widget Config",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-VoxDesk-Public-Key",
+                "value": "replace-me",
+                "description": ""
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public/widget/config",
+              "query": [
+                {
+                  "key": "public_key",
+                  "value": "replace-me",
+                  "description": "",
+                  "disabled": true
+                },
+                {
+                  "key": "origin",
+                  "value": "replace-me",
+                  "description": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get Widget Config\n\nConfiguration for an embedded widget, resolved from the request Origin.\n\nReturns only what a web page may know: product name, colours, position and the session endpoint. A key presented from an origin not on the key's allowlist is refused."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/public/widget/embed.js — Get Widget Embed Js",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public/widget/embed.js"
+            },
+            "description": "Get Widget Embed Js\n\nServe the CSP-safe embeddable widget loader (`widget/embed.js`)."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/public/widget/sessions — Start Widget Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-VoxDesk-Public-Key",
+                "value": "replace-me",
+                "description": ""
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public/widget/sessions"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"public_key\": \"{{public_key}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Start Widget Session\n\nOpen a widget session.\n\nThe only unauthenticated route that can spend money, so it passes the abuse gates — captcha, budget, toll-fraud heuristics — before a session row exists. Every refusal names the gate that fired.\n\nReview example values and replace placeholders before sending."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/public/widget/sessions/{session_id} — Read Widget Session",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-VoxDesk-Widget-Session",
+                "value": "replace-me",
+                "description": ""
+              },
+              {
+                "key": "authorization",
+                "value": "replace-me",
+                "description": ""
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public/widget/sessions/{{session_id}}"
+            },
+            "description": "Read Widget Session\n\nRead a widget session's state and turns.\n\nThe session token is the credential; there is no other lookup path."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/public/widget/sessions/{session_id}/end — Terminate Widget Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-VoxDesk-Widget-Session",
+                "value": "replace-me",
+                "description": ""
+              },
+              {
+                "key": "authorization",
+                "value": "replace-me",
+                "description": ""
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public/widget/sessions/{{session_id}}/end"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"visitor_ended\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Terminate Widget Session\n\nEnd a widget session. Idempotent; ending an ended session returns its final state.\n\nReview example values and replace placeholders before sending."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/public/widget/sessions/{session_id}/messages — Post Widget Session Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-VoxDesk-Widget-Session",
+                "value": "replace-me",
+                "description": ""
+              },
+              {
+                "key": "authorization",
+                "value": "replace-me",
+                "description": ""
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public/widget/sessions/{{session_id}}/messages"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"{{content}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Post Widget Session Message\n\nSend one visitor message and return the agent's reply.\n\nBlocking on purpose: a widget that returns a message id and polls is a widget that feels broken.\n\nReview example values and replace placeholders before sending."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/public/widget/voice-bootstrap — Create Widget Voice Bootstrap",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-VoxDesk-Public-Key",
+                "value": "replace-me",
+                "description": ""
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public/widget/voice-bootstrap"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"public_key\": \"{{public_key}}\",\n  \"origin\": \"{{origin}}\",\n  \"dynamic_vars\": {},\n  \"metadata\": {}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Create Widget Voice Bootstrap\n\nReturn the real web-call bootstrap (public key + origin check) when configured, or NOT_CONFIGURED otherwise.\n\nReview example values and replace placeholders before sending."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "/api/v1/public-keys",
+      "item": [
+        {
+          "name": "GET /api/v1/public-keys — List Widget Public Keys",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public-keys",
+              "query": [
+                {
+                  "key": "agent_id",
+                  "value": "replace-me",
+                  "description": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "List Widget Public Keys\n\nList this workspace's widget public keys.\n\nNever returns the key itself — only its prefix, label, allowed origins and last-used timestamp."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/public-keys — Create Widget Public Key",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public-keys"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"agent_id\": \"{{agent_id}}\",\n  \"name\": \"{{name}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Create Widget Public Key\n\nCreate a public key for the embedded widget.\n\nThe plaintext key is returned **once**. Only its hash is stored, so a database dump cannot be used to impersonate a widget.\n\nReview example values and replace placeholders before sending."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/public-keys/{key_id} — Get Widget Public Key",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public-keys/{{key_id}}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Get Widget Public Key\n\nRead one widget public key by id.\n\nScoped to the caller's workspace; an id belonging to another workspace is a 404, not a 403, so the endpoint cannot be used to enumerate ids."
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/v1/public-keys/{key_id} — Update Widget Public Key",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public-keys/{{key_id}}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{name}}\",\n  \"allowed_origins\": [\n    \"{{allowed_origins}}\"\n  ],\n  \"allowed_capabilities\": [\n    \"{{allowed_capabilities}}\"\n  ],\n  \"rate_limit_per_minute\": 1.0,\n  \"session_ttl_seconds\": 60.0,\n  \"require_published_agent\": true,\n  \"widget_config\": {\n    \"title\": \"Talk with our AI Assistant\",\n    \"subtitle\": \"Ask a question or start a live voice session\",\n    \"greeting\": \"Hello! How can I help you today?\",\n    \"placeholder\": \"Type your message...\",\n    \"primary_color\": \"#2563eb\",\n    \"position\": \"bottom-right\",\n    \"enable_chat\": true,\n    \"enable_voice\": true,\n    \"show_branding\": true,\n    \"captcha\": {\n      \"enabled\": true,\n      \"provider\": \"recaptcha_v3\",\n      \"threshold\": 0.5,\n      \"site_key\": \"\"\n    },\n    \"budget\": {\n      \"daily_requests\": 500,\n      \"daily_seconds\": 3600\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Update Widget Public Key\n\nUpdate a key's label, allowed origins or agent binding.\n\nReview example values and replace placeholders before sending."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/public-keys/{key_id}/revoke — Revoke Widget Public Key",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public-keys/{{key_id}}/revoke"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"manual_revocation\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Revoke Widget Public Key\n\nRevoke a public key immediately.\n\nIdempotent: revoking an already-revoked key succeeds and changes nothing.\n\nReview example values and replace placeholders before sending."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/public-keys/{key_id}/rotate — Rotate Widget Public Key",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/public-keys/{{key_id}}/rotate"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"routine_rotation\",\n  \"allowed_origins\": [\n    \"{{allowed_origins}}\"\n  ],\n  \"expires_in_days\": 1.0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Rotate Widget Public Key\n\nRotate a public key, returning the new plaintext once.\n\nThe previous key keeps working for a grace window so a tenant's live site does not break mid-deploy; revoke it explicitly to end that window early.\n\nReview example values and replace placeholders before sending."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "/api/billing",
+      "item": [
+        {
+          "name": "GET /api/billing — Get Billing",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/billing"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Get Billing\n\nRead this workspace's billing status.\n\nReturns the plan, subscription state, current period and the estimated overage for the period so far. Every field is an allowlist: no provider identifiers, no API keys, no payment instrument."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/billing/ — Get Billing",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/billing/"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Get Billing\n\nRead this workspace's billing status.\n\nReturns the plan, subscription state, current period and the estimated overage for the period so far. Every field is an allowlist: no provider identifiers, no API keys, no payment instrument."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/billing/cancel — Cancel Subscription",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/billing/cancel"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"moving to a self-hosted deployment\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Cancel Subscription\n\nCancel at the end of the current period.\n\nImmediate cancellation is deliberately not offered: it would forfeit usage the customer has already been billed for.\n\nReview example values and replace placeholders before sending."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/billing/change-plan — Change Plan",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/billing/change-plan"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"interval\": \"month\",\n  \"plan_code\": \"growth\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Change Plan\n\nUpgrade immediately, or schedule a downgrade for the period end.\n\nThe policy is implemented once, in `service.change_plan`, and documented\nthere and in `docs/BILLING.md`.\n\nReview example values and replace placeholders before sending."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/billing/checkout — Start Checkout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/billing/checkout"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"interval\": \"month\",\n  \"plan_code\": \"growth\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Start Checkout\n\nBegin a purchase.\n\nReturns a URL and nothing else. **No subscription state is established\nhere** — a browser reaching the success URL has proved only that it\nreached a URL. Only a verified webhook makes a subscription active.\n\nReview example values and replace placeholders before sending."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/billing/invoice/lines — Itemised Invoice Lines",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/billing/invoice/lines"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Itemised Invoice Lines\n\nThis period's usage, priced per component against the current book."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/billing/invoices — List Invoices",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/billing/invoices",
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "List Invoices\n\nInvoice metadata.\n\nServed from the local mirror rather than by calling Stripe on every page\nload: it is faster, it works when Stripe is down, and it keeps the API\nkey out of a read path that a dashboard polls."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/billing/license/issue — Issue",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/billing/license/issue"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expires_in_days\": 365,\n  \"plan\": \"self_hosted_enterprise\",\n  \"seats\": 25\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Issue\n\nMint a signed licence for a self-hosted installation.\n\nOwner-only. The signature is HMAC over the licence claims, so the installation can verify itself offline.\n\nReview example values and replace placeholders before sending."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/billing/license/verify — Verify",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/billing/license/verify"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"license\": \"eyJhbGciOiJIUzI1NiJ9...\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Verify\n\nVerify a licence signature and its claims.\n\nUnauthenticated because a self-hosted installation has no account with us; the signature is the credential.\n\nReview example values and replace placeholders before sending."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/billing/margin — Margin Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/billing/margin"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Margin Report\n\nCost against charge for this period — the reseller's view.\n\nA tenant administrator sees their own margin (they are the reseller to\n*their* customers). Nobody sees another tenant's: the query is scoped to\n``ctx.tenant_id`` exactly like every other read here."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/billing/plans — List Plans",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/billing/plans"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "List Plans\n\nList the plans a workspace can buy.\n\nServer-owned catalogue. A browser can name a plan *code* but never a price; the code is resolved to a provider price id server-side."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/billing/portal — Open Portal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/billing/portal"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Open Portal\n\nOpen the customer portal for **the authenticated tenant's** customer.\n\nThere is no request body. The external customer id is read from the\ntenant's own row, so there is no parameter through which another tenant's\nid could be supplied (requirement 9)."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/billing/price-book — Get Price Book",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/billing/price-book",
+              "query": [
+                {
+                  "key": "version",
+                  "value": "replace-me",
+                  "description": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Get Price Book\n\nThe price book in force now, or a specific published version."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/billing/price-book — Publish Price Book",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/billing/price-book"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"version\": \"{{version}}\",\n  \"effective_from\": \"2026-11-08\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Publish Price Book\n\nPublish a new immutable version. Existing versions are never edited.\n\nThere is no PATCH and no DELETE on purpose: an invoice that cites version\n``2026-01`` must still mean the same numbers a year later.\n\nGuarded by ``get_platform_admin``, which currently denies every principal:\nprices are deploy-scoped, so a tenant administrator must not move them for\neveryone. Until a platform-operator principal exists, a price change is a\nrelease — see ``docs/PRICE_BOOK.md``. Denying is the correct interim\nbehaviour; inventing a superuser flag to make the endpoint \"work\" would be a\nprivilege-escalation hole hidden behind a convenience.\n\nReview example values and replace placeholders before sending."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/billing/price-book/versions — List Price Book Versions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/billing/price-book/versions"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "List Price Book Versions\n\nEvery published price-book version, oldest first.\n\nVersions are immutable. An invoice cites the version it was priced with, so re-deriving an old invoice reproduces the old numbers exactly."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/billing/reconcile — Reconcile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/billing/reconcile"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Reconcile\n\nRe-read the provider and rebuild the usage cache.\n\nThe \"something looks wrong\" button. Safe by construction: the provider is\nalways authoritative on subscription state, and rebuilding a summary only\ntouches a cache."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/billing/usage — Get Usage",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/billing/usage"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Get Usage\n\nMetered usage for the current billing period.\n\nOne entry per metric with included, used, remaining and overage. The counters come from append-only usage events, so the figure is reproducible after any dispute."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/billing/usage/by-provider — Usage By Provider",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/billing/usage/by-provider"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Usage By Provider\n\nUsage split by provider and by day, from the same rows.\n\nOne query, one pivot: a \"by day\" chart computed separately from the \"by\nprovider\" table is how the two disagree by a few minutes and the customer\nnotices before we do."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/billing/webhook/{provider} — Receive Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/billing/webhook/{{provider}}"
+            },
+            "description": "Receive Webhook\n\nProvider events.\n\nUnauthenticated by necessity — Stripe has no VoxDesk credential — and\ntherefore **signature-verified before anything else**.\n\n`await request.body()` gives the exact bytes as received. Nothing parses\nthe JSON before verification: requirement 21 is explicit that a\nre-serialized body invalidates the signature, and reading `request.json()`\nhere would silently make every signature check meaningless.\n\nAlways returns 2xx once the signature passes. A non-2xx makes Stripe\nretry, and retrying an event we have already recorded, or one nobody will\never handle, is pure noise. Genuine handler failures are the exception:\nthose return 500 so Stripe *does* retry."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "/api/whitelabel",
+      "item": [
+        {
+          "name": "GET /api/whitelabel/assets — List Assets",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whitelabel/assets"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "List Assets\n\nList uploaded brand assets (logos, favicons)."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/whitelabel/assets — Upload Asset",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whitelabel/assets"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": null,
+                  "description": "Select a file."
+                },
+                {
+                  "key": "kind",
+                  "type": "text",
+                  "value": "{{kind}}",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Upload Asset\n\nUpload a logo or favicon. The bytes are validated and SVGs are sanitised.\n\nReview example values and replace placeholders before sending."
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/whitelabel/assets/{asset_id} — Delete Asset",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whitelabel/assets/{{asset_id}}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Delete Asset\n\nDelete a brand asset. A theme still referencing it falls back to no logo rather than a broken image."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/whitelabel/assets/{asset_id} — Read Asset",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whitelabel/assets/{{asset_id}}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Read Asset\n\nAsset metadata by id."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/whitelabel/assets/{asset_id}/content — Read Asset Content",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whitelabel/assets/{{asset_id}}/content"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Read Asset Content\n\nServe the stored bytes with the sniffed content type and a tight CSP."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/whitelabel/branding — Read Branding",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whitelabel/branding",
+              "query": [
+                {
+                  "key": "surface",
+                  "value": "ui",
+                  "description": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Read Branding\n\nThis tenant's branding, projected for one surface.\n\n``GET /theme`` returns the raw payload an editor edits. This returns what a\n*renderer* needs and nothing else: CSS custom properties, document metadata,\nor the widget's config, plus a ``coverage`` block naming any field that still\ncarries the vendor's name. The distinction matters because a support engineer\nanswering \"why does my dashboard still say VoxDesk\" needs the projection and\nits coverage report, not the theme JSON."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/whitelabel/domains — List Domains",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whitelabel/domains",
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "replace-me",
+                  "description": "",
+                  "disabled": true
+                },
+                {
+                  "key": "offset",
+                  "value": "replace-me",
+                  "description": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "List Domains\n\nList this workspace's claimed hostnames.\n\nIncludes their verification and certificate state, so an operator can see which are live."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/whitelabel/domains — Claim Domain",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whitelabel/domains"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"domain\": \"{{domain}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Claim Domain\n\nClaim a hostname. The ownership token is returned **once**, in this response.\n\nReview example values and replace placeholders before sending."
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/whitelabel/domains/{domain_id} — Delete Domain",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whitelabel/domains/{{domain_id}}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Delete Domain\n\nRelease a hostname claim.\n\nAfter this the hostname resolves to nothing and will receive no branded document."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/whitelabel/domains/{domain_id} — Read Domain",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whitelabel/domains/{{domain_id}}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Read Domain\n\nRead one hostname's claim."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/whitelabel/domains/{domain_id}/certificate — Read Certificate",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whitelabel/domains/{{domain_id}}/certificate"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Read Certificate\n\nThe certificate state for one hostname.\n\nA certificate is only issued after the domain is ACTIVE; before that this reports the reason rather than a placeholder."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/whitelabel/domains/{domain_id}/checks — Read Domain Checks",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whitelabel/domains/{{domain_id}}/checks",
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "replace-me",
+                  "description": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Read Domain Checks\n\nThe DNS checks for one hostname, with the resolver answers that produced them."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/whitelabel/domains/{domain_id}/disable — Disable Domain",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whitelabel/domains/{{domain_id}}/disable"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Disable Domain\n\nStop serving one hostname immediately.\n\nThe reason is recorded in the audit trail; the claim itself is kept so re-enabling does not require DNS proof again.\n\nReview example values and replace placeholders before sending."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/whitelabel/domains/{domain_id}/enable — Enable Domain",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whitelabel/domains/{{domain_id}}/enable"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Enable Domain\n\nResume serving a disabled hostname."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/whitelabel/domains/{domain_id}/refresh-certificate — Refresh Certificate",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whitelabel/domains/{{domain_id}}/refresh-certificate"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Refresh Certificate\n\nRequest a renewed certificate for one hostname."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/whitelabel/domains/{domain_id}/verify — Verify Domain",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whitelabel/domains/{{domain_id}}/verify"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{token}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Verify Domain\n\nRe-run the DNS checks for one hostname.\n\nIdempotent; a claim that already passes returns ACTIVE without changing anything.\n\nReview example values and replace placeholders before sending."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/whitelabel/email-domains — List Sender Domains",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whitelabel/email-domains"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "List Sender Domains\n\nList verified sending domains for outgoing email."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/whitelabel/email-domains — Create Sender Domain",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whitelabel/email-domains"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"domain\": \"{{domain}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Create Sender Domain\n\nClaim a sending domain.\n\nSending stays off until SPF, DKIM and DMARC all pass; this endpoint returns the records to publish.\n\nReview example values and replace placeholders before sending."
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/whitelabel/email-domains/{sender_id} — Delete Sender Domain",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whitelabel/email-domains/{{sender_id}}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Delete Sender Domain\n\nRemove a sending domain."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/whitelabel/email-domains/{sender_id}/records — Read Sender Records",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whitelabel/email-domains/{{sender_id}}/records"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Read Sender Records\n\nThe DNS records a sending domain must publish."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/whitelabel/email-domains/{sender_id}/verify — Verify Sender Domain",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whitelabel/email-domains/{{sender_id}}/verify"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Verify Sender Domain\n\nRe-check a sending domain's DNS records."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/whitelabel/public/widget/{public_key}/config — Public Widget Config",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Origin",
+                "value": "replace-me",
+                "description": ""
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whitelabel/public/widget/{{public_key}}/config"
+            },
+            "description": "Public Widget Config\n\nWidget configuration for an authorised embedding origin."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/whitelabel/public/widget/{public_key}/loader.js — Public Widget Loader",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whitelabel/public/widget/{{public_key}}/loader.js"
+            },
+            "description": "Public Widget Loader\n\nThe script a tenant's site loads.\n\nResolved from ``Host`` **and** the public key: the host decides the tenant, the\nkey is checked against that tenant so a key copied from one tenant's page\ncannot be used to pull another tenant's theme onto a domain that is not theirs.\nA host we do not serve is a 404 — never the default theme."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/whitelabel/templates — List Templates",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whitelabel/templates"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "List Templates\n\nThe branded email templates this deployment can render."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/whitelabel/templates/{name}/preview — Preview Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whitelabel/templates/{{name}}/preview"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"variables\": {}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Preview Template\n\nRender a branded email with the active theme, for the console's preview pane.\n\nReview example values and replace placeholders before sending."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/whitelabel/theme — Read Theme",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whitelabel/theme"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Read Theme\n\nThe theme payload an editor edits, plus its published version and the allowed fonts."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/whitelabel/theme — Publish Theme",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whitelabel/theme"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payload\": {}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Publish Theme\n\nPublish a new immutable theme version, optionally activating it.\n\nContrast is validated first; a theme that fails is refused with the failing pairs listed.\n\nReview example values and replace placeholders before sending."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/whitelabel/theme/validate — Validate Theme Endpoint",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whitelabel/theme/validate"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payload\": {}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Validate Theme Endpoint\n\nDry-run validation, so the editor can show contrast failures before saving.\n\nThis endpoint *reports*; it never raises. A theme editor that has to parse a 422\nto colour a field red is one that will show the failure in the wrong place, so\nthe errors come back in the body keyed by the field they belong to.\n\nReview example values and replace placeholders before sending."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/whitelabel/theme/versions — List Theme Versions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whitelabel/theme/versions"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "List Theme Versions\n\nTheme version history, newest first."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/whitelabel/theme/versions/{version_id}/activate — Activate Theme Version",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whitelabel/theme/versions/{{version_id}}/activate"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Activate Theme Version\n\nRepoint the active theme at an earlier version.\n\nA rollback is a pointer move: no row is rewritten, so the history stays intact."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/whitelabel/widget — Read Widget Admin",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/whitelabel/widget"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Read Widget Admin\n\nThe widget configuration as this workspace configured it.\n\nDistinct from the public endpoint, which resolves the same theme by request Host."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "/api/agent-templates",
+      "item": [
+        {
+          "name": "GET /api/agent-templates — List Templates",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/agent-templates"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "List Templates\n\nThe gallery. Flows are omitted: they are large and the list is a menu."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/agent-templates/{template_id} — Read Template",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/agent-templates/{{template_id}}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Read Template\n\nOne starter template in full: flow, tools, variables, analysis schema, simulation cases, compliance notes."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/agent-templates/{template_id}/instantiate — Instantiate Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/agent-templates/{{template_id}}/instantiate"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"config_overrides\": {\n    \"voice\": \"vd-voice-sadia\"\n  },\n  \"name\": \"Front desk — Dhaka\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Instantiate Template\n\nCreate a draft agent from a template.\n\nThe result is always a draft: a template that went straight to live would be a production agent nobody reviewed. 409 if the derived external key is already taken in this workspace.\n\nReview example values and replace placeholders before sending."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

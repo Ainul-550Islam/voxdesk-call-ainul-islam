@@ -1,0 +1,1 @@
+call_index,call_sid,status,caller_leg_p50_ms,caller_leg_p95_ms,stt_final_ms,llm_ttft_ms,tts_ttfb_ms,pipeline_e2e_ms,matched_turns,interruptions_detected,interruption_stop_ms,failure_reason

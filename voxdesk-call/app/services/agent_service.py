@@ -1965,6 +1965,26 @@ async def clone_agent_async(
         meta["cloned_from_agent_id"] = str(source_row.id)
         cloned.meta = meta
         await session.flush()
+        # PART 15 (P15-08): a clone starts with the parent's batch-test cases.
+        # A duplicate that silently loses its test cases looks like an agent
+        # with nothing to regress, which is exactly the agent nobody tests.
+        try:
+            from app.services import batch_test_service as _batch
+
+            await _batch.copy_cases(
+                session,
+                t_uuid,
+                from_agent_id=str(source_row.id),
+                to_agent_id=str(cloned.id),
+            )
+        except Exception as exc:  # a clone must not fail because a copy did
+            from app.core.logging import log as _log
+
+            _log.warning(
+                "agent_service.batch_case_copy_failed",
+                source_agent_id=str(source_row.id),
+                error_type=type(exc).__name__,
+            )
     return cloned
 
 

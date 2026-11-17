@@ -1,0 +1,199 @@
+{
+  "schema": "voxdesk.real_integrations/v1",
+  "generated_at": "2026-11-07T05:45:43Z",
+  "run_date": "2026-11-07",
+  "provider_fakes": false,
+  "providers": {
+    "hubspot": {
+      "provider": "hubspot",
+      "status": "SKIPPED_NO_CREDENTIALS",
+      "provider_fakes": false,
+      "test_node": "tests/real/test_hubspot_sandbox.py::test_hubspot_sandbox_upsert_contact_task_ticket_and_cleanup",
+      "recorded_at_utc": "2026-11-07T05:45:43Z",
+      "reason": "hubspot real integration skipped; missing VOXDESK_REAL_INTEGRATION=1, VOXDESK_REAL_HUBSPOT_TOKEN",
+      "missing_env": [
+        "VOXDESK_REAL_INTEGRATION=1",
+        "VOXDESK_REAL_HUBSPOT_TOKEN"
+      ],
+      "latency_ms": null,
+      "model": null,
+      "details": {}
+    },
+    "openai_realtime": {
+      "provider": "openai_realtime",
+      "status": "SKIPPED_NO_CREDENTIALS",
+      "provider_fakes": false,
+      "test_node": "tests/real/test_s2s_live.py::test_openai_realtime_s2s_audio_roundtrip_and_latency",
+      "recorded_at_utc": "2026-11-07T05:45:43Z",
+      "reason": "openai_realtime real integration skipped; missing VOXDESK_REAL_INTEGRATION=1, OPENAI_API_KEY",
+      "missing_env": [
+        "VOXDESK_REAL_INTEGRATION=1",
+        "OPENAI_API_KEY"
+      ],
+      "latency_ms": null,
+      "model": null,
+      "details": {}
+    },
+    "gemini_live": {
+      "provider": "gemini_live",
+      "status": "SKIPPED_NO_CREDENTIALS",
+      "provider_fakes": false,
+      "test_node": "tests/real/test_s2s_live.py::test_gemini_live_s2s_audio_roundtrip_and_latency",
+      "recorded_at_utc": "2026-11-07T05:45:43Z",
+      "reason": "gemini_live real integration skipped; missing VOXDESK_REAL_INTEGRATION=1, GOOGLE_API_KEY",
+      "missing_env": [
+        "VOXDESK_REAL_INTEGRATION=1",
+        "GOOGLE_API_KEY"
+      ],
+      "latency_ms": null,
+      "model": null,
+      "details": {}
+    },
+    "salesforce": {
+      "provider": "salesforce",
+      "status": "SKIPPED_NO_CREDENTIALS",
+      "provider_fakes": false,
+      "test_node": "tests/real/test_salesforce_sandbox.py::test_salesforce_sandbox_upsert_contact_task_case_and_cleanup",
+      "recorded_at_utc": "2026-11-07T05:45:43Z",
+      "reason": "salesforce real integration skipped; missing VOXDESK_REAL_INTEGRATION=1, SALESFORCE_CLIENT_ID, SALESFORCE_CLIENT_SECRET, SALESFORCE_REFRESH_TOKEN, SALESFORCE_INSTANCE_URL",
+      "missing_env": [
+        "VOXDESK_REAL_INTEGRATION=1",
+        "SALESFORCE_CLIENT_ID",
+        "SALESFORCE_CLIENT_SECRET",
+        "SALESFORCE_REFRESH_TOKEN",
+        "SALESFORCE_INSTANCE_URL"
+      ],
+      "latency_ms": null,
+      "model": null,
+      "details": {}
+    },
+    "deepgram": {
+      "provider": "deepgram",
+      "status": "SKIPPED_NO_CREDENTIALS",
+      "provider_fakes": false,
+      "test_node": "tests/real/test_stt_tts_llm_stream.py::test_deepgram_streaming_stt_ttfb",
+      "recorded_at_utc": "2026-11-07T05:45:43Z",
+      "reason": "deepgram real integration skipped; missing VOXDESK_REAL_INTEGRATION=1, DEEPGRAM_API_KEY",
+      "missing_env": [
+        "VOXDESK_REAL_INTEGRATION=1",
+        "DEEPGRAM_API_KEY"
+      ],
+      "latency_ms": null,
+      "model": null,
+      "details": {}
+    },
+    "elevenlabs": {
+      "provider": "elevenlabs",
+      "status": "SKIPPED_NO_CREDENTIALS",
+      "provider_fakes": false,
+      "test_node": "tests/real/test_stt_tts_llm_stream.py::test_elevenlabs_streaming_tts_ttfb",
+      "recorded_at_utc": "2026-11-07T05:45:43Z",
+      "reason": "elevenlabs real integration skipped; missing VOXDESK_REAL_INTEGRATION=1, ELEVENLABS_API_KEY",
+      "missing_env": [
+        "VOXDESK_REAL_INTEGRATION=1",
+        "ELEVENLABS_API_KEY"
+      ],
+      "latency_ms": null,
+      "model": null,
+      "details": {}
+    },
+    "cartesia": {
+      "provider": "cartesia",
+      "status": "SKIPPED_NO_CREDENTIALS",
+      "provider_fakes": false,
+      "test_node": "tests/real/test_stt_tts_llm_stream.py::test_cartesia_streaming_tts_ttfb",
+      "recorded_at_utc": "2026-11-07T05:45:43Z",
+      "reason": "cartesia real integration skipped; missing VOXDESK_REAL_INTEGRATION=1, CARTESIA_API_KEY",
+      "missing_env": [
+        "VOXDESK_REAL_INTEGRATION=1",
+        "CARTESIA_API_KEY"
+      ],
+      "latency_ms": null,
+      "model": null,
+      "details": {}
+    },
+    "openai": {
+      "provider": "openai",
+      "status": "SKIPPED_NO_CREDENTIALS",
+      "provider_fakes": false,
+      "test_node": "tests/real/test_stt_tts_llm_stream.py::test_openai_streaming_llm_ttft",
+      "recorded_at_utc": "2026-11-07T05:45:43Z",
+      "reason": "openai real integration skipped; missing VOXDESK_REAL_INTEGRATION=1, OPENAI_API_KEY",
+      "missing_env": [
+        "VOXDESK_REAL_INTEGRATION=1",
+        "OPENAI_API_KEY"
+      ],
+      "latency_ms": null,
+      "model": null,
+      "details": {}
+    },
+    "anthropic": {
+      "provider": "anthropic",
+      "status": "SKIPPED_NO_CREDENTIALS",
+      "provider_fakes": false,
+      "test_node": "tests/real/test_stt_tts_llm_stream.py::test_anthropic_streaming_llm_ttft",
+      "recorded_at_utc": "2026-11-07T05:45:43Z",
+      "reason": "anthropic real integration skipped; missing VOXDESK_REAL_INTEGRATION=1, ANTHROPIC_API_KEY",
+      "missing_env": [
+        "VOXDESK_REAL_INTEGRATION=1",
+        "ANTHROPIC_API_KEY"
+      ],
+      "latency_ms": null,
+      "model": null,
+      "details": {}
+    },
+    "telnyx": {
+      "provider": "telnyx",
+      "status": "SKIPPED_NO_CREDENTIALS",
+      "provider_fakes": false,
+      "test_node": "tests/real/test_telnyx_live.py::test_telnyx_inbound_outbound_media_websocket_flow",
+      "recorded_at_utc": "2026-11-07T05:45:43Z",
+      "reason": "telnyx real integration skipped; missing VOXDESK_REAL_INTEGRATION=1, TELNYX_API_KEY, TELNYX_CONNECTION_ID, TELNYX_FROM_NUMBER, TELNYX_TO_NUMBER, VOXDESK_PUBLIC_BASE_URL",
+      "missing_env": [
+        "VOXDESK_REAL_INTEGRATION=1",
+        "TELNYX_API_KEY",
+        "TELNYX_CONNECTION_ID",
+        "TELNYX_FROM_NUMBER",
+        "TELNYX_TO_NUMBER",
+        "VOXDESK_PUBLIC_BASE_URL"
+      ],
+      "latency_ms": null,
+      "model": null,
+      "details": {}
+    },
+    "twilio": {
+      "provider": "twilio",
+      "status": "SKIPPED_NO_CREDENTIALS",
+      "provider_fakes": false,
+      "test_node": "tests/real/test_twilio_inbound_outbound.py::test_twilio_real_call_media_stream_recording_status_and_cleanup",
+      "recorded_at_utc": "2026-11-07T05:45:43Z",
+      "reason": "twilio real integration skipped; missing VOXDESK_REAL_INTEGRATION=1, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER, TWILIO_TEST_TO_NUMBER, VOXDESK_PUBLIC_BASE_URL",
+      "missing_env": [
+        "VOXDESK_REAL_INTEGRATION=1",
+        "TWILIO_ACCOUNT_SID",
+        "TWILIO_AUTH_TOKEN",
+        "TWILIO_PHONE_NUMBER",
+        "TWILIO_TEST_TO_NUMBER",
+        "VOXDESK_PUBLIC_BASE_URL"
+      ],
+      "latency_ms": null,
+      "model": null,
+      "details": {}
+    },
+    "webhook_receiver": {
+      "provider": "webhook_receiver",
+      "status": "SKIPPED_NO_CREDENTIALS",
+      "provider_fakes": false,
+      "test_node": "tests/real/test_webhook_receiver.py::test_deliver_signed_webhook_to_public_receiver_and_verify_signature",
+      "recorded_at_utc": "2026-11-07T05:45:43Z",
+      "reason": "webhook_receiver real integration skipped; missing VOXDESK_REAL_INTEGRATION=1, VOXDESK_REAL_WEBHOOK_RECEIVER_URL",
+      "missing_env": [
+        "VOXDESK_REAL_INTEGRATION=1",
+        "VOXDESK_REAL_WEBHOOK_RECEIVER_URL"
+      ],
+      "latency_ms": null,
+      "model": null,
+      "details": {}
+    }
+  }
+}

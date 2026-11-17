@@ -101,7 +101,10 @@ class UsageTracker(FrameProcessor):
     # --------------------------------------------------------------- frames ---
 
     async def process_frame(self, frame, direction: FrameDirection):
-        # Pass through first: observation must never gate the audio graph.
+        # Initialize Pipecat lifecycle state before passing through StartFrame and other
+        # system frames. Pass-through remains first with respect to observation: metrics
+        # collection must never gate the audio graph.
+        await super().process_frame(frame, direction)
         await self.push_frame(frame, direction)
         try:
             if isinstance(frame, MetricsFrame):

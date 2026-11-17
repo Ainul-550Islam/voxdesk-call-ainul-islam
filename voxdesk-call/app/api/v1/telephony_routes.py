@@ -336,13 +336,11 @@ async def hangup_call(
     session: AsyncSession = Depends(get_session),
 ) -> CallSessionResponse:
     svc = TelephonyRuntimeService(session)
-    result = await svc.hangup_call(
+    return await svc.hangup_call(
         tenant_id=ctx.tenant_id,
         call_id=call_id,
         payload=payload,
     )
-    await session.commit()
-    return result
 
 
 @router.post("/calls/{call_id}/dtmf", response_model=CallDtmfResponse)

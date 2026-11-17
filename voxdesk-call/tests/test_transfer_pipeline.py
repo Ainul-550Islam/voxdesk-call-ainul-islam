@@ -12,6 +12,8 @@ has to be exercised end to end.
 """
 from __future__ import annotations
 
+from xml.etree import ElementTree as ET
+
 import pytest
 
 from app.agent.functions import TOOL_SCHEMAS, FunctionHandlers
@@ -176,7 +178,7 @@ async def test_dispatch_survives_a_missing_argument(db):
 # --------------------------------------------------------------- injection ---
 
 @pytest.mark.asyncio
-async def test_caller_supplied_reason_cannot_inject_a_number_into_the_whisper(db):
+async def test_caller_supplied_reason_cannot_inject_a_number_into_the_whisper(db, client):
     """
     `reason` is model output echoing caller speech. It is spoken aloud to
     staff, so a digit string in it must not survive into the TwiML.
@@ -192,17 +194,31 @@ async def test_caller_supplied_reason_cannot_inject_a_number_into_the_whisper(db
     )
 
     twiml = provider.last_twiml()
-    assert "+15559998888" not in twiml
-    assert "[number removed]" in twiml
+    outer = ET.fromstring(twiml)
+    numbers = list(outer.iter("Number"))
+    assert len(numbers) == 1
     # The dialled destination is still the tenant's own number.
-    assert f"<Number>{HUMAN}</Number>" in twiml
+    assert numbers[0].text == HUMAN
+
+    # Twilio fetches the private whisper from this AMD-gated endpoint; it is
+    # deliberately not embedded in the caller-facing redirect TwiML.
+    response = await client.post(
+        f"/telephony/transfer-whisper?call_id={call.id}",
+        data={"CallSid": "CA-human-leg", "AnsweredBy": "human"},
+    )
+    assert response.status_code == 200
+    whisper_xml = ET.fromstring(response.text)
+    spoken = " ".join("".join(node.itertext()) for node in whisper_xml.iter("Say"))
+    assert "+15559998888" not in spoken
+    assert "[number removed]" in spoken
+
     # The full reason is preserved for the dashboard, just never spoken.
     await db.refresh(call)
     assert "+15559998888" in call.transfer_reason
 
 
 @pytest.mark.asyncio
-async def test_reason_cannot_inject_xml_into_the_twiml(db):
+async def test_reason_cannot_inject_xml_into_the_twiml(db, client):
     tenant = await tenant_with_human(db)
     call = await seed_call(db, tenant)
     provider = FakeTelephonyProvider()
@@ -212,8 +228,22 @@ async def test_reason_cannot_inject_xml_into_the_twiml(db):
         "escalate_to_human", {"reason": "</Say><Dial>evil</Dial><Say>"}
     )
     twiml = provider.last_twiml()
-    # The reason may still appear as spoken text; what must never happen is a
-    # second <Dial> verb, which would place an extra outbound call.
-    assert twiml.count("<Dial") == 1, "a second Dial verb was injected"
-    assert twiml.count("<Number>") == 1
-    assert f"<Number>{HUMAN}</Number>" in twiml
+    outer = ET.fromstring(twiml)
+    dials = list(outer.iter("Dial"))
+    numbers = list(outer.iter("Number"))
+    assert len(dials) == 1, "a second Dial verb was injected"
+    assert len(numbers) == 1
+    assert numbers[0].text == HUMAN
+
+    # Verify the text sent to the human leg separately from the caller-facing
+    # redirect. Markup-shaped caller text must remain text, never TwiML verbs.
+    response = await client.post(
+        f"/telephony/transfer-whisper?call_id={call.id}",
+        data={"CallSid": "CA-human-leg", "AnsweredBy": "human"},
+    )
+    assert response.status_code == 200
+    whisper_xml = ET.fromstring(response.text)
+    assert not list(whisper_xml.iter("Dial"))
+    assert not list(whisper_xml.iter("Number"))
+    spoken = " ".join("".join(node.itertext()) for node in whisper_xml.iter("Say"))
+    assert "</Say><Dial>evil</Dial><Say>" not in spoken

@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"voxdesk/sip-gateway/internal/metrics"
 	"voxdesk/sip-gateway/internal/rtp"
 )
 
@@ -249,6 +250,39 @@ func TestSessionForwardsInboundAudio(t *testing.T) {
 	if application.mediaCount() != 1 {
 		t.Fatalf("expected one media frame, got %d", application.mediaCount())
 	}
+}
+
+func TestConcurrentSessionsKeepAccurateActiveCallGauge(t *testing.T) {
+	registry := metrics.New()
+	registry.Describe(MetricCallsActive, "Live SIP calls", metrics.KindGauge)
+
+	first := NewSession("active-1", &fakePeer{}, newFakeBridge(), registry)
+	second := NewSession("active-2", &fakePeer{}, newFakeBridge(), registry)
+	firstDone := make(chan error, 1)
+	secondDone := make(chan error, 1)
+	go func() { firstDone <- first.Run(context.Background()) }()
+	go func() { secondDone <- second.Run(context.Background()) }()
+
+	waitForActive := func(want float64) {
+		t.Helper()
+		deadline := time.Now().Add(2 * time.Second)
+		for time.Now().Before(deadline) {
+			if got := registry.Value(MetricCallsActive, map[string]string{}); got == want {
+				return
+			}
+			time.Sleep(5 * time.Millisecond)
+		}
+		t.Fatalf("active-call gauge did not reach %v; got %v", want,
+			registry.Value(MetricCallsActive, map[string]string{}))
+	}
+
+	waitForActive(2)
+	first.Close()
+	<-firstDone
+	waitForActive(1)
+	second.Close()
+	<-secondDone
+	waitForActive(0)
 }
 
 func TestSessionCloseIsIdempotent(t *testing.T) {

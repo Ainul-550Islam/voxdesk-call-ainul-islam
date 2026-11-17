@@ -430,6 +430,26 @@ def test_real_looking_key_is_detected(tmp_path):
     assert hits == [fixture.name]
 
 
+def test_pem_header_without_key_material_is_not_a_secret(tmp_path):
+    fixture = tmp_path / "fixture.py"
+    fixture.write_text(
+        'assert pem.startswith("-----BEGIN PRIVATE KEY-----")\n', encoding="utf-8"
+    )
+    assert ops.scan_secrets_in_files([fixture.name], root=tmp_path) == []
+
+
+def test_pem_private_key_block_is_detected(tmp_path):
+    fixture = tmp_path / "fixture.txt"
+    key_material = "A" * 64 + "\n" + "B" * 64
+    fixture.write_text(
+        "-----BEGIN PRIVATE KEY-----\n"
+        + key_material
+        + "\n-----END PRIVATE KEY-----\n",
+        encoding="utf-8",
+    )
+    assert ops.scan_secrets_in_files([fixture.name], root=tmp_path) == [fixture.name]
+
+
 def test_preflight_security_section_passes_on_clean_repo(tmp_path):
     repo = make_git_repo(tmp_path)
     (repo / ".env.example").write_text("SECRET_KEY=change-me\n", encoding="utf-8")

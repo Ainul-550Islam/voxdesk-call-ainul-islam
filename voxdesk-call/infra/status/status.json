@@ -1,0 +1,55 @@
+{
+  "certifications": [
+    {
+      "name": "SOC 2 Type I",
+      "status": "PLANNED"
+    },
+    {
+      "name": "SOC 2 Type II",
+      "status": "PLANNED"
+    },
+    {
+      "name": "HIPAA",
+      "status": "PLANNED"
+    },
+    {
+      "name": "ISO/IEC 27001:2022",
+      "status": "PLANNED"
+    },
+    {
+      "name": "GDPR",
+      "status": "Technical measures implemented"
+    },
+    {
+      "name": "PCI DSS",
+      "status": "Not applicable"
+    }
+  ],
+  "components": [
+    {
+      "critical": true,
+      "detail": "HTTP 200",
+      "name": "health",
+      "state": "up",
+      "target": "http://127.0.0.1:8011/health"
+    },
+    {
+      "critical": true,
+      "detail": "HTTP 200",
+      "name": "health/ready",
+      "state": "up",
+      "target": "http://127.0.0.1:8011/health/ready"
+    },
+    {
+      "critical": false,
+      "detail": "HTTP 503",
+      "name": "health/dependencies",
+      "state": "down",
+      "target": "http://127.0.0.1:8011/health/dependencies"
+    }
+  ],
+  "generated_at": "2026-11-11T11:11:16.055246Z",
+  "open_incidents": 0,
+  "probe_means": "2xx from the endpoint; not a claim about upstream providers",
+  "status": "degraded"
+}

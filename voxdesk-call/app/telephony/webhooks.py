@@ -6,6 +6,8 @@ and idempotent event processing into `TelephonyCallSession` & `TelephonyProvider
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
+
 import hashlib
 import hmac
 import json
@@ -46,6 +48,7 @@ from app.telephony.exceptions import (
     TelephonyConfigurationError,
 )
 from app.telephony.idempotency import claim_provider_event, verify_replay_timestamp
+from app.telephony.number_routing import build_routing
 from app.telephony.providers.base import normalize_generic_webhook_payload
 from app.telephony.schemas import (
     NormalizedProviderWebhookEvent,
@@ -149,6 +152,59 @@ class TelephonyWebhookProcessor:
 
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
+        self._pending_slot_releases: set[tuple[str, str]] = set()
+        self._pending_slot_acquisitions: set[tuple[str, str]] = set()
+
+    def _queue_call_slot_acquisition(self, tenant_id: Any, call_id: Any) -> None:
+        self._pending_slot_acquisitions.add((str(tenant_id), str(call_id)))
+
+    def commit_pending_call_slot_acquisitions(self) -> None:
+        """Keep new leases once the corresponding call-session commit succeeds."""
+        self._pending_slot_acquisitions.clear()
+
+    async def rollback_pending_call_slot_acquisitions(self) -> None:
+        """Compensate leases if the database transaction that created them fails."""
+        from app.telephony.concurrency_policy import release_call_slot
+
+        pending = tuple(self._pending_slot_acquisitions)
+        for tenant_id, call_id in pending:
+            await release_call_slot(tenant_id, call_id)
+        self._pending_slot_acquisitions.difference_update(pending)
+
+    def _queue_call_slot_release(self, tenant_id: Any, call_id: Any) -> None:
+        self._pending_slot_releases.add((str(tenant_id), str(call_id)))
+
+    async def release_pending_call_slots(self) -> None:
+        """Release terminal-call leases only after the webhook transaction commits."""
+        from app.telephony.concurrency_policy import release_call_slot
+
+        pending = tuple(self._pending_slot_releases)
+        for tenant_id, call_id in pending:
+            await release_call_slot(tenant_id, call_id)
+        self._pending_slot_releases.difference_update(pending)
+
+    async def _record_failed_inbound_history(
+        self,
+        normalized: NormalizedProviderWebhookEvent,
+        *,
+        tenant_id: UUID,
+        environment_id: UUID | None,
+        reason: str,
+        agent_id: str | None = None,
+    ):
+        from app.telephony.qos import record_failed_inbound
+
+        return await record_failed_inbound(
+            self.session,
+            tenant_id,
+            call_sid=normalized.provider_call_id,
+            from_number=normalized.from_number or "unknown",
+            to_number=normalized.to_number or "unknown",
+            reason=reason,
+            environment_id=environment_id,
+            provider=normalized.provider.value,
+            agent_id=agent_id,
+        )
 
     async def process_webhook(
         self,
@@ -274,6 +330,11 @@ class TelephonyWebhookProcessor:
             call_id=existing_call.id if existing_call else None,
         )
         if claim.is_duplicate:
+            if (
+                existing_call is not None
+                and TelephonyCallState(existing_call.status) in TERMINAL_CALL_STATES
+            ):
+                self._queue_call_slot_release(existing_call.tenant_id, existing_call.id)
             return WebhookProcessResult(
                 accepted=True,
                 duplicate=True,
@@ -288,6 +349,7 @@ class TelephonyWebhookProcessor:
 
         call_session = existing_call
         now = datetime.now(timezone.utc)
+        answer_policy_denied = False
 
         if call_session is None:
             # Inbound call initiation: verify phone number and inbound agent binding
@@ -299,21 +361,120 @@ class TelephonyWebhookProcessor:
                 claim.event_row.processing_status = "rejected"
                 claim.event_row.failure_reason = "inbound_disabled_on_number"
                 claim.event_row.processed_at = now
+                failed_history = await self._record_failed_inbound_history(
+                    normalized,
+                    tenant_id=tenant_id,
+                    environment_id=environment_id,
+                    reason="inbound_disabled_on_number",
+                )
+                failed_call = TelephonyCallSession(
+                    id=uuid.uuid4(),
+                    legacy_call_id=failed_history.id,
+                    tenant_id=tenant_id,
+                    environment_id=environment_id,
+                    phone_number_id=phone_row.id,
+                    agent_id=None,
+                    provider=normalized.provider.value,
+                    provider_call_id=normalized.provider_call_id,
+                    direction=normalized.direction.value,
+                    from_number=normalized.from_number or "unknown",
+                    to_number=normalized.to_number or phone_row.e164_number,
+                    status=TelephonyCallState.FAILED.value,
+                    media_state=MediaSessionState.DISCONNECTED.value,
+                    started_at=now,
+                    ended_at=now,
+                    hangup_reason="inbound_disabled_on_number",
+                    runtime_events=[],
+                    transcript_turns=[],
+                    dtmf_events=[],
+                    metadata_json={"webhook_event_id": normalized.provider_event_id},
+                    created_at=now,
+                    updated_at=now,
+                )
+                append_runtime_event(
+                    failed_call,
+                    event_type=InternalTelephonyEventType.CALL_FAILED,
+                    detail={"reason": "inbound_disabled_on_number"},
+                    occurred_at=now,
+                )
+                self.session.add(failed_call)
+                claim.event_row.call_id = failed_call.id
                 await self.session.flush()
                 raise TelephonyConfigurationError(
                     f"Inbound calls are disabled on number {phone_row.e164_number}.",
-                    detail={"phone_number_id": str(phone_row.id)},
+                    detail={
+                        "phone_number_id": str(phone_row.id),
+                        "call_session_id": str(failed_call.id),
+                    },
                 )
 
-            bound_agent_id = (
-                phone_row.inbound_agent_id
-                if (phone_row is not None and normalized.direction == CallDirection.INBOUND)
-                else (phone_row.outbound_agent_id if phone_row is not None else None)
+            channel = (
+                "inbound"
+                if normalized.direction == CallDirection.INBOUND
+                else "outbound"
             )
+            bound_agent_id = None
+            number_routing_decision: dict[str, Any] | None = None
+            if phone_row is not None:
+                legacy_in = str(phone_row.inbound_agent_id or "")
+                legacy_out = str(phone_row.outbound_agent_id or "")
+                routing = build_routing(
+                    phone_row.routing,
+                    legacy_inbound_agent_id=legacy_in,
+                    legacy_outbound_agent_id=legacy_out,
+                )
+                entries = routing.entries_for(channel)
+                if entries:
+                    caller_identity = (
+                        normalized.from_number
+                        if channel == "inbound"
+                        else normalized.to_number
+                    ) or ""
+                    routing_salt = f"{phone_row.e164_number}|{channel}"
+                    bound_agent_id = routing.select(
+                        channel,
+                        caller=caller_identity,
+                        salt=routing_salt,
+                    )
+                    number_routing_decision = {
+                        "phone_number_id": str(phone_row.id),
+                        "number": phone_row.e164_number,
+                        "channel": channel,
+                        "selected_agent_id": bound_agent_id,
+                        "bucket": routing.bucket(
+                            channel, caller=caller_identity, salt=routing_salt
+                        ),
+                        "candidate_count": len(entries),
+                    }
             if not bound_agent_id:
                 bound_agent_id = str(
                     normalized.raw_payload.get("agent_id") or ""
                 ).strip() or None
+
+            raw_overrides = normalized.raw_payload.get("voxdesk_overrides")
+            if normalized.direction == CallDirection.INBOUND and isinstance(raw_overrides, Mapping):
+                parsed_overrides = parse_inbound_overrides(raw_overrides)
+                selected_overrides = resolve_inbound_agent(
+                    parsed_overrides,
+                    number_agent_id=str(bound_agent_id or ""),
+                )
+                if selected_overrides.agent_id:
+                    bound_agent_id = selected_overrides.agent_id
+            else:
+                parsed_overrides = InboundOverrides()
+                selected_overrides = parsed_overrides
+
+            resolution_metadata: dict[str, Any] = {}
+            if number_routing_decision is not None:
+                resolution_metadata["number_routing"] = number_routing_decision
+            if selected_overrides.source == "webhook":
+                resolution_metadata["inbound_overrides"] = selected_overrides.as_dict()
+                if selected_overrides.dynamic_variables:
+                    resolution_metadata["dynamic_variables"] = dict(
+                        selected_overrides.dynamic_variables
+                    )
+                if selected_overrides.metadata:
+                    resolution_metadata["metadata"] = dict(selected_overrides.metadata)
 
             # If an inbound call arrives for a phone number that has no bound inbound agent,
             # fail deterministically rather than fabricating a fake agent.
@@ -322,8 +483,15 @@ class TelephonyWebhookProcessor:
                 and phone_row is not None
                 and not bound_agent_id
             ):
+                failed_history = await self._record_failed_inbound_history(
+                    normalized,
+                    tenant_id=tenant_id,
+                    environment_id=environment_id,
+                    reason="no_inbound_agent_bound",
+                )
                 failed_call = TelephonyCallSession(
                     id=uuid.uuid4(),
+                    legacy_call_id=failed_history.id,
                     tenant_id=tenant_id,
                     environment_id=environment_id,
                     phone_number_id=phone_row.id,
@@ -341,7 +509,10 @@ class TelephonyWebhookProcessor:
                     runtime_events=[],
                     transcript_turns=[],
                     dtmf_events=[],
-                    metadata_json={"webhook_event_id": normalized.provider_event_id},
+                    metadata_json={
+                        "webhook_event_id": normalized.provider_event_id,
+                        **resolution_metadata,
+                    },
                     created_at=now,
                     updated_at=now,
                 )
@@ -410,14 +581,30 @@ class TelephonyWebhookProcessor:
                             tenant_id=tenant_id,
                             agent=resolved_agent,
                             environment_id=environment_id,
+                            requested_version_number=(
+                                selected_overrides.agent_version
+                                if selected_overrides.source == "webhook"
+                                and selected_overrides.agent_id
+                                else None
+                            ),
                         )
                         snapshot_profile(resolved_agent_version, resolved_agent)
                     except AgentVersionResolutionError as exc:
                         version_resolution_error = exc
 
             if version_resolution_error is not None:
+                failed_history = None
+                if normalized.direction == CallDirection.INBOUND:
+                    failed_history = await self._record_failed_inbound_history(
+                        normalized,
+                        tenant_id=tenant_id,
+                        environment_id=environment_id,
+                        reason=version_resolution_error.code,
+                        agent_id=resolved_agent.id if resolved_agent is not None else None,
+                    )
                 failed_call = TelephonyCallSession(
                     id=uuid.uuid4(),
+                    legacy_call_id=failed_history.id if failed_history is not None else None,
                     tenant_id=tenant_id,
                     environment_id=environment_id,
                     phone_number_id=phone_row.id if phone_row else None,
@@ -443,6 +630,7 @@ class TelephonyWebhookProcessor:
                     dtmf_events=[],
                     metadata_json={
                         "initial_webhook_event_id": normalized.provider_event_id,
+                        **resolution_metadata,
                         "agent_version_resolution_error": {
                             "code": version_resolution_error.code,
                             "message": str(version_resolution_error),
@@ -479,6 +667,76 @@ class TelephonyWebhookProcessor:
 
             if resolved_agent is not None:
                 bound_agent_id = str(resolved_agent.id)
+
+            if normalized.direction == CallDirection.INBOUND:
+                from app.telephony.country_policy import decide_for_session
+
+                country_decision = await decide_for_session(
+                    self.session,
+                    tenant_id,
+                    normalized.from_number,
+                    stage="answer",
+                    number_id=str(phone_row.id) if phone_row is not None else None,
+                    agent_id=str(bound_agent_id) if bound_agent_id else None,
+                )
+                if not country_decision.allowed:
+                    failed_history = await self._record_failed_inbound_history(
+                        normalized,
+                        tenant_id=tenant_id,
+                        environment_id=environment_id,
+                        reason="inbound_country_policy_denied",
+                        agent_id=bound_agent_id,
+                    )
+                    failed_call = TelephonyCallSession(
+                        id=uuid.uuid4(),
+                        legacy_call_id=failed_history.id,
+                        tenant_id=tenant_id,
+                        environment_id=environment_id,
+                        phone_number_id=phone_row.id if phone_row else None,
+                        agent_id=bound_agent_id,
+                        provider=normalized.provider.value,
+                        provider_call_id=normalized.provider_call_id,
+                        direction=normalized.direction.value,
+                        from_number=normalized.from_number or "unknown",
+                        to_number=normalized.to_number or (phone_row.e164_number if phone_row else "unknown"),
+                        status=TelephonyCallState.FAILED.value,
+                        media_state=MediaSessionState.DISCONNECTED.value,
+                        started_at=now,
+                        ended_at=now,
+                        hangup_reason="inbound_country_policy_denied",
+                        runtime_events=[],
+                        transcript_turns=[],
+                        dtmf_events=[],
+                        metadata_json={
+                            "webhook_event_id": normalized.provider_event_id,
+                            "country_policy": country_decision.as_dict(),
+                            **resolution_metadata,
+                        },
+                        created_at=now,
+                        updated_at=now,
+                    )
+                    append_runtime_event(
+                        failed_call,
+                        event_type=InternalTelephonyEventType.CALL_FAILED,
+                        detail={"reason": "inbound_country_policy_denied", "country": country_decision.country},
+                        occurred_at=now,
+                    )
+                    self.session.add(failed_call)
+                    claim.event_row.call_id = failed_call.id
+                    claim.event_row.processing_status = "failed_country_policy"
+                    claim.event_row.failure_reason = "inbound_country_policy_denied"
+                    claim.event_row.processed_at = now
+                    await self.session.flush()
+                    return WebhookProcessResult(
+                        accepted=True,
+                        duplicate=False,
+                        provider=normalized.provider.value,
+                        provider_event_id=normalized.provider_event_id,
+                        event_type=normalized.event_type.value,
+                        call_session_id=failed_call.id,
+                        call_state=failed_call.status,
+                        detail="inbound_country_policy_denied",
+                    )
 
             initial_state = normalized.call_state or TelephonyCallState.RINGING
             call_session = TelephonyCallSession(
@@ -518,6 +776,7 @@ class TelephonyWebhookProcessor:
                 dtmf_events=[],
                 metadata_json={
                     "initial_webhook_event_id": normalized.provider_event_id,
+                    **resolution_metadata,
                     **(
                         {
                             "resolved_agent_version_id": str(resolved_agent_version.id),
@@ -553,6 +812,68 @@ class TelephonyWebhookProcessor:
             self.session.add(call_session)
             await self.session.flush()
 
+            if (
+                normalized.direction == CallDirection.INBOUND
+                and initial_state not in TERMINAL_CALL_STATES
+                and not call_session.is_simulation
+            ):
+                from app.telephony.concurrency_policy import (
+                    ConcurrencyError,
+                    acquire_call_slot,
+                )
+
+                try:
+                    lease = await acquire_call_slot(
+                        self.session,
+                        tenant_id,
+                        call_session.id,
+                        direction="inbound",
+                    )
+                except ConcurrencyError:
+                    failed_history = await self._record_failed_inbound_history(
+                        normalized,
+                        tenant_id=tenant_id,
+                        environment_id=environment_id,
+                        reason="inbound_concurrency_exhausted",
+                        agent_id=bound_agent_id,
+                    )
+                    call_session.legacy_call_id = failed_history.id
+                    call_session.status = TelephonyCallState.FAILED.value
+                    call_session.media_state = MediaSessionState.DISCONNECTED.value
+                    call_session.ended_at = now
+                    call_session.hangup_reason = "inbound_concurrency_exhausted"
+                    append_runtime_event(
+                        call_session,
+                        event_type=InternalTelephonyEventType.CALL_FAILED,
+                        detail={"reason": "inbound_concurrency_exhausted"},
+                        occurred_at=now,
+                    )
+                    claim.event_row.call_id = call_session.id
+                    claim.event_row.processing_status = "failed_concurrency"
+                    claim.event_row.failure_reason = "inbound_concurrency_exhausted"
+                    claim.event_row.processed_at = now
+                    await self.session.flush()
+                    return WebhookProcessResult(
+                        accepted=True,
+                        duplicate=False,
+                        provider=normalized.provider.value,
+                        provider_event_id=normalized.provider_event_id,
+                        event_type=normalized.event_type.value,
+                        call_session_id=call_session.id,
+                        call_state=call_session.status,
+                        detail="inbound_concurrency_exhausted",
+                    )
+                self._queue_call_slot_acquisition(tenant_id, call_session.id)
+                metadata = dict(call_session.metadata_json or {})
+                metadata["concurrency_lease"] = {
+                    "direction": lease.direction,
+                    "burst": lease.burst,
+                    "billable_overage": lease.billable_overage,
+                    "base": lease.base,
+                    "ceiling": lease.ceiling,
+                }
+                call_session.metadata_json = metadata
+
             if initial_state != TelephonyCallState.CREATED:
                 await manager.transition_state(
                     call_session,
@@ -587,6 +908,7 @@ class TelephonyWebhookProcessor:
                     current_enum in TERMINAL_CALL_STATES
                     and normalized.call_state not in TERMINAL_CALL_STATES
                 ):
+                    self._queue_call_slot_release(call_session.tenant_id, call_session.id)
                     claim.event_row.call_id = call_session.id
                     claim.event_row.processing_status = "ignored_out_of_order"
                     claim.event_row.processed_at = now
@@ -602,14 +924,80 @@ class TelephonyWebhookProcessor:
                         detail="ignored_out_of_order_after_terminal",
                     )
 
+                target_state = normalized.call_state
+                answer_policy_decision = None
+                if (
+                    call_session.direction == CallDirection.INBOUND.value
+                    and target_state
+                    in {TelephonyCallState.ANSWERED, TelephonyCallState.IN_PROGRESS}
+                ):
+                    from app.telephony.country_policy import decide_for_session
+
+                    answer_policy_decision = await decide_for_session(
+                        self.session,
+                        call_session.tenant_id,
+                        call_session.from_number,
+                        stage="answer",
+                        number_id=(
+                            str(call_session.phone_number_id)
+                            if call_session.phone_number_id is not None
+                            else None
+                        ),
+                        agent_id=(
+                            str(call_session.agent_id) if call_session.agent_id else None
+                        ),
+                    )
+                    if not answer_policy_decision.allowed:
+                        from app.telephony.qos import record_failed_inbound
+
+                        failed_history = await record_failed_inbound(
+                            self.session,
+                            call_session.tenant_id,
+                            call_sid=call_session.provider_call_id,
+                            from_number=(
+                                call_session.from_number or normalized.from_number or "unknown"
+                            ),
+                            to_number=(
+                                call_session.to_number or normalized.to_number or "unknown"
+                            ),
+                            reason="inbound_country_policy_denied",
+                            environment_id=call_session.environment_id,
+                            provider=call_session.provider,
+                            agent_id=call_session.agent_id,
+                        )
+                        if failed_history is not None:
+                            call_session.legacy_call_id = failed_history.id
+                        metadata = dict(call_session.metadata_json or {})
+                        metadata["country_policy"] = answer_policy_decision.as_dict()
+                        call_session.metadata_json = metadata
+                        target_state = TelephonyCallState.FAILED
+
+                answer_policy_denied = bool(
+                    answer_policy_decision is not None
+                    and not answer_policy_decision.allowed
+                )
                 await manager.transition_state(
                     call_session,
-                    normalized.call_state,
+                    target_state,
                     occurred_at=now,
-                    hangup_reason=normalized.hangup_reason,
+                    hangup_reason=(
+                        "inbound_country_policy_denied"
+                        if answer_policy_denied
+                        else normalized.hangup_reason
+                    ),
                     provider_duration_seconds=normalized.duration_seconds,
                     recording_reference=normalized.recording_url,
-                    event_detail={"webhook_event_type": normalized.event_type.value},
+                    event_detail={
+                        "webhook_event_type": normalized.event_type.value,
+                        **(
+                            {
+                                "failure_reason": "inbound_country_policy_denied",
+                                "country_policy": answer_policy_decision.as_dict(),
+                            }
+                            if answer_policy_denied
+                            else {}
+                        ),
+                    },
                 )
 
         # If call just transitioned to ANSWERED or IN_PROGRESS and has no greeting turn yet, add greeting
@@ -627,8 +1015,15 @@ class TelephonyWebhookProcessor:
                 occurred_at=now,
             )
 
+        if TelephonyCallState(call_session.status) in TERMINAL_CALL_STATES:
+            self._queue_call_slot_release(call_session.tenant_id, call_session.id)
+
         claim.event_row.call_id = call_session.id
-        claim.event_row.processing_status = "processed"
+        claim.event_row.processing_status = (
+            "failed_country_policy" if answer_policy_denied else "processed"
+        )
+        if answer_policy_denied:
+            claim.event_row.failure_reason = "inbound_country_policy_denied"
         claim.event_row.processed_at = now
         await self.session.flush()
 
@@ -640,5 +1035,149 @@ class TelephonyWebhookProcessor:
             event_type=normalized.event_type.value,
             call_session_id=call_session.id,
             call_state=call_session.status,
-            detail="processed",
+            detail=(
+                "inbound_country_policy_denied" if answer_policy_denied else "processed"
+            ),
         )
+
+# ---------------------------------------------------------------------------
+# PART 12 (P12-25) — inbound webhook may choose the agent, version and variables
+# ---------------------------------------------------------------------------
+
+#: What an inbound-call webhook is allowed to set. Anything else is ignored rather than merged
+#: blindly: an unknown key usually means the caller's integration is out of date.
+INBOUND_OVERRIDE_KEYS: frozenset[str] = frozenset(
+    {"agent_id", "agent_version", "dynamic_variables", "metadata", "fallback_agent_id"}
+)
+
+WEBHOOK_TIMEOUT_S = 3.0
+WEBHOOK_MAX_ATTEMPTS = 2
+
+
+@dataclass(frozen=True)
+class InboundOverrides:
+    """The resolved response of an inbound-call webhook."""
+
+    agent_id: str = ""
+    agent_version: int | None = None
+    dynamic_variables: dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
+    fallback_agent_id: str = ""
+    source: str = "default"  # webhook | fallback | default
+    ignored_keys: tuple[str, ...] = ()
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "agent_id": self.agent_id,
+            "agent_version": self.agent_version,
+            "dynamic_variables": self.dynamic_variables,
+            "metadata": self.metadata,
+            "fallback_agent_id": self.fallback_agent_id,
+            "source": self.source,
+            "ignored_keys": list(self.ignored_keys),
+        }
+
+
+def parse_inbound_overrides(payload: Any) -> InboundOverrides:
+    """Validate a webhook response body.
+
+    A malformed body is not fatal: the call still has to be answered, so we keep the keys we
+    understand, record the ones we dropped, and let the caller fall back to the number's agent.
+    """
+    if isinstance(payload, str):
+        try:
+            decoded = json.loads(payload)
+        except (TypeError, ValueError):
+            return InboundOverrides(source="default", ignored_keys=("payload",))
+        payload = decoded
+    if not isinstance(payload, Mapping):
+        return InboundOverrides(source="default", ignored_keys=("payload",))
+    unknown = tuple(sorted(str(key) for key in payload if str(key) not in INBOUND_OVERRIDE_KEYS))
+
+    variables = payload.get("dynamic_variables")
+    metadata = payload.get("metadata")
+    if isinstance(variables, str):
+        try:
+            variables = json.loads(variables)
+        except (TypeError, ValueError):
+            variables = None
+            unknown = tuple(sorted(set(unknown) | {"dynamic_variables"}))
+    if isinstance(metadata, str):
+        try:
+            metadata = json.loads(metadata)
+        except (TypeError, ValueError):
+            metadata = None
+            unknown = tuple(sorted(set(unknown) | {"metadata"}))
+
+    version = payload.get("agent_version")
+    try:
+        parsed_version = int(version) if version is not None else None
+        if parsed_version is not None and parsed_version < 1:
+            parsed_version = None
+            unknown = tuple(sorted(set(unknown) | {"agent_version"}))
+    except (TypeError, ValueError):
+        parsed_version = None
+        unknown = tuple(sorted(set(unknown) | {"agent_version"}))
+
+    return InboundOverrides(
+        agent_id=str(payload.get("agent_id") or "").strip(),
+        agent_version=parsed_version,
+        dynamic_variables=dict(variables) if isinstance(variables, Mapping) else {},
+        metadata=dict(metadata) if isinstance(metadata, Mapping) else {},
+        fallback_agent_id=str(payload.get("fallback_agent_id") or "").strip(),
+        source="webhook",
+        ignored_keys=unknown,
+    )
+
+
+def resolve_inbound_agent(
+    overrides: InboundOverrides,
+    *,
+    number_agent_id: str = "",
+    webhook_failed: bool = False,
+) -> InboundOverrides:
+    """Decide which agent takes the call when the webhook did not produce a usable answer."""
+    if overrides.agent_id and not webhook_failed:
+        return overrides
+    if overrides.fallback_agent_id or webhook_failed:
+        return InboundOverrides(
+            agent_id=overrides.fallback_agent_id or number_agent_id,
+            agent_version=overrides.agent_version,
+            dynamic_variables=overrides.dynamic_variables,
+            metadata=overrides.metadata,
+            fallback_agent_id=overrides.fallback_agent_id,
+            source="fallback",
+            ignored_keys=overrides.ignored_keys,
+        )
+    return InboundOverrides(
+        agent_id=number_agent_id,
+        dynamic_variables=overrides.dynamic_variables,
+        metadata=overrides.metadata,
+        source="default",
+        ignored_keys=overrides.ignored_keys,
+    )
+
+
+def apply_inbound_overrides_to_call(call: Any, payload: Any) -> InboundOverrides:
+    """Persist verified per-call overrides for the live runtime resolver."""
+    parsed = parse_inbound_overrides(payload)
+    resolved = resolve_inbound_agent(parsed)
+    context = dict(getattr(call, "transfer_context", None) or {})
+    context["inbound_overrides"] = resolved.as_dict()
+
+    if resolved.dynamic_variables:
+        variable_overrides = context.get("dynamic_variable_overrides")
+        variable_overrides = (
+            dict(variable_overrides) if isinstance(variable_overrides, Mapping) else {}
+        )
+        variable_overrides.update(resolved.dynamic_variables)
+        context["dynamic_variable_overrides"] = variable_overrides
+        context["dynamic_variables"] = variable_overrides
+    if resolved.metadata:
+        metadata = context.get("metadata")
+        metadata = dict(metadata) if isinstance(metadata, Mapping) else {}
+        metadata.update(resolved.metadata)
+        context["metadata"] = metadata
+
+    call.transfer_context = context
+    return resolved

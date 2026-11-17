@@ -67,7 +67,7 @@ def _is_declaration_holder(node: ast.ClassDef) -> bool:
 
 @lru_cache(maxsize=1)
 def _enum_declarations() -> dict[str, set[str]]:
-    """Declaration name -> declared member names, plus members attached after it."""
+    """Declaration name -> members/methods, plus attributes attached after it."""
     declared: dict[str, set[str]] = {}
     for base in SCAN_ROOTS:
         for path in _python_files(ROOT / base):
@@ -85,6 +85,10 @@ def _enum_declarations() -> dict[str, set[str]]:
                         )
                     elif isinstance(statement, ast.AnnAssign) and isinstance(statement.target, ast.Name):
                         members.add(statement.target.id)
+                    elif isinstance(statement, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                        # A classmethod or other method on an enum-like class is a
+                        # valid class attribute, not a missing enum member.
+                        members.add(statement.name)
     # Members can be attached to the class after the body, e.g.
     # `JobState.TERMINAL = frozenset({...})` (app/jobs/models.py). Those are
     # real attributes and must count as declared.

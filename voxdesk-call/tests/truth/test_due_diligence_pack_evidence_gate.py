@@ -83,6 +83,20 @@ def test_a_fresh_artifact_is_present_and_a_stale_one_is_flagged(tmp_path: Path) 
     assert evidence["live"]["age_days"] >= 89
 
 
+def test_archive_date_is_the_evidence_freshness_as_of_date(tmp_path: Path) -> None:
+    (tmp_path / "reports").mkdir()
+    (tmp_path / "reports" / "TEST_EVIDENCE_SUMMARY.json").write_text(
+        json.dumps({"generated_at": "2026-10-30T05:47:28Z"}),
+        encoding="utf-8",
+    )
+    as_of = datetime(2026, 11, 8, 23, 59, 59, tzinfo=timezone.utc)
+
+    evidence = module.collect_evidence(tmp_path, as_of=as_of)
+    assert evidence["test"]["status"] == "PRESENT"
+    assert evidence["test"]["age_days"] is not None
+    assert 9.7 < evidence["test"]["age_days"] < 10
+
+
 def test_problems_name_missing_required_items_and_not_optional_ones(tmp_path: Path) -> None:
     evidence = module.collect_evidence(tmp_path)
     problems = module.evidence_problems(evidence)

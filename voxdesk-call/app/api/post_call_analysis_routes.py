@@ -466,9 +466,28 @@ async def extended_clear_cache(
     ctx: TenantContext = Depends(require_permission(Permission.QA_WRITE)),
     session: AsyncSession = Depends(get_session),
 ):
-    """No analysis cache exists; persisted evidence must not be called a cache."""
+    """No analysis cache exists; persisted evidence must not be called a cache.
+
+    501 was wrong here and PART 17B (P17B-03) fixed it. A 501 means "this
+    capability is not available *yet*", which invites a client to retry later
+    or a buyer to assume configuring something will enable it. Nothing will:
+    analyses are persisted evidence with a retention policy, and deleting them
+    as if they were a cache would destroy audit data. That is a permanent
+    business rule, so it is a 409 with a reason — the same choice
+    `webhooks/idempotency/cache` and `app/webhooks/replay.py` already made.
+    """
     await _environment(session, ctx, write=True)
-    raise HTTPException(501, detail={"code": "UNSUPPORTED_CAPABILITY", "capability": "analysis_cache_clear"})
+    raise HTTPException(
+        409,
+        detail={
+            "code": "UNSUPPORTED_CAPABILITY",
+            "capability": "analysis_cache_clear",
+            "message": (
+                "Analyses are persisted evidence, not a cache; they expire under the "
+                "tenant's retention policy and cannot be cleared through this endpoint."
+            ),
+        },
+    )
 
 
 router.include_router(compat_router)

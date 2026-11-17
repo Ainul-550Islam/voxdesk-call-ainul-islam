@@ -29,11 +29,11 @@ import sys
 import time
 from dataclasses import dataclass, field
 
+from pipecat.audio.dtmf.types import KeypadEntry
 from pipecat.frames.frames import (
     Frame,
     InputAudioRawFrame,
     InputDTMFFrame,
-    KeypadEntry,
     OutputAudioRawFrame,
 )
 from pipecat.serializers.base_serializer import FrameSerializer, FrameSerializerType

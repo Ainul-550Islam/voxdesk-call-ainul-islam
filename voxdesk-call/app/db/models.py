@@ -3990,6 +3990,10 @@ class Agent(Base):
     agent_type: Mapped[str] = mapped_column(String(32), nullable=False, default="voice")
     status: Mapped[str] = mapped_column(String(24), nullable=False, default="draft")
     current_draft_config: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    # PART 12 (P12-25): the folder this agent sits in; NULL means "unfiled".
+    folder_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("agent_folders.id", ondelete="SET NULL"), nullable=True
+    )
     draft_etag: Mapped[str] = mapped_column(String(64), nullable=False, default="")
     published_version_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), nullable=True

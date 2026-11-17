@@ -93,7 +93,11 @@ def test_sales_and_due_diligence_docs_exist_and_obey_truth_rules() -> None:
     assert "dc85c3336f65fea8cc3c976b9c26b185bfa345b3" in hist
 
 
-@pytest.mark.timeout(90)
+# The body builds the pack from scratch when `dist/` is empty: a full tree walk,
+# SHA256 of every evidence file, and a `scripts/repo_stats.py` subprocess. On a
+# clean export behind a busy CI box that is a 30-60s job, so a 90s budget was a
+# flake generator, not a safety net. The suite-wide ceiling is 300s.
+@pytest.mark.timeout(300)
 def test_due_diligence_zip_and_sha256sums_verify() -> None:
     import shutil
 
@@ -126,8 +130,17 @@ def test_due_diligence_zip_and_sha256sums_verify() -> None:
         lines = [ln.strip() for ln in sha_file.read_text(encoding="utf-8").splitlines() if ln.strip()]
         assert len(lines) >= 20
         first_digest, first_name = lines[0].split(None, 1)
-        assert first_name == zip_path.name
+        assert first_name == zip_path.relative_to(ROOT).as_posix()
         assert first_digest == _sha256(zip_path)
+        import subprocess
+
+        subprocess.run(
+            ["sha256sum", "-c", sha_file.relative_to(ROOT).as_posix()],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
 
         with zipfile.ZipFile(zip_path, "r") as zf:
             names = set(zf.namelist())

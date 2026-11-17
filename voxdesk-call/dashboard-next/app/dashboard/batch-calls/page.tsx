@@ -89,12 +89,19 @@ export default function BatchCallsPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await request<{ batch_calls: BatchCallRecord[] }>(
+      //: The endpoint answers `{batches: [...], total, limit, offset, has_more}`
+      //: (app/api/batch_call_routes.py, BatchCallListOut). Reading `batch_calls`
+      //: yielded `undefined`, and `undefined.length` threw during render — the
+      //: whole route then unmounted into the error boundary, which is what the
+      //: accessibility run reported as a missing <title> and <html lang>. The
+      //: fallback keeps a malformed payload from taking the page down again.
+      const res = await request<{ batches?: BatchCallRecord[] }>(
         "/api/batch-calls",
       );
-      setBatches(res.batch_calls);
-      if (res.batch_calls.length > 0 && !selectedBatch) {
-        setSelectedBatch(res.batch_calls[0]);
+      const batchList = res.batches ?? [];
+      setBatches(batchList);
+      if (batchList.length > 0 && !selectedBatch) {
+        setSelectedBatch(batchList[0]);
       }
     } catch (err) {
       setError(

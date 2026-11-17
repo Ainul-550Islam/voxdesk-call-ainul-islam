@@ -1,6 +1,6 @@
 {
   "dashboard_build_present": false,
-  "route_count": 1526,
+  "route_count": 1662,
   "routes": [
     {
       "methods": [
@@ -66,6 +66,49 @@
       ],
       "name": "call_status",
       "path": "/telephony/status"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "transfer_hold_music",
+      "path": "/telephony/transfer-hold-music"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "transfer_session_target",
+      "path": "/telephony/transfer-session-target"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "transfer_session_status",
+      "path": "/telephony/transfer-session-status"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "transfer_session_target_status",
+      "path": "/telephony/transfer-session-target-status"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "transfer_session_conference",
+      "path": "/telephony/transfer-session-conference"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "transfer_whisper",
+      "path": "/telephony/transfer-whisper"
     },
     {
       "methods": [
@@ -243,6 +286,21 @@
       ],
       "name": "create_server",
       "path": "/api/mcp/servers"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "voxdesk_tools",
+      "path": "/api/mcp/voxdesk/tools"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "voxdesk_rpc",
+      "path": "/api/mcp/voxdesk/rpc"
     },
     {
       "methods": [
@@ -452,6 +510,53 @@
       ],
       "name": "list_invoices",
       "path": "/api/billing/invoices"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "get_price_book",
+      "path": "/api/billing/price-book"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "list_price_book_versions",
+      "path": "/api/billing/price-book/versions"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "publish_price_book",
+      "path": "/api/billing/price-book"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "itemised_invoice_lines",
+      "path": "/api/billing/invoice/lines"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "usage_by_provider",
+      "path": "/api/billing/usage/by-provider"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "margin_report",
+      "path": "/api/billing/margin"
     },
     {
       "methods": [
@@ -1707,6 +1812,52 @@
     },
     {
       "methods": [
+        "POST"
+      ],
+      "name": "post_analyst_run",
+      "path": "/api/qa/analyst/run"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "get_analyst_runs",
+      "path": "/api/qa/analyst/runs"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "get_analyst_patterns",
+      "path": "/api/qa/analyst/patterns"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "get_guardrail_policies",
+      "path": "/api/qa/guardrails/policies"
+    },
+    {
+      "methods": [
+        "PUT"
+      ],
+      "name": "put_guardrail_policy",
+      "path": "/api/qa/guardrails/policies"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "get_guardrail_events",
+      "path": "/api/qa/guardrails/events"
+    },
+    {
+      "methods": [
         "GET",
         "HEAD"
       ],
@@ -1927,6 +2078,37 @@
       ],
       "name": "clear_monitoring_idempotency_cache",
       "path": "/api/calls/monitoring/idempotency/cache"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "list_live_calls",
+      "path": "/api/calls/live"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "stream_live_calls",
+      "path": "/api/calls/live/stream"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "list_auto_actions",
+      "path": "/api/calls/auto-actions"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_auto_action",
+      "path": "/api/calls/auto-actions"
     },
     {
       "methods": [
@@ -2746,6 +2928,21 @@
         "GET",
         "HEAD"
       ],
+      "name": "list_saved_views",
+      "path": "/api/calls/saved-views"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_saved_view",
+      "path": "/api/calls/saved-views"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
       "name": "query_audit_events_legacy_security_audit",
       "path": "/api/security/audit/events"
     },
@@ -3112,6 +3309,28 @@
     },
     {
       "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "get_page_context",
+      "path": "/api/v1/conductor/page-context"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "investigate_calls",
+      "path": "/api/v1/conductor/investigate-calls"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "build_chart",
+      "path": "/api/v1/conductor/build-chart"
+    },
+    {
+      "methods": [
         "POST"
       ],
       "name": "ingest_conductor_webhook_event",
@@ -3201,6 +3420,14 @@
       ],
       "name": "create_widget_voice_bootstrap",
       "path": "/api/v1/public/widget/voice-bootstrap"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "get_widget_chat_js",
+      "path": "/api/v1/public/widget/chat.js"
     },
     {
       "methods": [
@@ -3415,6 +3642,38 @@
     },
     {
       "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "get_concurrency_24h",
+      "path": "/api/v1/analytics/concurrency-24h"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "get_cost_by_provider",
+      "path": "/api/v1/analytics/cost-by-provider"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "get_disconnection_reasons",
+      "path": "/api/v1/analytics/disconnection-reasons"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "get_channel_summary",
+      "path": "/api/v1/analytics/channels"
+    },
+    {
+      "methods": [
         "POST"
       ],
       "name": "twilio_sms_webhook",
@@ -3433,13 +3692,6 @@
       ],
       "name": "twilio_sms_status_webhook",
       "path": "/messaging/sms/status"
-    },
-    {
-      "methods": [
-        "POST"
-      ],
-      "name": "send_sms_endpoint",
-      "path": "/messaging/sms/send"
     },
     {
       "methods": [
@@ -4102,6 +4354,14 @@
         "GET",
         "HEAD"
       ],
+      "name": "read_branding",
+      "path": "/api/whitelabel/branding"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
       "name": "read_theme",
       "path": "/api/whitelabel/theme"
     },
@@ -4262,6 +4522,411 @@
       ],
       "name": "tls_status",
       "path": "/api/platform/tls/status"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "sip_trunk_runtime_config",
+      "path": "/internal/telephony/sip-trunk-runtime-config"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "sip_inbound_route",
+      "path": "/internal/telephony/sip-inbound-route"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "list_trunks",
+      "path": "/api/telephony/trunks"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_trunk",
+      "path": "/api/telephony/trunks"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "trunks_health",
+      "path": "/api/telephony/trunks/health"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "current_concurrency",
+      "path": "/api/concurrency"
+    },
+    {
+      "methods": [
+        "PUT"
+      ],
+      "name": "update_limits",
+      "path": "/api/concurrency/limits"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "concurrency_series",
+      "path": "/api/concurrency/series"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "take_sample",
+      "path": "/api/concurrency/sample"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "list_rules",
+      "path": "/api/telephony/countries"
+    },
+    {
+      "methods": [
+        "PUT"
+      ],
+      "name": "replace_rules",
+      "path": "/api/telephony/countries"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "dry_run",
+      "path": "/api/telephony/countries/dry-run"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "list_registrations",
+      "path": "/api/messaging/registrations"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_draft",
+      "path": "/api/messaging/registrations"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "messaging_status",
+      "path": "/api/messaging/status"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "registration_webhook",
+      "path": "/api/messaging/webhooks/registration"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "purge_captures",
+      "path": "/api/calls/debug-artifacts/purge"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "get_catalog",
+      "path": "/api/workflow-library/catalog"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "get_presets",
+      "path": "/api/workflow-library/presets"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "list_installs",
+      "path": "/api/workflow-library/installs"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "install",
+      "path": "/api/workflow-library/install"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "read_settings",
+      "path": "/api/memory/settings"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "patch_settings",
+      "path": "/api/memory/settings"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "backfill",
+      "path": "/api/memory/backfill"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create",
+      "path": "/api/share-links"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "list_links",
+      "path": "/api/share-links"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "verify",
+      "path": "/api/v1/public/share/session/verify"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_chat_session",
+      "path": "/api/v1/public/chat/session"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "budget",
+      "path": "/api/v1/public/chat/budget"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "demo_status",
+      "path": "/api/v1/public/demo"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "request_verification",
+      "path": "/api/v1/public/demo/verification"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "confirm_verification",
+      "path": "/api/v1/public/demo/verification/confirm"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_demo_call",
+      "path": "/api/v1/public/demo/call"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "list_components",
+      "path": "/api/flow-components"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_component",
+      "path": "/api/flow-components"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "component_stats",
+      "path": "/api/flow-components/stats"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "import_agent_bundle",
+      "path": "/api/agents/import"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "list_folders",
+      "path": "/api/agent-folders"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_folder",
+      "path": "/api/agent-folders"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "list_templates",
+      "path": "/api/agent-templates"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "list_rules",
+      "path": "/api/alerts/rules"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_rule",
+      "path": "/api/alerts/rules"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "list_events",
+      "path": "/api/alerts/events"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "evaluate_now",
+      "path": "/api/alerts/evaluate"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "permission_catalogue",
+      "path": "/api/auth/permission-catalogue"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "list_custom_roles",
+      "path": "/api/auth/custom-roles"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_custom_role",
+      "path": "/api/auth/custom-roles"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "effective_permission_preview",
+      "path": "/api/auth/effective-permissions"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "list_cases",
+      "path": "/api/batch-tests/cases"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_case",
+      "path": "/api/batch-tests/cases"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "import_cases",
+      "path": "/api/batch-tests/import"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "export_cases",
+      "path": "/api/batch-tests/export"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "start_run",
+      "path": "/api/batch-tests/runs"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "list_runs",
+      "path": "/api/batch-tests/runs"
     },
     {
       "methods": [
@@ -7086,6 +7751,42 @@
       "path": "/api/calls/{call_id}/monitor/analytics"
     },
     {
+      "methods": [
+        "POST"
+      ],
+      "name": "record_live_score",
+      "path": "/api/calls/{call_id}/live-score"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "patch_auto_action",
+      "path": "/api/calls/auto-actions/{rule_id}"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_auto_action",
+      "path": "/api/calls/auto-actions/{rule_id}"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "get_call_auto_actions",
+      "path": "/api/calls/{call_id}/auto-actions"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "evaluate_auto_actions",
+      "path": "/api/calls/{call_id}/auto-actions/evaluate"
+    },
+    {
       "methods": [],
       "name": "monitor_call_ws",
       "path": "/ws/monitor/{call_id}"
@@ -7858,6 +8559,13 @@
       "methods": [
         "POST"
       ],
+      "name": "merge_agent_versions",
+      "path": "/api/agents/{agent_id}/versions/merge"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
       "name": "create_tool",
       "path": "/api/agents/{agent_id}/tools"
     },
@@ -7985,6 +8693,21 @@
       ],
       "name": "delete_dnc_by_phone",
       "path": "/api/calls/dnc/phone/{phone}"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "get_recording_access",
+      "path": "/api/calls/{call_id}/recording-access"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_saved_view",
+      "path": "/api/calls/saved-views/{view_id}"
     },
     {
       "methods": [
@@ -8538,6 +9261,13 @@
       ],
       "name": "get_resulting_version_endpoint",
       "path": "/api/v1/conductor/proposals/{proposal_id}/resulting-version"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "add_attachment",
+      "path": "/api/v1/conductor/proposals/{proposal_id}/attachments"
     },
     {
       "methods": [
@@ -10091,6 +10821,275 @@
     },
     {
       "methods": [
+        "PATCH"
+      ],
+      "name": "update_trunk",
+      "path": "/api/telephony/trunks/{trunk_id}"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_trunk",
+      "path": "/api/telephony/trunks/{trunk_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "test_trunk",
+      "path": "/api/telephony/trunks/{trunk_id}/test"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "submit_registration",
+      "path": "/api/messaging/registrations/{registration_id}/submit"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "capture_call_packets",
+      "path": "/api/calls/{call_id}/pcap"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "list_call_captures",
+      "path": "/api/calls/{call_id}/pcap"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "enable",
+      "path": "/api/workflow-library/{workflow_key}/enable"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "uninstall",
+      "path": "/api/workflow-library/{workflow_key}"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "preview_review",
+      "path": "/api/workflow-library/review/{workflow_key}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "rebuild_brief",
+      "path": "/api/memory/{contact_id}/brief"
+    },
+    {
+      "methods": [
+        "PUT"
+      ],
+      "name": "edit_brief",
+      "path": "/api/memory/{contact_id}/brief"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "clear_brief",
+      "path": "/api/memory/{contact_id}/brief"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "recall",
+      "path": "/api/memory/{contact_id}/recall"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "revoke",
+      "path": "/api/share-links/{link_id}"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "describe",
+      "path": "/api/v1/public/share/{token}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "redeem",
+      "path": "/api/v1/public/share/{token}/redeem"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "add_version",
+      "path": "/api/flow-components/{component_id}/versions"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "publish_version",
+      "path": "/api/flow-components/{component_id}/publish"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "component_usage",
+      "path": "/api/flow-components/{component_id}/usage"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "bind_agent",
+      "path": "/api/flow-components/{component_id}/bindings"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "propagation_plan",
+      "path": "/api/flow-components/{component_id}/propagation-plan"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "export_agent_bundle",
+      "path": "/api/agents/{agent_id}/export"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "move_folder",
+      "path": "/api/agent-folders/{folder_id}"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_folder",
+      "path": "/api/agent-folders/{folder_id}"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "move_agent",
+      "path": "/api/agents/{agent_id}/folder"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "read_template",
+      "path": "/api/agent-templates/{template_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "instantiate_template",
+      "path": "/api/agent-templates/{template_id}/instantiate"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "patch_rule",
+      "path": "/api/alerts/rules/{rule_id}"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_rule",
+      "path": "/api/alerts/rules/{rule_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "test_fire",
+      "path": "/api/alerts/rules/{rule_id}/test-fire"
+    },
+    {
+      "methods": [
+        "PATCH"
+      ],
+      "name": "patch_custom_role",
+      "path": "/api/auth/custom-roles/{role_id}"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_custom_role",
+      "path": "/api/auth/custom-roles/{role_id}"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "list_assignments",
+      "path": "/api/auth/custom-roles/{role_id}/assignments"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "create_assignment",
+      "path": "/api/auth/custom-roles/{role_id}/assignments"
+    },
+    {
+      "methods": [
+        "DELETE"
+      ],
+      "name": "delete_case",
+      "path": "/api/batch-tests/cases/{case_id}"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "get_run",
+      "path": "/api/batch-tests/runs/{run_id}"
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "name": "cancel_run",
+      "path": "/api/batch-tests/runs/{run_id}/cancel"
+    },
+    {
+      "methods": [
         "POST"
       ],
       "name": "call_tool",
@@ -11267,6 +12266,13 @@
     },
     {
       "methods": [
+        "DELETE"
+      ],
+      "name": "delete_assignment",
+      "path": "/api/auth/custom-roles/{role_id}/assignments/{assignment_id}"
+    },
+    {
+      "methods": [
         "GET",
         "HEAD"
       ],
@@ -11317,6 +12323,14 @@
       ],
       "name": "archive_resource",
       "path": "/api/tenants/{tenant_id}/environments/{environment_id}/resources/{resource_type}/{resource_id}/archive"
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "name": "download_capture",
+      "path": "/api/calls/debug-artifacts/{storage_key:path}"
     }
   ]
 }

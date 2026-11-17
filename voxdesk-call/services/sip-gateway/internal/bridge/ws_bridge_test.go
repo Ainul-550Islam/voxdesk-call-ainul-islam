@@ -82,6 +82,9 @@ func TestWSBridgeSendsTheStartMessage(t *testing.T) {
 		if message.Codec != "PCMU" {
 			t.Fatalf("unexpected codec %q", message.Codec)
 		}
+		if message.Direction != "inbound" {
+			t.Fatalf("unexpected call direction %q", message.Direction)
+		}
 	case <-time.After(2 * time.Second):
 		t.Fatal("the start message never arrived")
 	}
@@ -103,6 +106,63 @@ func TestWSBridgeSendsTheStartMessage(t *testing.T) {
 		}
 	case <-time.After(2 * time.Second):
 		t.Fatal("the handshake headers never arrived")
+	}
+}
+
+func TestWSBridgeCarriesTheAuthorizedTenantBinding(t *testing.T) {
+	received := make(chan Message, 2)
+	server := startServer(t, received, nil, nil)
+	url := "ws" + strings.TrimPrefix(server.URL, "http") + "/telephony/sip/ws"
+	mediaBridge := NewWSBridge(url, "secret-token")
+	defer mediaBridge.Close()
+	if err := mediaBridge.DialWithRoute(
+		context.Background(),
+		"sip-call-1@carrier.example",
+		"+15559998888",
+		"+15550001111",
+		"PCMU",
+		"inbound",
+		"11111111-1111-4111-8111-111111111111",
+		"22222222-2222-4222-8222-222222222222",
+		"33333333-3333-4333-8333-333333333333",
+		"192.0.2.44",
+	); err != nil {
+		t.Fatalf("dial: %v", err)
+	}
+	select {
+	case message := <-received:
+		if message.TenantID != "11111111-1111-4111-8111-111111111111" ||
+			message.TrunkID != "22222222-2222-4222-8222-222222222222" ||
+			message.EnvironmentID != "33333333-3333-4333-8333-333333333333" ||
+			message.SourceIP != "192.0.2.44" {
+			t.Fatalf("start frame lost the authorized route binding: %+v", message)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("the routed start message never arrived")
+	}
+}
+
+func TestWSBridgeCanSignalAnOutboundCall(t *testing.T) {
+	received := make(chan Message, 2)
+	server := startServer(t, received, nil, nil)
+	url := "ws" + strings.TrimPrefix(server.URL, "http") + "/telephony/sip/ws"
+	mediaBridge := NewWSBridge(url, "secret-token")
+	defer mediaBridge.Close()
+	if err := mediaBridge.DialWithDirection(
+		context.Background(), "call-out", "+15550001111", "+14155550123", "PCMA", "outbound",
+	); err != nil {
+		t.Fatalf("dial: %v", err)
+	}
+	select {
+	case message := <-received:
+		if message.Direction != "outbound" {
+			t.Fatalf("expected outbound direction, got %q", message.Direction)
+		}
+		if message.From != "+15550001111" || message.To != "+14155550123" {
+			t.Fatalf("unexpected numbers %q -> %q", message.From, message.To)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("the outbound start message never arrived")
 	}
 }
 

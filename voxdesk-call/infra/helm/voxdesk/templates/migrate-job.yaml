@@ -1,0 +1,70 @@
+{{- /*
+Schema migration hook (helm.sh/hook: pre-upgrade,pre-install).
+
+The API image's entrypoint also migrates, which is fine for a single pod and
+disastrous for a rolling deployment: N pods racing `alembic upgrade head`
+against one database is how a schema ends up half-applied. This Job runs
+exactly once, before the new ReplicaSet exists, and fails the release (default
+hook policy `hook-failed` + `before-hook-creation`) if the migration fails.
+
+`hook-delete-policy: before-hook-creation` matters: the Job is named
+deterministically, so without it the second upgrade finds the first Job's
+completed pod and reports success without running anything.
+*/ -}}
+{{- $mj := .Values.migrateJob | default dict -}}
+{{- if $mj.enabled | default false }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "voxdesk.fullname" . }}-migrate
+  labels:
+    {{- include "voxdesk.labels" . | nindent 4 }}
+    app.kubernetes.io/component: migrate
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "-10"
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  backoffLimit: {{ $mj.backoffLimit | default 1 }}
+  activeDeadlineSeconds: {{ $mj.activeDeadlineSeconds | default 900 }}
+  # Two migrations may not run at once even across concurrent helm runs.
+  parallelism: 1
+  completions: 1
+  ttlSecondsAfterFinished: {{ $mj.ttlSecondsAfterFinished | default 3600 }}
+  template:
+    metadata:
+      labels:
+        {{- include "voxdesk.labels" . | nindent 8 }}
+        app.kubernetes.io/component: migrate
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: migrate
+          image: "{{ required "migrateJob.image.repository is required" .Values.image.repository }}:{{ required "image.tag is required" .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["python", "-m", "alembic", "upgrade", "head"]
+          env:
+            - name: APP_ENV
+              value: {{ .Values.config.appEnv | quote }}
+            - name: DATABASE_URL
+              value: {{ required "config.databaseUrl is required" .Values.config.databaseUrl | quote }}
+            - name: REDIS_URL
+              value: {{ required "config.redisUrl is required" .Values.config.redisUrl | quote }}
+          envFrom:
+            - secretRef:
+                name: {{ required "secrets.existingSecret is required" .Values.secrets.existingSecret }}
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {cpu: "1", memory: 1Gi}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+{{- end }}

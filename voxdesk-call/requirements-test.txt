@@ -14,3 +14,8 @@ ruff==0.8.4
 # loadtest/voice_ws_user.py imports audioop, removed in Python 3.13. Pin the
 # backport on 3.13 only; 3.12 ships audioop in the standard library.
 audioop-lts==0.2.2; python_version >= "3.13"
+
+# PART 11 / P11-10: the WebRTC signalling path is real and covered by a genuine aiortc
+# peer-connection test (tests/telephony/test_webrtc_real_negotiation.py). Pinned so CI
+# executes the negotiation instead of skipping it. See docs/WEBRTC_TRANSPORT_DECISION.md.
+aiortc==1.16.0

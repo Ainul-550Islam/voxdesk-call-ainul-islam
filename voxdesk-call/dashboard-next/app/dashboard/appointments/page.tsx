@@ -95,7 +95,7 @@ export default function AppointmentsPage() {
         {data.appointments.length === 0 ? (
           <div className="empty">No appointments match.</div>
         ) : (
-          <div className="table-wrap">
+          <div className="table-wrap" tabIndex={0} role="region" aria-label="Data table">
             <table>
               <thead>
                 <tr>

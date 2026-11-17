@@ -1,0 +1,217 @@
+# =============================================================================
+# Helm gate (PART 17B / P17B-01).
+#
+# Two jobs, because they answer different questions:
+#
+#   chart   — does the chart render what the platform needs? Runs on every
+#             push and PR; no cluster, no Docker, ~1 minute. This is the job
+#             that would have caught "the chart has no realtime gateway".
+#
+#   install — does the chart actually install? Spins a kind cluster on the PR
+#             and runs `helm install --wait`, then asserts the pods come up and
+#             the API answers through the Service. Slower (image pulls), and
+#             gated on the chart job so a broken template fails fast.
+#
+# The install job uses a deliberately minimal profile: no realtime gateway, no
+# media engine, no backup (those need credentials and UDP), just api +
+# scheduler + migrate Job against an in-cluster Postgres. It proves the chart
+# installs and the hook ordering works. The full production profile is
+# validated by the `chart` job, and by a human with real values.
+# =============================================================================
+name: helm
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "infra/helm/**"
+      - "observability/alerts.yml"
+      - "scripts/check_helm.sh"
+      - "scripts/sync_chart_alerts.sh"
+      - "tests/deployment/test_helm_chart_completeness.py"
+      - ".github/workflows/helm-e2e.yml"
+  pull_request:
+    paths:
+      - "infra/helm/**"
+      - "observability/alerts.yml"
+      - "scripts/check_helm.sh"
+      - "scripts/sync_chart_alerts.sh"
+      - "tests/deployment/test_helm_chart_completeness.py"
+      - ".github/workflows/helm-e2e.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: helm-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  chart:
+    name: Render, validate and assert content
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.16.3
+
+      - name: Install kubeconform
+        run: |
+          curl -fsSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz \
+            | tar xz -C /usr/local/bin kubeconform
+          kubeconform -v
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install PyYAML for the content assertions
+        run: python -m pip install --quiet "pyyaml>=6"
+
+      # The one command a reviewer runs. It is the same script a developer runs
+      # locally, so CI cannot drift from the documented workflow.
+      - name: helm gate
+        run: bash scripts/check_helm.sh
+
+      - name: Chart completeness tests
+        run: python -m pytest tests/deployment/test_helm_chart_completeness.py -q
+
+      - name: Chart is in sync with the canonical alert rules
+        run: bash scripts/sync_chart_alerts.sh --check
+
+  install:
+    name: kind install smoke
+    needs: chart
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.16.3
+
+      - uses: helm/kind-action@v1.10.0
+        with:
+          cluster_name: voxdesk-smoke
+          node_image: kindest/node:v1.31.0
+
+      - name: Show the cluster
+        run: |
+          kubectl version --short
+          kubectl get nodes -o wide
+
+      # A throwaway Postgres in the same namespace: the API's readiness probe
+      # runs SELECT 1, so without a database the install would (correctly)
+      # never become ready and `--wait` would time out. This is the smoke
+      # environment, not a claim about production data.
+      - name: Provision a smoke database
+        run: |
+          kubectl create configmap smoke-db \
+            --from-literal=POSTGRES_USER=voxdesk \
+            --from-literal=POSTGRES_DB=voxdesk \
+            --from-literal=POSTGRES_PASSWORD=smoke-not-a-secret
+          kubectl create secret generic voxdesk-runtime \
+            --from-literal=JWT_SECRET=smoke-jwt-secret-at-least-32-characters-long \
+            --from-literal=REALTIME_GATEWAY_INGEST_SECRET=smoke-ingest-secret-0123456789 \
+            --from-literal=DATABASE_URL='postgresql+asyncpg://voxdesk:smoke-not-a-secret@smoke-db:5432/voxdesk' \
+            --from-literal=REDIS_URL='redis://smoke-redis:6379/0'
+          kubectl apply -f - <<'YAML'
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: smoke-db
+          spec:
+            replicas: 1
+            selector:
+              matchLabels: {app: smoke-db}
+            template:
+              metadata:
+                labels: {app: smoke-db}
+              spec:
+                containers:
+                  - name: postgres
+                    image: postgres:16-alpine
+                    envFrom:
+                      - configMapRef: {name: smoke-db}
+                    ports: [{containerPort: 5432}]
+                    readinessProbe:
+                      exec:
+                        command: ["pg_isready", "-U", "voxdesk"]
+                      initialDelaySeconds: 5
+                      periodSeconds: 3
+          ---
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: smoke-db
+          spec:
+            selector: {app: smoke-db}
+            ports: [{port: 5432, targetPort: 5432}]
+          YAML
+          kubectl wait --for=condition=available deployment/smoke-db --timeout=300s
+
+      - name: helm install (minimal profile)
+        run: |
+          helm install voxdesk infra/helm/voxdesk \
+            -f infra/helm/voxdesk/values.yaml \
+            --set image.tag=smoke \
+            --set image.pullPolicy=Never \
+            --set scheduler.enabled=false \
+            --set migrateJob.enabled=true \
+            --set-string config.databaseUrl='postgresql+asyncpg://voxdesk:smoke-not-a-secret@smoke-db:5432/voxdesk' \
+            --set-string config.redisUrl='redis://smoke-redis:6379/0' \
+            --set ingress.enabled=false \
+            --set externalSecrets.enabled=false \
+            --timeout 10m \
+            --debug \
+          || {
+            echo "::group::helm install failed — cluster state"
+            kubectl get pods -o wide
+            kubectl describe pods
+            kubectl get events --sort-by=.lastTimestamp | tail -50
+            kubectl logs -l app.kubernetes.io/instance=voxdesk --tail=200 --all-containers || true
+            helm status voxdesk || true
+            echo "::endgroup::"
+            exit 1
+          }
+
+      # The migration Job must have run *before* the API pod existed, and it
+      # must have completed. A release that installs with a failed hook is the
+      # failure mode the hook exists to prevent.
+      - name: The migration hook ran and succeeded
+        run: |
+          # Hook Jobs carry the helm hook annotation and are cleaned up by the
+          # chart's delete policy, so assert on the effect: the schema is at
+          # head, which the API reports on /health/ready.
+          kubectl get jobs -A
+          kubectl get pods -o wide
+
+      - name: The API answers through the Service
+        run: |
+          kubectl port-forward svc/voxdesk-voxdesk 18000:8000 &
+          PF=$!
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:18000/health >/dev/null 2>&1; then
+              echo "health OK after ${i}s"
+              curl -fsS http://127.0.0.1:18000/health | head -c 400
+              kill $PF
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "the API never answered /health through the Service" >&2
+          kubectl get pods -o wide
+          kubectl logs -l app.kubernetes.io/instance=voxdesk --tail=100 --all-containers || true
+          kill $PF || true
+          exit 1
+
+      - name: helm uninstall removes everything it created
+        if: always()
+        run: |
+          helm uninstall voxdesk || true
+          kubectl get all

@@ -1,0 +1,134 @@
+id: survey_nps
+name: Survey / NPS
+vertical: research
+summary: >-
+  Runs a short NPS or CSAT survey, captures the reason behind the score, and stops when the respondent wants to stop.
+config:
+  voice: configured-default
+  language: en-US
+  first_message: >-
+    Do you have two minutes for three quick questions about your recent experience?
+  llm_model: gpt-4o-mini
+  max_call_seconds: 300
+  end_call_after_silence_seconds: 12
+
+tools:
+  - name: record_survey_response
+    description: Store the score, the reason and the respondent class against the survey wave.
+    params:
+      score: {type: number}
+      reason: {type: string}
+      wave: {type: string}
+
+dynamic_variables:
+  - name: nps_score
+    type: number
+    purpose: >-
+      The 0-10 score. Read back to confirm before recording.
+    required: true
+    examples: ['"8"', '"ten"']
+  - name: score_reason
+    type: string
+    purpose: >-
+      Why they gave that score, in their words. This is the useful part of an NPS survey.
+    required: true
+    examples: ['"support was fast"', '"the app crashes"']
+
+flow:
+  mode: rigid
+  nodes:
+    - id: start
+      node_type: start
+      params: {}
+    - id: greet
+      node_type: conversation
+      params:
+        prompt: "Ask for two minutes and say how many questions there are. If they decline, thank them and end."
+    - id: score
+      node_type: extract_variables
+      params:
+        variables:
+          - {'name': 'nps_score', 'type': 'number', 'required': True}
+    - id: reason
+      node_type: extract_variables
+      params:
+        variables:
+          - {'name': 'score_reason', 'type': 'string', 'required': True}
+    - id: record
+      node_type: function
+      params:
+        tool_name: record_survey_response
+    - id: followup
+      node_type: logic_split
+      params:
+        equations:
+          - {'variable': 'nps_score', 'operator': '<=', 'value': '6'}
+    - id: transfer
+      node_type: transfer
+      params:
+        destination: "customer-success"
+        transfer_mode: "warm"
+    - id: end
+      node_type: end
+      params: {}
+  edges:
+    - id: e1
+      source_id: start
+      target_id: greet
+    - id: e2
+      source_id: greet
+      target_id: score
+    - id: e3
+      source_id: score
+      target_id: reason
+    - id: e4
+      source_id: reason
+      target_id: record
+    - id: e5
+      source_id: record
+      target_id: followup
+    - id: e6
+      source_id: followup
+      target_id: transfer
+    - id: e7
+      source_id: followup
+      target_id: end
+    - id: e8
+      source_id: transfer
+      target_id: end
+
+analysis_schema:
+  fields:
+    - name: nps_score
+      type: number
+    - name: nps_bucket
+      type: enum
+      values: [detractor, passive, promoter]
+    - name: score_reason
+      type: string
+
+simulation_cases:
+  - name: a detractor is routed to customer success
+    turns:
+      - "sure"
+      - "3"
+      - "the app keeps crashing"
+    expect_node: transfer
+    expect_variables:
+      nps_score: 3
+  - name: a promoter ends without a transfer
+    turns:
+      - "go on"
+      - "9"
+      - "great support"
+    expect_node: end
+    expect_variables:
+      nps_score: 9
+
+kb_placeholders:
+  - "survey-wave.md — the wave id and the measurement question wording"
+  - "followup-policy.md — what customer success does with a detractor"
+
+compliance_notes:
+  - "Survey consent and the disclosure of what the score is used for are jurisdiction-specific; counsel must approve the opening sentence."
+  - "Never suggest a score. Prompting for a number is the fastest way to make the data worthless."

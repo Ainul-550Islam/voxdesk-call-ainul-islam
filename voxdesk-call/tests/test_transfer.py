@@ -12,6 +12,7 @@ resulting database state.
 from __future__ import annotations
 
 import uuid
+import xml.etree.ElementTree as ET
 from datetime import datetime
 
 import pytest
@@ -26,7 +27,8 @@ from app.db.models import (
 )
 from app.telephony import transfer_service
 from app.telephony.provider import FakeTelephonyProvider
-from app.telephony.transfer_service import TransferError, TransferOutcome
+from app.telephony.transfer import transfer_whisper_url
+from app.telephony.transfer_service import TransferError, TransferOutcome, plan_transfer_v2
 from tests.conftest import make_tenant
 
 HUMAN = "+15557654321"
@@ -47,6 +49,15 @@ async def seed_call(db, tenant, *, status=CallStatus.IN_PROGRESS, **kw) -> Call:
     await db.commit()
     await db.refresh(call)
     return call
+
+
+def simulate_human_amd(call: Call) -> None:
+    """Set the server-side AMD result for unit tests below the HTTP boundary."""
+    context = dict(call.transfer_context or {})
+    plan = dict(context.get("transfer_v2") or {})
+    plan.update({"human_verified": True, "amd_verdict": "human"})
+    context["transfer_v2"] = plan
+    call.transfer_context = context
 
 
 @pytest.fixture
@@ -90,6 +101,140 @@ async def test_valid_escalation_actually_performs_the_transfer(db, provider):
     assert call.transfer_requested_at is not None
     assert call.transfer_started_at is not None
     assert call.transfer_error is None
+
+
+@pytest.mark.asyncio
+async def test_active_transfer_uses_the_v2_plan_for_supported_twiml_fields(db, provider):
+    tenant = await tenant_with_human(db)
+    call = await seed_call(db, tenant)
+    unsafe_whisper = "Billing question for +15551234567, password=topsecret"
+    expected = plan_transfer_v2(
+        tenant,
+        call,
+        destination=HUMAN,
+        style="whisper",
+        caller_id_mode="agent",
+        hold_music=False,
+        require_human=True,
+        reason="billing question",
+        whisper=unsafe_whisper,
+    )
+
+    await transfer_service.request_transfer(
+        db,
+        tenant,
+        call,
+        provider=provider,
+        reason="billing question",
+        whisper=unsafe_whisper,
+    )
+
+    twiml = provider.last_twiml()
+    assert twiml is not None
+    root = ET.fromstring(twiml)
+    dial = root.find("Dial")
+    assert "Billing question" not in twiml
+    assert "topsecret" not in twiml
+    assert all(expected.whisper not in (say.text or "") for say in root.findall("Say"))
+    assert dial is not None
+    assert dial.attrib.get("callerId") == expected.caller_id
+    number = dial.find("Number")
+    assert number is not None
+    assert number.text == expected.destination.resolved
+    assert number.attrib.get("url") == transfer_whisper_url(call.id)
+    assert number.attrib.get("machineDetection") == "Enable"
+
+
+@pytest.mark.asyncio
+async def test_whisper_webhook_speaks_only_to_a_verified_human(client, db, provider):
+    tenant = await tenant_with_human(db)
+    call = await seed_call(db, tenant)
+    whisper = "Billing question for +15551234567, password=topsecret"
+    expected = plan_transfer_v2(
+        tenant,
+        call,
+        destination=HUMAN,
+        hold_music=False,
+        require_human=True,
+        reason="billing question",
+        whisper=whisper,
+    )
+    await transfer_service.request_transfer(
+        db, tenant, call, provider=provider, reason="billing question", whisper=whisper
+    )
+
+    response = await client.post(
+        f"/telephony/transfer-whisper?call_id={call.id}",
+        data={"CallSid": "CA-human-leg", "AnsweredBy": "human"},
+    )
+
+    assert response.status_code == 200, response.text
+    root = ET.fromstring(response.text)
+    say = root.find("Say")
+    assert say is not None and say.text == expected.whisper
+    assert "15551234567" not in (say.text or "")
+    assert "topsecret" not in (say.text or "")
+    assert root.find("Hangup") is None
+    await db.refresh(call)
+    assert call.transfer_context["transfer_v2"]["human_verified"] is True
+
+    status_response = await client.post(
+        "/telephony/transfer-status",
+        data={"CallSid": call.call_sid, "DialCallStatus": "completed"},
+    )
+    assert status_response.status_code == 200
+    await db.refresh(call)
+    assert call.transfer_state is TransferState.CONNECTED
+
+    ended_response = await client.post(
+        "/telephony/status",
+        data={"CallSid": call.call_sid, "CallStatus": "completed", "CallDuration": "45"},
+    )
+    assert ended_response.status_code == 200
+    await db.refresh(call)
+    texts = await system_texts(db, call)
+    assert "Caller connected to a person" in texts
+    assert "Transfer ended" in texts
+
+
+@pytest.mark.parametrize(
+    ("answered_by", "expected_verdict"),
+    [("machine_start", "machine_detected"), (None, "human_not_confirmed")],
+)
+@pytest.mark.asyncio
+async def test_machine_or_unknown_amd_is_not_bridged(
+    client, db, provider, answered_by, expected_verdict
+):
+    tenant = await tenant_with_human(db)
+    call = await seed_call(db, tenant)
+    await transfer_service.request_transfer(db, tenant, call, provider=provider)
+    data = {"CallSid": "CA-non-human-leg"}
+    if answered_by is not None:
+        data["AnsweredBy"] = answered_by
+
+    response = await client.post(
+        f"/telephony/transfer-whisper?call_id={call.id}", data=data
+    )
+
+    assert response.status_code == 200, response.text
+    root = ET.fromstring(response.text)
+    assert root.find("Say") is None
+    assert root.find("Hangup") is not None
+    await db.refresh(call)
+    v2_state = call.transfer_context["transfer_v2"]
+    assert v2_state["human_verified"] is False
+    assert v2_state["amd_verdict"] == expected_verdict
+
+    status_response = await client.post(
+        "/telephony/transfer-status",
+        data={"CallSid": call.call_sid, "DialCallStatus": "completed"},
+    )
+    assert status_response.status_code == 200
+    await db.refresh(call)
+    assert call.transfer_state is TransferState.FAILED
+    texts = await system_texts(db, call)
+    assert "Human transfer connected." not in texts
+    assert f"Transfer cancelled — {expected_verdict}" in texts
 
 
 @pytest.mark.asyncio
@@ -229,6 +374,7 @@ async def test_already_connected_call_reports_completed_not_a_new_transfer(db, p
     tenant = await tenant_with_human(db)
     call = await seed_call(db, tenant)
     await transfer_service.request_transfer(db, tenant, call, provider=provider)
+    simulate_human_amd(call)
     await transfer_service.mark_transfer_connected(db, call)
     await db.commit()
 
@@ -293,10 +439,23 @@ async def test_transfer_unavailable_while_one_is_in_flight(db, provider):
 # =========================================================== callbacks ====
 
 @pytest.mark.asyncio
+async def test_unverified_v2_leg_cannot_be_marked_connected(db, provider):
+    tenant = await tenant_with_human(db)
+    call = await seed_call(db, tenant)
+    await transfer_service.request_transfer(db, tenant, call, provider=provider)
+
+    changed = await transfer_service.mark_transfer_connected(db, call)
+
+    assert changed is False
+    assert call.transfer_state is TransferState.DIALING
+
+
+@pytest.mark.asyncio
 async def test_connected_callback_records_the_connection(db, provider):
     tenant = await tenant_with_human(db)
     call = await seed_call(db, tenant)
     await transfer_service.request_transfer(db, tenant, call, provider=provider)
+    simulate_human_amd(call)
 
     changed = await transfer_service.mark_transfer_connected(db, call)
     await db.commit()
@@ -312,6 +471,7 @@ async def test_duplicate_connected_callback_changes_nothing(db, provider):
     tenant = await tenant_with_human(db)
     call = await seed_call(db, tenant)
     await transfer_service.request_transfer(db, tenant, call, provider=provider)
+    simulate_human_amd(call)
     await transfer_service.mark_transfer_connected(db, call)
     await db.commit()
     first_time = call.transfer_completed_at
@@ -327,6 +487,7 @@ async def test_failure_callback_after_connection_is_ignored(db, provider):
     tenant = await tenant_with_human(db)
     call = await seed_call(db, tenant)
     await transfer_service.request_transfer(db, tenant, call, provider=provider)
+    simulate_human_amd(call)
     await transfer_service.mark_transfer_connected(db, call)
     await db.commit()
 
@@ -366,6 +527,7 @@ async def test_transfer_writes_system_transcript_events(db, provider):
     tenant = await tenant_with_human(db)
     call = await seed_call(db, tenant)
     await transfer_service.request_transfer(db, tenant, call, provider=provider)
+    simulate_human_amd(call)
     await transfer_service.mark_transfer_connected(db, call)
     await db.commit()
 
@@ -373,6 +535,7 @@ async def test_transfer_writes_system_transcript_events(db, provider):
     assert "Human transfer requested." in texts
     assert "Human transfer started." in texts
     assert "Human transfer connected." in texts
+    assert "Transfer started" in texts
 
 
 @pytest.mark.asyncio
@@ -380,6 +543,7 @@ async def test_duplicate_provider_events_do_not_duplicate_system_turns(db, provi
     tenant = await tenant_with_human(db)
     call = await seed_call(db, tenant)
     await transfer_service.request_transfer(db, tenant, call, provider=provider)
+    simulate_human_amd(call)
     for _ in range(3):
         await transfer_service.mark_transfer_connected(db, call)
         await transfer_service.request_transfer(db, tenant, call, provider=provider)
@@ -389,6 +553,8 @@ async def test_duplicate_provider_events_do_not_duplicate_system_turns(db, provi
     assert texts.count("Human transfer connected.") == 1
     assert texts.count("Human transfer requested.") == 1
     assert texts.count("Human transfer started.") == 1
+    assert texts.count("Transfer started") == 1
+    assert texts.count("Caller connected to a person") == 1
 
 
 @pytest.mark.asyncio

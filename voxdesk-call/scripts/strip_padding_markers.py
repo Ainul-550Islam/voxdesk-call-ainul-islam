@@ -13,7 +13,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-ROOTS = ('app', 'services', 'dashboard/src', 'dashboard-next', 'sdk')
+ROOTS = ('app', 'services', 'dashboard-next', 'sdk')
 SUFFIXES = {'.py', '.ts', '.tsx', '.js', '.jsx', '.rs', '.go', '.c', '.cc', '.cpp', '.h', '.hpp', '.html'}
 SKIP = {'node_modules', 'target', 'build', 'dist', 'vendor', '__pycache__', '.next', '.cache', '.venv'}
 BANNER = re.compile(r'NO SKIP FULL CODE|\b\d{3,}\+\s*lines\b', re.I)

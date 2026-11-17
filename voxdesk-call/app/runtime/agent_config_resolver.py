@@ -24,8 +24,10 @@ Also resolves the bound agent's enabled tools (``AgentTool``, ``ApiTool``,
 
 from __future__ import annotations
 
+import re
 import uuid
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from typing import Any
 
 from sqlalchemy import select
@@ -50,6 +52,7 @@ from app.db.models import (
 )
 from app.db.telephony_models import TelephonyPhoneNumber
 from app.services.experiment_service import assign_call_to_experiment
+from app.telephony.number_routing import build_routing
 from app.telephony.number_provisioning import PhoneNumber, PhoneNumberStatus
 
 
@@ -78,6 +81,14 @@ def _coerce_int(val: Any, default: int) -> int:
         return default
 
 
+def _coerce_bool(val: Any, default: bool = False) -> bool:
+    if val is None:
+        return default
+    if isinstance(val, str):
+        return val.strip().lower() not in {"", "0", "false", "no", "off"}
+    return bool(val)
+
+
 def _parse_boosted_keywords(raw: Any) -> list[tuple[str, float]]:
     if not raw or not isinstance(raw, list):
         return []
@@ -101,6 +112,106 @@ def _parse_boosted_keywords(raw: Any) -> list[tuple[str, float]]:
             else:
                 out.append((raw_str, 2.0))
     return out
+
+
+def _render_dynamic_template(text: str, variables: dict[str, Any]) -> str:
+    """Render known ``{{variable}}`` placeholders without blanking unknown names."""
+    def replace(match: re.Match[str]) -> str:
+        name = match.group(1).strip()
+        value = variables.get(name)
+        return str(value) if value not in (None, "") else match.group(0)
+
+    return re.sub(r"\{\{\s*([\w.]+)\s*\}\}", replace, text or "")
+
+
+async def _resolve_call_dynamic_variables(
+    session: AsyncSession,
+    *,
+    tenant: Tenant,
+    call: Call | None,
+    direction: str,
+    snapshot: dict[str, Any],
+) -> dict[str, Any]:
+    """Build system, configured-default, typed-definition and per-call variables."""
+    if call is None:
+        return {}
+
+    from app.services.dynamic_variable_service import (
+        SystemVariableContext,
+        build_variables,
+        resolve_variables,
+    )
+
+    call_context = dict(getattr(call, "transfer_context", None) or {})
+    inbound_overrides = call_context.get("inbound_overrides")
+    inbound_variables = (
+        inbound_overrides.get("dynamic_variables")
+        if isinstance(inbound_overrides, dict)
+        else None
+    )
+    raw_overrides = call_context.get("dynamic_variable_overrides")
+    if not isinstance(raw_overrides, dict):
+        raw_overrides = dict(inbound_variables) if isinstance(inbound_variables, dict) else {}
+        existing_variables = call_context.get("dynamic_variables")
+        if isinstance(existing_variables, dict):
+            raw_overrides.update(existing_variables)
+    else:
+        raw_overrides = dict(raw_overrides)
+
+    variable_defaults: dict[str, Any] = {}
+    for key in ("dynamic_variable_defaults", "default_dynamic_variables", "initial_variables"):
+        values = snapshot.get(key)
+        if isinstance(values, dict):
+            variable_defaults.update(values)
+
+    # Tenant-level definitions are the scope shared by voice and chat. Agent-scoped
+    # definitions belong to ChatAgent IDs and must not be applied to voice Agent IDs.
+    defined_values = await resolve_variables(
+        session,
+        tenant,
+        raw_overrides,
+        chat_agent_id=None,
+    )
+    variable_defaults.update(defined_values)
+
+    now = getattr(call, "started_at", None) or datetime.now(timezone.utc)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
+    direction_for_system = direction if direction in {"inbound", "outbound"} else "inbound"
+    requested_type = str(
+        call_context.get("call_type")
+        or call_context.get("channel")
+        or ("web" if direction == "web" else direction_for_system)
+    ).strip().lower()
+    call_type = requested_type if requested_type in {"inbound", "outbound", "web", "sms"} else direction_for_system
+    user_number = (
+        str(call.from_number or "")
+        if direction_for_system == "inbound"
+        else str(call.to_number or "")
+    )
+    agent_number = (
+        str(call.to_number or "")
+        if direction_for_system == "inbound"
+        else str(call.from_number or "")
+    )
+    system_context = SystemVariableContext(
+        now=now,
+        direction=direction_for_system,
+        call_type=call_type,
+        user_number=user_number,
+        agent_number=agent_number,
+        default_tz=str(getattr(tenant, "timezone", None) or "UTC"),
+    )
+    variables = build_variables(
+        system_context,
+        defaults=variable_defaults,
+        overrides=raw_overrides,
+    )
+
+    call_context["dynamic_variable_overrides"] = raw_overrides
+    call_context["dynamic_variables"] = variables
+    call.transfer_context = call_context
+    return variables
 
 
 @dataclass
@@ -131,7 +242,11 @@ class RuntimeConfig:
     # STT settings
     stt_provider: str = "deepgram"
     stt_model: str = "nova-3"
+    stt_language: str = "en-US"
     stt_fallback_providers: list[str] = field(default_factory=list)
+    stt_endpointing_mode: str = "default"
+    stt_medical_vocabulary: bool = False
+    stt_medical_terms: list[str] = field(default_factory=list)
 
     # TTS & Voice settings
     tts_provider: str = "elevenlabs"
@@ -161,10 +276,34 @@ class RuntimeConfig:
     boosted_keywords: list[tuple[str, float]] = field(default_factory=list)
     filler_trigger_ms: int = 0
 
+    # PART 12 voice behaviour (stored as a JSON block on the agent snapshot)
+    colloquial: bool = False
+    colloquial_budget_ms: int = 50
+    expressive: bool = False
+    expressive_auto: bool = False
+    expressive_emotions: list[str] = field(default_factory=lambda: ["neutral", "warm", "calm"])
+    dynamic_pace: bool = True
+    pace_min_speed: float = 0.8
+    pace_max_speed: float = 1.2
+    begin_message_delay_ms: int = 0
+    normalize_for_speech: bool = True
+    read_numbers_slowly: bool = False
+    format_transcript: bool = True
+    allowed_languages: list[str] = field(default_factory=list)
+    language_reply_policy: str = "follow_caller"
+    language_fallback_phrase: str = ""
+    structured_output_schema: dict[str, Any] | None = None
+    structured_output_strict: bool = True
+    # Explicit tools are None for legacy tenant config (all default tools), and a list for
+    # versioned AgentConfig snapshots where the enabled-tools allowlist is authoritative.
+    enabled_tools: list[str] | None = None
+    call_tooling: dict[str, Any] = field(default_factory=dict)
+
     # Ambient Audio & Denoise (2G)
     ambient_sound: str | None = None
     ambient_volume: float = 0.12
     denoise_mode: str = "off"
+    denoise_gate: Any = field(default=None, repr=False, compare=False)
 
     # Voicemail, IVR & Transfer settings (2D)
     voicemail_detection_enabled: bool = False
@@ -181,6 +320,7 @@ class RuntimeConfig:
     knowledge_document_ids: list[uuid.UUID] | None = None
     environment_id: uuid.UUID | None = None
 
+    dynamic_variables: dict[str, Any] = field(default_factory=dict)
     raw_config: dict[str, Any] = field(default_factory=dict)
 
     @property
@@ -225,10 +365,42 @@ async def _find_phone_binding(
     *,
     tenant_id: uuid.UUID,
     e164: str,
-) -> tuple[uuid.UUID | None, int | None, uuid.UUID | None]:
-    """Return ``(inbound_agent_id, inbound_agent_version, outbound_agent_id)`` for ``e164``."""
+    channel: str,
+    caller: str,
+) -> tuple[str | None, int | None, dict[str, Any] | None]:
+    """Select a deterministic weighted or legacy agent binding for a number."""
     if not e164:
         return None, None, None
+
+    def _select(row: Any, *, legacy: bool) -> tuple[str | None, int | None, dict[str, Any] | None]:
+        legacy_in = str(row.inbound_agent_id) if row.inbound_agent_id else ""
+        legacy_out = str(row.outbound_agent_id) if row.outbound_agent_id else ""
+        routing = build_routing(
+            getattr(row, "routing", None),
+            legacy_inbound_agent_id=legacy_in,
+            legacy_outbound_agent_id=legacy_out,
+        )
+        entries = routing.entries_for(channel)
+        if not entries:
+            return None, None, None
+        salt = f"{e164}|{channel}"
+        selected = routing.select(channel, caller=caller, salt=salt)
+        pinned = (
+            getattr(row, "inbound_agent_version", None)
+            if channel == "inbound" and selected == legacy_in
+            else None
+        )
+        decision = {
+            "phone_number_id": str(row.id),
+            "number": e164,
+            "channel": channel,
+            "selected_agent_id": selected,
+            "bucket": routing.bucket(channel, caller=caller, salt=salt),
+            "candidate_count": len(entries),
+            "legacy_table": legacy,
+        }
+        return selected, pinned, decision
+
     pn = (
         await session.execute(
             select(PhoneNumber).where(
@@ -238,8 +410,10 @@ async def _find_phone_binding(
             )
         )
     ).scalars().first()
-    if pn is not None and (pn.inbound_agent_id or pn.outbound_agent_id):
-        return pn.inbound_agent_id, pn.inbound_agent_version, pn.outbound_agent_id
+    if pn is not None:
+        selected, pinned, decision = _select(pn, legacy=True)
+        if selected is not None:
+            return selected, pinned, decision
 
     tpn = (
         await session.execute(
@@ -251,11 +425,9 @@ async def _find_phone_binding(
         )
     ).scalars().first()
     if tpn is not None:
-        return (
-            _parse_uuid(tpn.inbound_agent_id),
-            tpn.inbound_agent_version,
-            _parse_uuid(tpn.outbound_agent_id),
-        )
+        selected, pinned, decision = _select(tpn, legacy=False)
+        if selected is not None:
+            return selected, pinned, decision
     return None, None, None
 
 
@@ -263,14 +435,20 @@ async def _resolve_agent_and_version(
     session: AsyncSession,
     *,
     tenant_id: uuid.UUID,
-    agent_id: uuid.UUID,
+    agent_id: uuid.UUID | str,
     pinned_version_number: int | None = None,
     explicit_version_id: uuid.UUID | None = None,
 ) -> tuple[Agent | None, AgentVersion | None]:
+    agent_uuid = _parse_uuid(agent_id)
+    agent_filter = (
+        Agent.id == agent_uuid
+        if agent_uuid is not None
+        else Agent.external_key == str(agent_id).strip()
+    )
     agent = (
         await session.execute(
             select(Agent).where(
-                Agent.id == agent_id,
+                agent_filter,
                 Agent.tenant_id == tenant_id,
                 Agent.deleted_at.is_(None),
             )
@@ -402,6 +580,12 @@ async def _resolve_scoped_tools(
                     "id": str(row.id),
                     "name": row.name,
                     "description": row.description,
+                    # Keep the persisted API tool's argument contract with the runtime descriptor;
+                    # both the cascaded and realtime paths use this same schema to advertise it.
+                    "schema": {
+                        "parameters": dict(row.parameter_schema or {}),
+                        "body_schema": dict(row.body_schema or {}),
+                    },
                     "kind": "http",
                     "api_tool_id": str(row.id),
                 }
@@ -518,38 +702,80 @@ async def resolve_runtime_config(
         else str(getattr(call, "direction", "inbound") or "inbound")
     ).lower()
 
-    # Determine candidate agent_id & pinned version from PhoneNumber binding or Call
-    inbound_aid, inbound_ver, outbound_aid = await _find_phone_binding(
-        session,
-        tenant_id=tenant_id,
-        e164=(
-            (call.to_number if direction_val == "inbound" else call.from_number)
-            if call is not None
-            else ""
-        ),
+    # Determine the per-number candidate for this call direction. The caller/recipient
+    # participates in the hash; including the selected E.164 number in salt prevents two
+    # different numbers from accidentally sharing the same cohort assignment.
+    channel = direction_val if direction_val in {"inbound", "outbound"} else ""
+    number_e164 = (
+        (call.to_number if direction_val == "inbound" else call.from_number)
+        if call is not None and channel
+        else ""
     )
+    routing_identity = (
+        (call.from_number if direction_val == "inbound" else call.to_number)
+        if call is not None and channel
+        else ""
+    )
+    phone_agent_id, phone_agent_version, number_routing_decision = (None, None, None)
+    if channel:
+        phone_agent_id, phone_agent_version, number_routing_decision = await _find_phone_binding(
+            session,
+            tenant_id=tenant_id,
+            e164=number_e164,
+            channel=channel,
+            caller=routing_identity,
+        )
 
-    candidate_agent_id: uuid.UUID | None = None
+    candidate_agent_id: uuid.UUID | str | None = None
     pinned_version_number: int | None = None
     explicit_version_id: uuid.UUID | None = getattr(call, "agent_version_id", None) if call is not None else None
     source = "tenant_fallback"
 
     explicit_aid = (getattr(call, "agent_id", None) if call is not None else None) or agent_id
-    if direction_val == "inbound" and inbound_aid is not None:
-        candidate_agent_id = inbound_aid
-        pinned_version_number = inbound_ver
-        source = "phone_number"
+    call_context = dict(getattr(call, "transfer_context", None) or {}) if call is not None else {}
+    inbound_overrides = call_context.get("inbound_overrides")
+    inbound_overrides = inbound_overrides if isinstance(inbound_overrides, dict) else {}
+    override_agent_id = str(inbound_overrides.get("agent_id") or "").strip()
+    override_version = _coerce_int(inbound_overrides.get("agent_version"), 0) or None
+
+    if direction_val == "inbound" and override_agent_id:
+        candidate_agent_id = override_agent_id
+        pinned_version_number = override_version
+        # The webhook's version pin belongs to its chosen agent; never let a
+        # pre-existing call/version binding silently override that explicit pin.
+        if override_version is not None:
+            explicit_version_id = None
+        source = "inbound_webhook"
+    elif direction_val == "inbound" and phone_agent_id is not None:
+        candidate_agent_id = phone_agent_id
+        pinned_version_number = phone_agent_version
+        source = (
+            "phone_number_weighted"
+            if number_routing_decision and number_routing_decision.get("candidate_count", 0) > 1
+            else "phone_number"
+        )
     elif direction_val == "outbound" and explicit_aid is not None:
         candidate_agent_id = explicit_aid
         source = "call"
-    elif direction_val == "outbound" and outbound_aid is not None:
-        candidate_agent_id = outbound_aid
-        source = "phone_number"
+    elif direction_val == "outbound" and phone_agent_id is not None:
+        candidate_agent_id = phone_agent_id
+        pinned_version_number = phone_agent_version
+        source = (
+            "phone_number_weighted"
+            if number_routing_decision and number_routing_decision.get("candidate_count", 0) > 1
+            else "phone_number"
+        )
     elif explicit_aid is not None:
         candidate_agent_id = explicit_aid
         source = "call"
-    else:
-        # Check if tenant has a default published Agent
+
+    if call is not None and number_routing_decision is not None:
+        call_context["number_routing"] = number_routing_decision
+        call.transfer_context = call_context
+
+    if candidate_agent_id is None:
+        # Check if tenant has a default published Agent only after all explicit,
+        # webhook, phone-number, and weighted-routing candidates are exhausted.
         default_agent = (
             await session.execute(
                 select(Agent)
@@ -683,6 +909,17 @@ async def resolve_runtime_config(
     voice_block = merged_snapshot.get("voice") if isinstance(merged_snapshot.get("voice"), dict) else {}
     model_block = merged_snapshot.get("model") if isinstance(merged_snapshot.get("model"), dict) else {}
     stt_block = merged_snapshot.get("stt") if isinstance(merged_snapshot.get("stt"), dict) else {}
+    language_block = merged_snapshot.get("language") if isinstance(merged_snapshot.get("language"), dict) else {}
+    voice_behavior_block = (
+        merged_snapshot.get("voice_behavior")
+        if isinstance(merged_snapshot.get("voice_behavior"), dict)
+        else {}
+    )
+    call_tooling_block = (
+        merged_snapshot.get("call_tooling")
+        if isinstance(merged_snapshot.get("call_tooling"), dict)
+        else {}
+    )
     turn_block = (
         merged_snapshot.get("turn_taking")
         if isinstance(merged_snapshot.get("turn_taking"), dict)
@@ -694,6 +931,13 @@ async def resolve_runtime_config(
         else {}
     )
 
+    dynamic_variables = await _resolve_call_dynamic_variables(
+        session,
+        tenant=tenant,
+        call=call,
+        direction=direction_val,
+        snapshot=merged_snapshot,
+    )
     system_prompt = str(
         merged_snapshot.get("system_prompt")
         or merged_snapshot.get("prompt")
@@ -707,15 +951,64 @@ async def resolve_runtime_config(
         or getattr(tenant, "greeting", None)
         or "Hello, how can I help you today?"
     )
-    language = str(
-        merged_snapshot.get("language")
+    system_prompt = _render_dynamic_template(system_prompt, dynamic_variables)
+    greeting = _render_dynamic_template(greeting, dynamic_variables)
+    raw_language = merged_snapshot.get("language")
+    configured_language = str(
+        (language_block.get("primary") if isinstance(raw_language, dict) else raw_language)
         or getattr(tenant, "language", None)
-        or "en"
+        or "en-US"
     )
     auto_detect_language = (
-        language.lower() == "auto"
-        or bool(merged_snapshot.get("auto_detect_language", False))
+        configured_language.strip().lower() in {"auto", "multi", "multilingual"}
+        or _coerce_bool(
+            merged_snapshot.get("auto_detect_language", language_block.get("auto_detect", False)),
+            False,
+        )
     )
+    language = (
+        str(language_block.get("primary") or getattr(tenant, "language", None) or "en-US")
+        if configured_language.strip().lower() in {"auto", "multi", "multilingual"}
+        else configured_language
+    )
+
+    raw_allowed_languages = voice_behavior_block.get("languages", ())
+    if isinstance(raw_allowed_languages, str):
+        raw_allowed_languages = [part.strip() for part in raw_allowed_languages.split(",") if part.strip()]
+    elif not isinstance(raw_allowed_languages, (list, tuple, set)):
+        raw_allowed_languages = []
+    allowed_languages = [str(code).strip() for code in raw_allowed_languages if str(code).strip()]
+    if not allowed_languages:
+        allowed_languages = [language]
+        allowed_languages.extend(
+            str(code).strip()
+            for code in (language_block.get("fallbacks") or [])
+            if str(code).strip()
+        )
+    if auto_detect_language and len([code for code in allowed_languages if code.lower() not in {"multi", "auto"}]) > 1:
+        if not any(code.lower() in {"multi", "auto", "multilingual"} for code in allowed_languages):
+            allowed_languages.insert(0, "multi")
+    language_reply_policy = str(voice_behavior_block.get("language_reply_policy") or "follow_caller")
+    language_fallback_phrase = str(voice_behavior_block.get("language_fallback_phrase") or "")
+    try:
+        from app.agent.language import build_language_policy, detection_constraints
+
+        language_policy = build_language_policy(
+            languages=allowed_languages,
+            language=language,
+            reply_policy=language_reply_policy,
+            fallback_phrase=language_fallback_phrase or None,
+        )
+        language_constraints = detection_constraints(language_policy)
+        allowed_languages = list(language_policy.allowlist)
+        stt_language = str(language_constraints["stt_language"])
+        language_reply_policy = language_policy.reply_policy
+        language_fallback_phrase = language_policy.fallback_phrase
+    except (TypeError, ValueError):
+        allowed_languages = [language]
+        stt_language = language
+        language_reply_policy = "follow_caller"
+        language_fallback_phrase = ""
 
     llm_provider = str(
         merged_snapshot.get("llm_provider")
@@ -820,7 +1113,10 @@ async def resolve_runtime_config(
         "speed": _coerce_float(
             merged_snapshot.get(
                 "voice_speed",
-                voice_block.get("speed", getattr(tenant, "voice_speed", 1.0)),
+                voice_block.get(
+                    "speed",
+                    getattr(tenant, "speech_speed", getattr(tenant, "voice_speed", 1.0)),
+                ),
             ),
             1.0,
         ),
@@ -946,28 +1242,123 @@ async def resolve_runtime_config(
         0.12,
     )
     denoise_mode = str(
-        merged_snapshot.get("denoise_mode")
+        voice_behavior_block.get("denoise_mode")
+        or merged_snapshot.get("denoise_mode")
         or audio_block.get("denoise_mode")
         or "off"
     ).lower()
-
-    voicemail_detection_enabled = bool(
-        merged_snapshot.get("voicemail_detection_enabled", False)
-    )
-    voicemail_action = str(
-        merged_snapshot.get("voicemail_action") or "hangup"
+    stt_endpointing_mode = str(
+        voice_behavior_block.get("stt_endpointing_mode")
+        or merged_snapshot.get("stt_endpointing_mode")
+        or stt_block.get("endpointing_mode")
+        or "default"
     ).lower()
-    voicemail_message = merged_snapshot.get("voicemail_message")
-    ivr_navigation_enabled = bool(
-        merged_snapshot.get("ivr_navigation_enabled", False)
+    stt_medical_vocabulary = _coerce_bool(
+        stt_block.get("medical_vocabulary", stt_block.get("medical", False)), False
     )
-    ivr_goal = merged_snapshot.get("ivr_goal")
+    raw_medical_terms = stt_block.get("medical_terms", ())
+    stt_medical_terms = (
+        [str(term).strip() for term in raw_medical_terms if str(term).strip()]
+        if isinstance(raw_medical_terms, (list, tuple, set))
+        else []
+    )
+    raw_emotions = voice_behavior_block.get("expressive_emotions", ("neutral", "warm", "calm"))
+    expressive_emotions = (
+        [str(value).strip() for value in raw_emotions if str(value).strip()]
+        if isinstance(raw_emotions, (list, tuple, set))
+        else ["neutral", "warm", "calm"]
+    )
+    colloquial = _coerce_bool(voice_behavior_block.get("colloquial", False), False)
+    colloquial_budget_ms = _coerce_int(voice_behavior_block.get("colloquial_budget_ms"), 50)
+    expressive = _coerce_bool(voice_behavior_block.get("expressive", False), False)
+    expressive_auto = _coerce_bool(voice_behavior_block.get("expressive_auto", False), False)
+    dynamic_pace = _coerce_bool(voice_behavior_block.get("dynamic_pace", True), True)
+    pace_min_speed = _coerce_float(voice_behavior_block.get("pace_min_speed"), 0.8)
+    pace_max_speed = _coerce_float(voice_behavior_block.get("pace_max_speed"), 1.2)
+    begin_message_delay_ms = _coerce_int(voice_behavior_block.get("begin_message_delay_ms"), 0)
+    normalize_for_speech = _coerce_bool(voice_behavior_block.get("normalize_for_speech", True), True)
+    read_numbers_slowly = _coerce_bool(voice_behavior_block.get("read_numbers_slowly", False), False)
+    format_transcript = _coerce_bool(voice_behavior_block.get("format_transcript", True), True)
+
+    def _call_value(key: str, legacy_key: str | None = None, default: Any = None) -> Any:
+        if key in call_tooling_block:
+            return call_tooling_block[key]
+        # Before call_tooling was a nested block these controls were stored at the
+        # snapshot root. The same key is the canonical legacy spelling unless a
+        # migration alias is explicitly supplied.
+        root_key = legacy_key or key
+        if root_key in merged_snapshot:
+            return merged_snapshot[root_key]
+        return default
+
+    call_tooling = dict(call_tooling_block)
+    call_tooling.setdefault("voicemail_detection_enabled", _call_value("voicemail_detection_enabled", default=False))
+    call_tooling.setdefault("voicemail_action", _call_value("voicemail_action", default="hangup"))
+    call_tooling.setdefault("voicemail_message", _call_value("voicemail_message", default=""))
+    call_tooling.setdefault("voicemail_window_s", _call_value("voicemail_window_s", default=12.0))
+    call_tooling.setdefault("user_dtmf_enabled", _call_value("user_dtmf_enabled", default=False))
+    call_tooling.setdefault(
+        "call_screening_enabled",
+        _call_value(
+            "call_screening_enabled",
+            default=bool(_call_value("call_screening_message", default="")),
+        ),
+    )
+    call_tooling.setdefault("ivr_navigation_enabled", _call_value("ivr_navigation_enabled", default=False))
+    call_tooling.setdefault("ivr_goal", _call_value("ivr_goal", default=""))
+    call_tooling.setdefault("auto_hangup_on_ivr", _call_value("auto_hangup_on_ivr", default=False))
+    call_tooling.setdefault("ivr_max_menus", _call_value("ivr_max_menus", default=3))
+    call_tooling.setdefault("call_screening_message", _call_value("call_screening_message", default=""))
+    call_tooling.setdefault("call_screening_wait_s", _call_value("call_screening_wait_s", default=20.0))
+    call_tooling.setdefault("user_dtmf_mode", _call_value("user_dtmf_mode", default="end_key"))
+    call_tooling.setdefault("user_dtmf_end_key", _call_value("user_dtmf_end_key", default="#"))
+    call_tooling.setdefault("user_dtmf_fixed_digits", _call_value("user_dtmf_fixed_digits", default=4))
+    call_tooling.setdefault("user_dtmf_timeout_s", _call_value("user_dtmf_timeout_s", default=5.0))
+    call_tooling.setdefault("user_dtmf_keep_last", _call_value("user_dtmf_keep_last", default=2))
+    call_tooling.setdefault("user_dtmf_prompt", _call_value("user_dtmf_prompt", default=""))
+    call_tooling.setdefault("structured_output_schema", _call_value("structured_output_schema", default=None))
+    call_tooling.setdefault("structured_output_strict", _call_value("structured_output_strict", default=True))
+    call_tooling.setdefault("ivr_goal", _call_value("ivr_goal", default=""))
+    call_tooling["voicemail_detection_enabled"] = _coerce_bool(call_tooling.get("voicemail_detection_enabled"), False)
+    call_tooling["call_screening_enabled"] = _coerce_bool(call_tooling.get("call_screening_enabled"), False)
+    call_tooling["ivr_navigation_enabled"] = _coerce_bool(call_tooling.get("ivr_navigation_enabled"), False)
+    call_tooling["auto_hangup_on_ivr"] = _coerce_bool(call_tooling.get("auto_hangup_on_ivr"), False)
+    call_tooling["user_dtmf_enabled"] = _coerce_bool(call_tooling.get("user_dtmf_enabled"), False)
+    call_tooling["structured_output_strict"] = _coerce_bool(call_tooling.get("structured_output_strict"), True)
+    call_tooling["voicemail_action"] = str(call_tooling.get("voicemail_action") or "hangup").lower()
+    call_tooling["voicemail_message"] = str(call_tooling.get("voicemail_message") or "")
+    call_tooling["voicemail_window_s"] = _coerce_float(call_tooling.get("voicemail_window_s"), 12.0)
+    call_tooling["call_screening_message"] = str(call_tooling.get("call_screening_message") or "")
+    call_tooling["call_screening_wait_s"] = _coerce_float(call_tooling.get("call_screening_wait_s"), 20.0)
+    call_tooling["ivr_goal"] = str(call_tooling.get("ivr_goal") or "")
+    call_tooling["ivr_max_menus"] = _coerce_int(call_tooling.get("ivr_max_menus"), 3)
+    call_tooling["user_dtmf_mode"] = str(call_tooling.get("user_dtmf_mode") or "end_key")
+    call_tooling["user_dtmf_end_key"] = str(call_tooling.get("user_dtmf_end_key") or "#")
+    call_tooling["user_dtmf_fixed_digits"] = _coerce_int(call_tooling.get("user_dtmf_fixed_digits"), 4)
+    call_tooling["user_dtmf_timeout_s"] = _coerce_float(call_tooling.get("user_dtmf_timeout_s"), 5.0)
+    call_tooling["user_dtmf_keep_last"] = _coerce_int(call_tooling.get("user_dtmf_keep_last"), 2)
+    call_tooling["user_dtmf_prompt"] = str(call_tooling.get("user_dtmf_prompt") or "")
+    if not isinstance(call_tooling.get("structured_output_schema"), dict):
+        call_tooling["structured_output_schema"] = None
+
+    voicemail_detection_enabled = call_tooling["voicemail_detection_enabled"]
+    voicemail_action = call_tooling["voicemail_action"]
+    voicemail_message = call_tooling["voicemail_message"]
+    ivr_navigation_enabled = call_tooling["ivr_navigation_enabled"]
+    ivr_goal = call_tooling["ivr_goal"] or None
 
     transfer_targets = dict(merged_snapshot.get("transfer_targets") or {})
     if not transfer_targets and getattr(tenant, "transfer_number", None):
         transfer_targets["default"] = str(tenant.transfer_number)
     warm_transfer_enabled = bool(
         merged_snapshot.get("warm_transfer_enabled", False)
+    )
+
+    raw_enabled_tools = merged_snapshot.get("enabled_tools")
+    enabled_tools = (
+        [str(tool) for tool in raw_enabled_tools if str(tool).strip()]
+        if isinstance(raw_enabled_tools, (list, tuple, set))
+        else None
     )
 
     tools = await _resolve_scoped_tools(
@@ -1004,7 +1395,11 @@ async def resolve_runtime_config(
         max_tokens=max_tokens,
         stt_provider=stt_provider,
         stt_model=stt_model,
+        stt_language=stt_language,
         stt_fallback_providers=stt_fallbacks,
+        stt_endpointing_mode=stt_endpointing_mode,
+        stt_medical_vocabulary=stt_medical_vocabulary,
+        stt_medical_terms=stt_medical_terms,
         tts_provider=tts_provider,
         tts_model=tts_model,
         tts_fallback_providers=tts_fallbacks,
@@ -1028,6 +1423,25 @@ async def resolve_runtime_config(
         ambient_sound=ambient_sound,
         ambient_volume=ambient_volume,
         denoise_mode=denoise_mode,
+        colloquial=colloquial,
+        colloquial_budget_ms=colloquial_budget_ms,
+        expressive=expressive,
+        expressive_auto=expressive_auto,
+        expressive_emotions=expressive_emotions,
+        dynamic_pace=dynamic_pace,
+        pace_min_speed=pace_min_speed,
+        pace_max_speed=pace_max_speed,
+        begin_message_delay_ms=begin_message_delay_ms,
+        normalize_for_speech=normalize_for_speech,
+        read_numbers_slowly=read_numbers_slowly,
+        format_transcript=format_transcript,
+        allowed_languages=allowed_languages,
+        language_reply_policy=language_reply_policy,
+        language_fallback_phrase=language_fallback_phrase,
+        structured_output_schema=call_tooling.get("structured_output_schema"),
+        structured_output_strict=call_tooling["structured_output_strict"],
+        enabled_tools=enabled_tools,
+        call_tooling=call_tooling,
         voicemail_detection_enabled=voicemail_detection_enabled,
         voicemail_action=voicemail_action,
         voicemail_message=voicemail_message,
@@ -1039,6 +1453,7 @@ async def resolve_runtime_config(
         knowledge_collection_ids=collection_ids,
         knowledge_document_ids=doc_ids,
         environment_id=getattr(agent, "environment_id", None) if agent is not None else None,
+        dynamic_variables=dynamic_variables,
         raw_config=merged_snapshot,
     )
     log.info(

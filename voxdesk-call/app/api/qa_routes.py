@@ -697,3 +697,255 @@ async def get_auto_review_status(
         elif job.status == "succeeded":
             state = "completed" if run.status == "completed" else "inconsistent"
     return {"review_id": str(review.id), "state": state, "run": run.as_dict(), "job": ledger}
+
+
+# ===========================================================================
+# PART 15 — AI QA analyst (P15-05)
+#
+# A run is metered and stored; a read of the patterns is not. That split is the
+# whole cost model: looking at the last run's clusters is free, asking for a new
+# analysis is a billable unit and therefore an explicit POST.
+# ===========================================================================
+
+from datetime import datetime as _dt  # noqa: E402
+
+from app.qa import analyst as _analyst  # noqa: E402
+
+
+class AnalystRunBody(BaseModel):
+    start: _dt | None = None
+    end: _dt | None = None
+    agent_id: str | None = Field(default=None, max_length=120)
+    tenant_id: uuid.UUID | None = None
+
+
+@router.post("/api/qa/analyst/run", status_code=201)
+async def post_analyst_run(
+    payload: AnalystRunBody,
+    ctx: TenantContext = Depends(require_permission(Permission.QA_WRITE)),
+    session: AsyncSession = Depends(get_session),
+):
+    tenant = _scope(ctx, None, payload.tenant_id)
+    analysis = await _analyst.run_analysis(
+        session,
+        tenant,
+        start=payload.start,
+        end=payload.end,
+        agent_id=payload.agent_id,
+    )
+    await session.commit()
+    run = analysis["run"]
+    return {
+        "run_id": str(run.id),
+        "calls_analysed": run.calls_analysed,
+        "metered_units": run.metered_units,
+        "metrics": analysis["metrics"],
+        "clusters": analysis["clusters"],
+        "repeat_patterns": analysis["repeat_patterns"],
+    }
+
+
+@router.get("/api/qa/analyst/runs")
+async def get_analyst_runs(
+    limit: int = Query(default=20, ge=1, le=100),
+    ctx: TenantContext = Depends(require_permission(Permission.QA_READ)),
+    session: AsyncSession = Depends(get_session),
+):
+    rows = await _analyst.list_runs(session, ctx.tenant_id, limit=limit)
+    return {
+        "runs": [
+            {
+                "id": str(row.id),
+                "agent_id": row.agent_id,
+                "calls_analysed": row.calls_analysed,
+                "metered_units": row.metered_units,
+                "metrics": dict(row.metrics or {}),
+                "clusters": list(row.clusters or []),
+                "window_start": row.window_start.isoformat() if row.window_start else None,
+                "window_end": row.window_end.isoformat() if row.window_end else None,
+                "created_at": row.created_at.isoformat() if row.created_at else None,
+            }
+            for row in rows
+        ]
+    }
+
+
+@router.get("/api/qa/analyst/patterns")
+async def get_analyst_patterns(
+    hours: int = Query(default=72, ge=1, le=720),
+    agent_id: str | None = Query(default=None, max_length=120),
+    ctx: TenantContext = Depends(require_permission(Permission.QA_READ)),
+    session: AsyncSession = Depends(get_session),
+):
+    """Repeat contacts and issue clusters for a window, without recording a run."""
+    from datetime import timedelta as _td
+
+    end = _dt.now().astimezone().replace(tzinfo=None)
+    analysis = await _analyst.analyse_tenant(
+        session,
+        ctx.tenant_id,
+        start=end - _td(hours=hours),
+        end=end,
+        agent_id=agent_id,
+        repeat_window_hours=hours,
+    )
+    return {
+        "hours": hours,
+        "agent_id": agent_id,
+        "metrics": analysis["metrics"],
+        "clusters": analysis["clusters"],
+        "repeat_patterns": analysis["repeat_patterns"],
+        "metered": False,
+    }
+
+
+# ===========================================================================
+# PART 15 (P15-09) — guardrail policy toggles and block history
+#
+# The policy is per agent (`agent_id='*'` is the tenant default). The history is
+# counts and hashes: it answers "how often does this agent try to say something
+# harmful, and in which category" without storing what it tried to say.
+# ===========================================================================
+
+
+class GuardrailPolicyBody(BaseModel):
+    agent_id: str = Field(default="*", max_length=120)
+    enabled_categories: list[str] = Field(default_factory=list)
+    block_jailbreak: bool = True
+    block_prompt_extraction: bool = True
+    hard_stop_phrase: str = Field(
+        default="I can't help with that, but I can connect you to a person.",
+        min_length=1,
+        max_length=400,
+    )
+    judge_fallback: bool = False
+
+
+def _policy_dict(row) -> dict:
+    from app.ai.guardrails import categories as _categories
+
+    return {
+        "id": str(row.id),
+        "agent_id": row.agent_id,
+        "enabled_categories": list(row.enabled_categories or []),
+        "block_jailbreak": bool(row.block_jailbreak),
+        "block_prompt_extraction": bool(row.block_prompt_extraction),
+        "hard_stop_phrase": row.hard_stop_phrase,
+        "judge_fallback": bool(row.judge_fallback),
+        "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+        "known_categories": list(_categories.CATEGORIES),
+    }
+
+
+@router.get("/api/qa/guardrails/policies")
+async def get_guardrail_policies(
+    ctx: TenantContext = Depends(require_permission(Permission.QA_READ)),
+    session: AsyncSession = Depends(get_session),
+):
+    from sqlalchemy import select as _select
+
+    from app.ai.guardrails import categories as _categories
+    from app.db.monitoring_models import GuardrailPolicy
+
+    rows = (
+        await session.scalars(
+            _select(GuardrailPolicy)
+            .where(GuardrailPolicy.tenant_id == ctx.tenant_id)
+            .order_by(GuardrailPolicy.agent_id)
+        )
+    ).all()
+    return {
+        "policies": [_policy_dict(row) for row in rows],
+        "categories": list(_categories.CATEGORIES),
+        "defaults": _categories.default_policy().as_dict(),
+    }
+
+
+@router.put("/api/qa/guardrails/policies")
+async def put_guardrail_policy(
+    payload: GuardrailPolicyBody,
+    ctx: TenantContext = Depends(require_permission(Permission.QA_WRITE)),
+    session: AsyncSession = Depends(get_session),
+):
+    """Create or replace one agent's policy.
+
+    Categories are filtered against the known taxonomy rather than rejected
+    wholesale: a client that sends one retired category should still be able to
+    save the rest, and the response shows exactly what was kept.
+    """
+    from sqlalchemy import select as _select
+
+    from app.ai.guardrails import categories as _categories
+    from app.db.monitoring_models import GuardrailPolicy
+
+    kept = _categories.enabled_categories_validate(payload.enabled_categories)
+    dropped = [c for c in payload.enabled_categories if c not in kept]
+
+    row = await session.scalar(
+        _select(GuardrailPolicy).where(
+            GuardrailPolicy.tenant_id == ctx.tenant_id,
+            GuardrailPolicy.agent_id == payload.agent_id,
+        )
+    )
+    if row is None:
+        row = GuardrailPolicy(tenant_id=ctx.tenant_id, agent_id=payload.agent_id)
+        session.add(row)
+    row.enabled_categories = kept
+    row.block_jailbreak = payload.block_jailbreak
+    row.block_prompt_extraction = payload.block_prompt_extraction
+    row.hard_stop_phrase = payload.hard_stop_phrase
+    row.judge_fallback = payload.judge_fallback
+    row.updated_by = str(ctx.user_id) if ctx.user_id else None
+    await session.commit()
+    await session.refresh(row)
+    return {**_policy_dict(row), "dropped_categories": dropped}
+
+
+@router.get("/api/qa/guardrails/events")
+async def get_guardrail_events(
+    hours: int = Query(default=24, ge=1, le=720),
+    stage: str | None = Query(default=None, pattern="^(input|output)$"),
+    limit: int = Query(default=50, ge=1, le=200),
+    ctx: TenantContext = Depends(require_permission(Permission.QA_READ)),
+    session: AsyncSession = Depends(get_session),
+):
+    from datetime import datetime as _dt
+    from datetime import timedelta as _td
+
+    from sqlalchemy import select as _select
+
+    from app.db.monitoring_models import GuardrailEvent
+
+    since = _dt.now().astimezone().replace(tzinfo=None) - _td(hours=hours)
+    query = _select(GuardrailEvent).where(
+        GuardrailEvent.tenant_id == ctx.tenant_id, GuardrailEvent.created_at >= since
+    )
+    if stage is not None:
+        query = query.where(GuardrailEvent.stage == stage)
+    rows = (
+        await session.scalars(query.order_by(GuardrailEvent.created_at.desc()).limit(limit))
+    ).all()
+    by_category: dict[str, int] = {}
+    by_reason: dict[str, int] = {}
+    for row in rows:
+        by_category[row.category or "unclassified"] = by_category.get(row.category or "unclassified", 0) + 1
+        by_reason[row.reason] = by_reason.get(row.reason, 0) + 1
+    return {
+        "hours": hours,
+        "counts": {"by_category": by_category, "by_reason": by_reason, "total": len(rows)},
+        "events": [
+            {
+                "id": str(row.id),
+                "call_id": str(row.call_id) if row.call_id else None,
+                "agent_id": row.agent_id,
+                "stage": row.stage,
+                "reason": row.reason,
+                "category": row.category,
+                "text_hash": row.text_hash[:16],
+                "char_count": row.char_count,
+                "created_at": row.created_at.isoformat() if row.created_at else None,
+            }
+            for row in rows
+        ],
+        "note": "matched text is never stored; text_hash identifies repeats only",
+    }

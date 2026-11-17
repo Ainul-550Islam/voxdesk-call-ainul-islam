@@ -40,12 +40,62 @@ _TOOLS = [
 ]
 
 
+
+async def _wait_for_connections(provider, count: int, timeout: float = 30.0) -> None:
+    """Wait until the provider has accepted ``count`` connections.
+
+    Event-driven and generous, so a loaded CI box cannot fail the assertion by
+    being slow: the wait ends the moment the Nth connection lands instead of
+    spinning on a five-second wall-clock budget.
+    """
+    deadline = time.monotonic() + timeout
+    while provider.connections < count:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise AssertionError(
+                f"expected {count} provider connections, saw {provider.connections} after {timeout}s"
+            )
+        # Clear first: waiting on an already-set event returns without yielding,
+        # which would starve the reconnect task inside this same event loop.
+        provider.connections_changed.clear()
+        if provider.connections >= count:
+            break
+        try:
+            await asyncio.wait_for(provider.connections_changed.wait(), timeout=min(remaining, 1.0))
+        except asyncio.TimeoutError:
+            pass
+
+
+async def _wait_for_setups(provider, count: int, timeout: float = 30.0) -> None:
+    """Wait until ``count`` ``setup`` frames have arrived.
+
+    A reconnect is only observable once the client has sent its setup frame on
+    the new socket, so waiting on the frame (not just the socket) removes the
+    race that a fixed wall-clock budget was papering over.
+    """
+    deadline = time.monotonic() + timeout
+    while len([m for m in provider.received if "setup" in m]) < count:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise AssertionError(
+                f"expected {count} setup frames, saw "
+                f"{len([m for m in provider.received if 'setup' in m])} after {timeout}s"
+            )
+        provider.connections_changed.clear()
+        if len([m for m in provider.received if "setup" in m]) >= count:
+            break
+        try:
+            await asyncio.wait_for(provider.connections_changed.wait(), timeout=min(remaining, 1.0))
+        except asyncio.TimeoutError:
+            pass
+
 class _Provider:
     """A local server that speaks the Gemini Live envelope."""
 
     def __init__(self, *, script: list[dict] | None = None, drop_after_first: bool = False):
         self.received: list[dict] = []
         self.connections = 0
+        self.connections_changed = asyncio.Event()
         self.script = list(script or [])
         self.drop_after_first = drop_after_first
         self._server = None
@@ -69,9 +119,11 @@ class _Provider:
 
     async def _handler(self, websocket) -> None:
         self.connections += 1
+        self.connections_changed.set()
         async for raw in websocket:
             message = json.loads(raw)
             self.received.append(message)
+            self.connections_changed.set()
             if "setup" in message:
                 for event in self.script:
                     await websocket.send(json.dumps(event))
@@ -265,9 +317,8 @@ async def test_the_resumption_handle_is_remembered_and_replayed() -> None:
             reconnect_policy=ReconnectPolicy(max_attempts=3, base_delay_seconds=0.01),
         )
         async with _running(session):
-            deadline = time.monotonic() + 5.0
-            while provider.connections < 2 and time.monotonic() < deadline:
-                await asyncio.sleep(0.01)
+            await _wait_for_connections(provider, 2)
+            await _wait_for_setups(provider, 2)
             assert provider.connections >= 2
             assert session.resumption_handle == "handle-42"
             setups = [m for m in provider.received if "setup" in m]

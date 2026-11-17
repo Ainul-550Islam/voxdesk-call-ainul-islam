@@ -130,7 +130,11 @@ async def test_cache_is_unsupported_and_does_not_delete_evidence(client, db, ten
     _, _, headers = await seed(client, db, tenant_a, owner_a)
     for auth in (headers, await auth_headers(client, owner_b)):
         response = await client.delete("/api/analysis/extended/cache", headers=auth)
-        assert response.status_code == 501 and response.json()["detail"]["code"] == "UNSUPPORTED_CAPABILITY"
+        # PART 17B (P17B-03): a 501 invited a retry that could never succeed.
+        # Nothing is configurable here, so this is a permanent 409 refusal.
+        assert response.status_code == 409 and response.json()["detail"]["code"] == "UNSUPPORTED_CAPABILITY"
+        assert response.json()["detail"]["capability"] == "analysis_cache_clear"
+        assert response.json()["detail"]["message"]
     assert await db.scalar(select(func.count()).select_from(AnalysisSchema)) == 1
     viewer = await auth_headers(client, viewer_a)
     assert (await client.post("/api/analysis/extended/bulk", headers=viewer, json={})).status_code == 403

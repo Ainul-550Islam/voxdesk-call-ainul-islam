@@ -1,0 +1,206 @@
+{{- /*
+Frontend (dashboard-next, PART 17A).
+
+The Next.js app is a real server, not a bundle of static files: it serves a
+per-request CSP nonce and renders /share/[token] on demand, so it needs its own
+Deployment and Service. Before this template the chart rendered no frontend at
+all — a Kubernetes install had an API and no console.
+
+Ingress in the chart is a single host with a catch-all prefix to the API. The
+console is exposed on `frontend.path` (default "/"), which means a production
+values file that enables both must give the two different hosts, or point the
+API's ingress at an `/api` prefix. The chart cannot guess which split the
+operator wants, so it renders what it is told and the README states the rule.
+*/ -}}
+{{- $fe := .Values.frontend | default dict -}}
+{{- $image := $fe.image | default dict -}}
+{{- $service := $fe.service | default dict -}}
+{{- $pdb := $fe.podDisruptionBudget | default dict -}}
+{{- $autoscaling := $fe.autoscaling | default dict -}}
+{{- $probes := $fe.probes | default dict -}}
+{{- if $fe.enabled | default false }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "voxdesk.fullname" . }}-web
+  labels:
+    {{- include "voxdesk.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+spec:
+  {{- if not ($autoscaling.enabled | default false) }}
+  replicas: {{ $fe.replicaCount | default 2 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "voxdesk.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: web
+  template:
+    metadata:
+      labels:
+        {{- include "voxdesk.labels" . | nindent 8 }}
+        app.kubernetes.io/component: web
+    spec:
+      terminationGracePeriodSeconds: {{ $fe.terminationGracePeriodSeconds | default 30 }}
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+      {{- with $fe.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $fe.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: web
+          image: "{{ required "frontend.image.repository is required" $image.repository }}:{{ required "frontend.image.tag is required" $image.tag }}"
+          imagePullPolicy: {{ $image.pullPolicy | default "IfNotPresent" }}
+          ports:
+            - name: http
+              containerPort: {{ $fe.port | default 3000 }}
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: PORT
+              value: {{ $fe.port | default 3000 | quote }}
+            - name: HOSTNAME
+              value: "0.0.0.0"
+            # Same-origin by design (PART 17A): the browser calls /api on the
+            # host it is already on, and the ingress routes it. An absolute
+            # backend URL here would reintroduce CORS and leak the internal
+            # service name into the shipped bundle.
+            {{- with $fe.publicApiBaseUrl }}
+            - name: VOXDESK_PUBLIC_API_BASE_URL
+              value: {{ . | quote }}
+            {{- end }}
+            - name: NEXT_TELEMETRY_DISABLED
+              value: "1"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: {{ $fe.runAsUser | default 1000 }}
+            runAsGroup: {{ $fe.runAsUser | default 1000 }}
+            capabilities:
+              drop: ["ALL"]
+          startupProbe:
+            httpGet: {path: {{ $probes.startup | default "/" }}, port: http}
+            periodSeconds: 2
+            failureThreshold: 30
+            timeoutSeconds: 3
+          readinessProbe:
+            httpGet: {path: {{ $probes.readiness | default "/" }}, port: http}
+            periodSeconds: 5
+            failureThreshold: 2
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet: {path: {{ $probes.liveness | default "/" }}, port: http}
+            periodSeconds: 20
+            timeoutSeconds: 3
+          resources:
+            {{- toYaml ($fe.resources | default dict) | nindent 12 }}
+          volumeMounts:
+            # Next writes a cache under .next/cache at runtime; the root
+            # filesystem is read-only, so it gets a scratch volume.
+            - name: next-cache
+              mountPath: /app/.next/cache
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: next-cache
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "voxdesk.fullname" . }}-web
+  labels:
+    {{- include "voxdesk.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+spec:
+  type: {{ $service.type | default "ClusterIP" }}
+  selector:
+    app.kubernetes.io/name: {{ include "voxdesk.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: web
+  ports:
+    - name: http
+      port: {{ $service.port | default 3000 }}
+      targetPort: http
+{{- if $autoscaling.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "voxdesk.fullname" . }}-web
+  labels:
+    {{- include "voxdesk.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "voxdesk.fullname" . }}-web
+  minReplicas: {{ $autoscaling.minReplicas | default 2 }}
+  maxReplicas: {{ $autoscaling.maxReplicas | default 10 }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ $autoscaling.targetCPUUtilizationPercentage | default 70 }}
+{{- end }}
+{{- if $pdb.enabled | default true }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "voxdesk.fullname" . }}-web
+  labels:
+    {{- include "voxdesk.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+spec:
+  minAvailable: {{ $pdb.minAvailable | default 1 }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "voxdesk.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: web
+{{- end }}
+{{- if $fe.ingress.enabled | default false }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "voxdesk.fullname" . }}-web
+  labels:
+    {{- include "voxdesk.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+  {{- with $fe.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ $fe.ingress.className | default .Values.ingress.className | quote }}
+  rules:
+    - host: {{ required "frontend.ingress.host is required when frontend.ingress.enabled" $fe.ingress.host }}
+      http:
+        paths:
+          {{- range $fe.ingress.paths | default (list (dict "path" "/" "pathType" "Prefix")) }}
+          - path: {{ .path | default "/" }}
+            pathType: {{ .pathType | default "Prefix" }}
+            backend:
+              service:
+                name: {{ include "voxdesk.fullname" $ }}-web
+                port: {name: http}
+          {{- end }}
+  {{- with $fe.ingress.tls }}
+  tls: {{ toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
+{{- end }}

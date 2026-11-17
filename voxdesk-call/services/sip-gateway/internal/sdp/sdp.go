@@ -9,6 +9,7 @@ package sdp
 
 import (
 	"fmt"
+	"net"
 	"strconv"
 	"strings"
 )
@@ -107,7 +108,11 @@ func Parse(raw string) (*Session, error) {
 		case 's':
 			session.SessionName = value
 		case 'c':
-			session.Connection = value
+			if current == nil {
+				session.Connection = value
+			} else {
+				current.Connection = value
+			}
 		case 't':
 			session.Timing = value
 		case 'a':
@@ -250,6 +255,67 @@ func (s *Session) Audio() (Media, bool) {
 		}
 	}
 	return Media{}, false
+}
+
+// ValidatePlainRTP rejects media profiles and SDP attributes that need a
+// secure-media, ICE, or DTLS implementation. RTPEngine may terminate those
+// carrier-side features, but the Go gateway accepts only its plain-RTP edge leg.
+func (s *Session) ValidatePlainRTP(media Media) error {
+	if s == nil {
+		return fmt.Errorf("sdp: session is missing")
+	}
+	if !strings.EqualFold(strings.TrimSpace(media.Proto), "RTP/AVP") {
+		return fmt.Errorf("sdp: media protocol %q is not supported; only plain RTP/AVP is accepted", media.Proto)
+	}
+	for _, attributes := range [][]string{s.Attributes, media.Attributes} {
+		for _, attribute := range attributes {
+			name, _ := splitAttribute(attribute)
+			switch name {
+			case "crypto", "fingerprint", "setup", "key-mgmt", "ice-lite",
+				"ice-ufrag", "ice-pwd", "ice-options", "candidate",
+				"remote-candidates", "ice-mismatch", "end-of-candidates":
+				return fmt.Errorf("sdp: security/ICE attribute %q is unsupported on the plain-RTP gateway leg", name)
+			}
+		}
+	}
+	return nil
+}
+
+// Endpoint returns the unicast RTP address for a media line. The media-level
+// connection address takes precedence over the session-level address. Domain
+// names, multicast, unspecified addresses, rejected media (port zero), and
+// malformed c= lines are refused rather than being resolved or guessed.
+func (m Media) Endpoint(sessionConnection string) (*net.UDPAddr, error) {
+	if m.Port < 1 || m.Port > 65535 {
+		return nil, fmt.Errorf("sdp: invalid RTP media port %d", m.Port)
+	}
+	connection := strings.TrimSpace(m.Connection)
+	if connection == "" {
+		connection = strings.TrimSpace(sessionConnection)
+	}
+	parts := strings.Fields(connection)
+	if len(parts) != 3 || !strings.EqualFold(parts[0], "IN") {
+		return nil, fmt.Errorf("sdp: malformed connection address %q", connection)
+	}
+	addressType := strings.ToUpper(parts[1])
+	if addressType != "IP4" && addressType != "IP6" {
+		return nil, fmt.Errorf("sdp: unsupported connection address type %q", parts[1])
+	}
+	if strings.Contains(parts[2], "/") {
+		return nil, fmt.Errorf("sdp: multicast connection addresses are not supported")
+	}
+	ip := net.ParseIP(parts[2])
+	if ip == nil {
+		return nil, fmt.Errorf("sdp: connection address %q is not an IP literal", parts[2])
+	}
+	if (addressType == "IP4" && ip.To4() == nil) ||
+		(addressType == "IP6" && (ip.To16() == nil || ip.To4() != nil)) {
+		return nil, fmt.Errorf("sdp: connection address %q does not match %s", parts[2], addressType)
+	}
+	if ip.IsUnspecified() || ip.IsMulticast() {
+		return nil, fmt.Errorf("sdp: connection address %q is not a unicast host", parts[2])
+	}
+	return &net.UDPAddr{IP: ip, Port: m.Port}, nil
 }
 
 // Answer describes the local media the gateway offers back to the peer.

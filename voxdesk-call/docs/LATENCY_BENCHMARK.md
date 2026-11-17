@@ -1,73 +1,98 @@
-# VoxDesk — Real PSTN & Voice Pipeline Latency Benchmark
+# VoxDesk — Real PSTN & Voice-Pipeline Latency Evidence
 
-This document reports **only real external provider and PSTN caller-leg measurements** (`provider_fakes: false`). Synthetic in-process pipeline overhead tests are strictly excluded from this document and isolated in [`docs/LATENCY_BENCHMARK_MOCK.md`](LATENCY_BENCHMARK_MOCK.md).
+This document reports only measurements derived from real external provider
+traffic or real dual-channel carrier recordings (`provider_fakes: false`). Mock
+pipeline timings and synthetic WAV results are isolated in
+[`docs/LATENCY_BENCHMARK_MOCK.md`](LATENCY_BENCHMARK_MOCK.md). **No live PSTN
+latency value is currently available; no value is inferred from a mock run.**
 
----
+## Measurement method
 
-## 1. Measurement Methodology (Caller-Leg Dual-Channel Recording + Server Telemetry)
+`scripts/measure_pstn_latency.py` analyzes a dual-channel PCM16 WAV. By default,
+channel 0 is caller audio and channel 1 is agent audio. It uses short-time 10 ms
+RMS windows with a `-38.0 dBFS` threshold, at least 80 ms speech, and 150 ms
+silence to detect caller end-of-speech. It then finds the first sustained
+(20 ms) agent-audio onset and computes
+`caller_leg_latency_ms = agent_first_audio_ms - caller_speech_end_ms`.
+The output includes the measurement leg, provider, model, region, codec, sample
+rate, channel indices, detected turns, and p50/p95/p99 where observations exist.
+The live runners default to channel 0 = caller and channel 1 = agent, with
+`--caller-channel`/`--agent-channel` overrides; they record this map as
+`verified_by_live_calibration: false`. A two-channel recording proves channel
+count, not which side each channel contains. Until a controlled live calibration
+confirms the direction for the deployed Twilio path, treat the resulting
+caller-leg percentiles as provisional rather than validated product evidence.
 
-Real conversational voice latency must be measured at the **caller leg** (from the last millisecond of caller speech to the first millisecond of audible agent reply arriving at the carrier bridge), joined with server-side stage timings:
+The offline analysis is a signal-processing utility. Its synthetic stereo
+fixture establishes that the detector returns a known injected offset; it does
+not establish real PSTN, provider, media-stream, or model performance.
 
-1. **Dual-Channel Carrier Recording (`scripts/measure_pstn_latency.py`)**:
-   - Outbound/inbound study calls are placed via Twilio Programmable Voice with `Record="true"` and `RecordingChannels="dual"` (`PCMU/8000` stereo WAV: `channel 0` = inbound caller leg, `channel 1` = outbound agent leg).
-   - `analyze_dual_channel_wav()` computes short-time 10 ms RMS windows against a `-38.0 dBFS` speech threshold (`min_speech_ms = 80 ms`, `min_silence_ms = 150 ms`) to locate exact caller end-of-speech (`caller_speech_end_ms`) and the first sustained (`>= 20 ms`) agent speech onset (`agent_first_audio_ms`).
-   - Caller-leg turn latency is `caller_leg_latency_ms = agent_first_audio_ms - caller_speech_end_ms`.
-   - Every emitted JSON report records `provider`, `model`, `region`, `codec`, `provider_fakes: false`, per-turn timestamps, and `p50_ms` / `p95_ms` / `p99_ms`.
-2. **N-Call Scripted PSTN Study (`scripts/run_real_call_study.py`)**:
-   - Places `N` real calls via Twilio REST against a scripted callee (`TWILIO_TEST_TO_NUMBER`), downloads dual-channel WAVs, computes caller-leg latency, queries `/api/calls` for persisted `CallLatencyStat` per-stage breakdowns (`stt_final_ms`, `llm_ttft_ms`, `tts_ttfb_ms`, `pipeline_e2e_ms`) and barge-in interruption stop latency (`clean_stops_under_250ms`), and writes `evidence/latency/<date>/real_study.{json,csv}`.
-3. **Per-Provider Streaming TTFB (`tests/real/test_stt_tts_llm_stream.py` & `tests/real/test_s2s_live.py`)**:
-   - Measures direct wire TTFB/TTFT against Deepgram (`nova-2`), ElevenLabs (`eleven_turbo_v2_5`), Cartesia (`sonic-english`), OpenAI (`gpt-4o-mini` + `gpt-4o-realtime-preview`), Anthropic (`claude-3-5-haiku-latest`), and Gemini Live (`models/gemini-2.0-flash-exp`), writing `evidence/real-integrations/<date>/provider_latency.json`.
+## N-call real PSTN study
 
----
+`scripts/run_real_call_study.py` is the live-only runner. For each requested
+call, it:
 
-## 2. Current Real-Call Study Artifact (`evidence/latency/2026-11-07/real_study.json`)
+1. requires `VOXDESK_REAL_INTEGRATION=1`, a VoxDesk API key, Twilio credentials,
+   provider test credentials, and an explicitly controlled destination;
+2. creates the call through VoxDesk's authenticated `/api/calls` endpoint, so a
+   durable `Call` row and signed outbound media URL exist;
+3. waits for a completed Twilio call and a two-channel recording;
+4. requires caller and assistant transcript turns through the authenticated
+   replay endpoint, analyzes the recording, and writes per-call / aggregate
+   caller-leg results to `real_study.json` and `real_study.csv`;
+5. deletes the Twilio recording after analysis and does not retain raw WAV audio
+   in the evidence bundle.
 
-| Field | Value |
-| --- | --- |
-| **Artifact Path** | `evidence/latency/2026-11-07/real_study.json`, `evidence/latency/2026-11-07/real_study.csv` |
-| **Study Date (UTC)** | `2026-11-07` |
-| **`provider_fakes`** | `false` |
-| **Status in Offline CI / Sandbox** | `NOT_RUN_MISSING_CREDENTIALS` (`0` live carrier calls placed; zero credentials present in build sandbox) |
-| **Configured Study Target Stack** | `twilio` (`PCMU/8000`, `us-east-1`) + `deepgram/nova-2` + `openai/gpt-4o-mini` + `elevenlabs/eleven_turbo_v2_5` |
-| **Caller-Leg E2E (`p50 / p95 / p99`)** | `null / null / null` *(requires live `TWILIO_*`, `DEEPGRAM_API_KEY`, `OPENAI_API_KEY`, `ELEVENLABS_API_KEY`)* |
-| **STT Final (`p50 / p95 / p99`)** | `null / null / null` |
-| **LLM TTFT (`p50 / p95 / p99`)** | `null / null / null` |
-| **TTS TTFB (`p50 / p95 / p99`)** | `null / null / null` |
-| **Interruption Clean Stops (`<= 250 ms`)** | `0 / 0` (`NOT_RUN_MISSING_CREDENTIALS`) |
+Per-stage STT/LLM/TTS TTFB and interruption-stop metrics are explicitly marked
+`measured: false`/null in this `/api/calls`-based study. The call and replay
+responses it consumes do not include per-call stage timings or interruption stop
+latency; the separate operator live-proof flow is not joined to these call IDs.
+No stage latency or interruption result is fabricated or inferred from an
+aggregate dashboard response.
 
-> **Honesty Policy**: Because live carrier and LLM API keys are not injected into the offline build environment, `real_study.json` records `null` percentiles rather than substituting synthetic numbers. See [`docs/EVIDENCE_STATUS.md`](EVIDENCE_STATUS.md) for the nightly real-provider integration status.
+## Current evidence state
 
----
+- `evidence/latency/` contains the instructions only; there is no `real_study.json`
+  or `.csv` artifact.
+- The repository's dated provider ledger at
+  `evidence/real-integrations/2026-11-10/real_integrations.json` records 0 PASS
+  and 12 `SKIPPED_NO_CREDENTIALS` results. A dated skip ledger is not provider
+  evidence.
+- No live provider call or N-call PSTN study was run to prepare this document.
+- Caller-leg p50/p95/p99, per-stage TTFB, interruptions, and capacity under live
+  provider conditions are therefore **not measured**.
 
-## 3. Reference Host Hardware (Recorded in `real_study.json`)
+The automated proof that exists is limited to offline behavior: the unit test
+`tests/truth/test_part11_evidence_and_bench.py::test_measure_pstn_latency_dual_channel_caller_leg_onset`
+checks a synthetic stereo fixture with a known 420 ms offset. This is not a
+product-performance result.
 
-- **CPU**: `x86_64` container / VM (`Intel Xeon @ 2.20 GHz` in sandbox baseline; recommend `>= 4 vCPU` dedicated in `us-east-1` co-located near Twilio US-East media edge)
-- **OS & Runtime**: `Linux 6.1`, Python `3.11+` / `3.13`, Pipecat `0.0.94`, Uvicorn (`uvloop`)
-- **Telephony Codec**: `PCMU/8000` (`G.711 mu-law`, 20 ms RTP / WebSocket frames)
+## Running an authorized study
 
----
-
-## 4. Reproducing a Live PSTN Study
+The scripts default to one call, but this N-call runner places paid calls. Use only
+a consented test callee/IVR under your control. Increase `--calls` only when the
+additional spend and side effects are authorized. The remote VoxDesk deployment
+must itself be configured with the required carrier/STT/LLM/TTS providers.
 
 ```bash
+export VOXDESK_REAL_INTEGRATION=1
+export VOXDESK_REAL_API_KEY="vxd_test_..."
+export VOXDESK_PUBLIC_BASE_URL="https://voice-test.example.com"
 export TWILIO_ACCOUNT_SID="AC..."
 export TWILIO_AUTH_TOKEN="..."
 export TWILIO_PHONE_NUMBER="+15550001111"
-export TWILIO_TEST_TO_NUMBER="+15550002222"
-export VOXDESK_PUBLIC_BASE_URL="https://voice.example.com"
-export VOXDESK_REAL_API_KEY="vxd_live_..."
+export TWILIO_TEST_TO_NUMBER="+15550002222"  # controlled, consented test callee
 export DEEPGRAM_API_KEY="..."
 export OPENAI_API_KEY="..."
 export ELEVENLABS_API_KEY="..."
 
-# 1. Run a 30-call dual-channel PSTN study and write real_study.{json,csv}
-python scripts/run_real_call_study.py --calls 30 --date "$(date -u +%Y-%m-%d)"
-
-# 2. Analyze an individual dual-channel carrier WAV directly
-python scripts/measure_pstn_latency.py \
-  --wav evidence/latency/$(date -u +%Y-%m-%d)/recordings/call_001_CAxxxx.wav \
-  --provider twilio \
-  --model gpt-4o-mini \
-  --region us-east-1 \
-  --codec PCMU/8000
+python scripts/run_real_call_study.py \
+  --calls 5 \
+  --date "$(date -u +%Y-%m-%d)"
 ```
+
+The manual `real-integrations` workflow also accepts a `pstn_study_calls`
+input (default `0`). A positive count explicitly requests that additional paid
+study and uploads its JSON/CSV artifacts. The nightly schedule does not run the
+extra N-call study. See [`evidence/latency/README.md`](../evidence/latency/README.md)
+for the artifact location and privacy notes.

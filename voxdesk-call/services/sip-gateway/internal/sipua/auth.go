@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -189,42 +190,68 @@ func (a *ACL) Empty() bool {
 	return a == nil || len(a.networks) == 0
 }
 
-// TrunkConfig is what the application says about one SIP trunk.
+// TrunkConfig is a digest credential response. It supports the legacy
+// machine-wide endpoint and the tenant/trunk-scoped runtime endpoint.
 type TrunkConfig struct {
-	// Username and Password are the digest credentials of the trunk.
-	Username string `json:"username"`
-	Password string `json:"password"`
-	// AllowedCIDRs are the networks the trunk may come from.
-	AllowedCIDRs []string `json:"allowed_cidrs"`
+	TenantID      string   `json:"tenant_id,omitempty"`
+	TrunkID       string   `json:"trunk_id,omitempty"`
+	EnvironmentID string   `json:"environment_id,omitempty"`
+	Host          string   `json:"host,omitempty"`
+	Port          int      `json:"port,omitempty"`
+	Transport     string   `json:"transport,omitempty"`
+	SRTPRequired  bool     `json:"srtp_required,omitempty"`
+	CallerID      string   `json:"caller_id,omitempty"`
+	EgressAddress string   `json:"egress_address,omitempty"`
+	Username      string   `json:"username"`
+	Password      string   `json:"password"`
+	AllowedCIDRs  []string `json:"allowed_cidrs,omitempty"`
 }
 
-// ConfigCache holds the trunk configuration of the application.
-//
-// The application owns the tenant configuration, so the gateway asks for it
-// and keeps the answer for a while: a SIP proxy in front of the gateway
-// would otherwise be asked on every INVITE. The answer is optional -- a
-// gateway without a configuration URL uses the credentials and the access
-// list of its own environment.
-type ConfigCache struct {
-	url    string
-	ttl    time.Duration
-	client *http.Client
-
-	mu        sync.Mutex
+type cachedTenantTrunk struct {
 	config    TrunkConfig
-	acl       *ACL
 	fetchedAt time.Time
 }
 
-// NewConfigCache creates a cache for the given application URL.
-func NewConfigCache(url string, ttl time.Duration) *ConfigCache {
+// ConfigCache holds the legacy machine-wide response and a bounded-TTL cache
+// keyed by the exact tenant, trunk, and environment for runtime lookups.
+type ConfigCache struct {
+	url       string
+	tenantURL string
+	ttl       time.Duration
+	token     string
+	client    *http.Client
+
+	mu           sync.Mutex
+	config       TrunkConfig
+	acl          *ACL
+	fetchedAt    time.Time
+	tenantTrunks map[string]cachedTenantTrunk
+}
+
+// NewConfigCache creates a cache for the given application URL. A configured
+// endpoint always requires the machine-to-machine gateway bearer token.
+func NewConfigCache(url string, ttl time.Duration, token string) *ConfigCache {
+	return NewConfigCacheWithTenantURL(url, "", ttl, token)
+}
+
+// NewConfigCacheWithTenantURL keeps the legacy global endpoint separate from
+// the tenant/trunk-scoped runtime endpoint.
+func NewConfigCacheWithTenantURL(
+	url string,
+	tenantURL string,
+	ttl time.Duration,
+	token string,
+) *ConfigCache {
 	if ttl <= 0 {
 		ttl = 30 * time.Second
 	}
 	return &ConfigCache{
-		url:    strings.TrimSpace(url),
-		ttl:    ttl,
-		client: &http.Client{Timeout: 5 * time.Second},
+		url:          strings.TrimSpace(url),
+		tenantURL:    strings.TrimSpace(tenantURL),
+		ttl:          ttl,
+		token:        strings.TrimSpace(token),
+		client:       &http.Client{Timeout: 5 * time.Second},
+		tenantTrunks: map[string]cachedTenantTrunk{},
 	}
 }
 
@@ -239,6 +266,9 @@ func (c *ConfigCache) Trunk(ctx context.Context) (TrunkConfig, error) {
 	if !c.Configured() {
 		return TrunkConfig{}, nil
 	}
+	if c.token == "" {
+		return TrunkConfig{}, fmt.Errorf("sipua: the trunk configuration endpoint requires a gateway token")
+	}
 	c.mu.Lock()
 	fresh := time.Since(c.fetchedAt) < c.ttl
 	current := c.config
@@ -251,6 +281,7 @@ func (c *ConfigCache) Trunk(ctx context.Context) (TrunkConfig, error) {
 		return TrunkConfig{}, fmt.Errorf("sipua: cannot build the configuration request: %w", err)
 	}
 	request.Header.Set("Accept", "application/json")
+	request.Header.Set("Authorization", "Bearer "+c.token)
 	response, err := c.client.Do(request)
 	if err != nil {
 		return TrunkConfig{}, fmt.Errorf("sipua: cannot read the trunk configuration: %w", err)
@@ -271,6 +302,101 @@ func (c *ConfigCache) Trunk(ctx context.Context) (TrunkConfig, error) {
 	c.config = config
 	c.acl = acl
 	c.fetchedAt = time.Now()
+	c.mu.Unlock()
+	return config, nil
+}
+
+// TenantTrunk fetches the call-time profile for exactly one tenant/trunk
+// pair. The endpoint is authenticated with the gateway bearer token; IDs are
+// query parameters, never credential fields supplied in the call request.
+func (c *ConfigCache) TenantTrunk(
+	ctx context.Context,
+	tenantID string,
+	trunkID string,
+	environmentID string,
+) (TrunkConfig, error) {
+	tenantID = strings.TrimSpace(tenantID)
+	trunkID = strings.TrimSpace(trunkID)
+	environmentID = strings.TrimSpace(environmentID)
+	if tenantID == "" || trunkID == "" {
+		return TrunkConfig{}, fmt.Errorf("sipua: tenant and trunk IDs are required for scoped configuration")
+	}
+	if c == nil || c.tenantURL == "" {
+		return TrunkConfig{}, fmt.Errorf("sipua: tenant trunk configuration endpoint is not configured")
+	}
+	if c.token == "" {
+		return TrunkConfig{}, fmt.Errorf("sipua: the trunk configuration endpoint requires a gateway token")
+	}
+
+	key := tenantID + "\x00" + trunkID + "\x00" + environmentID
+	c.mu.Lock()
+	if cached, ok := c.tenantTrunks[key]; ok && time.Since(cached.fetchedAt) < c.ttl {
+		c.mu.Unlock()
+		return cached.config, nil
+	}
+	c.mu.Unlock()
+
+	endpoint, err := url.Parse(c.tenantURL)
+	if err != nil || endpoint.Scheme == "" || endpoint.Host == "" {
+		return TrunkConfig{}, fmt.Errorf("sipua: the trunk configuration URL is invalid")
+	}
+	query := endpoint.Query()
+	query.Set("tenant_id", tenantID)
+	query.Set("trunk_id", trunkID)
+	if environmentID != "" {
+		query.Set("environment_id", environmentID)
+	}
+	endpoint.RawQuery = query.Encode()
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint.String(), nil)
+	if err != nil {
+		return TrunkConfig{}, fmt.Errorf("sipua: cannot build the scoped configuration request: %w", err)
+	}
+	request.Header.Set("Accept", "application/json")
+	request.Header.Set("Authorization", "Bearer "+c.token)
+	response, err := c.client.Do(request)
+	if err != nil {
+		return TrunkConfig{}, fmt.Errorf("sipua: cannot read the scoped trunk configuration: %w", err)
+	}
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		return TrunkConfig{}, fmt.Errorf("sipua: the application answered %d for the scoped trunk configuration", response.StatusCode)
+	}
+	var config TrunkConfig
+	if err := json.NewDecoder(response.Body).Decode(&config); err != nil {
+		return TrunkConfig{}, fmt.Errorf("sipua: the scoped trunk configuration is not readable: %w", err)
+	}
+	if config.TenantID != tenantID || config.TrunkID != trunkID {
+		return TrunkConfig{}, fmt.Errorf("sipua: the application returned a different tenant or trunk")
+	}
+	if environmentID != "" && config.EnvironmentID != "" && config.EnvironmentID != environmentID {
+		return TrunkConfig{}, fmt.Errorf("sipua: the application returned a different trunk environment")
+	}
+	if strings.TrimSpace(config.Host) == "" || config.Port < 1 || config.Port > 65535 ||
+		strings.TrimSpace(config.Username) == "" || strings.TrimSpace(config.Password) == "" {
+		return TrunkConfig{}, fmt.Errorf("sipua: the scoped trunk configuration is incomplete")
+	}
+	transport := strings.ToLower(strings.TrimSpace(config.Transport))
+	if transport != "udp" && transport != "tcp" && transport != "tls" {
+		return TrunkConfig{}, fmt.Errorf("sipua: the scoped trunk transport is unsupported")
+	}
+	config.Transport = transport
+
+	c.mu.Lock()
+	if c.tenantTrunks == nil {
+		c.tenantTrunks = map[string]cachedTenantTrunk{}
+	}
+	if len(c.tenantTrunks) >= 256 {
+		for cachedKey, cached := range c.tenantTrunks {
+			if time.Since(cached.fetchedAt) >= c.ttl {
+				delete(c.tenantTrunks, cachedKey)
+			}
+		}
+		if len(c.tenantTrunks) >= 256 {
+			c.mu.Unlock()
+			return TrunkConfig{}, fmt.Errorf("sipua: tenant trunk configuration cache is full")
+		}
+	}
+	c.tenantTrunks[key] = cachedTenantTrunk{config: config, fetchedAt: time.Now()}
 	c.mu.Unlock()
 	return config, nil
 }

@@ -244,6 +244,11 @@ async def vonage_answer(
         session.add(call)
         try:
             await session.flush()
+            raw_overrides = params.get("voxdesk_overrides")
+            if raw_overrides:
+                from app.telephony.webhooks import apply_inbound_overrides_to_call
+
+                apply_inbound_overrides_to_call(call, raw_overrides)
             await resolve_runtime_config(session, call, tenant=tenant)
             await session.commit()
         except IntegrityError:

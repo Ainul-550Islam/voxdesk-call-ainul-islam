@@ -45,9 +45,9 @@ jobs:
         run: |
           pip install semgrep
           semgrep --config p/python --config p/typescript --config p/security-audit \
-            --sarif --output artifacts/security/semgrep-results.sarif app scripts dashboard/src dashboard-next || true
+            --sarif --output artifacts/security/semgrep-results.sarif app scripts dashboard-next || true
           semgrep --config p/python --config p/typescript --config p/security-audit \
-            --json --output artifacts/security/semgrep-results.json app scripts dashboard/src dashboard-next || true
+            --json --output artifacts/security/semgrep-results.json app scripts dashboard-next || true
           test -f artifacts/security/semgrep-results.sarif
 
       - name: Upload Bandit SARIF
@@ -112,7 +112,7 @@ jobs:
       - name: cargo audit (Rust workspaces high/critical CVEs)
         run: |
           cargo install cargo-audit --locked
-          (cd services/control-plane && cargo audit --deny warnings)
+          (cd experimental/control-plane && cargo audit --deny warnings)
           (cd services/realtime/media-engine-rs && cargo audit --deny warnings)
 
       - uses: actions/setup-go@v5
@@ -122,8 +122,8 @@ jobs:
       - name: govulncheck (Go services vulnerability check)
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
-          (cd services/signal-go && govulncheck ./...)
-          (cd services/ops && govulncheck ./...)
+          (cd experimental/signal-go && govulncheck ./...)
+          (cd experimental/ops && govulncheck ./...)
 
       - name: Upload dependency audit artifacts
         if: always()

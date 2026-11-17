@@ -1,7 +1,7 @@
 // Parser seam for strip_generated_tails.py. No regex-based brace deletion.
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
-const require = createRequire(new URL('../dashboard/package.json', import.meta.url));
+const require = createRequire(new URL('../dashboard-next/package.json', import.meta.url));
 const { parse } = require('@babel/parser');
 const [file, namesJson] = process.argv.slice(2);
 const names = new Set(JSON.parse(namesJson));

@@ -43,7 +43,7 @@ export default function LeadsPage() {
         {leads.length === 0 ? (
           <div className="empty">No leads yet.</div>
         ) : (
-          <div className="table-wrap">
+          <div className="table-wrap" tabIndex={0} role="region" aria-label="Data table">
             <table>
               <thead>
                 <tr>

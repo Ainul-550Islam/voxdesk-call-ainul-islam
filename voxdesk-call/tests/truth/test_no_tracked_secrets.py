@@ -21,8 +21,11 @@ committed alongside the existing rules.
 from __future__ import annotations
 
 import re
+import shutil
 import subprocess
 from pathlib import Path
+
+import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -46,6 +49,26 @@ PLACEHOLDER_VALUES = frozenset(
 )
 
 
+def _require_git() -> None:
+    """Skip when there is no working tree to inspect.
+
+    These gates ask *what git tracks*. A buyer's `git archive` export and a
+    release tarball have no `.git`, so there is nothing to inspect — crashing
+    there would report a broken repository when the repository is fine.
+    """
+    if shutil.which("git") is None:
+        pytest.skip("git is not available")
+    probe = subprocess.run(
+        ["git", "rev-parse", "--is-inside-work-tree"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if probe.returncode != 0:
+        pytest.skip("no git working tree: nothing can be tracked, so this gate has no subject")
+
+
 def _tracked_files() -> list[str]:
     out = subprocess.run(
         ["git", "ls-files"],
@@ -59,6 +82,7 @@ def _tracked_files() -> list[str]:
 
 def test_no_env_file_is_tracked():
     """`.env` and its variants are generated locally and must stay untracked."""
+    _require_git()
     tracked = _tracked_files()
     offenders = [
         path
@@ -89,6 +113,7 @@ def _env_shaped(path: str) -> bool:
 
 def test_tracked_env_files_carry_no_live_secret():
     """An env-shaped file may only carry blank or obvious placeholder values."""
+    _require_git()
     offenders: list[str] = []
     for path in _tracked_files():
         if not _env_shaped(path) or path.endswith(".example"):
@@ -118,6 +143,7 @@ def test_tracked_env_files_carry_no_live_secret():
 
 def test_the_generated_check_env_is_ignored_not_tracked():
     """`.env.check` is produced by `scripts/make_check_env.py` at run time."""
+    _require_git()
     result = subprocess.run(
         ["git", "check-ignore", "-q", ".env.check"], cwd=REPO_ROOT
     )

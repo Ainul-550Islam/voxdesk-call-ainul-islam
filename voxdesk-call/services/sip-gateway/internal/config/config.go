@@ -13,6 +13,8 @@ package config
 
 import (
 	"fmt"
+	"net"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -23,6 +25,7 @@ import (
 // allocated from this range and released when the call ends.
 const (
 	DefaultSIPPort        = 5060
+	DefaultTrunkPort      = 5060
 	DefaultMediaPortMin   = 30000
 	DefaultMediaPortMax   = 30100
 	DefaultAPIListen      = ":8080"
@@ -83,17 +86,31 @@ type Config struct {
 	// PreferredCodec is PCMU or PCMA.
 	PreferredCodec string
 
-	// TrunkHost is the default SIP peer used when a call does not name one.
+	// TrunkHost and TrunkPort are the optional default outbound SIP peer used
+	// for E.164 destinations. They are deliberately not inferred from SIPHost:
+	// the advertised media address is not a carrier route.
 	TrunkHost string
+	TrunkPort int
 
-	// TrunkConfigURL is the application endpoint that holds the digest
-	// credentials and the access list of the tenant trunks. When it is
-	// empty the gateway uses AllowedCIDRs alone.
+	// TrunkConfigURL is an optional machine-wide endpoint that supplies one
+	// digest credential set and an inbound peer allow-list.
 	TrunkConfigURL string
+	// TenantTrunkConfigURL is a distinct authenticated endpoint for one
+	// tenant/trunk runtime profile; it must not reuse the global schema.
+	TenantTrunkConfigURL string
+	// InboundRouteURL is the authenticated per-INVITE tenant/trunk resolver.
+	// It must not be pointed at a public trunk-management route.
+	InboundRouteURL string
 	// TrunkConfigTTL is how long a fetched trunk configuration is used.
 	TrunkConfigTTL time.Duration
-	// AllowedCIDRs are the networks a SIP peer may come from.
+	// AllowedCIDRs are the networks allowed to open a SIP signalling socket.
 	AllowedCIDRs []string
+	// TrustedProxyCIDRs are the only SIP peer networks whose
+	// X-VoxDesk-Source-IP header is trusted as the original carrier address.
+	TrustedProxyCIDRs []string
+	// MediaPeerCIDRs restrict SDP RTP destinations. If empty, media targets
+	// must use the same IP as the SIP signalling peer.
+	MediaPeerCIDRs []string
 
 	// SessionTimeout bounds one SIP transaction.
 	SessionTimeout time.Duration
@@ -128,23 +145,29 @@ func envList(getenv func(string) string, name string) []string {
 // that must stop the process from starting.
 func Load(getenv func(string) string) (Config, []string, []string) {
 	cfg := Config{
-		SIPPort:        envInt(getenv, "VOXDESK_SIP_PORT", DefaultSIPPort),
-		SIPHost:        strings.TrimSpace(getenv("VOXDESK_SIP_HOST")),
-		SIPTransport:   strings.ToUpper(strings.TrimSpace(getenv("VOXDESK_SIP_TRANSPORT"))),
-		MediaPortMin:   envInt(getenv, "VOXDESK_MEDIA_PORT_MIN", DefaultMediaPortMin),
-		MediaPortMax:   envInt(getenv, "VOXDESK_MEDIA_PORT_MAX", DefaultMediaPortMax),
-		APIListen:      strings.TrimSpace(getenv("VOXDESK_SIP_API_ADDR")),
-		GatewayToken:   strings.TrimSpace(getenv("VOXDESK_SIP_GATEWAY_TOKEN")),
-		MediaWSURL:     strings.TrimSpace(getenv("VOXDESK_SIP_MEDIA_WS_URL")),
-		PreferredCodec: strings.ToUpper(strings.TrimSpace(getenv("VOXDESK_SIP_CODEC"))),
-		TrunkHost:      strings.TrimSpace(getenv("VOXDESK_SIP_TRUNK_HOST")),
-		TrunkConfigURL: strings.TrimSpace(getenv("VOXDESK_SIP_CONFIG_URL")),
+		SIPPort:              envInt(getenv, "VOXDESK_SIP_PORT", DefaultSIPPort),
+		SIPHost:              strings.TrimSpace(getenv("VOXDESK_SIP_HOST")),
+		SIPTransport:         strings.ToUpper(strings.TrimSpace(getenv("VOXDESK_SIP_TRANSPORT"))),
+		MediaPortMin:         envInt(getenv, "VOXDESK_MEDIA_PORT_MIN", DefaultMediaPortMin),
+		MediaPortMax:         envInt(getenv, "VOXDESK_MEDIA_PORT_MAX", DefaultMediaPortMax),
+		APIListen:            strings.TrimSpace(getenv("VOXDESK_SIP_API_ADDR")),
+		GatewayToken:         strings.TrimSpace(getenv("VOXDESK_SIP_GATEWAY_TOKEN")),
+		MediaWSURL:           strings.TrimSpace(getenv("VOXDESK_SIP_MEDIA_WS_URL")),
+		PreferredCodec:       strings.ToUpper(strings.TrimSpace(getenv("VOXDESK_SIP_CODEC"))),
+		TrunkHost:            strings.TrimSpace(getenv("VOXDESK_SIP_TRUNK_HOST")),
+		TrunkPort:            envInt(getenv, "VOXDESK_SIP_TRUNK_PORT", DefaultTrunkPort),
+		TrunkConfigURL:       strings.TrimSpace(getenv("VOXDESK_SIP_CONFIG_URL")),
+		TenantTrunkConfigURL: strings.TrimSpace(getenv("VOXDESK_SIP_TENANT_TRUNK_CONFIG_URL")),
+		InboundRouteURL:      strings.TrimSpace(getenv("VOXDESK_SIP_INBOUND_ROUTE_URL")),
+
 		TrunkConfigTTL: envDuration(
 			getenv, "VOXDESK_SIP_CONFIG_TTL", DefaultTrunkConfigTTL,
 		),
-		AllowedCIDRs:   envList(getenv, "VOXDESK_SIP_ALLOWED_CIDRS"),
-		SessionTimeout: envDuration(getenv, "VOXDESK_SIP_SESSION_TIMEOUT", DefaultSessionTimeout),
-		WriteTimeout:   envDuration(getenv, "VOXDESK_SIP_WRITE_TIMEOUT", DefaultWriteWait),
+		AllowedCIDRs:      envList(getenv, "VOXDESK_SIP_ALLOWED_CIDRS"),
+		TrustedProxyCIDRs: envList(getenv, "VOXDESK_SIP_TRUSTED_PROXY_CIDRS"),
+		MediaPeerCIDRs:    envList(getenv, "VOXDESK_SIP_MEDIA_PEER_CIDRS"),
+		SessionTimeout:    envDuration(getenv, "VOXDESK_SIP_SESSION_TIMEOUT", DefaultSessionTimeout),
+		WriteTimeout:      envDuration(getenv, "VOXDESK_SIP_WRITE_TIMEOUT", DefaultWriteWait),
 		ShutdownTimeout: envDuration(
 			getenv, "VOXDESK_SIP_SHUTDOWN_TIMEOUT", DefaultShutdownWait,
 		),
@@ -168,9 +191,6 @@ func Load(getenv func(string) string) (Config, []string, []string) {
 	if cfg.APIListen == "" {
 		cfg.APIListen = DefaultAPIListen
 	}
-	if cfg.TrunkHost == "" {
-		cfg.TrunkHost = cfg.SIPHost
-	}
 	if cfg.PreferredCodec == "" {
 		cfg.PreferredCodec = DefaultCodec
 	}
@@ -179,6 +199,13 @@ func Load(getenv func(string) string) (Config, []string, []string) {
 	}
 	if cfg.SIPPort < 1 || cfg.SIPPort > 65535 {
 		problems = append(problems, "VOXDESK_SIP_PORT must be a valid TCP/UDP port")
+	}
+	if cfg.TrunkPort < 1 || cfg.TrunkPort > 65535 {
+		problems = append(problems, "VOXDESK_SIP_TRUNK_PORT must be a valid port")
+	}
+	if strings.ContainsAny(cfg.TrunkHost, " /@") ||
+		(strings.Contains(cfg.TrunkHost, ":") && net.ParseIP(cfg.TrunkHost) == nil) {
+		problems = append(problems, "VOXDESK_SIP_TRUNK_HOST must be a host name or IP address without a scheme, user info, or port")
 	}
 	if cfg.MediaPortMin < 1 || cfg.MediaPortMax > 65535 || cfg.MediaPortMin > cfg.MediaPortMax {
 		problems = append(problems, "the media port range is invalid")
@@ -196,6 +223,13 @@ func Load(getenv func(string) string) (Config, []string, []string) {
 		problems = append(problems, "VOXDESK_SIP_MEDIA_WS_URL is required")
 	} else if !strings.HasPrefix(cfg.MediaWSURL, "ws://") && !strings.HasPrefix(cfg.MediaWSURL, "wss://") {
 		problems = append(problems, "VOXDESK_SIP_MEDIA_WS_URL must be a ws:// or wss:// URL")
+	}
+	if cfg.InboundRouteURL != "" {
+		endpoint, err := url.ParseRequestURI(cfg.InboundRouteURL)
+		if err != nil || endpoint.Host == "" ||
+			(endpoint.Scheme != "http" && endpoint.Scheme != "https") || endpoint.User != nil {
+			problems = append(problems, "VOXDESK_SIP_INBOUND_ROUTE_URL must be an http:// or https:// internal route URL without user info")
+		}
 	}
 
 	return cfg, problems, warnings

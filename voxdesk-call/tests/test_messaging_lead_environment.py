@@ -94,9 +94,10 @@ async def test_stop_from_an_unknown_number_creates_a_scoped_dnc_lead(
     assert "consent:voice:denied" in history[1].reason
 
     consents = await _consents(db, lead)
-    assert [(c.channel, c.decision, c.source) for c in consents] == [
-        ("voice", "denied", "messaging:stop")
-    ]
+    assert {(c.channel, c.decision, c.source) for c in consents} == {
+        ("sms", "denied", "messaging:stop"),
+        ("voice", "denied", "messaging:stop"),
+    }
 
 
 async def test_stop_on_an_existing_production_lead(client, db, tenant_a):
@@ -126,9 +127,9 @@ async def test_start_never_reverses_do_not_call(client, db, tenant_a):
         (None, "new"), ("new", "do_not_call"),
     ]  # START wrote no status transition
     consents = await _consents(db, lead)
-    assert [(c.channel, c.decision) for c in consents] == [
-        ("voice", "denied"), ("sms", "granted"),
-    ]
+    assert {(c.channel, c.decision) for c in consents} == {
+        ("sms", "denied"), ("voice", "denied"), ("sms", "granted"),
+    }
 
 
 async def test_start_on_a_normal_lead_records_sms_consent_only(client, db, tenant_a):
@@ -215,6 +216,6 @@ async def test_duplicate_delivery_is_answered_silently(client, db, tenant_a):
 
     lead = await _lead_for(db, tenant_a, "+15551000008")
     consents = await _consents(db, lead)
-    assert len(consents) == 1
+    assert len(consents) == 2  # SMS denial and voice DNC are separate consent records
     history = await history_for(db, lead.tenant_id, lead.environment_id, lead.id)
     assert len(history) == 2  # created + the single DNC transition

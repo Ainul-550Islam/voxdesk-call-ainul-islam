@@ -1,0 +1,26 @@
+site_name: VoxDesk Developer Documentation
+site_description: Integration and operations documentation for VoxDesk.
+site_dir: ../build/docs-site
+strict: true
+use_directory_urls: false
+
+nav:
+  - Home: index.md
+  - Getting started: getting-started.md
+  - API reference:
+      - Overview: api/index.md
+      - Public endpoints: api/api-v1-public.md
+      - Widget public keys: api/api-v1-public-keys.md
+      - Billing: api/api-billing.md
+      - White-label: api/api-whitelabel.md
+      - Agent templates: api/api-agent-templates.md
+  - Changelog: changelog.md
+
+theme:
+  name: readthedocs
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true

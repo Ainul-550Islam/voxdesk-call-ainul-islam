@@ -93,7 +93,14 @@ _SECRET_VALUE_PATTERNS = [
     re.compile(r"AKIA[0-9A-Z]{16}"),
     re.compile(r"sk-[A-Za-z0-9]{20,}"),
     re.compile(r"SG\.[A-Za-z0-9_-]{16,}"),
-    re.compile(r"-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----"),
+    # Match an actual PEM block, not a harmless header quoted by a test or
+    # documentation. Require at least 64 base64 characters of key material.
+    re.compile(
+        r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----[ \t]*\r?\n"
+        r"(?=[A-Za-z0-9+/=\r\n]{64,}-----END (?:RSA |EC |OPENSSH )?PRIVATE KEY-----)"
+        r"[A-Za-z0-9+/=]+(?:\r?\n[A-Za-z0-9+/=]+)*\r?\n"
+        r"-----END (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"
+    ),
 ]
 
 #: Well-known documentation/example values that are not secrets. AWS's public

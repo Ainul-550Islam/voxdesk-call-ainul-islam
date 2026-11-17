@@ -18,7 +18,7 @@ import re
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Protocol
+from typing import Any, Iterable, Protocol
 
 from sqlalchemy import (
     JSON,
@@ -42,6 +42,7 @@ from app.core.config import settings
 from app.core.logging import log
 from app.db.models import Agent, AgentVersion, Base, Tenant, UsageMetric
 from app.telephony.phone import InvalidPhoneNumber, normalize
+from app.telephony.number_routing import build_routing
 from app.telephony.provider_errors import (
     ProviderConflictError,
     ProviderValidationError,
@@ -156,6 +157,9 @@ class PhoneNumber(Base):
         nullable=True,
         index=True,
     )
+    # Per-channel weighted routing. Nullable to keep the legacy single-agent columns
+    # authoritative for rows created before weighted routing was configured.
+    routing: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
 
     voice_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     status_callback_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
@@ -200,6 +204,11 @@ class PhoneNumber(Base):
             "inbound_agent_id": str(self.inbound_agent_id) if self.inbound_agent_id else None,
             "inbound_agent_version": self.inbound_agent_version,
             "outbound_agent_id": str(self.outbound_agent_id) if self.outbound_agent_id else None,
+            "routing": build_routing(
+                self.routing,
+                legacy_inbound_agent_id=(str(self.inbound_agent_id) if self.inbound_agent_id else ""),
+                legacy_outbound_agent_id=(str(self.outbound_agent_id) if self.outbound_agent_id else ""),
+            ).as_dict(),
             "assigned_at": self.assigned_at.isoformat() if self.assigned_at else None,
             "released_at": self.released_at.isoformat() if self.released_at else None,
         }
@@ -1067,11 +1076,14 @@ class NumberProvisioningService:
         )
 
         if inbound_agent_id is not ...:
+            previous_inbound = record.inbound_agent_id
             if inbound_agent_id is not None:
                 agent = await self._validate_tenant_agent(
                     session, tenant_id=tenant_id, agent_id=inbound_agent_id
                 )
                 record.inbound_agent_id = agent.id
+                if previous_inbound != agent.id and inbound_agent_version is ...:
+                    record.inbound_agent_version = None
             else:
                 record.inbound_agent_id = None
                 if inbound_agent_version is ...:
@@ -1113,6 +1125,30 @@ class NumberProvisioningService:
                 record.outbound_agent_id = agent.id
             else:
                 record.outbound_agent_id = None
+
+        if inbound_agent_id is not ... or outbound_agent_id is not ...:
+            routing = build_routing(
+                record.routing,
+                legacy_inbound_agent_id=(
+                    str(record.inbound_agent_id) if record.inbound_agent_id else ""
+                ),
+                legacy_outbound_agent_id=(
+                    str(record.outbound_agent_id) if record.outbound_agent_id else ""
+                ),
+            ).as_dict()
+            if inbound_agent_id is not ...:
+                routing["inbound"] = (
+                    [{"agent_id": str(record.inbound_agent_id), "weight": 1.0, "label": ""}]
+                    if record.inbound_agent_id
+                    else []
+                )
+            if outbound_agent_id is not ...:
+                routing["outbound"] = (
+                    [{"agent_id": str(record.outbound_agent_id), "weight": 1.0, "label": ""}]
+                    if record.outbound_agent_id
+                    else []
+                )
+            record.routing = routing
 
         if friendly_name is not None:
             record.friendly_name = friendly_name[:120]
@@ -1207,3 +1243,150 @@ def _reset_for_tests(provider: NumberProvider | None = None) -> NumberProvisioni
     global _default_service
     _default_service = NumberProvisioningService(provider=provider or StubNumberProvider())
     return _default_service
+
+
+# ===========================================================================
+# PART 13 / P13-07 — international numbers, toll-free and nicknames
+# ===========================================================================
+#
+# Buying a number outside the US is not a search-and-click: regulators in most
+# countries require a local address, sometimes an ID document, and the carrier
+# will hold the order until those are on file. The workflow below is therefore
+# *requirements first*: a purchase plan lists what is missing and refuses to
+# start until it is empty, so an operator never waits a week to learn they
+# forgot a field.
+
+#: ISO country -> the documents its regulator requires before a number is
+#: activated. Kept as data so the wizard can render it and the tests can prove
+#: it; an unknown country requires a local address, which is the conservative
+#: default rather than an empty list.
+REGULATORY_REQUIREMENTS: dict[str, tuple[str, ...]] = {
+    "US": ("address",),
+    "CA": ("address",),
+    "GB": ("address",),
+    "DE": ("address", "id_document"),
+    "FR": ("address",),
+    "AU": ("address", "business_registration"),
+    "BD": ("address", "id_document"),
+    "IN": ("address", "id_document", "business_registration"),
+    "SG": ("business_registration",),
+    "BR": ("address", "id_document"),
+    "MX": ("address",),
+    "JP": ("address", "business_registration"),
+}
+DEFAULT_REQUIREMENTS: tuple[str, ...] = ("address",)
+
+#: Toll-free prefixes per country. Deliberately explicit: "800" is toll-free in
+#: the US and a normal area code elsewhere.
+TOLL_FREE_PREFIXES: dict[str, tuple[str, ...]] = {
+    "US": ("+1800", "+1833", "+1844", "+1855", "+1866", "+1877", "+1888"),
+    "CA": ("+1800", "+1833", "+1844", "+1855", "+1866", "+1877", "+1888"),
+    "GB": ("+80800", "+800"),
+    "AU": ("+1800",),
+}
+
+NICKNAME_MAX = 64
+
+
+class RegulatoryError(RuntimeError):
+    """A purchase that cannot start yet, with the missing fields named."""
+
+    def __init__(self, missing: tuple[str, ...], country: str) -> None:
+        super().__init__(
+            f"{country} requires {', '.join(missing)} before a number can be activated"
+        )
+        self.missing = missing
+        self.country = country
+
+
+@dataclass(frozen=True)
+class RegulatoryBundle:
+    country: str
+    required: tuple[str, ...]
+    satisfied: tuple[str, ...]
+    missing: tuple[str, ...]
+
+    @property
+    def ready(self) -> bool:
+        return not self.missing
+
+    def as_dict(self) -> dict:
+        return {
+            "country": self.country,
+            "required": list(self.required),
+            "satisfied": list(self.satisfied),
+            "missing": list(self.missing),
+            "ready": self.ready,
+        }
+
+
+def regulatory_bundle(country: str, provided: Iterable[str] = ()) -> RegulatoryBundle:
+    """What this country needs, and which of those we already have."""
+    code = (country or "").strip().upper()
+    required = REGULATORY_REQUIREMENTS.get(code, DEFAULT_REQUIREMENTS)
+    supplied = {str(item).strip().lower() for item in provided if str(item).strip()}
+    satisfied = tuple(item for item in required if item in supplied)
+    missing = tuple(item for item in required if item not in supplied)
+    return RegulatoryBundle(code, required, satisfied, missing)
+
+
+def is_toll_free(number: str, country: str | None = None) -> bool:
+    """Whether an E.164 number is toll-free in its country."""
+    text = (number or "").strip()
+    if country:
+        return any(text.startswith(prefix) for prefix in TOLL_FREE_PREFIXES.get(country.upper(), ()))
+    return any(text.startswith(prefix) for prefixes in TOLL_FREE_PREFIXES.values() for prefix in prefixes)
+
+
+def normalise_nickname(nickname: str | None) -> str:
+    """A label the operator sees. Empty is allowed; control characters are not."""
+    text = (nickname or "").strip()
+    if len(text) > NICKNAME_MAX:
+        raise ValueError(f"a nickname is at most {NICKNAME_MAX} characters")
+    if any(ord(char) < 32 for char in text):
+        raise ValueError("a nickname cannot contain control characters")
+    return text
+
+
+@dataclass(frozen=True)
+class PurchasePlan:
+    country: str
+    toll_free: bool
+    bundle: RegulatoryBundle
+    nickname: str
+
+    @property
+    def allowed(self) -> bool:
+        return self.bundle.ready
+
+    def require_ready(self) -> None:
+        if not self.allowed:
+            raise RegulatoryError(self.bundle.missing, self.bundle.country)
+
+    def as_dict(self) -> dict:
+        return {
+            "country": self.country,
+            "toll_free": self.toll_free,
+            "nickname": self.nickname,
+            "bundle": self.bundle.as_dict(),
+            "allowed": self.allowed,
+        }
+
+
+def plan_purchase(
+    country: str,
+    *,
+    toll_free: bool = False,
+    provided: Iterable[str] = (),
+    nickname: str | None = None,
+) -> PurchasePlan:
+    """Everything the international purchase endpoint needs, before it spends."""
+    code = (country or "").strip().upper()
+    if len(code) != 2:
+        raise RegulatoryError(("country",), code or "??")
+    return PurchasePlan(
+        country=code,
+        toll_free=bool(toll_free),
+        bundle=regulatory_bundle(code, provided),
+        nickname=normalise_nickname(nickname),
+    )
