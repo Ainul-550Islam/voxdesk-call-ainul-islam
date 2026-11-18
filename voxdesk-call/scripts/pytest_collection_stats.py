@@ -20,7 +20,7 @@ import subprocess
 import sys
 from typing import Iterator
 
-CACHE_VERSION = 1
+CACHE_VERSION = 2
 CACHE_RELATIVE_PATH = Path(".cache") / "pytest-collection-stats.json"
 PYTEST_CONFIGS = (
     "pytest.ini",
@@ -63,8 +63,14 @@ def _input_files(root: Path) -> list[Path]:
 def _fingerprint(root: Path) -> str:
     digest = hashlib.sha256()
     digest.update(f"cache-version={CACHE_VERSION}\0".encode("ascii"))
-    digest.update(str(root.resolve()).encode("utf-8"))
-    digest.update(b"\0")
+    # The checkout path is deliberately NOT in the digest. It used to be, which
+    # made the cache unusable anywhere but the directory that produced it: a fresh
+    # `git archive` export, a CI runner and a buyer's clone all resolve to different
+    # paths, so every one of them paid for a full `pytest --collect-only` of the whole
+    # suite inside a 900-second ceiling - and on slow storage that is how a truth
+    # guard fails on a tree that is actually fine. What can change the count is the
+    # test sources, the pytest configuration, this helper, and the interpreter plus
+    # pytest plugin versions, and all four are still hashed below.
     digest.update(_environment_fingerprint())
     digest.update(b"\0")
     for path in _input_files(root):

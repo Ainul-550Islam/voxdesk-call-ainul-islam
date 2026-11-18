@@ -17,7 +17,6 @@ file fails. Written for PART 17B / P17B-02 (audit finding S-15).
 from __future__ import annotations
 
 import re
-import subprocess
 from pathlib import Path
 
 import pytest

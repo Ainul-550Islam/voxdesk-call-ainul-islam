@@ -63,24 +63,15 @@ services:
     entrypoint: ["python", "-m", "scripts.scheduler"]
     restart: unless-stopped
 
-  dashboard:
-    image: node:20-alpine
-    working_dir: /srv
-    volumes: ["./dashboard:/srv"]
-    ports: ["5173:5173"]
-    command: sh -c "npm ci --no-audit --no-fund && npm run dev -- --host 0.0.0.0"
-    depends_on: [api]
-    environment:
-      VITE_API_PROXY_TARGET: http://api:8000
-      VITE_ALLOWED_HOSTS: ${VITE_ALLOWED_HOSTS:-}
-
   nginx:
     image: nginx:1.27-alpine
     ports: ["8080:80"]
     volumes: ["./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro"]
+    # P10-05 retired the Vite console, so `dashboard/` no longer exists and no
+    # service may mount it. `/` is answered by the API (its own static mount);
+    # `docs/DEPLOYMENT.md` explains how to run the Next console alongside this stack.
     depends_on:
       api: {condition: service_started}
-      dashboard: {condition: service_started}
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/health || exit 1"]
       interval: 10s

@@ -7,6 +7,7 @@ never from a request body. Production cannot be duplicated or archived.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any, Mapping, Sequence
 
 import uuid
 from datetime import datetime

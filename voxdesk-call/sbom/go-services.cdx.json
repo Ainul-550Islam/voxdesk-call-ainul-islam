@@ -4,7 +4,7 @@
   "serialNumber": "urn:uuid:00000000-0000-4000-8000-05c517e58911",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-11-07T06:50:56Z",
+    "timestamp": "2026-11-18T12:12:48Z",
     "tools": [
       {
         "vendor": "VoxDesk",
@@ -323,6 +323,149 @@
       "name": "golang.org/x/time",
       "version": "v0.14.0",
       "purl": "pkg:golang/golang.org/x/time@v0.14.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-3-Clause / MIT"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "github.com/prometheus/client_golang",
+      "version": "v1.23.2",
+      "purl": "pkg:golang/github.com/prometheus/client_golang@v1.23.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-3-Clause / MIT"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "github.com/prometheus/client_model",
+      "version": "v0.6.2",
+      "purl": "pkg:golang/github.com/prometheus/client_model@v0.6.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-3-Clause / MIT"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "github.com/prometheus/common",
+      "version": "v0.66.1",
+      "purl": "pkg:golang/github.com/prometheus/common@v0.66.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-3-Clause / MIT"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "github.com/beorn7/perks",
+      "version": "v1.0.1",
+      "purl": "pkg:golang/github.com/beorn7/perks@v1.0.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-3-Clause / MIT"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "github.com/cespare/xxhash/v2",
+      "version": "v2.3.0",
+      "purl": "pkg:golang/github.com/cespare/xxhash/v2@v2.3.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-3-Clause / MIT"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "github.com/kr/text",
+      "version": "v0.2.0",
+      "purl": "pkg:golang/github.com/kr/text@v0.2.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-3-Clause / MIT"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "github.com/munnerz/goautoneg",
+      "version": "v0.0.0-20191010083416-a7dc8b61c822",
+      "purl": "pkg:golang/github.com/munnerz/goautoneg@v0.0.0-20191010083416-a7dc8b61c822",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-3-Clause / MIT"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "github.com/prometheus/procfs",
+      "version": "v0.16.1",
+      "purl": "pkg:golang/github.com/prometheus/procfs@v0.16.1",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-3-Clause / MIT"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "go.yaml.in/yaml/v2",
+      "version": "v2.4.2",
+      "purl": "pkg:golang/go.yaml.in/yaml/v2@v2.4.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-3-Clause / MIT"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "golang.org/x/sys",
+      "version": "v0.35.0",
+      "purl": "pkg:golang/golang.org/x/sys@v0.35.0",
+      "licenses": [
+        {
+          "license": {
+            "name": "BSD-3-Clause / MIT"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "google.golang.org/protobuf",
+      "version": "v1.36.8",
+      "purl": "pkg:golang/google.golang.org/protobuf@v1.36.8",
       "licenses": [
         {
           "license": {

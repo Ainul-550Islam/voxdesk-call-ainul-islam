@@ -96,7 +96,11 @@ lxml==6.1.1
 # Imported directly by app/platform_v2/whitelabel/dns.py (custom-domain DNS
 # verification). Already present transitively via email-validator; pinned here
 # so the direct import is declared. Verified: `pip check` clean on this pin set.
-dnspython==2.9.0
+# PART 10 (security evidence refresh): 2.9.0 -> 2.9.2. pip-audit reported one
+# advisory against 2.9.0, CVE-2026-128089 (GHSA-vvf4-9x63-8xvv), fixed at 2.9.2.
+# Patch bump inside the same minor; `pytest tests/platform_v2/test_dns.py` is
+# 41 passed on this pin and `scripts/audit_dependencies.sh` is clean afterwards.
+dnspython==2.9.2
 # Imported directly by app/platform_v2/mobile/apns.py: APNs requires HTTP/2 and
 # httpx selects it only when `h2` is importable. Pinned to the 4.x line that
 # httpx 0.28.1 supports.
@@ -155,7 +159,14 @@ cryptography==50.0.1
 # STEP 02-B: 6.20.0 -> 6.21.2. pip-audit reported nine advisories against the
 # untrusted-PDF parser (infinite loops and arbitrary code execution on a
 # crafted file); every one is fixed at or before 6.21.2.
-pypdf==6.21.2
+# PART 10 (security evidence refresh): 6.21.2 -> 6.21.4. Three weeks later
+# pip-audit listed seven more against 6.21.2 — CVE-2026-119206/-119207/
+# -119208/-119209 fixed at 6.21.3, CVE-2026-119203/-119204/-119205 at 6.21.4.
+# Unlike the pillow residual there is no upstream pin blocking this, so the
+# pins move instead of the register growing. The extractor still touches only
+# the stable PdfReader/pages/extract_text API; `pytest tests/knowledge` is 21
+# passed on this pin.
+pypdf==6.21.4
 
 # `app/knowledge/storage/s3.py` imports `boto3` lazily and only when the S3
 # storage backend is selected, so the omission is invisible at boot -- but S3

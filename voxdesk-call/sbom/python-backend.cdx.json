@@ -4,7 +4,7 @@
   "serialNumber": "urn:uuid:00000000-0000-4000-8000-571a4a9af517",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-11-07T06:50:56Z",
+    "timestamp": "2026-11-18T12:12:48Z",
     "tools": [
       {
         "vendor": "VoxDesk",
@@ -308,8 +308,8 @@
     {
       "type": "library",
       "name": "dnspython",
-      "version": "2.9.0",
-      "purl": "pkg:pypi/dnspython@2.9.0",
+      "version": "2.9.2",
+      "purl": "pkg:pypi/dnspython@2.9.2",
       "licenses": [
         {
           "license": {
@@ -451,8 +451,8 @@
     {
       "type": "library",
       "name": "pypdf",
-      "version": "6.21.2",
-      "purl": "pkg:pypi/pypdf@6.21.2",
+      "version": "6.21.4",
+      "purl": "pkg:pypi/pypdf@6.21.4",
       "licenses": [
         {
           "license": {
@@ -691,6 +691,19 @@
         {
           "license": {
             "name": "BSD-3-Clause"
+          }
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "phonenumbers",
+      "version": "9.0.43",
+      "purl": "pkg:pypi/phonenumbers@9.0.43",
+      "licenses": [
+        {
+          "license": {
+            "name": "Apache-2.0"
           }
         }
       ]

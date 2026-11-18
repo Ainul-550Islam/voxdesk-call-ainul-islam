@@ -23,7 +23,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.alerts import evaluator, notifier
 from app.alerts.models import AlertEvent, AlertRule
-from app.auth.dependencies import TenantContext, get_context, require_permission
+from app.auth.dependencies import TenantContext, require_permission
 from app.auth.permissions import Permission
 from app.db.session import get_session
 from app.tenancy.context import reject_client_override

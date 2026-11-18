@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
 
 from app.agent.humanize import HumanizeOptions, apply_humanize, normalize_for_speech, read_numbers_slowly
 

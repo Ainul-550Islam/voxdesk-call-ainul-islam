@@ -72,10 +72,10 @@ collected tests are not passed tests.
 
 ```json
 {
-  "source_files": 1912,
-  "source_physical_lines": 442435,
+  "source_files": 1959,
+  "source_physical_lines": 449484,
   "registered_routes": 1662,
-  "collected_pytest_nodes": 8123,
+  "collected_pytest_nodes": 8142,
   "passed_tests": "not measured by collection"
 }
 ```

@@ -161,12 +161,46 @@ def parse_npm_audit(path: Path) -> dict[str, Any]:
 
 
 def parse_checkov(path: Path) -> dict[str, Any]:
+    """Read a checkov JSON report, single-object or multi-framework list.
+
+    ``checkov --output json --output-file-path <dir>`` — the invocation
+    ``.github/workflows/security-scan.yml`` uses, because that flag takes a
+    directory, not a filename — writes one ``results_json.json`` holding a LIST
+    of per-framework report objects when more than one ``-d`` or framework is
+    scanned. Reading it as a single object raised ``AttributeError`` in the
+    summariser, so the only shapes that survived were ones CI never produces.
+    Measured with checkov 3.4.5 over ``infra/terraform`` + ``infra/helm`` during
+    PART 10 (§8.6).
+    """
+
     data = _load_json(path)
     counts = {severity: 0 for severity in SEVERITIES}
     findings: list[dict[str, Any]] = []
     total = 0
-    results = (data or {}).get("results") or {}
-    failed = results.get("failed_checks") or []
+    if isinstance(data, dict) and "__parse_error__" in data:
+        # Propagated so parse_artifact() marks the row "unparseable" instead of
+        # reporting a zero count for a file that could not be read at all.
+        return {
+            "parse_error": str(data["__parse_error__"]),
+            "counts": counts,
+            "findings": [],
+            "total": 0,
+        }
+    reports = data if isinstance(data, list) else [data]
+    for report in reports:
+        if not isinstance(report, dict):
+            continue
+        failed = (report.get("results") or {}).get("failed_checks") or []
+        findings, total = _collect_checkov(failed, counts, findings, total)
+    return {"counts": counts, "findings": findings, "total": total}
+
+
+def _collect_checkov(
+    failed: list[Any],
+    counts: dict[str, int],
+    findings: list[dict[str, Any]],
+    total: int,
+) -> tuple[list[dict[str, Any]], int]:
     for entry in failed:
         if not isinstance(entry, dict):
             continue
@@ -182,7 +216,7 @@ def parse_checkov(path: Path) -> dict[str, Any]:
                     "message": str(entry.get("check_name") or "")[:200],
                 }
             )
-    return {"counts": counts, "findings": findings, "total": total}
+    return findings, total
 
 
 def parse_gitleaks(path: Path) -> dict[str, Any]:
@@ -211,17 +245,44 @@ def parse_gitleaks(path: Path) -> dict[str, Any]:
 
 
 def parse_hadolint(path: Path) -> dict[str, Any]:
+    """Read hadolint output in either shape it is ever produced in.
+
+    ``hadolint --format json`` writes ONE JSON array on a single line — that is
+    what ``hadolint/hadolint-action@v3.1.0`` puts in
+    ``artifacts/security/hadolint-results.json``, and what CI commits. Splitting
+    that file on newlines finds no line starting with ``{``, so a per-line-only
+    reader reports 0 findings for any input, including a Dockerfile tree with
+    real warnings in it: a scanner column that can never be non-zero. PART 10
+    measured it (6 hadolint warnings across 8 Dockerfiles, summary said ``clean``),
+    so the parser now takes the array form first and keeps JSONL support for
+    the line-per-object variant.
+    """
+
+    text = path.read_text(encoding="utf-8", errors="replace").strip()
+    entries: list[dict[str, Any]] = []
+    if text.startswith("["):
+        try:
+            parsed = json.loads(text)
+        except json.JSONDecodeError:
+            parsed = None
+        if isinstance(parsed, list):
+            entries = [entry for entry in parsed if isinstance(entry, dict)]
+    if not entries:
+        for line in text.splitlines():
+            line = line.strip()
+            if not line.startswith("{"):
+                continue
+            try:
+                entry = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(entry, dict):
+                entries.append(entry)
+
     counts = {severity: 0 for severity in SEVERITIES}
     findings: list[dict[str, Any]] = []
     total = 0
-    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
-        line = line.strip()
-        if not line.startswith("{"):
-            continue
-        try:
-            entry = json.loads(line)
-        except json.JSONDecodeError:
-            continue
+    for entry in entries:
         total += 1
         severity = _severity(entry.get("level"))
         counts[severity] += 1
@@ -292,6 +353,57 @@ def _load_json(path: Path) -> Any:
         return {"__parse_error__": str(exc)}
 
 
+def parse_semgrep(path: Path) -> dict[str, Any]:
+    """Count semgrep's own ``--json`` report (``{"results": [...]}``).
+
+    CI writes BOTH ``semgrep-results.sarif`` and ``semgrep-results.json``, and
+    ``KNOWN_SCANNERS`` declares semgrep's kind as ``sarif``, so the JSON report
+    used to be handed to the SARIF reader: no ``runs`` key, therefore zero
+    findings, therefore a ``clean`` line beside 26 real ones. PART 10 measured
+    it (semgrep 1.186.0, rule packs p/python + p/typescript + p/security-audit:
+    18 ERROR + 8 WARNING) and this parser is why that column can now fail.
+    """
+
+    data = _load_json(path)
+    counts = {severity: 0 for severity in SEVERITIES}
+    findings: list[dict[str, Any]] = []
+    total = 0
+    if isinstance(data, dict) and "__parse_error__" in data:
+        return {"parse_error": str(data["__parse_error__"]), "counts": counts, "findings": [], "total": 0}
+    rows: Any = []
+    if isinstance(data, dict):
+        rows = data.get("results") or data.get("diagnostics") or []
+    elif isinstance(data, list):
+        rows = data
+    for entry in rows:
+        if not isinstance(entry, dict):
+            continue
+        extra = entry.get("extra") or {}
+        total += 1
+        severity = _severity(str(extra.get("severity") or entry.get("severity") or ""))
+        counts[severity] += 1
+        if len(findings) < 200:
+            findings.append(
+                {
+                    "rule_id": str(entry.get("check_id") or ""),
+                    "severity": severity,
+                    "path": f"{entry.get('path', '')}:{(entry.get('start') or {}).get('line', '')}",
+                    "message": str(extra.get("message") or "")[:200],
+                }
+            )
+    return {"counts": counts, "findings": findings, "total": total}
+
+
+def _is_sarif_document(path: Path) -> bool:
+    """True when the file is a SARIF log rather than a scanner's native JSON."""
+
+    try:
+        document = json.loads(path.read_text(encoding="utf-8", errors="replace"))
+    except (json.JSONDecodeError, OSError):
+        return False
+    return isinstance(document, dict) and isinstance(document.get("runs"), list)
+
+
 def classify(path: Path) -> tuple[str, str]:
     text = path.as_posix().lower()
     for stem, scanner, kind in KNOWN_SCANNERS:
@@ -304,10 +416,16 @@ def classify(path: Path) -> tuple[str, str]:
 
 def parse_artifact(path: Path) -> dict[str, Any]:
     scanner, kind = classify(path)
+    if kind == "sarif" and path.suffix.lower() != ".sarif" and not _is_sarif_document(path):
+        # A `.json` artifact declared SARIF by filename but carrying the
+        # scanner's native report is parsed as that report, not as an empty SARIF.
+        kind = "json"
     if kind == "sarif":
         parsed = parse_sarif(path)
     elif scanner == "npm-audit":
         parsed = parse_npm_audit(path)
+    elif scanner == "semgrep":
+        parsed = parse_semgrep(path)
     elif scanner == "checkov":
         parsed = parse_checkov(path)
     elif scanner == "gitleaks":

@@ -275,6 +275,7 @@ async def _execute_real_study(
         "schema": "voxdesk.real_call_study/v1",
         "generated_at": now_iso,
         "study_date": out_dir.name,
+        "run_date": out_dir.name,
         "provider_fakes": False,
         "status": (
             "COMPLETED" if completed_count == calls and not failures
@@ -365,6 +366,7 @@ def main(argv: list[str] | None = None) -> int:
             "schema": "voxdesk.real_call_study/v1",
             "generated_at": now_iso,
             "study_date": args.date,
+            "run_date": args.date,
             "provider_fakes": False,
             "status": "NOT_RUN_MISSING_CREDENTIALS",
             "missing_credentials": missing,

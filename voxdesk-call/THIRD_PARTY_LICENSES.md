@@ -56,7 +56,7 @@ and resonator synthesis (`numpy`). No third-party copyrighted recordings are bun
 | `cryptography` | `50.0.1` | Apache-2.0 OR BSD-3-Clause | `requirements.txt` |
 | `deepgram-sdk` | `4.7.0` | MIT | `requirements.txt` |
 | `defusedxml` | `0.7.1` | PSFL | `requirements.txt` |
-| `dnspython` | `2.9.0` | ISC | `requirements.txt` |
+| `dnspython` | `2.9.2` | ISC | `requirements.txt` |
 | `docker` | `7.1.0` | Apache-2.0 | `requirements.txt` |
 | `email-validator` | `2.2.0` | Unlicense | `requirements.txt` |
 | `fastapi` | `0.136.1` | MIT | `requirements.txt` |
@@ -76,7 +76,7 @@ and resonator synthesis (`numpy`). No third-party copyrighted recordings are bun
 | `psutil` | `7.2.2` | BSD-3-Clause | `requirements.txt` |
 | `pydantic` | `2.10.6` | MIT | `requirements.txt` |
 | `pydantic-settings` | `2.7.0` | MIT | `requirements.txt` |
-| `pypdf` | `6.21.2` | BSD-3-Clause | `requirements.txt` |
+| `pypdf` | `6.21.4` | BSD-3-Clause | `requirements.txt` |
 | `pytest` | `8.3.4` | MIT | `requirements.txt` |
 | `pytest-asyncio` | `0.25.0` | Apache 2.0 | `requirements.txt` |
 | `python-docx` | `1.2.0` | MIT | `requirements.txt` |

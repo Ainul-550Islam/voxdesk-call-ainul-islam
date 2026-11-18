@@ -315,6 +315,54 @@ product/operational items below.
 | R3 `cryptography 44.0.1` | → **50.0.1** | Seven advisories closed (OpenSSL-in-wheel, subgroup, DNS-name-constraint, wildcard-DNS verifier, duplicate intermediates, PKCS#7 Bleichenbacher). Only `AESGCM` is used (`app/integrations/crm/crypto.py`), API unchanged 44→50; envelope format unchanged, no migration. `tests/test_crm_credentials.py` + security regression green (41/41). |
 | R4 `starlette 0.41.3` | → **1.6.0** via **fastapi 0.136.1** | Seven starlette advisories closed (multipart DoS, Range DoS, BadHost, StaticFiles UNC-path SSRF, HTTP-method dispatch, form() limits, authority poisoning). FastAPI 0.136.1 is the newest release that still flattens `app.routes` at import (0.137.0+ lazy `_IncludedRouter` would break the Step 9 route-contract tests) while permitting starlette 1.x. Full API/middleware/WebSocket/security-header/TrustedHost/CORS/auth suite green. |
 
+### 7.2 Security-evidence refresh (PART 10, 2026-11-18)
+
+`reports/SECURITY_EVIDENCE_SUMMARY.json` had been generated on 2026-10-29 from a
+CI run that produced **two** of the eight scanner artifacts. Every scanner was
+then re-run directly against this tree and the summary regenerated from what came
+out; the numbers below are from that run, not from a policy file.
+
+| Scanner | Findings | What it means |
+|---|---|---|
+| bandit (`-lll`, `pyproject.toml` profile) | 0 | clean at the severity the gate uses |
+| gitleaks (full default ruleset, project allowlist) | 0 | raw scan of the same tree reports 52; every one is a planted test dummy — see `.gitleaks.toml` |
+| semgrep (p/python + p/typescript + p/security-audit) | 26 (18 ERROR, 8 WARNING) | **untriaged.** Dominated by `use-defused-xml` (Matrix/CALDAV XML parsing), `avoid-sqlalchemy-text` in migration/rekey jobs, `raw-html-format`. CI runs semgrep with `|| true`, so nobody has ever had to look at these |
+| hadolint (8 Dockerfiles) | 6 (medium) | `DL3008`/`DL3018` unpinned `apt`/`apk` installs, `DL4006` no `pipefail`. Deliberate tradeoff in the runtime image; not fixed here because the rebuild cannot be verified without a Docker daemon |
+| checkov (`infra/terraform` + `infra/helm`) | 108 (101 terraform, 7 secret-scan) | **untriaged.** `CKV_AWS_23` open-ingress SG (15), `CKV_AWS_118`/`_191` unencrypted stores, `CKV_AWS_260` ALB listener without HTTPS redirect, `CKV_AWS_338`/`_158` bucket/CloudWatch hardening. Owner decision per AWS account, not a code change |
+| pip-audit (`requirements.txt`) | 86 advisories before the pins below, **78 after**: 76 `pillow` (R2b) + 2 `pytest` (R5), both in the register; the 8 on `pypdf`/`dnspython` were **not** registered and are gone | the two unregistered ones were fixed, not accepted — see the pins below |
+| npm audit (`dashboard-next`, `--omit=dev`) | 1 moderate | `next` 16.2.0–16.4.4 range; below CI's `--audit-level=high`. Fix is a Next major/minor bump and needs a real frontend build to verify |
+| trivy | no artifact | needs a Docker daemon to build and scan the production image; `trivy` steps in `security-scan.yml` still run in CI |
+
+**Two pins moved instead of growing the register.** Both had published fixes and
+no upstream constraint blocking them, unlike pillow:
+
+* `dnspython 2.9.0 → 2.9.2` — CVE-2026-128089. Used by
+  `app/platform_v2/whitelabel/dns.py` for tenant-domain verification.
+  `pytest tests/platform_v2/test_dns.py` → 41 passed.
+* `pypdf 6.21.2 → 6.21.4` — CVE-2026-119203/-119204/-119205/-119206/-119207/
+  -119208/-119209. `pytest tests/knowledge` → 21 passed.
+
+`bash scripts/audit_dependencies.sh` after the bumps:
+`OK: no unexpected vulnerable dependencies.` with pillow (76) and pytest (2)
+listed as accepted risk. Before the bumps it failed on exactly those two packages.
+
+**Five gates that could not report a finding, and now can.** Each was found by
+running the tool, not by reading the summary — the summary looked tidy in all
+five cases:
+
+1. `.gitleaks.toml` used `[[allowlists]]`; gitleaks reads one `[allowlist]` table,
+   so the file was inert (52 findings with it, 52 without).
+2. `parse_hadolint` read hadolint output line-by-line, but `hadolint -f json`
+   emits one single-line array — 0 findings for any input.
+3. `parse_checkov` assumed one `{"results": …}` object; checkov writes a list of
+   per-framework reports to a file, which raised `AttributeError`.
+4. CI's checkov step passed a *filename* to `--output-file-path`, which takes a
+   *directory*, so the artifact never existed at the path the collector reads.
+5. `KNOWN_SCANNERS` declares semgrep's kind as `sarif`, so `semgrep-results.json`
+   — the report CI writes beside the SARIF — went to the SARIF reader, found no
+   `runs` array, and reported `clean` over 26 findings. `.json` artifacts
+   declared SARIF by filename are now sniffed for a `runs` key first.
+
 The CI dependency gate (`scripts/audit_dependencies.sh`, wired into
 `.github/workflows/security-scan.yml`) hard-fails on anything **not** in the
 accepted list above, so the accepted set is explicit and reviewable, never
@@ -409,7 +457,7 @@ ruff check app scripts tests
 python -m pytest tests/ -q -m "not real_provider"
 
 # Frontend quality gate
-cd dashboard && npm run test && npm run build && npm audit --omit=dev --audit-level=high
+cd dashboard-next && npm run test && npm run build && npm audit --omit=dev --audit-level=high
 
 # Secret scanning (CI: gitleaks)
 gitleaks detect --source . --redact

@@ -7,10 +7,16 @@ model principal is never an actor.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from app.auth.permissions import Permission
 from app.auth.rbac import has_permission
 from app.db.models import UserRole
+
+if TYPE_CHECKING:  # pragma: no cover - annotation-only, avoids a cycle through categories
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    from app.ai.guardrails.categories import GuardrailPolicyView
 
 ALLOW = "allow"
 DENY = "deny"

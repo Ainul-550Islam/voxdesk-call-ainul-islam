@@ -91,20 +91,16 @@ jobs:
         with:
           node-version: 20
 
-      # Both frontends, not just one: dashboard-next was audited and dashboard
-      # was not, which meant half the shipped JS surface was unaudited.
+      # The shipped JS surface is exactly one tree. `dashboard/` (Vite) was
+      # retired in PART 17A (P17A-05) and its files are no longer in git, so an
+      # audit step pointed at it would fail on a missing working directory.
+      # `sbom/node-dashboard.cdx.json` stays as the historical record of the
+      # retired bundle; PART 18 regenerates the SBOM set from what ships.
       - name: npm audit (dashboard-next, production deps)
         working-directory: dashboard-next
         run: |
           mkdir -p ../artifacts/security
           npm audit --omit=dev --audit-level=high --json > ../artifacts/security/npm-audit-dashboard-next.json || true
-          npm audit --omit=dev --audit-level=high
-
-      - name: npm audit (dashboard, production deps)
-        working-directory: dashboard
-        run: |
-          mkdir -p ../artifacts/security
-          npm audit --omit=dev --audit-level=high --json > ../artifacts/security/npm-audit-dashboard.json || true
           npm audit --omit=dev --audit-level=high
 
       - uses: dtolnay/rust-toolchain@1.90.0
@@ -228,9 +224,15 @@ jobs:
         run: |
           pip install checkov
           mkdir -p artifacts/security
+          # `--output-file-path` names a DIRECTORY, not a file: given
+          # `checkov-results.json`, checkov creates that path as a directory
+          # containing `results_json.json` — so `test -f` cannot pass on it, and scripts/security_evidence.py (which identifies a
+          # scanner by the stem in the FILENAME) could never have seen the
+          # artifact. Measured with checkov 3.4.5 on infra/helm in PART 10
+          # (§8.6). Redirect stdout to the file the collector reads instead.
           checkov -d infra/terraform -d infra/helm --compact --quiet \
-            --output json --output-file-path artifacts/security/checkov-results.json || true
-          test -f artifacts/security/checkov-results.json
+            --output json > artifacts/security/checkov-results.json || true
+          test -s artifacts/security/checkov-results.json
 
       - name: Upload IaC scan artifacts
         if: always()

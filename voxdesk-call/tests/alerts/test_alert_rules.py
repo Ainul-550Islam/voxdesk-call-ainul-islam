@@ -17,7 +17,7 @@ quietly:
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta, timezone, time as dtime
+from datetime import datetime, timedelta, timezone
 
 import pytest
 import pytest_asyncio
@@ -26,7 +26,7 @@ from sqlalchemy import select
 import app.db.models  # noqa: F401
 from app.alerts import evaluator, notifier
 from app.alerts.models import AlertEvent, AlertRule
-from app.db.models import Call, CallStatus, Tenant
+from app.db.models import CallStatus, Tenant
 from app.notifications.delivery import DispatchResult
 from app.qa.models import SentimentResult
 from tests.conftest import auth_headers, make_call, make_tenant

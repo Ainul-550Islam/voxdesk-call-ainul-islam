@@ -10,7 +10,7 @@ here is enforced by code (`Settings.validate_security()`, `scripts/migrate.py`,
 
 ## Local full-stack development
 
-The root `docker-compose.yml` runs the canonical React dashboard, FastAPI, PostgreSQL, Redis, and the scheduler behind one Nginx entry point. The experimental `dashboard-next` application is tested in CI but is not mounted into this stack.
+The root `docker-compose.yml` runs FastAPI, PostgreSQL, Redis and the scheduler behind one Nginx entry point. It no longer runs a UI container: the Vite console that used to have one (`dashboard/`, `npm run dev` on :5173) was retired and deleted in P10-05, and `dashboard-next` is not statically exported either — `dashboard-next/next.config.js:75-79` (P17A-03) ships a Node server, so `app/main.py`'s static mount logs `dashboard.not_built` and `/` through Nginx returns the API's own 404. That is the honest current state of the dev stack; the API paths below are what this proxy is for.
 
 ```bash
 cp .env.example .env
@@ -20,7 +20,7 @@ docker compose up --build
 
 Open `http://localhost:8080`. The API is available under the same origin at `/api`; health is at `/health`. PostgreSQL and Redis use private container networking, and PostgreSQL data persists in the named `pgdata` volume. The API entry point applies Alembic migrations before accepting traffic. No live provider credentials are included, and provider calls remain credential-gated.
 
-For frontend hot reload, run PostgreSQL, Redis, and the API through Compose and start the canonical dashboard separately with `npm run dev` inside `dashboard/`; its Vite proxy targets `http://localhost:8000`. The all-in-one Nginx route remains the single-page development entry point when using the full Compose command.
+For frontend hot reload, run PostgreSQL, Redis and the API through Compose and start the console separately with `cd dashboard-next && npm run dev` (`next dev -H 0.0.0.0`, default port 3000); point the browser at `http://localhost:3000`, which calls the API on this same origin's `/api/...` through its own rewrite. There is no longer a Vite dev server to start: `dashboard/` is gone from the tree, and `scripts/ui_parity.py --check` reports `PORT 0` pages still to move.
 
 Before committing deployment changes, validate the resolved configuration with `docker compose config` and run the frontend and backend verification targets documented in the Makefile.
 

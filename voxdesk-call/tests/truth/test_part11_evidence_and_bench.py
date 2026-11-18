@@ -5,6 +5,7 @@ from __future__ import annotations
 import ast
 import json
 import math
+from datetime import date, timedelta
 from pathlib import Path
 import struct
 import subprocess
@@ -16,7 +17,11 @@ import yaml
 
 from bench.run_bench import evaluate_tool_calls, load_all_scenarios, wilson_ci_95
 from loadtest.voice_capacity_test import estimate_cost_per_concurrent_call
-from scripts.generate_feature_matrix import main as matrix_main
+from scripts.generate_feature_matrix import (
+    FRESHNESS_MAX_DAYS,
+    junit_execution_date,
+    main as matrix_main,
+)
 from scripts.measure_pstn_latency import analyze_dual_channel_wav
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -59,16 +64,27 @@ def test_manifest_provider_nodes_name_real_test_functions() -> None:
 
 
 def test_generate_feature_matrix_check_and_seven_day_freshness_rule(tmp_path: Path) -> None:
-    # Current repo must pass --check at reference date 2026-11-07
-    assert matrix_main(["--check", "--reference-date", "2026-11-07"]) == 0
+    # The committed docs must be the render of the committed evidence, and that has to be
+    # checkable on any day: `--reference-date evidence` pins the render to the date inside
+    # `evidence/junit/feature_evidence.xml`. The previous version of this guard hardcoded
+    # `2026-11-07`, so it passed exactly once and a buyer's fresh export could never pass it.
+    assert matrix_main(["--check", "--reference-date", "evidence"]) == 0
 
-    # Advancing reference date > 7 days past JUnit timestamp must fail --check non-zero
-    assert matrix_main(["--check", "--reference-date", "2026-11-25"]) == 1
+    evidence_date = junit_execution_date(ROOT / "evidence" / "junit" / "feature_evidence.xml")
+    assert evidence_date, "the guard needs committed JUnit evidence to age against"
+    run_day = date.fromisoformat(evidence_date)
+
+    # One day past the window the same tree must fail: the rule is enforced, not narrated.
+    stale = (run_day + timedelta(days=FRESHNESS_MAX_DAYS + 1)).isoformat()
+    assert matrix_main(["--check", "--reference-date", stale]) == 1
+    # Evidence dated after the reference date is a time-travelling claim, not fresh proof.
+    future = (run_day - timedelta(days=1)).isoformat()
+    assert matrix_main(["--check", "--reference-date", future]) == 1
 
     # Drift in output file must also fail --check non-zero
     drifted = tmp_path / "FEATURE_MATRIX_VERIFIED.md"
     drifted.write_text("# drifted\n", encoding="utf-8")
-    assert matrix_main(["--check", "--reference-date", "2026-11-07", "--output", str(drifted)]) == 1
+    assert matrix_main(["--check", "--reference-date", "evidence", "--output", str(drifted)]) == 1
 
 
 def test_evidence_status_and_real_integrations_ledger_exist() -> None:

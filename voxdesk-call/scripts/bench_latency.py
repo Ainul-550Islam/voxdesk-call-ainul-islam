@@ -11,7 +11,7 @@ Supports both:
 - Single-call turn benchmark (`ACCEPTANCE [2A]`):
     python scripts/bench_latency.py --turns 10 --mock --output /tmp/bench.json
 - Multi-call concurrency benchmark (`N>=200` calls) writing JSON + CSV under
-  `evidence/latency/<date>/`:
+  `evidence/mock/` (mock numbers never land under `evidence/latency/`):
     python scripts/bench_latency.py --calls 200 --turns-per-call 3 --concurrency 10 --mock --write-evidence
 """
 

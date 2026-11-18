@@ -1,20 +1,20 @@
 {
   "schema": "voxdesk.repo_stats/v1",
-  "generated_date": "2026-11-08",
-  "source_files": 1912,
-  "source_physical_lines": 442435,
+  "generated_date": "2026-11-18",
+  "source_files": 1959,
+  "source_physical_lines": 449484,
   "registered_routes": 1662,
-  "collected_pytest_nodes": 8123,
-  "junit_passed_tests": 1329,
+  "collected_pytest_nodes": 8142,
+  "junit_passed_tests": 1364,
   "junit_failed_tests": 0,
-  "junit_skipped_tests": 17,
+  "junit_skipped_tests": 18,
   "junit_suites": {
     "feature_evidence": {
-      "tests": 496,
-      "passed": 489,
+      "tests": 532,
+      "passed": 524,
       "failures": 0,
       "errors": 0,
-      "skipped": 7
+      "skipped": 8
     },
     "batch07_platform": {
       "tests": 744,

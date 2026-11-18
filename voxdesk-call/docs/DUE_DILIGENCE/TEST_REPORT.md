@@ -13,8 +13,8 @@ treating them as current validation.
 
 | Plane / Test Suite | Runner | Test Files / Packages | Verified Test Cases | Failures / Errors | Status |
 |---|---|---:|---:|---:|---|
-| **Python Backend Total Collected (`tests/`)** | `pytest --collect-only` | `729` files | `8123` collected; collection only | `not measured` | **MEASURED** |
-| **Feature Matrix Evidence Suite** | `pytest --junitxml` | `evidence/junit/feature_evidence.xml` | `489` passed, `7` skipped (`59.96s`) | `0` | **PASS** |
+| **Python Backend Total Collected (`tests/`)** | `pytest --collect-only` | `732` files | `8142` collected; collection only | `not measured` | **MEASURED** |
+| **Feature Matrix Evidence Suite** | `pytest --junitxml` | `evidence/junit/feature_evidence.xml` | `524` passed, `8` skipped (`60.50s`) | `0` | **PASS** |
 | **Batch 07 platform-v2 suites** | `make batch07-check` | `evidence/batch07/batch07-platform-junit.xml` | `744` passed, `0` skipped | `0` | **PASS** |
 | **Batch 07 truth guards** | `make batch07-check` | `evidence/batch07/batch07-truth-junit.xml` | `96` passed, `0` skipped | `0` | **PASS** |
 | **Next.js dashboard (`dashboard-next/`)** | `vitest run` + `tsc --noEmit` + `next build` | `dashboard-next/` (the retired Vite console is gone; PART 17A) | `194` passed, typecheck clean, standalone build green | `0` | **PASS** |

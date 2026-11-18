@@ -128,7 +128,7 @@ realtimeGateway:
   antiAffinity: true
   podAnnotations: {}
   nodeSelector: {}
-  tolerations: {}
+  tolerations: []
   image:
     repository: ghcr.io/voxdesk/voxdesk-realtime-gateway
     tag: "1.0.0"
@@ -178,7 +178,7 @@ mediaEngine:
   terminationGracePeriodSeconds: 30
   maxUnavailable: 1
   nodeSelector: {}
-  tolerations: {}
+  tolerations: []
   image:
     repository: ghcr.io/voxdesk/voxdesk-media-engine
     tag: "1.0.0"
@@ -208,7 +208,7 @@ frontend:
   terminationGracePeriodSeconds: 30
   publicApiBaseUrl: ""
   nodeSelector: {}
-  tolerations: {}
+  tolerations: []
   image:
     repository: ghcr.io/voxdesk/voxdesk-call
     tag: "1.0.0"

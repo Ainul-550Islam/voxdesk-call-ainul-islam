@@ -94,10 +94,13 @@ def test_sales_and_due_diligence_docs_exist_and_obey_truth_rules() -> None:
 
 
 # The body builds the pack from scratch when `dist/` is empty: a full tree walk,
-# SHA256 of every evidence file, and a `scripts/repo_stats.py` subprocess. On a
-# clean export behind a busy CI box that is a 30-60s job, so a 90s budget was a
-# flake generator, not a safety net. The suite-wide ceiling is 300s.
-@pytest.mark.timeout(300)
+# SHA256 of every evidence file, and a `scripts/repo_stats.py` subprocess. Measured
+# on a `git archive` export with no `dist/`: 21.85s alone, and over 300s when the same
+# export ran it inside the full `make verify-truth` suite on a contended disk (the
+# generator itself took 22.2s in that same tree). A budget that a busy machine can
+# exceed is a flake generator, not a safety net, so this covers a cold build with room
+# for contention; a genuine hang is still caught.
+@pytest.mark.timeout(900)
 def test_due_diligence_zip_and_sha256sums_verify() -> None:
     import shutil
 

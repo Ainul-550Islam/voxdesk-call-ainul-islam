@@ -9,9 +9,9 @@ buyers have complete visibility before acquisition.
 
 ## Verified Repository Baseline (`docs/STATS.json`)
 
-- **Source files**: `1912` (`442,435` physical lines)
+- **Source files**: `1959` (`449,484` physical lines)
 - **Registered FastAPI routes**: `1662`
-- **Collected pytest nodes**: `8,123` (collection count; `1,329` passed JUnit test executions recorded in `docs/STATS.json`)
+- **Collected pytest nodes**: `8,142` (collection count; `1,364` passed JUnit test executions recorded in `docs/STATS.json`)
 - **Alembic migration head**: `0091_call_debug_pcap_metadata`
 
 ---
@@ -89,12 +89,12 @@ checkout. Neither is presented as a pass.
 
 | Evidence | Required | Artifact | Status | Age (days) | Generated (UTC) |
 |---|---|---|---|---|---|
-| `test` | yes | `reports/TEST_EVIDENCE_SUMMARY.json` | **PRESENT** | 9.76 | 2026-10-30T05:47:28Z |
-| `polyglot` | yes | `reports/POLYGLOT_EVIDENCE_SUMMARY.json` | **PRESENT** | 9.75 | 2026-10-30T05:54:23Z |
-| `security` | yes | `reports/SECURITY_EVIDENCE_SUMMARY.json` | **PRESENT** | 10.4 | 2026-10-29T14:30:10Z |
-| `deploy-assets` | yes | `reports/deploy_asset_validation.json` | **PRESENT** | 9.75 | 2026-10-30T05:56:29Z |
+| `test` | yes | `reports/TEST_EVIDENCE_SUMMARY.json` | **STALE** | 19.76 | 2026-10-30T05:47:28Z |
+| `polyglot` | yes | `reports/POLYGLOT_EVIDENCE_SUMMARY.json` | **STALE** | 19.75 | 2026-10-30T05:54:23Z |
+| `security` | yes | `reports/SECURITY_EVIDENCE_SUMMARY.json` | **PRESENT** | 0.51 | 2026-11-18T11:51:52Z |
+| `deploy-assets` | yes | `reports/deploy_asset_validation.json` | **PRESENT** | 0.58 | 2026-11-18T10:11:37Z |
 | `staging` | yes | `evidence/staging` | **MISSING** | — | — |
-| `live` | no (opt-in) | `evidence/live` | **MISSING** | — | — |
+| `live` | no (opt-in) | `evidence/live/twilio-twilio-control-plane-20261101T142529Z.json` | **STALE** | 17.4 | 2026-11-01T14:25:29Z |
 
 Regenerate with: `python scripts/pytest_chunks.py` then
 `python scripts/reconcile_validation_results.py --ci` (test),

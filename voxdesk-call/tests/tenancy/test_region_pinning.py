@@ -30,7 +30,6 @@ from app.governance.models import ResidencyIntent
 from app.telephony import media_storage, transcription
 from app.tenancy import data_residency, regions
 from app.tenancy.exceptions import ResidencyDenied
-from tests.conftest import make_tenant
 
 pytestmark = pytest.mark.asyncio
 

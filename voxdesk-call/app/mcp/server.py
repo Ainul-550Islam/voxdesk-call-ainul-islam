@@ -23,7 +23,7 @@ from __future__ import annotations
 import inspect
 import traceback
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Awaitable, Callable, Mapping
 
 PROTOCOL_VERSION = "2024-11-05"

@@ -1,17 +1,17 @@
 {
   "schema": "voxdesk.deploy_asset_validation/v1",
-  "generated_at": "2026-10-30T05:56:29Z",
-  "started_at": "2026-10-30T05:54:23Z",
+  "generated_at": "2026-11-18T10:11:37Z",
+  "started_at": "2026-11-18T10:10:51Z",
   "checks_run": 25,
-  "failed": 1,
-  "overall": "FAIL",
+  "failed": 0,
+  "overall": "PASS",
   "results": [
     {"check":"helm:lint:values-prod.yaml","status":"PASS","detail":"1 chart(s) linted, 0 chart(s) failed"},
-    {"check":"helm:template:values-prod.yaml","status":"PASS","detail":"rendered 22 object(s)"},
-    {"check":"kubeconform:values-prod.yaml","status":"PASS","detail":"Summary: 0 resource found in 0 file - Valid: 0, Invalid: 0, Errors: 0, Skipped: 0"},
+    {"check":"helm:template:values-prod.yaml","status":"PASS","detail":"rendered 47 object(s)"},
+    {"check":"kubeconform:values-prod.yaml","status":"PASS","detail":"Summary: 47 resources found in 1 file - Valid: 42, Invalid: 0, Errors: 0, Skipped: 5"},
     {"check":"helm:lint:values-staging.yaml","status":"PASS","detail":"1 chart(s) linted, 0 chart(s) failed"},
-    {"check":"helm:template:values-staging.yaml","status":"PASS","detail":"rendered 22 object(s)"},
-    {"check":"kubeconform:values-staging.yaml","status":"PASS","detail":"Summary: 0 resource found in 0 file - Valid: 0, Invalid: 0, Errors: 0, Skipped: 0"},
+    {"check":"helm:template:values-staging.yaml","status":"PASS","detail":"rendered 45 object(s)"},
+    {"check":"kubeconform:values-staging.yaml","status":"PASS","detail":"Summary: 45 resources found in 1 file - Valid: 40, Invalid: 0, Errors: 0, Skipped: 5"},
     {"check":"terraform:fmt","status":"PASS","detail":"all files formatted"},
     {"check":"terraform:validate:infra/terraform","status":"PASS","detail":"Success! The configuration is valid."},
     {"check":"terraform:validate:envs/dev","status":"PASS","detail":"Success! The configuration is valid."},
@@ -26,10 +26,10 @@
     {"check":"terraform:validate:modules/platform_v2_assets","status":"PASS","detail":"Success! The configuration is valid."},
     {"check":"terraform:validate:modules/rds","status":"PASS","detail":"Success! The configuration is valid."},
     {"check":"terraform:validate:modules/redis","status":"PASS","detail":"Success! The configuration is valid."},
-    {"check":"tflint","status":"PASS","detail":"no lint findings"},
     {"check":"caddy:validate:Caddyfile","status":"PASS","detail":"config is valid"},
     {"check":"caddy:validate:infra/caddy/edge-global.caddy","status":"PASS","detail":"config is valid"},
     {"check":"caddy:validate:infra/caddy/tenant-domains.caddy","status":"PASS","detail":"config is valid"},
-    {"check":"tool:docker","status":"FAIL","detail":"not installed; install Docker Engine or Docker Desktop"}
+    {"check":"compose:config:docker-compose.prod.yml","status":"PASS","detail":"config is valid"},
+    {"check":"compose:config:docker-compose.staging.yml","status":"PASS","detail":"config is valid"}
   ]
 }

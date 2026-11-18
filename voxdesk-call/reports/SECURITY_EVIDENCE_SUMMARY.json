@@ -1,14 +1,14 @@
 {
   "schema": "voxdesk.security_evidence/v1",
-  "generated_at": "2026-10-29T14:30:10Z",
+  "generated_at": "2026-11-18T11:51:52Z",
   "input_dir": "artifacts/security",
-  "artifact_count": 2,
+  "artifact_count": 7,
   "scanners": [
     {
       "scanner": "bandit",
       "artifact": "artifacts/security/bandit-results.sarif",
-      "sha256": "cff3fb1dfa6462dc9b8b791596a80c1fe374765e1e399e6ed39bebc634863ec7",
-      "bytes": 508195,
+      "sha256": "48cc7315976d7c8c39e26acbd4e52deb14b32e3ca8a491637ca8bcc6e2adc01e",
+      "bytes": 554507,
       "counts": {
         "critical": 0,
         "high": 0,
@@ -28,41 +28,952 @@
     },
     {
       "scanner": "semgrep",
-      "status": "missing",
-      "reason": "no artifact found"
+      "artifact": "artifacts/security/semgrep-results.json",
+      "sha256": "8678c4ae667fc87096a6b0f3a3de532235db4cdb4bbdd684153fccbfe82d12f0",
+      "bytes": 136858,
+      "counts": {
+        "critical": 0,
+        "high": 18,
+        "medium": 8,
+        "low": 0,
+        "info": 0,
+        "unknown": 0
+      },
+      "findings": [
+        {
+          "rule_id": "python.lang.security.use-defused-xml.use-defused-xml",
+          "severity": "high",
+          "path": "app/api/multichannel_routes.py:15",
+          "message": "The Python documentation recommends using `defusedxml` instead of `xml` because the native Python `xml` library is vulnerable to XML External Entity (XXE) attacks. These attacks can leak confidential "
+        },
+        {
+          "rule_id": "python.flask.security.audit.directly-returned-format-string.directly-returned-format-string",
+          "severity": "medium",
+          "path": "app/api/public_site_routes.py:54",
+          "message": "Detected Flask route directly returning a formatted string. This is subject to cross-site scripting if user input can reach the string. Consider using the template engine instead and rendering pages w"
+        },
+        {
+          "rule_id": "python.sqlalchemy.security.audit.avoid-sqlalchemy-text.avoid-sqlalchemy-text",
+          "severity": "high",
+          "path": "app/compliance_v2/kms/rekey_job.py:198",
+          "message": "sqlalchemy.text passes the constructed SQL statement to the database mostly unchanged. This means that the usual SQL injection protections are not applied and this function is vulnerable to SQL inject"
+        },
+        {
+          "rule_id": "python.sqlalchemy.security.audit.avoid-sqlalchemy-text.avoid-sqlalchemy-text",
+          "severity": "high",
+          "path": "app/compliance_v2/kms/rekey_job.py:208",
+          "message": "sqlalchemy.text passes the constructed SQL statement to the database mostly unchanged. This means that the usual SQL injection protections are not applied and this function is vulnerable to SQL inject"
+        },
+        {
+          "rule_id": "python.sqlalchemy.security.audit.avoid-sqlalchemy-text.avoid-sqlalchemy-text",
+          "severity": "high",
+          "path": "app/environments/resource_migration.py:35",
+          "message": "sqlalchemy.text passes the constructed SQL statement to the database mostly unchanged. This means that the usual SQL injection protections are not applied and this function is vulnerable to SQL inject"
+        },
+        {
+          "rule_id": "python.sqlalchemy.security.audit.avoid-sqlalchemy-text.avoid-sqlalchemy-text",
+          "severity": "high",
+          "path": "app/environments/resource_migration.py:42",
+          "message": "sqlalchemy.text passes the constructed SQL statement to the database mostly unchanged. This means that the usual SQL injection protections are not applied and this function is vulnerable to SQL inject"
+        },
+        {
+          "rule_id": "python.lang.security.use-defused-xml.use-defused-xml",
+          "severity": "high",
+          "path": "app/integrations_v2/matrix.py:14",
+          "message": "The Python documentation recommends using `defusedxml` instead of `xml` because the native Python `xml` library is vulnerable to XML External Entity (XXE) attacks. These attacks can leak confidential "
+        },
+        {
+          "rule_id": "python.lang.security.use-defused-xml-parse.use-defused-xml-parse",
+          "severity": "high",
+          "path": "app/integrations_v2/matrix.py:68",
+          "message": "The native Python `xml` library is vulnerable to XML External Entity (XXE) attacks.  These attacks can leak confidential data and \"XML bombs\" can cause denial of service. Do not use this library to pa"
+        },
+        {
+          "rule_id": "python.lang.security.use-defused-xml.use-defused-xml",
+          "severity": "high",
+          "path": "app/knowledge/sitemap.py:23",
+          "message": "The Python documentation recommends using `defusedxml` instead of `xml` because the native Python `xml` library is vulnerable to XML External Entity (XXE) attacks. These attacks can leak confidential "
+        },
+        {
+          "rule_id": "python.lang.security.use-defused-xml.use-defused-xml",
+          "severity": "high",
+          "path": "app/platform_v2/whitelabel/assets.py:35",
+          "message": "The Python documentation recommends using `defusedxml` instead of `xml` because the native Python `xml` library is vulnerable to XML External Entity (XXE) attacks. These attacks can leak confidential "
+        },
+        {
+          "rule_id": "python.lang.security.use-defused-xml.use-defused-xml",
+          "severity": "high",
+          "path": "app/platform_v2/whitelabel/assets.py:186",
+          "message": "The Python documentation recommends using `defusedxml` instead of `xml` because the native Python `xml` library is vulnerable to XML External Entity (XXE) attacks. These attacks can leak confidential "
+        },
+        {
+          "rule_id": "python.lang.security.use-defused-xml.use-defused-xml",
+          "severity": "high",
+          "path": "app/telephony/live_proof/pstn_probe.py:49",
+          "message": "The Python documentation recommends using `defusedxml` instead of `xml` because the native Python `xml` library is vulnerable to XML External Entity (XXE) attacks. These attacks can leak confidential "
+        },
+        {
+          "rule_id": "python.twilio.security.twiml-injection.twiml-injection",
+          "severity": "medium",
+          "path": "app/telephony/live_proof/pstn_probe.py:203",
+          "message": "Using non-constant TwiML (Twilio Markup Language) argument when creating a Twilio conversation could allow the injection of additional TwiML commands"
+        },
+        {
+          "rule_id": "python.lang.security.audit.md5-used-as-password.md5-used-as-password",
+          "severity": "medium",
+          "path": "app/telephony/sip.py:342",
+          "message": "It looks like MD5 is used as a password hash. MD5 is not considered a secure password hash because it can be cracked by an attacker in a short amount of time. Use a suitable password hashing function "
+        },
+        {
+          "rule_id": "python.lang.security.use-defused-xml.use-defused-xml",
+          "severity": "high",
+          "path": "app/telephony/takeover.py:22",
+          "message": "The Python documentation recommends using `defusedxml` instead of `xml` because the native Python `xml` library is vulnerable to XML External Entity (XXE) attacks. These attacks can leak confidential "
+        },
+        {
+          "rule_id": "python.django.security.injection.raw-html-format.raw-html-format",
+          "severity": "medium",
+          "path": "app/telephony/telnyx_handler.py:223",
+          "message": "Detected user input flowing into a manually constructed HTML string. You may be accidentally bypassing secure methods of rendering HTML by manually constructing HTML and this could create a cross-site"
+        },
+        {
+          "rule_id": "python.django.security.injection.raw-html-format.raw-html-format",
+          "severity": "medium",
+          "path": "app/telephony/telnyx_handler.py:224",
+          "message": "Detected user input flowing into a manually constructed HTML string. You may be accidentally bypassing secure methods of rendering HTML by manually constructing HTML and this could create a cross-site"
+        },
+        {
+          "rule_id": "python.django.security.injection.raw-html-format.raw-html-format",
+          "severity": "medium",
+          "path": "app/telephony/telnyx_handler.py:225",
+          "message": "Detected user input flowing into a manually constructed HTML string. You may be accidentally bypassing secure methods of rendering HTML by manually constructing HTML and this could create a cross-site"
+        },
+        {
+          "rule_id": "python.lang.security.use-defused-xml.use-defused-xml",
+          "severity": "high",
+          "path": "scripts/build_changelog_feed.py:9",
+          "message": "The Python documentation recommends using `defusedxml` instead of `xml` because the native Python `xml` library is vulnerable to XML External Entity (XXE) attacks. These attacks can leak confidential "
+        },
+        {
+          "rule_id": "python.lang.security.use-defused-xml.use-defused-xml",
+          "severity": "high",
+          "path": "scripts/junit_xml.py:16",
+          "message": "The Python documentation recommends using `defusedxml` instead of `xml` because the native Python `xml` library is vulnerable to XML External Entity (XXE) attacks. These attacks can leak confidential "
+        },
+        {
+          "rule_id": "python.lang.security.use-defused-xml-parse.use-defused-xml-parse",
+          "severity": "high",
+          "path": "scripts/junit_xml.py:48",
+          "message": "The native Python `xml` library is vulnerable to XML External Entity (XXE) attacks.  These attacks can leak confidential data and \"XML bombs\" can cause denial of service. Do not use this library to pa"
+        },
+        {
+          "rule_id": "python.lang.security.audit.dynamic-urllib-use-detected.dynamic-urllib-use-detected",
+          "severity": "medium",
+          "path": "scripts/local_front_proxy.py:113",
+          "message": "Detected a dynamic value being used with urllib. urllib supports 'file://' schemes, so a dynamic value controlled by a malicious actor may allow them to read arbitrary files. Audit uses of urllib call"
+        },
+        {
+          "rule_id": "python.lang.security.use-defused-xml.use-defused-xml",
+          "severity": "high",
+          "path": "scripts/pytest_chunks.py:40",
+          "message": "The Python documentation recommends using `defusedxml` instead of `xml` because the native Python `xml` library is vulnerable to XML External Entity (XXE) attacks. These attacks can leak confidential ",
+          "accepted_risk": "pytest 8.3.4: Not shipped; PYSEC-2026-1845 is tmpdir handling in the test runner. The fix is the 9.0.3 major line, which needs a pytest-asyncio migration."
+        },
+        {
+          "rule_id": "python.lang.security.use-defused-xml.use-defused-xml",
+          "severity": "high",
+          "path": "scripts/repo_stats.py:22",
+          "message": "The Python documentation recommends using `defusedxml` instead of `xml` because the native Python `xml` library is vulnerable to XML External Entity (XXE) attacks. These attacks can leak confidential "
+        },
+        {
+          "rule_id": "python.lang.security.use-defused-xml-parse.use-defused-xml-parse",
+          "severity": "high",
+          "path": "scripts/repo_stats.py:67",
+          "message": "The native Python `xml` library is vulnerable to XML External Entity (XXE) attacks.  These attacks can leak confidential data and \"XML bombs\" can cause denial of service. Do not use this library to pa"
+        },
+        {
+          "rule_id": "python.lang.security.audit.dynamic-urllib-use-detected.dynamic-urllib-use-detected",
+          "severity": "medium",
+          "path": "scripts/verify_audit_bundle.py:60",
+          "message": "Detected a dynamic value being used with urllib. urllib supports 'file://' schemes, so a dynamic value controlled by a malicious actor may allow them to read arbitrary files. Audit uses of urllib call"
+        }
+      ],
+      "total": 26,
+      "status": "failed"
     },
     {
       "scanner": "gitleaks",
-      "status": "missing",
-      "reason": "no artifact found"
-    },
-    {
-      "scanner": "npm-audit",
-      "status": "missing",
-      "reason": "no artifact found"
-    },
-    {
-      "scanner": "hadolint",
-      "status": "missing",
-      "reason": "no artifact found"
-    },
-    {
-      "scanner": "checkov",
-      "status": "missing",
-      "reason": "no artifact found"
-    },
-    {
-      "scanner": "pip-audit",
-      "artifact": "artifacts/security/pip-audit.json",
-      "sha256": "2cdbad1aa6fa6b0e6fd5217a41ad28b3bd66bc6c862f807208f51314c744b19e",
-      "bytes": 392014,
+      "artifact": "artifacts/security/gitleaks-results.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "bytes": 3,
       "counts": {
         "critical": 0,
         "high": 0,
         "medium": 0,
         "low": 0,
         "info": 0,
-        "unknown": 75
+        "unknown": 0
+      },
+      "findings": [],
+      "total": 0,
+      "status": "clean"
+    },
+    {
+      "scanner": "npm-audit",
+      "artifact": "artifacts/security/npm-audit-dashboard-next.json",
+      "sha256": "45a3c4d1b471b4d693d3a80439cb03d9d0c71e7987454633ae15574bc4921d1e",
+      "bytes": 1770,
+      "counts": {
+        "critical": 0,
+        "high": 0,
+        "medium": 1,
+        "low": 0,
+        "info": 0,
+        "unknown": 0
+      },
+      "findings": [
+        {
+          "rule_id": "next",
+          "severity": "medium",
+          "path": "16.2.0 - 16.4.4",
+          "message": "Next.js: Information disclosure across root params when a 'use cache' function is called through unstable_cache()"
+        }
+      ],
+      "total": 1,
+      "status": "failed"
+    },
+    {
+      "scanner": "hadolint",
+      "artifact": "artifacts/security/hadolint-results.json",
+      "sha256": "46bfd547c3a653029ee6947899641bf588abb9d623fbca39940f38fd97ca0814",
+      "bytes": 1567,
+      "counts": {
+        "critical": 0,
+        "high": 0,
+        "medium": 6,
+        "low": 0,
+        "info": 0,
+        "unknown": 0
+      },
+      "findings": [
+        {
+          "rule_id": "DL3008",
+          "severity": "medium",
+          "path": "Dockerfile",
+          "message": "Pin versions in apt get install. Instead of `apt-get install <package>` use `apt-get install <package>=<version>`"
+        },
+        {
+          "rule_id": "DL4006",
+          "severity": "medium",
+          "path": "Dockerfile",
+          "message": "Set the SHELL option -o pipefail before RUN with a pipe in it. If you are using /bin/sh in an alpine image or if your shell is symlinked to busybox then consider explicitly setting your SHELL to /bin/"
+        },
+        {
+          "rule_id": "DL3008",
+          "severity": "medium",
+          "path": "Dockerfile",
+          "message": "Pin versions in apt get install. Instead of `apt-get install <package>` use `apt-get install <package>=<version>`"
+        },
+        {
+          "rule_id": "DL3018",
+          "severity": "medium",
+          "path": "services/realtime/gateway-go/Dockerfile",
+          "message": "Pin versions in apk add. Instead of `apk add <package>` use `apk add <package>=<version>`"
+        },
+        {
+          "rule_id": "DL3008",
+          "severity": "medium",
+          "path": "services/sip-gateway/Dockerfile.kamailio",
+          "message": "Pin versions in apt get install. Instead of `apt-get install <package>` use `apt-get install <package>=<version>`"
+        },
+        {
+          "rule_id": "DL3008",
+          "severity": "medium",
+          "path": "services/sip-gateway/Dockerfile.rtpengine",
+          "message": "Pin versions in apt get install. Instead of `apt-get install <package>` use `apt-get install <package>=<version>`"
+        }
+      ],
+      "total": 6,
+      "status": "failed"
+    },
+    {
+      "scanner": "checkov",
+      "artifact": "artifacts/security/checkov-results.json",
+      "sha256": "9182df1a96a83ed6efbbc2bea8a9afa2cd7473f4ad913fb0df021d3dab720f46",
+      "bytes": 441595,
+      "counts": {
+        "critical": 0,
+        "high": 108,
+        "medium": 0,
+        "low": 0,
+        "info": 0,
+        "unknown": 0
+      },
+      "findings": [
+        {
+          "rule_id": "CKV_SECRET_4",
+          "severity": "high",
+          "path": "/voxdesk/values-prod.yaml",
+          "message": "Basic Auth Credentials"
+        },
+        {
+          "rule_id": "CKV_SECRET_6",
+          "severity": "high",
+          "path": "/voxdesk/values-prod.yaml",
+          "message": "Base64 High Entropy String"
+        },
+        {
+          "rule_id": "CKV_SECRET_4",
+          "severity": "high",
+          "path": "/voxdesk/values-staging.yaml",
+          "message": "Basic Auth Credentials"
+        },
+        {
+          "rule_id": "CKV_SECRET_6",
+          "severity": "high",
+          "path": "/voxdesk/values-staging.yaml",
+          "message": "Base64 High Entropy String"
+        },
+        {
+          "rule_id": "CKV_SECRET_6",
+          "severity": "high",
+          "path": "/voxdesk/values.yaml",
+          "message": "Base64 High Entropy String"
+        },
+        {
+          "rule_id": "CKV_SECRET_4",
+          "severity": "high",
+          "path": "/voxdesk/values.yaml",
+          "message": "Basic Auth Credentials"
+        },
+        {
+          "rule_id": "CKV_SECRET_6",
+          "severity": "high",
+          "path": "/voxdesk/values.yaml",
+          "message": "Base64 High Entropy String"
+        },
+        {
+          "rule_id": "CKV_AWS_260",
+          "severity": "high",
+          "path": "/modules/alb/main.tf",
+          "message": "Ensure no security groups allow ingress from 0.0.0.0:0 to port 80"
+        },
+        {
+          "rule_id": "CKV_AWS_23",
+          "severity": "high",
+          "path": "/modules/alb/main.tf",
+          "message": "Ensure every security group and rule has a description"
+        },
+        {
+          "rule_id": "CKV_AWS_131",
+          "severity": "high",
+          "path": "/modules/alb/main.tf",
+          "message": "Ensure that ALB drops HTTP headers"
+        },
+        {
+          "rule_id": "CKV_AWS_91",
+          "severity": "high",
+          "path": "/modules/alb/main.tf",
+          "message": "Ensure the ELBv2 (Application/Network) has access logging enabled"
+        },
+        {
+          "rule_id": "CKV_AWS_150",
+          "severity": "high",
+          "path": "/modules/alb/main.tf",
+          "message": "Ensure that Load Balancer has deletion protection enabled"
+        },
+        {
+          "rule_id": "CKV_AWS_192",
+          "severity": "high",
+          "path": "/modules/alb/main.tf",
+          "message": "Ensure WAF prevents message lookup in Log4j2. See CVE-2021-44228 aka log4jshell"
+        },
+        {
+          "rule_id": "CKV_AWS_260",
+          "severity": "high",
+          "path": "/modules/alb/main.tf",
+          "message": "Ensure no security groups allow ingress from 0.0.0.0:0 to port 80"
+        },
+        {
+          "rule_id": "CKV_AWS_23",
+          "severity": "high",
+          "path": "/modules/alb/main.tf",
+          "message": "Ensure every security group and rule has a description"
+        },
+        {
+          "rule_id": "CKV_AWS_131",
+          "severity": "high",
+          "path": "/modules/alb/main.tf",
+          "message": "Ensure that ALB drops HTTP headers"
+        },
+        {
+          "rule_id": "CKV_AWS_91",
+          "severity": "high",
+          "path": "/modules/alb/main.tf",
+          "message": "Ensure the ELBv2 (Application/Network) has access logging enabled"
+        },
+        {
+          "rule_id": "CKV_AWS_150",
+          "severity": "high",
+          "path": "/modules/alb/main.tf",
+          "message": "Ensure that Load Balancer has deletion protection enabled"
+        },
+        {
+          "rule_id": "CKV_AWS_192",
+          "severity": "high",
+          "path": "/modules/alb/main.tf",
+          "message": "Ensure WAF prevents message lookup in Log4j2. See CVE-2021-44228 aka log4jshell"
+        },
+        {
+          "rule_id": "CKV_AWS_260",
+          "severity": "high",
+          "path": "/modules/alb/main.tf",
+          "message": "Ensure no security groups allow ingress from 0.0.0.0:0 to port 80"
+        },
+        {
+          "rule_id": "CKV_AWS_23",
+          "severity": "high",
+          "path": "/modules/alb/main.tf",
+          "message": "Ensure every security group and rule has a description"
+        },
+        {
+          "rule_id": "CKV_AWS_131",
+          "severity": "high",
+          "path": "/modules/alb/main.tf",
+          "message": "Ensure that ALB drops HTTP headers"
+        },
+        {
+          "rule_id": "CKV_AWS_91",
+          "severity": "high",
+          "path": "/modules/alb/main.tf",
+          "message": "Ensure the ELBv2 (Application/Network) has access logging enabled"
+        },
+        {
+          "rule_id": "CKV_AWS_150",
+          "severity": "high",
+          "path": "/modules/alb/main.tf",
+          "message": "Ensure that Load Balancer has deletion protection enabled"
+        },
+        {
+          "rule_id": "CKV_AWS_192",
+          "severity": "high",
+          "path": "/modules/alb/main.tf",
+          "message": "Ensure WAF prevents message lookup in Log4j2. See CVE-2021-44228 aka log4jshell"
+        },
+        {
+          "rule_id": "CKV_AWS_338",
+          "severity": "high",
+          "path": "/modules/eks/main.tf",
+          "message": "Ensure CloudWatch log groups retains logs for at least 1 year"
+        },
+        {
+          "rule_id": "CKV_AWS_158",
+          "severity": "high",
+          "path": "/modules/eks/main.tf",
+          "message": "Ensure that CloudWatch Log Group is encrypted by KMS"
+        },
+        {
+          "rule_id": "CKV_AWS_23",
+          "severity": "high",
+          "path": "/modules/eks/main.tf",
+          "message": "Ensure every security group and rule has a description"
+        },
+        {
+          "rule_id": "CKV_AWS_23",
+          "severity": "high",
+          "path": "/modules/eks/main.tf",
+          "message": "Ensure every security group and rule has a description"
+        },
+        {
+          "rule_id": "CKV_AWS_58",
+          "severity": "high",
+          "path": "/modules/eks/main.tf",
+          "message": "Ensure EKS Cluster has Secrets Encryption Enabled"
+        },
+        {
+          "rule_id": "CKV_AWS_338",
+          "severity": "high",
+          "path": "/modules/eks/main.tf",
+          "message": "Ensure CloudWatch log groups retains logs for at least 1 year"
+        },
+        {
+          "rule_id": "CKV_AWS_158",
+          "severity": "high",
+          "path": "/modules/eks/main.tf",
+          "message": "Ensure that CloudWatch Log Group is encrypted by KMS"
+        },
+        {
+          "rule_id": "CKV_AWS_23",
+          "severity": "high",
+          "path": "/modules/eks/main.tf",
+          "message": "Ensure every security group and rule has a description"
+        },
+        {
+          "rule_id": "CKV_AWS_23",
+          "severity": "high",
+          "path": "/modules/eks/main.tf",
+          "message": "Ensure every security group and rule has a description"
+        },
+        {
+          "rule_id": "CKV_AWS_58",
+          "severity": "high",
+          "path": "/modules/eks/main.tf",
+          "message": "Ensure EKS Cluster has Secrets Encryption Enabled"
+        },
+        {
+          "rule_id": "CKV_AWS_338",
+          "severity": "high",
+          "path": "/modules/eks/main.tf",
+          "message": "Ensure CloudWatch log groups retains logs for at least 1 year"
+        },
+        {
+          "rule_id": "CKV_AWS_158",
+          "severity": "high",
+          "path": "/modules/eks/main.tf",
+          "message": "Ensure that CloudWatch Log Group is encrypted by KMS"
+        },
+        {
+          "rule_id": "CKV_AWS_23",
+          "severity": "high",
+          "path": "/modules/eks/main.tf",
+          "message": "Ensure every security group and rule has a description"
+        },
+        {
+          "rule_id": "CKV_AWS_23",
+          "severity": "high",
+          "path": "/modules/eks/main.tf",
+          "message": "Ensure every security group and rule has a description"
+        },
+        {
+          "rule_id": "CKV_AWS_58",
+          "severity": "high",
+          "path": "/modules/eks/main.tf",
+          "message": "Ensure EKS Cluster has Secrets Encryption Enabled"
+        },
+        {
+          "rule_id": "CKV_AWS_394",
+          "severity": "high",
+          "path": "/modules/network/main.tf",
+          "message": "Ensure aws_availability_zones data source pins zone identity so its result set does not silently expand when AWS adds an Availability Zone"
+        },
+        {
+          "rule_id": "CKV_AWS_338",
+          "severity": "high",
+          "path": "/modules/network/main.tf",
+          "message": "Ensure CloudWatch log groups retains logs for at least 1 year"
+        },
+        {
+          "rule_id": "CKV_AWS_158",
+          "severity": "high",
+          "path": "/modules/network/main.tf",
+          "message": "Ensure that CloudWatch Log Group is encrypted by KMS"
+        },
+        {
+          "rule_id": "CKV_AWS_394",
+          "severity": "high",
+          "path": "/modules/network/main.tf",
+          "message": "Ensure aws_availability_zones data source pins zone identity so its result set does not silently expand when AWS adds an Availability Zone"
+        },
+        {
+          "rule_id": "CKV_AWS_338",
+          "severity": "high",
+          "path": "/modules/network/main.tf",
+          "message": "Ensure CloudWatch log groups retains logs for at least 1 year"
+        },
+        {
+          "rule_id": "CKV_AWS_158",
+          "severity": "high",
+          "path": "/modules/network/main.tf",
+          "message": "Ensure that CloudWatch Log Group is encrypted by KMS"
+        },
+        {
+          "rule_id": "CKV_AWS_394",
+          "severity": "high",
+          "path": "/modules/network/main.tf",
+          "message": "Ensure aws_availability_zones data source pins zone identity so its result set does not silently expand when AWS adds an Availability Zone"
+        },
+        {
+          "rule_id": "CKV_AWS_338",
+          "severity": "high",
+          "path": "/modules/network/main.tf",
+          "message": "Ensure CloudWatch log groups retains logs for at least 1 year"
+        },
+        {
+          "rule_id": "CKV_AWS_158",
+          "severity": "high",
+          "path": "/modules/network/main.tf",
+          "message": "Ensure that CloudWatch Log Group is encrypted by KMS"
+        },
+        {
+          "rule_id": "CKV_AWS_26",
+          "severity": "high",
+          "path": "/modules/observability/main.tf",
+          "message": "Ensure all data stored in the SNS topic is encrypted"
+        },
+        {
+          "rule_id": "CKV_AWS_26",
+          "severity": "high",
+          "path": "/modules/observability/main.tf",
+          "message": "Ensure all data stored in the SNS topic is encrypted"
+        },
+        {
+          "rule_id": "CKV_AWS_26",
+          "severity": "high",
+          "path": "/modules/observability/main.tf",
+          "message": "Ensure all data stored in the SNS topic is encrypted"
+        },
+        {
+          "rule_id": "CKV_AWS_23",
+          "severity": "high",
+          "path": "/modules/rds/main.tf",
+          "message": "Ensure every security group and rule has a description"
+        },
+        {
+          "rule_id": "CKV_AWS_139",
+          "severity": "high",
+          "path": "/modules/rds/main.tf",
+          "message": "Ensure that RDS clusters have deletion protection enabled"
+        },
+        {
+          "rule_id": "CKV_AWS_162",
+          "severity": "high",
+          "path": "/modules/rds/main.tf",
+          "message": "Ensure RDS cluster has IAM authentication enabled"
+        },
+        {
+          "rule_id": "CKV_AWS_118",
+          "severity": "high",
+          "path": "/modules/rds/main.tf",
+          "message": "Ensure that enhanced monitoring is enabled for Amazon RDS instances"
+        },
+        {
+          "rule_id": "CKV_AWS_354",
+          "severity": "high",
+          "path": "/modules/rds/main.tf",
+          "message": "Ensure RDS Performance Insights are encrypted using KMS CMKs"
+        },
+        {
+          "rule_id": "CKV_AWS_226",
+          "severity": "high",
+          "path": "/modules/rds/main.tf",
+          "message": "Ensure DB instance gets all minor upgrades automatically"
+        },
+        {
+          "rule_id": "CKV_AWS_23",
+          "severity": "high",
+          "path": "/modules/rds/main.tf",
+          "message": "Ensure every security group and rule has a description"
+        },
+        {
+          "rule_id": "CKV_AWS_162",
+          "severity": "high",
+          "path": "/modules/rds/main.tf",
+          "message": "Ensure RDS cluster has IAM authentication enabled"
+        },
+        {
+          "rule_id": "CKV_AWS_118",
+          "severity": "high",
+          "path": "/modules/rds/main.tf",
+          "message": "Ensure that enhanced monitoring is enabled for Amazon RDS instances"
+        },
+        {
+          "rule_id": "CKV_AWS_354",
+          "severity": "high",
+          "path": "/modules/rds/main.tf",
+          "message": "Ensure RDS Performance Insights are encrypted using KMS CMKs"
+        },
+        {
+          "rule_id": "CKV_AWS_226",
+          "severity": "high",
+          "path": "/modules/rds/main.tf",
+          "message": "Ensure DB instance gets all minor upgrades automatically"
+        },
+        {
+          "rule_id": "CKV_AWS_118",
+          "severity": "high",
+          "path": "/modules/rds/main.tf",
+          "message": "Ensure that enhanced monitoring is enabled for Amazon RDS instances"
+        },
+        {
+          "rule_id": "CKV_AWS_354",
+          "severity": "high",
+          "path": "/modules/rds/main.tf",
+          "message": "Ensure RDS Performance Insights are encrypted using KMS CMKs"
+        },
+        {
+          "rule_id": "CKV_AWS_226",
+          "severity": "high",
+          "path": "/modules/rds/main.tf",
+          "message": "Ensure DB instance gets all minor upgrades automatically"
+        },
+        {
+          "rule_id": "CKV_AWS_118",
+          "severity": "high",
+          "path": "/modules/rds/main.tf",
+          "message": "Ensure that enhanced monitoring is enabled for Amazon RDS instances"
+        },
+        {
+          "rule_id": "CKV_AWS_354",
+          "severity": "high",
+          "path": "/modules/rds/main.tf",
+          "message": "Ensure RDS Performance Insights are encrypted using KMS CMKs"
+        },
+        {
+          "rule_id": "CKV_AWS_226",
+          "severity": "high",
+          "path": "/modules/rds/main.tf",
+          "message": "Ensure DB instance gets all minor upgrades automatically"
+        },
+        {
+          "rule_id": "CKV_AWS_23",
+          "severity": "high",
+          "path": "/modules/rds/main.tf",
+          "message": "Ensure every security group and rule has a description"
+        },
+        {
+          "rule_id": "CKV_AWS_162",
+          "severity": "high",
+          "path": "/modules/rds/main.tf",
+          "message": "Ensure RDS cluster has IAM authentication enabled"
+        },
+        {
+          "rule_id": "CKV_AWS_118",
+          "severity": "high",
+          "path": "/modules/rds/main.tf",
+          "message": "Ensure that enhanced monitoring is enabled for Amazon RDS instances"
+        },
+        {
+          "rule_id": "CKV_AWS_354",
+          "severity": "high",
+          "path": "/modules/rds/main.tf",
+          "message": "Ensure RDS Performance Insights are encrypted using KMS CMKs"
+        },
+        {
+          "rule_id": "CKV_AWS_226",
+          "severity": "high",
+          "path": "/modules/rds/main.tf",
+          "message": "Ensure DB instance gets all minor upgrades automatically"
+        },
+        {
+          "rule_id": "CKV_AWS_118",
+          "severity": "high",
+          "path": "/modules/rds/main.tf",
+          "message": "Ensure that enhanced monitoring is enabled for Amazon RDS instances"
+        },
+        {
+          "rule_id": "CKV_AWS_354",
+          "severity": "high",
+          "path": "/modules/rds/main.tf",
+          "message": "Ensure RDS Performance Insights are encrypted using KMS CMKs"
+        },
+        {
+          "rule_id": "CKV_AWS_226",
+          "severity": "high",
+          "path": "/modules/rds/main.tf",
+          "message": "Ensure DB instance gets all minor upgrades automatically"
+        },
+        {
+          "rule_id": "CKV_AWS_118",
+          "severity": "high",
+          "path": "/modules/rds/main.tf",
+          "message": "Ensure that enhanced monitoring is enabled for Amazon RDS instances"
+        },
+        {
+          "rule_id": "CKV_AWS_354",
+          "severity": "high",
+          "path": "/modules/rds/main.tf",
+          "message": "Ensure RDS Performance Insights are encrypted using KMS CMKs"
+        },
+        {
+          "rule_id": "CKV_AWS_226",
+          "severity": "high",
+          "path": "/modules/rds/main.tf",
+          "message": "Ensure DB instance gets all minor upgrades automatically"
+        },
+        {
+          "rule_id": "CKV_AWS_23",
+          "severity": "high",
+          "path": "/modules/redis/main.tf",
+          "message": "Ensure every security group and rule has a description"
+        },
+        {
+          "rule_id": "CKV_AWS_191",
+          "severity": "high",
+          "path": "/modules/redis/main.tf",
+          "message": "Ensure ElastiCache replication group is encrypted by KMS using a customer managed Key (CMK)"
+        },
+        {
+          "rule_id": "CKV_AWS_23",
+          "severity": "high",
+          "path": "/modules/redis/main.tf",
+          "message": "Ensure every security group and rule has a description"
+        },
+        {
+          "rule_id": "CKV_AWS_191",
+          "severity": "high",
+          "path": "/modules/redis/main.tf",
+          "message": "Ensure ElastiCache replication group is encrypted by KMS using a customer managed Key (CMK)"
+        },
+        {
+          "rule_id": "CKV_AWS_23",
+          "severity": "high",
+          "path": "/modules/redis/main.tf",
+          "message": "Ensure every security group and rule has a description"
+        },
+        {
+          "rule_id": "CKV_AWS_191",
+          "severity": "high",
+          "path": "/modules/redis/main.tf",
+          "message": "Ensure ElastiCache replication group is encrypted by KMS using a customer managed Key (CMK)"
+        },
+        {
+          "rule_id": "CKV2_AWS_62",
+          "severity": "high",
+          "path": "/modules/assets/main.tf",
+          "message": "Ensure S3 buckets should have event notifications enabled"
+        },
+        {
+          "rule_id": "CKV2_AWS_31",
+          "severity": "high",
+          "path": "/modules/alb/main.tf",
+          "message": "Ensure WAF2 has a Logging Configuration"
+        },
+        {
+          "rule_id": "CKV2_AWS_31",
+          "severity": "high",
+          "path": "/modules/alb/main.tf",
+          "message": "Ensure WAF2 has a Logging Configuration"
+        },
+        {
+          "rule_id": "CKV2_AWS_31",
+          "severity": "high",
+          "path": "/modules/alb/main.tf",
+          "message": "Ensure WAF2 has a Logging Configuration"
+        },
+        {
+          "rule_id": "CKV_AWS_18",
+          "severity": "high",
+          "path": "/modules/assets/main.tf",
+          "message": "Ensure the S3 bucket has access logging enabled"
+        },
+        {
+          "rule_id": "CKV2_AWS_50",
+          "severity": "high",
+          "path": "/modules/redis/main.tf",
+          "message": "Ensure AWS ElastiCache Redis cluster with Multi-AZ Automatic Failover feature set to enabled"
+        },
+        {
+          "rule_id": "CKV2_AWS_50",
+          "severity": "high",
+          "path": "/modules/redis/main.tf",
+          "message": "Ensure AWS ElastiCache Redis cluster with Multi-AZ Automatic Failover feature set to enabled"
+        },
+        {
+          "rule_id": "CKV2_AWS_50",
+          "severity": "high",
+          "path": "/modules/redis/main.tf",
+          "message": "Ensure AWS ElastiCache Redis cluster with Multi-AZ Automatic Failover feature set to enabled"
+        },
+        {
+          "rule_id": "CKV2_AWS_8",
+          "severity": "high",
+          "path": "/modules/rds/main.tf",
+          "message": "Ensure that RDS clusters has backup plan of AWS Backup"
+        },
+        {
+          "rule_id": "CKV2_AWS_8",
+          "severity": "high",
+          "path": "/modules/rds/main.tf",
+          "message": "Ensure that RDS clusters has backup plan of AWS Backup"
+        },
+        {
+          "rule_id": "CKV2_AWS_8",
+          "severity": "high",
+          "path": "/modules/rds/main.tf",
+          "message": "Ensure that RDS clusters has backup plan of AWS Backup"
+        },
+        {
+          "rule_id": "CKV2_AWS_76",
+          "severity": "high",
+          "path": "/modules/alb/main.tf",
+          "message": "Ensure AWS ALB attached WAFv2 WebACL is configured with AMR for Log4j Vulnerability"
+        },
+        {
+          "rule_id": "CKV2_AWS_76",
+          "severity": "high",
+          "path": "/modules/alb/main.tf",
+          "message": "Ensure AWS ALB attached WAFv2 WebACL is configured with AMR for Log4j Vulnerability"
+        },
+        {
+          "rule_id": "CKV2_AWS_76",
+          "severity": "high",
+          "path": "/modules/alb/main.tf",
+          "message": "Ensure AWS ALB attached WAFv2 WebACL is configured with AMR for Log4j Vulnerability"
+        },
+        {
+          "rule_id": "CKV2_AWS_12",
+          "severity": "high",
+          "path": "/modules/network/main.tf",
+          "message": "Ensure the default security group of every VPC restricts all traffic"
+        },
+        {
+          "rule_id": "CKV2_AWS_12",
+          "severity": "high",
+          "path": "/modules/network/main.tf",
+          "message": "Ensure the default security group of every VPC restricts all traffic"
+        },
+        {
+          "rule_id": "CKV2_AWS_12",
+          "severity": "high",
+          "path": "/modules/network/main.tf",
+          "message": "Ensure the default security group of every VPC restricts all traffic"
+        },
+        {
+          "rule_id": "CKV_AWS_144",
+          "severity": "high",
+          "path": "/modules/assets/main.tf",
+          "message": "Ensure that S3 bucket has cross-region replication enabled"
+        },
+        {
+          "rule_id": "CKV2_AWS_64",
+          "severity": "high",
+          "path": "/modules/assets/main.tf",
+          "message": "Ensure KMS key Policy is defined"
+        },
+        {
+          "rule_id": "CKV2_AWS_64",
+          "severity": "high",
+          "path": "/modules/rds/main.tf",
+          "message": "Ensure KMS key Policy is defined"
+        },
+        {
+          "rule_id": "CKV2_AWS_64",
+          "severity": "high",
+          "path": "/modules/rds/main.tf",
+          "message": "Ensure KMS key Policy is defined"
+        },
+        {
+          "rule_id": "CKV2_AWS_64",
+          "severity": "high",
+          "path": "/modules/rds/main.tf",
+          "message": "Ensure KMS key Policy is defined"
+        }
+      ],
+      "total": 108,
+      "status": "failed"
+    },
+    {
+      "scanner": "pip-audit",
+      "artifact": "artifacts/security/pip-audit.json",
+      "sha256": "9cc090eb7aad16de66a654088e5d30637e9af59edfbc40430a04fd419e115f2f",
+      "bytes": 445500,
+      "counts": {
+        "critical": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "info": 0,
+        "unknown": 78
       },
       "findings": [
         {
@@ -498,6 +1409,14 @@
           "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
         },
         {
+          "rule_id": "PYSEC-2026-4363",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
           "rule_id": "CVE-2026-112895",
           "severity": "unknown",
           "path": "pillow==11.3.0",
@@ -664,21 +1583,37 @@
           "package": "pillow",
           "message": "fixed in 13.0.0",
           "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "CVE-2026-128067",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
+        },
+        {
+          "rule_id": "CVE-2026-128066",
+          "severity": "unknown",
+          "path": "pillow==11.3.0",
+          "package": "pillow",
+          "message": "fixed in 13.0.0",
+          "accepted_risk": "pillow 11.3.0: pipecat pins `Pillow<12,>=11.1.0`; the fixes are all in 12.x. VoxDesk's audio-only pipeline never decodes images (no image upload or vision path reaches Pillow), so the image-format advisories are not reachable."
         }
       ],
-      "total": 75,
+      "total": 78,
       "status": "failed"
     }
   ],
   "counts": {
     "critical": 0,
-    "high": 0,
-    "medium": 0,
+    "high": 126,
+    "medium": 15,
     "low": 0,
     "info": 0,
-    "unknown": 75
+    "unknown": 78
   },
-  "total": 75,
+  "total": 219,
   "accepted_risks": [
     {
       "identifier": "pillow",
@@ -695,12 +1630,7 @@
   ],
   "overall": "BLOCKED",
   "problems": [
-    "trivy: no artifact",
-    "semgrep: no artifact",
-    "gitleaks: no artifact",
-    "npm-audit: no artifact",
-    "hadolint: no artifact",
-    "checkov: no artifact"
+    "trivy: no artifact"
   ],
   "note": "Findings matched to an accepted risk in SECURITY.md are attributed, not removed: they remain in the counts and carry the waiver reason."
 }

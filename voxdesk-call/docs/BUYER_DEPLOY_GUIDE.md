@@ -60,8 +60,28 @@ asserts each one, and the app raises at startup rather than degrading:
 | `E2E_ENABLED` | refused in production |
 | `CORS_ORIGINS` | an explicit list; `*` is rejected, and credentials are never returned for an unknown origin |
 
-Copy `.env.example` and fill it in; the full key list with comments is in that
-file.
+Copy `.env.example` and fill it in; the commented key list is in that file, but it is
+not the whole story for the Compose deployment, and this guide no longer claims that it
+is. `docker-compose.prod.yml` interpolates 10 variables with `${VAR:?…}`, which is
+Compose's own hard refusal, and `.env.example` does not carry 6 of them at all
+(`POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `TRUSTED_HOSTS`,
+`GRAFANA_ADMIN_PASSWORD`, `CONDUCTOR_WEBHOOK_SECRET`), while 2 more are present but
+deliberately blank (`TELEPHONY_WEBHOOK_SECRET`, `MEDIA_ENGINE_PUBLIC_IP`) — deliberately, because those are
+random per deployment, not copyable defaults. `python3 scripts/make_check_env.py` is what
+fills them: it writes `.env.check` (mode 0600, gitignored) with generated secrets plus
+`TRUSTED_HOSTS`/`MEDIA_ENGINE_PUBLIC_IP`. There is no make target for it — the entry point
+is the script itself, which is exactly what `scripts/verify_deploy_assets.sh` tells you to
+run when the file is missing. So the deployment path is: `cp .env.example .env`, then either
+generate the missing keys yourself or run `python3 scripts/make_check_env.py` and merge what
+it produced. Measured with
+Docker Compose v2.32.4: `docker compose -f docker-compose.prod.yml config` with only the
+template exits **15** on `services.db.environment.POSTGRES_USER: required variable
+POSTGRES_USER is missing a value`; with all 10 supplied it exits 0 and renders 11 services
+(`api backup caddy db grafana media-engine prometheus realtime-gateway redis scheduler
+web`), 1 network, 7 named volumes, 5 health checks, `restart` on all 11 and
+`depends_on` on 8. So: fill the 6 in before the first `up`, and expect a refusal — not a
+default — if you forget. The dev stack (`docker-compose.yml`) needs none of this: every
+variable there has a development default.
 
 ## 4. Kubernetes
 

@@ -14,9 +14,9 @@ metrics in [`docs/STATS.json`](../STATS.json), and the verified feature rows in
 <!-- >>> voxdesk:repo-stats >>> -->
 ## Verified Repository Snapshot (`docs/STATS.json`)
 
-- **Source files**: `1912` (`442,435` physical lines)
+- **Source files**: `1959` (`449,484` physical lines)
 - **Registered FastAPI routes**: `1662` registered routes
-- **Collected pytest nodes**: `8123` collected tests (`1,329` passed JUnit executions across `evidence/junit/feature_evidence.xml` and `evidence/batch07/`)
+- **Collected pytest nodes**: `8142` collected tests (`1,364` passed JUnit executions across `evidence/junit/feature_evidence.xml` and `evidence/batch07/`)
 - **Alembic migration head**: `0091_call_debug_pcap_metadata`
 - **Verified Feature Matrix**: `38` `LIVE` / `41` total (`1` `API_ONLY`, `1` `NOT_CONFIGURED`, `1` `PLANNED`)
 <!-- <<< voxdesk:repo-stats <<< -->

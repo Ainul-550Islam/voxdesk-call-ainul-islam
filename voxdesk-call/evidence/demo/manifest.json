@@ -1,4 +1,8 @@
 {
+  "provider_fakes": true,
+  "not_product_performance": true,
+  "evidence_tier": "LIVE_FAKE",
+  "provenance": "Synthetic pipeline trace, not a carrier call. Index of the eight traces in this directory. Every trace it lists carries `provider_fakes: true` at the top level; the WAV assets are release-asset audio rendered from the same fake-provider pipeline and are not recordings of carrier calls.",
   "schema": "voxdesk.demo_manifest/v2",
   "generated_at_utc": "2026-11-07T06:00:00Z",
   "audio_storage_policy": "GitHub Release assets only (no binary .wav blobs tracked in git)",
@@ -8,7 +12,7 @@
     {
       "id": "demo-01-inbound-call",
       "trace_and_transcript_file": "evidence/demo/01_inbound_call.json",
-      "trace_sha256": "a4f46c80c47f5707eddba68ac2eaf12707ce666bcfe8b1af38217d5069867844",
+      "trace_sha256": "438b3f31fea223a2189789586193dc6568e13a640d9968a2e9fd40389fb511e9",
       "feature_matrix_ids": [
         1,
         2,
@@ -28,7 +32,7 @@
     {
       "id": "demo-02-outbound-batch",
       "trace_and_transcript_file": "evidence/demo/02_outbound_batch.json",
-      "trace_sha256": "8ec0287b1cdfdddc73d850f97db929665ab12ea1762e5d05d37819df6c1a5f84",
+      "trace_sha256": "d87ef7442f7e638dc662c7cdf0c3deb9d977b5cf9e706fc4f4ff79a28a97a2e0",
       "feature_matrix_ids": [
         17,
         21
@@ -45,7 +49,7 @@
     {
       "id": "demo-03-web-call",
       "trace_and_transcript_file": "evidence/demo/03_web_call.json",
-      "trace_sha256": "5335de830f2523511d038ddd5b4d3d96b0c24883943c53d3ce68e120949a1cd3",
+      "trace_sha256": "909ddc721246258b9c5a473f8f6f5e221e9208e30b1f668b1416787c0a7088d1",
       "feature_matrix_ids": [
         22,
         37
@@ -62,7 +66,7 @@
     {
       "id": "demo-04-live-takeover",
       "trace_and_transcript_file": "evidence/demo/04_live_takeover.json",
-      "trace_sha256": "82e4b398a1f6878c82fa4ee11fa45df41131261ba9b7b1751b98e72c000bf201",
+      "trace_sha256": "a3c1dec7bbdbf371a64839af27039386555880c6f1095c68a9b4a1ce0b62213a",
       "feature_matrix_ids": [
         31
       ],
@@ -78,7 +82,7 @@
     {
       "id": "demo-05-flow-call",
       "trace_and_transcript_file": "evidence/demo/05_flow_call.json",
-      "trace_sha256": "59b4815bdce00e167c633dd6e493af16123949cf14b5ae0e990f26d46d716ad5",
+      "trace_sha256": "737992bd6bc2c93d4077914f9d1a1cc3147946d2b697f35dcb1711bdddb560c2",
       "feature_matrix_ids": [
         8,
         9,
@@ -96,7 +100,7 @@
     {
       "id": "demo-06-webhook-delivery",
       "trace_and_transcript_file": "evidence/demo/06_webhook_delivery.json",
-      "trace_sha256": "4667e14b866219f9f959210955954091b7afea78c9f6aee621a1fd5334ad9e32",
+      "trace_sha256": "ee860229eb125a1f605d1797569b7cce62f95356232afd2685075079be4f62eb",
       "feature_matrix_ids": [
         25,
         38
@@ -113,7 +117,7 @@
     {
       "id": "demo-07-post-call-analysis",
       "trace_and_transcript_file": "evidence/demo/07_post_call_analysis.json",
-      "trace_sha256": "9293e470efb9d71eac61ddbcfdb1ee982b49519080a23af090c0f4253690bd9b",
+      "trace_sha256": "b9714ffaa0695f715548812480ff4f04ab3a63d10a05a549e8f9ba0b2769913a",
       "feature_matrix_ids": [
         26,
         27
@@ -130,7 +134,7 @@
     {
       "id": "demo-08-custom-dashboard",
       "trace_and_transcript_file": "evidence/demo/08_custom_dashboard.json",
-      "trace_sha256": "4f583e65479ae45ca3fe5fc95d46900a3b6b51264de5ed39b62fbd2783ba1190",
+      "trace_sha256": "ddc555f1adfd1fbd742240dc5ccd754068765bc6712077ac8ef6c7737dfa7267",
       "feature_matrix_ids": [
         28,
         29,

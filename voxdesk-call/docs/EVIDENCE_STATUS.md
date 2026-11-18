@@ -3,11 +3,12 @@
 Generated automatically by `scripts/generate_feature_matrix.py` from the
 nightly real-provider integration ledger (`tests/real/`). Do not edit by hand.
 
-- **Latest Run Date (UTC)**: `2026-11-15`
-- **Freshness Status**: NO PROVIDER RAN (`14` entries, `0` PASS, all skipped for missing credentials; run date `2026-11-15`)
+- **Latest Run Date (UTC)**: `2026-11-07`
+- **Freshness Status**: NO PROVIDER RAN (`14` entries, `0` PASS, all skipped for missing credentials; run date `2026-11-07`)
+- **Reference Date Used**: `2026-11-18` (the age above is measured to this date, not to the day you are reading this file)
 - **`provider_fakes`**: `false` (enforced across every `tests/real/` suite)
-- **Evidence JSON**: [`evidence/real-integrations/2026-11-15/real_integrations.json`](../evidence/real-integrations/2026-11-15/real_integrations.json)
-- **JUnit XML**: [`evidence/real-integrations/<none>`](../evidence/real-integrations/<none>)
+- **Evidence JSON**: [`evidence/real-integrations/2026-11-07/real_integrations.json`](../evidence/real-integrations/2026-11-07/real_integrations.json)
+- **JUnit XML**: [`evidence/real-integrations/2026-11-07/junit.xml`](../evidence/real-integrations/2026-11-07/junit.xml)
 
 ## Evidence tier legend
 
@@ -25,18 +26,18 @@ A manifest feature declares the highest tier it *could* reach; the matrix grants
 
 | Provider | Capability Stage | Last Run Date | Freshness | Result | Latency (ms) | Model / Suite | Evidence Artifact |
 | --- | --- | --- | --- | --- | ---: | --- | --- |
-| `twilio` | Telephony (PSTN + Media Streams) | `2026-11-15` | `NO RUN` | `SKIPPED_NO_CREDENTIALS` | — | `tests/real/test_twilio_inbound_outbound.py` | [`real_integrations.json`](../evidence/real-integrations/2026-11-15/real_integrations.json) |
-| `telnyx` | Call Control v2 only; signed media WS/audio unverified | `2026-11-15` | `NO RUN` | `SKIPPED_NO_CREDENTIALS` | — | `tests/real/test_telnyx_live.py` | [`real_integrations.json`](../evidence/real-integrations/2026-11-15/real_integrations.json) |
-| `deepgram` | Streaming STT | `2026-11-15` | `NO RUN` | `SKIPPED_NO_CREDENTIALS` | — | `tests/real/test_stt_tts_llm_stream.py` | [`real_integrations.json`](../evidence/real-integrations/2026-11-15/real_integrations.json) |
-| `elevenlabs` | Streaming TTS | `2026-11-15` | `NO RUN` | `SKIPPED_NO_CREDENTIALS` | — | `tests/real/test_stt_tts_llm_stream.py` | [`real_integrations.json`](../evidence/real-integrations/2026-11-15/real_integrations.json) |
-| `cartesia` | Streaming TTS | `2026-11-15` | `NO RUN` | `SKIPPED_NO_CREDENTIALS` | — | `tests/real/test_stt_tts_llm_stream.py` | [`real_integrations.json`](../evidence/real-integrations/2026-11-15/real_integrations.json) |
-| `openai` | Streaming LLM | `2026-11-15` | `NO RUN` | `SKIPPED_NO_CREDENTIALS` | — | `tests/real/test_stt_tts_llm_stream.py` | [`real_integrations.json`](../evidence/real-integrations/2026-11-15/real_integrations.json) |
-| `anthropic` | Streaming LLM | `2026-11-15` | `NO RUN` | `SKIPPED_NO_CREDENTIALS` | — | `tests/real/test_stt_tts_llm_stream.py` | [`real_integrations.json`](../evidence/real-integrations/2026-11-15/real_integrations.json) |
-| `openai_realtime` | Speech-to-Speech (S2S) | `2026-11-15` | `NO RUN` | `SKIPPED_NO_CREDENTIALS` | — | `tests/real/test_s2s_live.py` | [`real_integrations.json`](../evidence/real-integrations/2026-11-15/real_integrations.json) |
-| `gemini_live` | Speech-to-Speech (S2S) | `2026-11-15` | `NO RUN` | `SKIPPED_NO_CREDENTIALS` | — | `tests/real/test_s2s_live.py` | [`real_integrations.json`](../evidence/real-integrations/2026-11-15/real_integrations.json) |
-| `salesforce` | CRM Sandbox Writeback | `2026-11-15` | `NO RUN` | `SKIPPED_NO_CREDENTIALS` | — | `tests/real/test_salesforce_sandbox.py` | [`real_integrations.json`](../evidence/real-integrations/2026-11-15/real_integrations.json) |
-| `hubspot` | CRM Sandbox Writeback | `2026-11-15` | `NO RUN` | `SKIPPED_NO_CREDENTIALS` | — | `tests/real/test_hubspot_sandbox.py` | [`real_integrations.json`](../evidence/real-integrations/2026-11-15/real_integrations.json) |
-| `webhook_receiver` | Signed Outbound Webhook | `2026-11-15` | `NO RUN` | `SKIPPED_NO_CREDENTIALS` | — | `tests/real/test_webhook_receiver.py` | [`real_integrations.json`](../evidence/real-integrations/2026-11-15/real_integrations.json) |
+| `twilio` | Telephony (PSTN + Media Streams) | `2026-11-07` | `NO RUN` | `SKIPPED_NO_CREDENTIALS` | — | `tests/real/test_twilio_inbound_outbound.py` | [`real_integrations.json`](../evidence/real-integrations/2026-11-07/real_integrations.json) |
+| `telnyx` | Call Control v2 only; signed media WS/audio unverified | `2026-11-07` | `NO RUN` | `SKIPPED_NO_CREDENTIALS` | — | `tests/real/test_telnyx_live.py` | [`real_integrations.json`](../evidence/real-integrations/2026-11-07/real_integrations.json) |
+| `deepgram` | Streaming STT | `2026-11-07` | `NO RUN` | `SKIPPED_NO_CREDENTIALS` | — | `tests/real/test_stt_tts_llm_stream.py` | [`real_integrations.json`](../evidence/real-integrations/2026-11-07/real_integrations.json) |
+| `elevenlabs` | Streaming TTS | `2026-11-07` | `NO RUN` | `SKIPPED_NO_CREDENTIALS` | — | `tests/real/test_stt_tts_llm_stream.py` | [`real_integrations.json`](../evidence/real-integrations/2026-11-07/real_integrations.json) |
+| `cartesia` | Streaming TTS | `2026-11-07` | `NO RUN` | `SKIPPED_NO_CREDENTIALS` | — | `tests/real/test_stt_tts_llm_stream.py` | [`real_integrations.json`](../evidence/real-integrations/2026-11-07/real_integrations.json) |
+| `openai` | Streaming LLM | `2026-11-07` | `NO RUN` | `SKIPPED_NO_CREDENTIALS` | — | `tests/real/test_stt_tts_llm_stream.py` | [`real_integrations.json`](../evidence/real-integrations/2026-11-07/real_integrations.json) |
+| `anthropic` | Streaming LLM | `2026-11-07` | `NO RUN` | `SKIPPED_NO_CREDENTIALS` | — | `tests/real/test_stt_tts_llm_stream.py` | [`real_integrations.json`](../evidence/real-integrations/2026-11-07/real_integrations.json) |
+| `openai_realtime` | Speech-to-Speech (S2S) | `2026-11-07` | `NO RUN` | `SKIPPED_NO_CREDENTIALS` | — | `tests/real/test_s2s_live.py` | [`real_integrations.json`](../evidence/real-integrations/2026-11-07/real_integrations.json) |
+| `gemini_live` | Speech-to-Speech (S2S) | `2026-11-07` | `NO RUN` | `SKIPPED_NO_CREDENTIALS` | — | `tests/real/test_s2s_live.py` | [`real_integrations.json`](../evidence/real-integrations/2026-11-07/real_integrations.json) |
+| `salesforce` | CRM Sandbox Writeback | `2026-11-07` | `NO RUN` | `SKIPPED_NO_CREDENTIALS` | — | `tests/real/test_salesforce_sandbox.py` | [`real_integrations.json`](../evidence/real-integrations/2026-11-07/real_integrations.json) |
+| `hubspot` | CRM Sandbox Writeback | `2026-11-07` | `NO RUN` | `SKIPPED_NO_CREDENTIALS` | — | `tests/real/test_hubspot_sandbox.py` | [`real_integrations.json`](../evidence/real-integrations/2026-11-07/real_integrations.json) |
+| `webhook_receiver` | Signed Outbound Webhook | `2026-11-07` | `NO RUN` | `SKIPPED_NO_CREDENTIALS` | — | `tests/real/test_webhook_receiver.py` | [`real_integrations.json`](../evidence/real-integrations/2026-11-07/real_integrations.json) |
 
 ## Reproduction Commands
 

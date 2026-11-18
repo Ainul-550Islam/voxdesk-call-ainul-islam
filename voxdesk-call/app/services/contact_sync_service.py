@@ -233,7 +233,6 @@ async def sync_contact(
     current.update({k: v for k, v in (contact.custom_fields or {}).items() if not k.startswith("_")})
     result = merge(current, incoming, policy=policy, source=source)
 
-    from app.db.retell_models import Contact  # local import: keeps this module import-light
 
     for canonical, value in result.values.items():
         if hasattr(contact, canonical) and canonical != "custom_fields":

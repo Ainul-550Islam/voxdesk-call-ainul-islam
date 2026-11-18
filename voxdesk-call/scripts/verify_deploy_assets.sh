@@ -131,7 +131,17 @@ if require_tool helm "install https://helm.sh/docs/intro/install/"; then
     # else — a PASS that validated nothing. A plain `mktemp` produced exactly that,
     # so the render target is created with an explicit .yaml name.
     rendered="$(mktemp /tmp/voxdesk-helm-render.XXXXXX.yaml)"
-    if out=$(helm template voxdesk "$HELM_CHART" -f "$HELM_CHART/values.yaml" -f "$values" 2>&1); then
+    # stdout only. Helm writes `coalesce.go: warning: …` to stderr, and merging it into
+    # the document made kubeconform report
+    #   "error unmarshalling resource: yaml: mapping values are not allowed in this
+    #    context" - a broken-manifest verdict for what was a values-shape warning, and
+    # the warning itself was never shown to anyone. Warnings are captured separately and
+    # fail the check on their own merits, which is this script's own rule: a validation
+    # that quietly did not run may not be reported as one that passed.
+    if out=$(helm template voxdesk "$HELM_CHART" -f "$HELM_CHART/values.yaml" -f "$values" 2>"$rendered.err"); then
+      if [ -s "$rendered.err" ]; then
+        record "helm:template:$short" "FAIL" "helm warned while rendering: $(head -c 300 "$rendered.err" | tr '\n' ' ')"
+      fi
       printf '%s\n' "$out" > "$rendered"
       kinds="$(grep -c '^kind:' "$rendered" || true)"
       if [ "${kinds:-0}" -eq 0 ]; then
@@ -160,7 +170,7 @@ if require_tool helm "install https://helm.sh/docs/intro/install/"; then
         fi
       fi
     fi
-    rm -f "$rendered"
+    rm -f "$rendered" "$rendered.err"
   done
 fi
 

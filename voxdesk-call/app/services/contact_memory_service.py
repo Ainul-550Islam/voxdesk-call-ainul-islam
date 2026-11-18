@@ -7,7 +7,7 @@ logging on every operation.
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any, Iterable
+from typing import TYPE_CHECKING, Any, Iterable
 from uuid import UUID
 
 from sqlalchemy import delete, select
@@ -17,6 +17,11 @@ from app.core.logging import log
 from app.db.models import AuditAction, Tenant
 from app.db.retell_models import Contact, ContactMemoryEntry
 from app.domain.contact_memory_models import MemorySaveRequest, validate_memory_key
+
+if TYPE_CHECKING:  # pragma: no cover - annotations only; the rows are imported lazily below
+    # `app.db.channel_models` is imported inside the functions because it imports this
+    # module's peers at module scope; the annotations still have to name the types.
+    from app.db.channel_models import ContactBrief, MemorySettings
 
 
 def _now() -> datetime:
@@ -432,7 +437,9 @@ async def build_brief(
 
     tid = _tenant_id(tenant)
     cid = _contact_id(contact, tid)
-    settings = await get_settings(session, tid)
+    # Reading the settings creates the default row on first use, which the brief
+    # below depends on; the values themselves are applied in `recall`.
+    await get_settings(session, tid)
     entries = await list_entries(session, tid, cid)
 
     phone = None
@@ -501,7 +508,6 @@ async def set_brief(
     edited_by: str,
 ) -> ContactBrief:
     """Operator edit of a brief. Recorded, never silently merged with facts."""
-    from app.db.channel_models import ContactBrief
 
     if len(text or "") > BRIEF_MAX_CHARS * 2:
         raise ValueError("a brief may be at most 2400 characters")

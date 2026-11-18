@@ -81,13 +81,21 @@ def _tracked_files() -> list[str]:
 
 
 def test_no_env_file_is_tracked():
-    """`.env` and its variants are generated locally and must stay untracked."""
+    """`.env` and its variants are generated locally and must stay untracked.
+
+    The pattern covers both shapes a name can take: `.env.staging` (a dot-prefixed
+    name, which is what the ignore rules were written for) and `live_local.env`
+    (an arbitrary name ending in `.env`), which is how a generated environment
+    actually reached a clone once.
+    """
     _require_git()
     tracked = _tracked_files()
     offenders = [
         path
         for path in tracked
-        if re.fullmatch(r"(^|.*/)\.env(\.[A-Za-z0-9_-]+)?", path)
+        if (
+            re.fullmatch(r"(^|.*/)\.env(\.[A-Za-z0-9_-]+)?", path) or path.endswith(".env")
+        )
         and not path.endswith(".example")
     ]
     assert offenders == [], (
@@ -111,6 +119,42 @@ def _env_shaped(path: str) -> bool:
     return path.endswith(".env.example")
 
 
+def _is_mount_path_reference(value: str) -> bool:
+    """True when the value *points at* a secret instead of containing one.
+
+    `services/sip-gateway/tls.cfg` carries `private_key =
+    /run/secrets/voxdesk-sip/tls.key`: the deployment mounts the real key at
+    that path, and committing the path leaks nothing. An absolute path cannot
+    be a bearer token, an API key or a password, and rtpengine's config syntax
+    has no other way to say "read the key from here".
+
+    The rule is deliberately the narrowest thing that works: it accepts a value
+    that starts with `/` and nothing else, so a relative path, a `file://` URL
+    or an inline blob is still a finding.
+    """
+    return value.startswith("/")
+
+
+def secret_findings(path: str, text: str) -> list[str]:
+    """`path:line:name` for every secret-named assignment with a live-looking value."""
+    offenders: list[str] = []
+    for lineno, line in enumerate(text.splitlines(), start=1):
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or "=" not in stripped:
+            continue
+        name, _, value = stripped.partition("=")
+        name = name.strip()
+        value = value.strip().strip('"').strip("'")
+        if not SECRET_KEY_PATTERN.search(name):
+            continue
+        if value.lower() in PLACEHOLDER_VALUES or value.startswith("${"):
+            continue
+        if _is_mount_path_reference(value):
+            continue
+        offenders.append(f"{path}:{lineno}: {name}")
+    return offenders
+
+
 def test_tracked_env_files_carry_no_live_secret():
     """An env-shaped file may only carry blank or obvious placeholder values."""
     _require_git()
@@ -123,22 +167,24 @@ def test_tracked_env_files_carry_no_live_secret():
             text = full.read_text(encoding="utf-8", errors="strict")
         except (OSError, UnicodeDecodeError):
             continue
-        for lineno, line in enumerate(text.splitlines(), start=1):
-            stripped = line.strip()
-            if not stripped or stripped.startswith("#") or "=" not in stripped:
-                continue
-            name, _, value = stripped.partition("=")
-            name = name.strip()
-            value = value.strip().strip('"').strip("'")
-            if not SECRET_KEY_PATTERN.search(name):
-                continue
-            if value.lower() in PLACEHOLDER_VALUES or value.startswith("${"):
-                continue
-            offenders.append(f"{path}:{lineno}: {name}")
+        offenders.extend(secret_findings(path, text))
     assert offenders == [], (
         "tracked environment files carry live-looking secrets; untrack them "
         f"with `git rm --cached` and rotate the values: {offenders}"
     )
+
+
+def test_an_inline_credential_in_a_cfg_is_still_a_finding() -> None:
+    """The mount-path rule must not become a way to smuggle a real key past."""
+    assert secret_findings("svc/tls.cfg", 'private_key = /run/secrets/tls.key\n') == []
+    assert [item.split(": ")[-1] for item in secret_findings(
+        "svc/tls.cfg", 'private_key = "-----BEGIN PRIVATE KEY-----abc"\n'
+    )] == ["private_key"]
+    # A relative path is not a mount reference, and neither is a `file://` URL.
+    assert secret_findings("svc/tls.cfg", "private_key = ./secrets/tls.key\n") != []
+    assert secret_findings("svc/tls.cfg", "private_key = file:///run/secrets/tls.key\n") != []
+    assert secret_findings("svc/tls.cfg", "api_key = ${SIP_GATEWAY_TOKEN}\n") == []
+    assert secret_findings("svc/tls.cfg", "api_key = sk_live_reallookingvalue\n") != []
 
 
 def test_the_generated_check_env_is_ignored_not_tracked():

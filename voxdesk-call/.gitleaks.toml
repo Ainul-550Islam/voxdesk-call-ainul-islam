@@ -1,53 +1,103 @@
 # VoxDesk secret-scan configuration.
 #
 # Read by .github/workflows/security-scan.yml (job `secret-scan`, which runs
-# gitleaks/gitleaks-action@v2), and by anyone running `gitleaks git .` locally:
-# gitleaks discovers a config at (target path)/.gitleaks.toml unless
-# --config / GITLEAKS_CONFIG overrides it.
+# `docker run zricethezav/gitleaks:latest detect --source /repo`, and which
+# auto-discovers this file at the scan root unless --config overrides it).
+#
+# It is NOT read by the tracked-file gate. That gate is a truth test with its own
+# patterns, not a gitleaks wrapper: `tests/truth/test_no_tracked_secrets.py`
+# (no tracked .env file, no live-secret shape in a tracked env file, an inline
+# credential in a .cfg is still a finding, `.env.check` stays ignored).
 #
 # WHY THIS FILE EXISTS
 # --------------------
 # The default gitleaks ruleset is tuned for application code, not for test
-# fixtures. On this repository it reported 32 findings, and all 32 are planted
-# dummy values inside unit/integration tests - values the product's own
-# redaction tests exist to mask. For example `sk_live_LEAKED123` in
-# dashboard/tests/audit.test.jsx is the *input* to a test asserting that the
-# audit UI never paints a credential into the DOM, and
-# services/realtime/gateway-go/internal/auth/jwt_test.go uses the literal
+# fixtures. On this repository it reported findings whose every example is a
+# planted dummy inside a test - values the product's own redaction tests exist
+# to mask. For example `sk_live_LEAKED_KEY_12345` in
+# `tests/test_billing_subscriptions.py` is the *input* to an assertion that no
+# provider error may paint a credential into a log line, and
+# `services/realtime/gateway-go/internal/auth/jwt_test.go` uses the literal
 # 0123456789abcdef0123456789abcdef as a signing key for a test JWT.
 #
 # Without an allowlist the CI job `secret-scan` failed on every push for
 # findings nobody should act on, which is how a security gate quietly becomes
-# something people ignore. The accepted-risk reasoning is documented in
-# AUDIT-REPORT.md, problem 17.
+# something people ignore. The accepted-risk reasoning is recorded here and in
+# `docs/PENTEST-CHECKLIST.md` (secret scanning).
+#
+# A CORRECTION WORTH KEEPING IN MIND
+# ----------------------------------
+# Until PART 10 this file used `[[allowlists]]` (plural, an array of tables).
+# gitleaks v8 reads exactly one global `[allowlist]` table, so every entry here
+# was silently ignored: scanning with the file and without it produced identical
+# findings (52 on a clean history scan, 114 filesystem scan). A config that
+# parses but matches nothing is worse than no config, because it looks
+# enforcing. The syntax below was verified by measuring, not by reading docs -
+# see `reports/PART_10_REPORT.md` §8.6.
 #
 # WHAT IS STILL SCANNED
 # ---------------------
-# Everything except the test trees listed below, with every default rule:
-# app/, scripts/, services/ (non-test files), dashboard/src/, dashboard/*.js,
-# infra/, contracts/, sdk/, docs/, the repo root, and the full git history.
-# The allowlist affects only which *findings are reported*, not which files
-# are visited.
+# Everything except the paths listed in the allowlist, with every default rule:
+# app/, scripts/, services/ (non-test files), dashboard-next/, infra/,
+# contracts/, sdk/, docs/, the repo root, and the full git history. The
+# allowlist affects only which *findings are reported*, not which files are
+# visited - a secret pasted into a test is still read, it just is not reported,
+# which is why MAINTENANCE below says to move values into environment variables.
+#
+# There is deliberately no rule for the retired Vite `dashboard/` tree: the
+# directory was deleted in PART 17A (P17A-05), and an allowlist entry for a path
+# that no longer exists hides nothing but it also stops anyone noticing that the
+# scanned surface changed. Add a rule when a tree ships, not before.
 #
 # MAINTENANCE
 # -----------
 # If a genuine credential is ever pasted into a test file, do not rely on this
 # allowlist to hide it: move the value to an environment variable and read it
 # in the test. The allowlist is for literals that are *by design* not secrets.
+# Every entry below names the file or pattern it suppresses and why; add the
+# reason with the entry, and never add a broad path (a whole `docs/` or
+# `scripts/` prefix) to make a finding go away.
+
+title = "VoxDesk secret-scan policy"
 
 [extend]
 # Keep every default rule and its severity; add project rules below this line
 # if a VoxDesk-specific pattern is ever needed.
 useDefault = true
 
-[[allowlists]]
-description = "Planted dummy values in Python unit/integration tests (tests/, including nested trees such as tests/auth/, tests/qa/, tests/security/)."
-paths = ['''(^|/)tests?/''']
-
-[[allowlists]]
-description = "Planted dummy values in the frontend test tree (dashboard/tests/)."
-paths = ['''(^|/)dashboard/tests/''']
-
-[[allowlists]]
-description = "Go test files (services/**/*_test.go and friends): fixed JWT signing keys, fake API tokens, gateway fixtures."
-paths = ['''_test\.go$''']
+[allowlist]
+description = """
+VoxDesk's own allowlist: synthetic values that exist to be detected by other
+tests, plus non-credential identifiers. Reasons per entry are in the comments
+above each path/regex group in the maintenance notes below.
+"""
+paths = [
+    # Planted dummy values in Python unit/integration tests, including nested
+    # trees such as tests/auth/, tests/qa/, tests/security/.
+    '''(^|/)tests?/''',
+    # Go test files (services/**/*_test.go and friends): fixed JWT signing keys,
+    # fake API tokens, gateway fixtures.
+    '''_test\.go$''',
+    # E2E workflow that boots a throwaway kind cluster; the `smoke-*` literals
+    # are inputs to a smoke test and are rotated with the cluster's lifetime.
+    '''\.github/workflows/helm-e2e\.yml$''',
+    # Transcripts of local test runs (DSN parameters, idempotency key digests).
+    # They are evidence of what a test printed against a throwaway database, not
+    # a place a credential lives; the tracked-env gate above covers what ships.
+    '''(^|/)docs/evidence/''',
+    # The scanners' own output directory. `artifacts/security/*.json` echoes
+    # every secret it just reported, so a filesystem scan of it re-detects the
+    # report about a secret instead of a secret in source (55 such findings on
+    # the first run, growing each time). The directory is gitignored and is
+    # absent from a `git archive` export, so nothing shipped is hidden by this.
+    '''(^|/)artifacts/security/''',
+]
+regexes = [
+    # `ELEVENLABS_VOICE_ID=21m00Tcm4TlvDq8ikWAM` in .env.check.example: a public
+    # voice-catalogue identifier from the vendor's own docs, not an API key.
+    '''21m00Tcm4TlvDq8ikWAM''',
+    # The `Ed25519PrivateKey` / `Ed25519PublicKey` type names in
+    # app/compliance_v2/audit_integrity/signing.py, matched by generic-api-key
+    # because they look like a 16-char token with capitals.
+    '''Ed25519(Private|Public)Key''',
+]

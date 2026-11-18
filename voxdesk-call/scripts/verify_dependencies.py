@@ -89,6 +89,13 @@ TRANSITIVE_ALLOWLIST: frozenset[str] = frozenset({
 # The project's own top-level packages — never treated as third-party.
 LOCAL_PACKAGES: frozenset[str] = frozenset({
     "app",
+    # services/sip-gateway/bridge — a first-party package, not a distribution.
+    # tests/telephony/test_sip_bridge.py reaches it with
+    # ``sys.path.insert(0, BRIDGE_DIR)`` before ``from bridge import ...``, so a
+    # scanner that imports from the repo root without that path sees
+    # ``No module named 'bridge'`` and blamed requirements.txt for it. PART 10
+    # measured that as 1 of the 2 "source-import" failures on a clean install.
+    "bridge",
     "bench",
     "tests",
     "scripts",
@@ -153,6 +160,46 @@ def _stdlib_names() -> frozenset[str]:
     return frozenset(names)
 
 
+def guarded_import_names(tree: ast.Module) -> set[str]:
+    """Top-level names imported inside a ``try`` that handles ``ImportError``.
+
+    Code like ``scripts/make_hold_music.py`` does::
+
+        try:
+            import imageio_ffmpeg
+        except ModuleNotFoundError:
+            return "ffmpeg"
+
+    which is a supported state of the world, not a broken install. ``loadtest/``
+    used to be excluded from the scan for exactly this reason (see
+    :func:`scan_source`); doing it per-name instead of per-directory means the
+    scanner keeps reading the file and still reports it — as a warning — and an
+    *unguarded* import of the same module remains an error.
+    """
+
+    guarded: set[str] = set()
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Try):
+            continue
+        handles_import_error = False
+        for handler in node.handlers:
+            exc = handler.type
+            names = {exc.id} if isinstance(exc, ast.Name) else set()
+            if isinstance(exc, ast.Tuple):
+                names = {e.id for e in exc.elts if isinstance(e, ast.Name)}
+            if names & {"ImportError", "ModuleNotFoundError", "Exception", "BaseException"}:
+                handles_import_error = True
+                break
+        if not handles_import_error:
+            continue
+        for inner in ast.walk(node):
+            if isinstance(inner, ast.Import):
+                guarded.update(alias.name.split(".", 1)[0] for alias in inner.names)
+            elif isinstance(inner, ast.ImportFrom) and inner.module and inner.level == 0:
+                guarded.add(inner.module.split(".", 1)[0])
+    return guarded
+
+
 def scan_source() -> tuple[list[dict[str, str]], list[dict[str, str]]]:
     """Collect third-party imports from app/, scripts/, tests/, alembic/ and
     verify importability.
@@ -162,11 +209,14 @@ def scan_source() -> tuple[list[dict[str, str]], list[dict[str, str]]]:
     fallback module (see the module docstring).
 
     Returns ``(errors, warnings)``. ``errors`` are modules that cannot be
-    imported at all; ``warnings`` are importable modules not declared in
-    ``requirements.txt`` (and not on the transitive allowlist).
+    imported at all *and are not guarded by an ``except ImportError`` handler*;
+    ``warnings`` are importable modules not declared in ``requirements.txt``
+    (and not on the transitive allowlist), plus unimportable ones that the
+    importer explicitly tolerates.
     """
     stdlib = _stdlib_names()
     importers: dict[str, set[str]] = {}
+    guarded_names: set[str] = set()
     for root in ("app", "scripts", "tests", "alembic"):
         for path in sorted((REPO_ROOT / root).rglob("*.py")):
             if "__pycache__" in path.parts:
@@ -175,6 +225,7 @@ def scan_source() -> tuple[list[dict[str, str]], list[dict[str, str]]]:
                 tree = ast.parse(path.read_text(encoding="utf-8"))
             except SyntaxError:
                 continue
+            guarded_names.update(guarded_import_names(tree))
             for node in ast.walk(tree):
                 if isinstance(node, ast.Import):
                     names = [alias.name for alias in node.names]
@@ -196,6 +247,13 @@ def scan_source() -> tuple[list[dict[str, str]], list[dict[str, str]]]:
         try:
             importlib.import_module(module)
         except Exception as exc:  # report every cause; never crash the report
+            if module in guarded_names:
+                # The importer handles the absence; requiring it anyway is how a
+                # gate gets muted, so it is reported and not failed on.
+                warnings.append({"package": module, "kind": "optional-missing",
+                                 "detail": f"imported by {', '.join(files[:3])}: "
+                                           f"{exc} (guarded by except ImportError)"})
+                continue
             errors.append({"package": module, "kind": "missing",
                            "detail": f"imported by {', '.join(files[:3])}: {exc}"})
             continue

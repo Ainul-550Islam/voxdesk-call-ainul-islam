@@ -409,6 +409,11 @@ def render(
         "never establishes `LIVE` or `VERIFIED_REAL`. The tier legend lives in "
         "`docs/EVIDENCE_STATUS.md`; this header deliberately does not repeat the tier name "
         "so that `grep -c` over this file counts rows, not prose.\n\n"
+        f"Rendered with reference date `{reference_date}`. Every `Stale (>Nd: ...)` marker and "
+        f"every tier downgrade below is relative to that date, not to the day this file is read. "
+        "Regenerate with `python3 scripts/generate_feature_matrix.py --reference-date evidence` "
+        "(the snapshot gate, which compares this file against the evidence it ships beside) or "
+        "`make verify-sale` (which re-runs the JUnit evidence and renders at today's date).\n\n"
         "| Feature | Test status | Evidence tier | Provider evidence | Evidence | Last verified date |\n"
         "|---|---|---|---|---|---|\n"
     )
@@ -457,9 +462,15 @@ def render_evidence_status(
                 f"credentials; run date `{run_date}`)"
             )
         elif age is not None and 0 <= age <= max_age_days:
-            freshness_banner = f"FRESH (`{passed}` provider(s) PASS; `{age}` day(s) old; window `<= {max_age_days}` days)"
+            freshness_banner = (
+                f"FRESH (`{passed}` provider(s) PASS; `{age}` day(s) old as of `{reference_date}`; "
+                f"window `<= {max_age_days}` days)"
+            )
         else:
-            freshness_banner = f"STALE (`{age}` day(s) old; exceeds `<= {max_age_days}` day window)"
+            freshness_banner = (
+                f"STALE (`{age}` day(s) old as of `{reference_date}`; exceeds `<= {max_age_days}` "
+                "day window)"
+            )
 
     lines = [
         "# VoxDesk — Real External Provider Evidence Status",
@@ -469,6 +480,8 @@ def render_evidence_status(
         "",
         f"- **Latest Run Date (UTC)**: `{run_date}`",
         f"- **Freshness Status**: {freshness_banner}",
+        f"- **Reference Date Used**: `{reference_date}` (the age above is measured to this date, "
+        "not to the day you are reading this file)",
         "- **`provider_fakes`**: `false` (enforced across every `tests/real/` suite)",
         f"- **Evidence JSON**: [`{artifact_rel}`](../{artifact_rel})",
         f"- **JUnit XML**: [`{junit_rel}`](../{junit_rel})",
@@ -560,19 +573,33 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--reference-date",
         default=datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+        help="ISO date, or `evidence` to pin the render to the date recorded in the JUnit "
+        "evidence. CI renders at today's date so the freshness window is re-tested; the "
+        "snapshot gate renders at the evidence date so `--check` compares the committed docs "
+        "with the committed evidence and stays green on a five-month-old export.",
     )
     parser.add_argument("--max-age-days", type=int, default=FRESHNESS_MAX_DAYS)
     parser.add_argument("--check", action="store_true")
     parser.add_argument("--require-fresh-real-runs", action="store_true")
     args = parser.parse_args(argv)
 
-    ref_date = _parse_iso_date(args.reference_date)
-    if ref_date is None:
-        print(f"ERROR: invalid --reference-date {args.reference_date!r}", file=sys.stderr)
-        return 2
-
     data = yaml.safe_load(args.manifest.read_text(encoding="utf-8"))
     evidence_date = junit_execution_date(args.junit)
+    requested_ref = str(args.reference_date or "").strip()
+    if requested_ref.lower() in {"evidence", "auto"}:
+        ref_date = _parse_iso_date(evidence_date)
+    else:
+        ref_date = _parse_iso_date(requested_ref)
+    if ref_date is None:
+        print(
+            f"ERROR: invalid --reference-date {args.reference_date!r}"
+            + ("" if requested_ref.lower() not in {"evidence", "auto"}
+               else " (no execution date in the JUnit evidence to pin to)")
+            + "\n",
+            file=sys.stderr,
+        )
+        return 2
+
     results = junit_results(args.junit, root=ROOT) if evidence_date else {}
     real_doc = load_latest_real_evidence(args.real_evidence_dir)
 

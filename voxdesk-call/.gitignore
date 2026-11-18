@@ -78,7 +78,12 @@ reports/check/chunks/*.xml
 reports/check/junit/
 !reports/check/.gitkeep
 !reports/check/*.md
-.cache/
+.cache/*
+# ...except the fingerprinted pytest collection count. scripts/pytest_collection_stats.py
+# invalidates it from the test sources and the pytest environment, so shipping it is safe,
+# and without it a fresh export has to re-collect 8k nodes before any doc number can be
+# checked - the slowest possible way to prove README.md is right.
+!.cache/pytest-collection-stats.json
 docs/archive/PART_0_REPORT_pre-reaudit.md
 docs/archive/part0-initial-evidence/openapi-before.json
 
@@ -118,6 +123,13 @@ evidence/*
 evidence/demo/*.wav
 # The small *_SUMMARY.json files are the committed record of a CI run.
 reports/**
+# `reports/**` excludes the *directory* `reports/check/`, and git never descends into an
+# excluded directory, so a negation like `!reports/**/*.md` cannot re-include the check
+# reports — the rule looked like "keep the .md files" while silently untracking them for
+# anyone who added the tree fresh (the original history had them only because they were
+# force-added once). Re-including the directory is what makes the file negations work.
+!reports/check/
+!reports/check/.gitkeep
 !reports/**/*.md
 !reports/*_SUMMARY.json
 !reports/deploy_asset_validation.json
@@ -128,3 +140,23 @@ htmlcov/
 # The 8.5 MB pytest dump has been superseded by reports/TEST_EVIDENCE_SUMMARY.json.
 FINAL_TEST_RESULTS.json
 # <<< voxdesk:repo-cleanup <<<
+
+# ---- PART 10 (P10-06): generated config, artifacts and build output ----
+# Every `.env`-shaped file is generated (scripts/make_check_env.py, operator
+# copies of the shipped examples) and must never be tracked — the ignore rule
+# that used to cover only `.env`, `.env.staging` and `.env.check` let
+# `scripts/live_local.env` into git. The `!…example` exceptions keep the
+# templates tracked, because those are the files an operator copies from.
+.env.*
+# `scripts/live_local.env` is exactly this shape: a name ending in `.env`, not
+# starting with it. Ignore both, and keep the `.example` templates readable.
+*.env
+!*.env.example
+!.env.example
+!.env.*.example
+# Command output and evidence dumps written by `make *-evidence`, `make
+# check-*` and the validation scripts. They belong on disk, not in a clone.
+artifacts/
+# Compiled object files: `make`/CI builds them, a clone must not carry them.
+*.a
+*.o

@@ -2,6 +2,7 @@
   "schema": "voxdesk.real_call_study/v1",
   "generated_at": "2026-11-07T06:00:21Z",
   "study_date": "2026-11-07",
+  "run_date": "2026-11-07",
   "provider_fakes": false,
   "status": "NOT_RUN_MISSING_CREDENTIALS",
   "missing_credentials": [
