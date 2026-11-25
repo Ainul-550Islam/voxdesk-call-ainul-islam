@@ -123,27 +123,47 @@ def filter_enabled_tools(
     """Apply the agent's explicit built-in allowlist while retaining scoped custom tools."""
     custom = {str(name) for name in (custom_names or set()) if name}
     if enabled_tools is None:
-        allowed = None
+        allowed: set[str] | None = None
     else:
-        allowed = {str(name).strip().lower() for name in enabled_tools if str(name).strip()}
+        allowed = set()
+        for entry in enabled_tools:
+            normalized = str(entry).strip().lower()
+            if normalized:
+                allowed.add(normalized)
 
+    # Profiling (PART 17B) made this the single hottest Python-level loop of the
+    # per-call preamble: ~28 us for 12 schemas, almost all of it dict lookups and
+    # attribute-free overhead rather than real work. The loop below keeps the
+    # semantics identical and hoists everything constant out of it. The one
+    # behavioural fast path: with no allowlist and IVR navigation enabled, every
+    # named schema is kept, so the alias table is never consulted.
     filtered: list[dict] = []
+    append = filtered.append
+    aliases_table = _TOOL_ENABLE_NAMES
+    allowed_is_none = allowed is None
     for schema in schemas:
-        function = schema.get("function") if isinstance(schema, dict) else None
-        name = str((function or {}).get("name") or "")
+        if not isinstance(schema, dict):
+            continue
+        function = schema.get("function")
+        if not isinstance(function, dict):
+            continue
+        name = function.get("name")
         if not name:
             continue
         if name in custom:
-            filtered.append(schema)
+            append(schema)
             continue
         if name == "navigate_ivr" and not ivr_navigation_enabled:
             continue
-        if allowed is None:
-            filtered.append(schema)
+        if allowed_is_none:
+            append(schema)
             continue
-        aliases = _TOOL_ENABLE_NAMES.get(name, frozenset({name}))
-        if aliases & allowed:
-            filtered.append(schema)
+        aliases = aliases_table.get(name)
+        if aliases is None:
+            if name in allowed:
+                append(schema)
+        elif not aliases.isdisjoint(allowed):
+            append(schema)
     return filtered
 
 

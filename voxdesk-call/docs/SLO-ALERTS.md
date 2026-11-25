@@ -92,9 +92,13 @@ Every alert in `observability/alerts.yml` maps to a concrete operator action and
 * **What it means:** `/health/ready` is reporting the database unreachable (`voxdesk_db_up == 0`), and readiness gates are draining the node.
 * **Act:** Follow [`docs/RUNBOOKS/db-failover.md`](RUNBOOKS/db-failover.md). Check `pg_isready`, connection pool limits, standby promotion, or restore using `scripts/dr_drill.sh` / `scripts/restore.sh`.
 
-#### VoxDeskHighErrorRate / VoxDeskSlowP95
-* **What it means:** Either a code regression, worker CPU saturation, or a degraded downstream dependency.
-* **Act:** Follow [`docs/RUNBOOKS/high-latency.md`](RUNBOOKS/high-latency.md). Correlate the 5xx/latency spike with deploy timestamps and `request_id` structured logs.
+#### VoxDeskHighErrorRate
+* **What it means:** The HTTP 5xx ratio crossed its threshold: either a code regression, worker CPU saturation, or a degraded downstream dependency.
+* **Act:** Follow [`docs/RUNBOOKS/high-latency.md`](RUNBOOKS/high-latency.md). Correlate the 5xx spike with deploy timestamps and `request_id` structured logs.
+
+#### VoxDeskSlowP95
+* **What it means:** HTTP p95 latency is above 2 s over 5 minutes while the service is still answering. This is a *symptom* alert: it does not say whether the API, the database, or a provider is slow.
+* **Act:** Follow [`docs/RUNBOOKS/high-latency.md`](RUNBOOKS/high-latency.md). Split by route (`voxdesk_http_request_duration_seconds_bucket{path=...}`) before changing anything — the same alert fires for a slow webhook endpoint and for a saturated connection pool.
 
 #### VoxDeskCallFailureRate
 * **What it means:** More than 30% of finished calls are `failed` (`no_answer` is excluded as normal caller behavior).

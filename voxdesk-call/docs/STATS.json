@@ -1,17 +1,17 @@
 {
   "schema": "voxdesk.repo_stats/v1",
-  "generated_date": "2026-11-18",
-  "source_files": 1959,
-  "source_physical_lines": 449484,
-  "registered_routes": 1662,
-  "collected_pytest_nodes": 8142,
-  "junit_passed_tests": 1364,
+  "generated_date": "2026-11-23",
+  "source_files": 1969,
+  "source_physical_lines": 459613,
+  "registered_routes": 1838,
+  "collected_pytest_nodes": 8504,
+  "junit_passed_tests": 1365,
   "junit_failed_tests": 0,
   "junit_skipped_tests": 18,
   "junit_suites": {
     "feature_evidence": {
-      "tests": 532,
-      "passed": 524,
+      "tests": 533,
+      "passed": 525,
       "failures": 0,
       "errors": 0,
       "skipped": 8
@@ -38,7 +38,7 @@
       "skipped": 10
     }
   },
-  "alembic_head": "0091_call_debug_pcap_metadata",
+  "alembic_head": "0095_calls_number_width",
   "feature_matrix": {
     "total": 41,
     "LIVE": 38,
@@ -46,16 +46,21 @@
     "NOT_CONFIGURED": 1,
     "PLANNED": 1
   },
+  "last_truth_run": {
+    "command": "make verify-truth",
+    "exit_code": 0,
+    "finished_utc": "2026-11-19T11:19:31+00:00"
+  },
   "gates": {
     "G0": "VERIFIED",
-    "G1": "VERIFIED",
-    "G2": "VERIFIED",
-    "G3": "VERIFIED",
-    "G4": "VERIFIED",
-    "G5": "VERIFIED",
-    "G6": "VERIFIED",
-    "G7": "VERIFIED",
-    "G8": "VERIFIED",
-    "G9": "VERIFIED"
+    "G1": "NOT_RUN",
+    "G2": "NOT_RUN",
+    "G3": "NOT_RUN",
+    "G4": "NOT_RUN",
+    "G5": "NOT_RUN",
+    "G6": "NOT_RUN",
+    "G7": "NOT_RUN",
+    "G8": "NOT_RUN",
+    "G9": "NOT_RUN"
   }
 }

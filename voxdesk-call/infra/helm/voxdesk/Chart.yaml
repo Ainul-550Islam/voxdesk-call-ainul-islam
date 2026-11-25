@@ -1,6 +1,12 @@
 apiVersion: v2
 name: voxdesk
-description: VoxDesk API and durable scheduler
+# The chart ships the whole call path, not just the API: api, scheduler, realtime
+# gateway, media engine, SIP gateway, coturn, contact-center workers, the front
+# end, the pre-upgrade migration Job, the backup CronJob, the compliance and
+# rota rollup CronJobs, plus NetworkPolicy / ServiceMonitor / PrometheusRule and
+# the optional ExternalSecret. Bump `version` whenever a template or a default is
+# added, so `helm history` in an incident is meaningful.
+description: VoxDesk multi-tenant AI voice platform — API, scheduler, realtime gateway, media engine, SIP gateway, coturn, workers, console, migration hook and scheduled backups
 type: application
-version: 0.1.0
+version: 0.2.0
 appVersion: "0.5.0"

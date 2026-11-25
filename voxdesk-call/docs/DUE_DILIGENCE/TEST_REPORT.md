@@ -13,11 +13,11 @@ treating them as current validation.
 
 | Plane / Test Suite | Runner | Test Files / Packages | Verified Test Cases | Failures / Errors | Status |
 |---|---|---:|---:|---:|---|
-| **Python Backend Total Collected (`tests/`)** | `pytest --collect-only` | `732` files | `8142` collected; collection only | `not measured` | **MEASURED** |
-| **Feature Matrix Evidence Suite** | `pytest --junitxml` | `evidence/junit/feature_evidence.xml` | `524` passed, `8` skipped (`60.50s`) | `0` | **PASS** |
+| **Python Backend Total Collected (`tests/`)** | `pytest --collect-only` | `771` files | `8504` collected; collection only | `not measured` | **MEASURED** |
+| **Feature Matrix Evidence Suite** | `pytest --junitxml` | `evidence/junit/feature_evidence.xml` | `525` passed, `8` skipped (`56.32s`) | `0` | **PASS** |
 | **Batch 07 platform-v2 suites** | `make batch07-check` | `evidence/batch07/batch07-platform-junit.xml` | `744` passed, `0` skipped | `0` | **PASS** |
 | **Batch 07 truth guards** | `make batch07-check` | `evidence/batch07/batch07-truth-junit.xml` | `96` passed, `0` skipped | `0` | **PASS** |
-| **Next.js dashboard (`dashboard-next/`)** | `vitest run` + `tsc --noEmit` + `next build` | `dashboard-next/` (the retired Vite console is gone; PART 17A) | `194` passed, typecheck clean, standalone build green | `0` | **PASS** |
+| **Next.js dashboard (`dashboard-next/`)** | `vitest run` + `tsc --noEmit` + `next build` | Next production build; original Vite sources preserved separately | Historical: `194` passed, typecheck and build passed; not rerun in Part 10 | `0` recorded | **HISTORICAL** |
 | **Rust / Go / C++ services** | Cargo, Go, and CTest | `reports/POLYGLOT_EVIDENCE_SUMMARY.json` | Verified in polyglot summary | `0` | **MEASURED** |
 
 ---
@@ -26,14 +26,14 @@ treating them as current validation.
 
 | Gate | Command | Result |
 |---|---|---|
-| **Python Linter (`ruff`)** | `ruff check app tests scripts bench loadtest security_harness sdk` | `PASS` (`0` findings across full repository) |
+| **Python Linter (`ruff`)** | `ruff check app tests scripts` | For the current measured result see `reports/PART_10_REPORT.md`; this table is not an execution. |
 | **Python Types (`mypy`)** | Scoped Batch 07 files | `PASS`; 51 files, no issues |
 | **Null-Byte Scanner** | `python scripts/verify_no_null_bytes.py` | `[]` (`0` corrupted files) |
 | **Filler / Clone Scanner** | `python scripts/verify_no_filler.py` | `0` findings |
 | **Fake-Success Scanner** | `python scripts/verify_no_fake_success.py` | `0` unallowlisted findings; `scripts/fake_success_allowlist.txt` is `0` bytes |
 | **Dependency Pin Verification** | `python scripts/verify_dependencies.py` | `OK: all third-party imports are declared in requirements.txt` |
 | **Protobuf / OpenAPI / AsyncAPI Contracts** | `python scripts/verify_contracts.py` | `OK: contracts verified` |
-| **Alembic Single Head Verification** | `python -m alembic heads` | `0091_call_debug_pcap_metadata (head)` (`356` registered tables) |
+| **Alembic Single Head Verification** | `python -m alembic heads` | `0095_calls_number_width (head)` (`360` registered tables) |
 | **Terraform / Helm / Caddy** | `make batch07-check` | `PASS`; see `reports/deploy_asset_validation.json` |
 | **SDK / Admin Console** | `make batch07-check` | `PASS`; native Android/iOS source checks were structural, not compiled |
 

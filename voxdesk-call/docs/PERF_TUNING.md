@@ -168,3 +168,65 @@ be justified individually. None is.
   for a small dev box, not a deployment recommendation: swapping under a
   memory-heavy process is slower, not faster, and the real answer is a bigger
   box or a smaller audit per process.
+
+---
+
+## 6. Per-call CPU on the voice pipeline preamble (PART 17B)
+
+The voice path's per-call setup is pure Python and runs before any media moves:
+`build_language_runtime`, `filter_enabled_tools`, `requires_runtime_stt`,
+`_dynamic_variables_instruction`. It had never been measured, so "the pipeline is
+slow, profile it" was an instruction with no baseline. This section is the
+baseline, and the change that came out of it.
+
+**Harness.** `scripts/bench_pipeline_preamble.py` — ships in the repo, runs the
+exact four functions against a bilingual agent with an explicit allowlist and the
+12 live tool schemas from `app/agent/functions.py`. Median of 5 rounds × 2000
+calls, same machine, same interpreter, back to back on the two trees.
+
+**Result.**
+
+| Tree | median µs/call | min | max |
+| --- | --- | --- | --- |
+| before (PART 18 v6 tree, unmodified) | 39.19 | 31.07 | 45.99 |
+| after (PART 17B) | **14.51** | 13.88 | 15.42 |
+| repeat 1 | 45.20 → **16.65** | 39.21 → 15.68 | 48.40 → 22.61 |
+| repeat 2 | 38.43 → **13.94** | 37.00 → 13.90 | 47.12 → 15.00 |
+
+≈ **−63 %** of the preamble's CPU per call, consistently across runs (the two
+trees' min/max ranges do not overlap). Reproduce:
+
+```sh
+python3 scripts/bench_pipeline_preamble.py          # 2000 calls × 5 rounds
+python3 scripts/bench_pipeline_preamble.py --json   # same, machine-readable
+```
+
+**What was actually hot.** `cProfile` sorted by `tottime` put exactly two things
+at the top, and neither was where the folklore pointed (no JSON encoding, no
+prompt building, no provider client construction — those are noise at this size):
+
+1. `filter_enabled_tools` — ~28 µs of the ~39 µs. Almost all of it was per-schema
+   `str()`/`.strip()`/`.lower()` on values that were already strings, plus two
+   dict lookups per schema. Rewritten to hoist the constant work, skip malformed
+   entries structurally, and use `frozenset.isdisjoint` against the allowlist.
+2. `build_language_policy` + `resolve_language_config` — called two to three times
+   per call, each only reading the static locale tables in `app/core/i18n.py`.
+   `resolve_language_config` is now `lru_cache`d (it returns a frozen dataclass, so
+   sharing the instance cannot be mutated by a caller); `build_language_policy`
+   memoizes its *fields* and still constructs a **fresh** `LanguagePolicy` per
+   call, so no live call can observe another's state.
+
+**What did not change — and how that is proven.** Behaviour is pinned by
+`tests/agent/test_pipeline_cpu_budget.py` (12 tests: the full allowlist matrix,
+alias direction, custom-tool survival, IVR removal, malformed schemas, the live
+`TOOL_SCHEMAS` table, cache hit/miss behaviour, and that an invalid policy still
+raises), plus the existing suites: `tests/agent` + `tests/telephony` → **1169
+passed, 15 skipped**. A benchmark cannot fail; that test file can.
+
+**Honest sizing.** 25 µs saved per call is not a latency win — a call lasts
+minutes and the preamble is one of thousands of things that happen. At 10,000
+calls an hour it is 0.25 s of CPU an hour. It is worth doing because it is free,
+it is on the hot path, and it removes a repeated table lookup from every single
+call — not because it will be felt. Anything claiming the pipeline got
+"materially faster" from this would be overselling microsecond work, and the
+numbers above are the whole claim.

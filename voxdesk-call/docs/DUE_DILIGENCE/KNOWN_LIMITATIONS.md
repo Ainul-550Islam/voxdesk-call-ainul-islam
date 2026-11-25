@@ -5,18 +5,19 @@ from `docs/STATS.json`, `tests/truth/feature_manifest.yaml`, and `docs/SALES/FEA
 
 Per Rule `R11` and Gate `G9`, any capability whose verified status is
 `API_ONLY`, `NOT_CONFIGURED`, or `PLANNED` is explicitly listed here so
-buyers have complete visibility before acquisition.
+buyers have complete visibility before acquisition. A matrix status is distinct
+from its evidence tier: no real carrier or provider run is implied by `LIVE_FAKE`.
 
 ## Verified Repository Baseline (`docs/STATS.json`)
 
-- **Source files**: `1959` (`449,484` physical lines)
-- **Registered FastAPI routes**: `1662`
-- **Collected pytest nodes**: `8,142` (collection count; `1,364` passed JUnit test executions recorded in `docs/STATS.json`)
-- **Alembic migration head**: `0091_call_debug_pcap_metadata`
+- **Source files**: `1969` (`459,613` physical lines)
+- **Registered FastAPI routes**: `1838`
+- **Collected pytest nodes**: `8,504` (collection count; `1,365` passed JUnit test executions recorded in `docs/STATS.json`)
+- **Alembic migration head**: `0095_calls_number_width`
 
 ---
 
-## 1. Non-`LIVE` Rows in `FEATURE_MATRIX_VERIFIED.md`
+## 1. Non-`LIVE` Rows in `docs/SALES/FEATURE_MATRIX_VERIFIED.md`
 
 Out of **41** tracked capabilities in the verified feature matrix:
 - **`LIVE`**: **38** capabilities
@@ -26,7 +27,7 @@ Out of **41** tracked capabilities in the verified feature matrix:
 |---:|---|---|---|---|---|
 | 3 | Voice Pipeline | **LLMs and speech-to-speech** | `API_ONLY` | `app/agent/providers/failover.py`, `app/agent/providers/s2s_providers.py` | Multi-LLM circuit-breaker failover is LIVE; direct speech-to-speech (OpenAI Realtime / Gemini Live) is API_ONLY requiring live upstream WebSocket keys. |
 | 19 | Telephony & Channels | **Multi-carrier live media** | `NOT_CONFIGURED` | `app/telephony/telnyx_handler.py`, `app/telephony/providers/factory.py` | Twilio live AI media streaming is LIVE; Telnyx/Vonage/SignalWire/SIP media streaming is NOT_CONFIGURED without carrier media bridge credentials. |
-| 35 | Enterprise & Compliance | **HIPAA / SOC 2 Type II / GDPR / ISO 27001** | `PLANNED` | `app/core/retention.py`, `app/audit/redaction.py`, `app/telephony/consent.py` | Technical safeguards (PII redaction, TTL retention purges, legal hold, two-party consent TwiML) are verified; third-party SOC 2/HIPAA/ISO attestation is PLANNED. |
+| 35 | Enterprise & Compliance | **HIPAA / SOC 2 Type II / GDPR / ISO 27001** | `PLANNED` | `app/core/retention.py`, `app/gdpr/redact.py`, `app/telephony/consent.py` | Technical safeguards (PII redaction, TTL retention purges, legal hold, two-party consent TwiML) are verified; third-party SOC 2/HIPAA/ISO attestation is PLANNED. |
 
 ---
 
@@ -66,12 +67,7 @@ Out of **41** tracked capabilities in the verified feature matrix:
 
 ## 3. Operational & Capacity Boundaries
 
-1. **Single-Worker Voice Concurrency Knee**: As measured in
-   [`docs/CAPACITY_MODEL.md`](../CAPACITY_MODEL.md), a single Python
-   Uvicorn worker on 2 vCPU / 2 GB RAM sustains **20 concurrent calls** with
-   real-time spectral denoise enabled (`NoisereduceFilter`) or **30 concurrent
-   calls** with denoise disabled while keeping pipeline `e2e_p95 < 500 ms`.
-   Higher concurrency scales horizontally via Kubernetes HPA (`infra/helm/voxdesk/templates/api.yaml`).
+1. **Single-worker capacity is not a live-call guarantee.** `docs/CAPACITY_MODEL.md` records a 2-vCPU test at 10, 20 and 30 concurrent calls with deterministic STT/LLM/TTS fakes, with and without denoise. It measures worker cost, not provider latency or a proved production ceiling. The HPA is configured in `infra/helm/voxdesk/templates/api.yaml`; an operator still needs a representative live load test.
 2. **External Provider Keys Required for Live PSTN / AI Calls**: In offline CI,
    provider calls are exercised against deterministic local fakes (`respx`,
    `FakeTwilioRestClient`, `FakeSTT` / `FakeLLM` / `FakeTTS`). Live PSTN and AI calls require
@@ -89,12 +85,12 @@ checkout. Neither is presented as a pass.
 
 | Evidence | Required | Artifact | Status | Age (days) | Generated (UTC) |
 |---|---|---|---|---|---|
-| `test` | yes | `reports/TEST_EVIDENCE_SUMMARY.json` | **STALE** | 19.76 | 2026-10-30T05:47:28Z |
-| `polyglot` | yes | `reports/POLYGLOT_EVIDENCE_SUMMARY.json` | **STALE** | 19.75 | 2026-10-30T05:54:23Z |
-| `security` | yes | `reports/SECURITY_EVIDENCE_SUMMARY.json` | **PRESENT** | 0.51 | 2026-11-18T11:51:52Z |
-| `deploy-assets` | yes | `reports/deploy_asset_validation.json` | **PRESENT** | 0.58 | 2026-11-18T10:11:37Z |
-| `staging` | yes | `evidence/staging` | **MISSING** | — | — |
-| `live` | no (opt-in) | `evidence/live/twilio-twilio-control-plane-20261101T142529Z.json` | **STALE** | 17.4 | 2026-11-01T14:25:29Z |
+| `test` | yes | `reports/TEST_EVIDENCE_SUMMARY.json` | **PRESENT** | 0.73 | 2026-11-23T06:26:51Z |
+| `polyglot` | yes | `reports/POLYGLOT_EVIDENCE_SUMMARY.json` | **PRESENT** | 2.76 | 2026-11-21T05:41:33Z |
+| `security` | yes | `reports/SECURITY_EVIDENCE_SUMMARY.json` | **PRESENT** | 5.51 | 2026-11-18T11:51:52Z |
+| `deploy-assets` | yes | `reports/deploy_asset_validation.json` | **PRESENT** | 5.58 | 2026-11-18T10:11:37Z |
+| `staging` | yes | `evidence/staging/2026-11-23/staging_proof.json` | **PRESENT** | 0.73 | 2026-11-23T06:35:20Z |
+| `live` | no (opt-in) | `evidence/live/twilio-twilio-control-plane-20261101T142529Z.json` | **STALE** | 22.4 | 2026-11-01T14:25:29Z |
 
 Regenerate with: `python scripts/pytest_chunks.py` then
 `python scripts/reconcile_validation_results.py --ci` (test),

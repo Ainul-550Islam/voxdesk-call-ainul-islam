@@ -1,0 +1,190 @@
+{
+  "schema": "voxdesk.staging_proof/v1",
+  "mode": "staging-proof",
+  "generated_at": "2026-11-22T17:23:32Z",
+  "timestamp": "2026-11-22T17:23:32+00:00",
+  "release_commit": "",
+  "environment": "staging",
+  "compose_files": [
+    "docker-compose.prod.yml",
+    "docker-compose.check.yml"
+  ],
+  "compose_project": "voxdesk-check",
+  "base_url": "http://localhost:8000",
+  "duration_seconds": 93.55,
+  "steps": [
+    {
+      "step": "compose up --build",
+      "status": "PASS",
+      "detail": "exit=0",
+      "exit_code": 0,
+      "duration_seconds": 17.784,
+      "log": "evidence/staging/2026-11-22/raw/01-compose-up.log",
+      "log_sha256": "eb3477b633dd7d27c23f7fa4c8e5e7fe26ffa000f92feca2ffbeb9d052878452"
+    },
+    {
+      "step": "alembic upgrade head (advisory-locked)",
+      "status": "PASS",
+      "detail": "exit=0",
+      "exit_code": 0,
+      "duration_seconds": 23.727,
+      "log": "evidence/staging/2026-11-22/raw/02-alembic-upgrade.log",
+      "log_sha256": "bb67332c847f24ee07708981c215edfbb57aa06ec8dccf60e635c1ad9d3c32cb"
+    },
+    {
+      "step": "api readiness (/health/ready)",
+      "status": "PASS",
+      "detail": "ready after 6 attempt(s) in 15.149s last=HTTP 200 {\"status\":\"ready\",\"checks\":{\"database\":{\"ok\":true},\"redis\":{\"ok\":true,\"configured\":true},\"providers\":{\"ok\":false,\"missing\":[\"deepgr",
+      "exit_code": 0,
+      "duration_seconds": 15.149,
+      "log": "evidence/staging/2026-11-22/raw/02b-api-readiness.log",
+      "log_sha256": "1463d24fad673bb3d46156098ff4795b13f1dc62805bfd99e44151c11bfb66f4"
+    },
+    {
+      "step": "owner creation (or already present)",
+      "status": "PASS",
+      "detail": "exit=0 (already-exists is not a failure; HTTP smoke proves login)",
+      "exit_code": 0,
+      "duration_seconds": 3.439,
+      "log": "evidence/staging/2026-11-22/raw/03-create-owner.log",
+      "log_sha256": "ade2fcbbd2927e5a2ec9b83f563d75f2d1c8d15b3952725fc404f6bebaad5e5b"
+    },
+    {
+      "step": "http smoke",
+      "status": "PASS",
+      "detail": "exit=0",
+      "exit_code": 0,
+      "duration_seconds": 8.105,
+      "log": "evidence/staging/2026-11-22/raw/04-http-smoke.log",
+      "log_sha256": "b16ecca98c36786cae6fce927e16a3eb758ed07a79c730734f9a9a99e6addc48"
+    },
+    {
+      "step": "twilio webhook smoke",
+      "status": "PASS",
+      "detail": "exit=0",
+      "exit_code": 0,
+      "duration_seconds": 0.767,
+      "log": "evidence/staging/2026-11-22/raw/05-twilio-webhook-smoke.log",
+      "log_sha256": "011e424dfd7cdd30b0a02347e1ca1e13da80100596dcb5e7ccb48bb27112a1d1"
+    },
+    {
+      "step": "call ws smoke",
+      "status": "PASS",
+      "detail": "exit=0",
+      "exit_code": 0,
+      "duration_seconds": 1.117,
+      "log": "evidence/staging/2026-11-22/raw/06-call-ws-smoke.log",
+      "log_sha256": "3515d7b88837ba65b449033454a983621649e6fdd55877ddce44d8c23e8d0e60"
+    },
+    {
+      "step": "web call token smoke",
+      "status": "PASS",
+      "detail": "exit=0",
+      "exit_code": 0,
+      "duration_seconds": 0.616,
+      "log": "evidence/staging/2026-11-22/raw/07-web-call-token-smoke.log",
+      "log_sha256": "146a15866dffbed1a84298146abf8428ad3b984185abb5b77c85ad24c244afa1"
+    },
+    {
+      "step": "database reachable and migrated",
+      "status": "PASS",
+      "detail": "exit=0",
+      "exit_code": 0,
+      "duration_seconds": 0.267,
+      "log": "evidence/staging/2026-11-22/raw/08-db-verify.log",
+      "log_sha256": "35db2b6aec9fe2463aa3ebe9d6427653bd80419f8205eb03c7b78fad6f6fc397"
+    },
+    {
+      "step": "backup.create",
+      "status": "PASS",
+      "detail": "residency: no tenant has a region pin; the dump is written to /var/tmp/cert/voxdesk-call/backups-staging and no physical residency is claimed\nBacking up voxdesk@127.0.0.1 -> /var/tmp/cert/voxdesk-call/backups-staging/voxdesk-20261122-172309.dump\nBackup verified: /var/tmp/cert/voxdesk-call/backups-st"
+    },
+    {
+      "step": "backup.integrity",
+      "status": "PASS",
+      "detail": "pg_restore --list read 3246 archive entries from voxdesk-20261122-172309.dump (3828872 bytes)"
+    },
+    {
+      "step": "backup.restore",
+      "status": "PASS",
+      "detail": "Verifying dump integrity...\nDump verified: /var/tmp/cert/voxdesk-call/backups-staging/voxdesk-20261122-172309.dump\nRestoring /var/tmp/cert/voxdesk-call/backups-staging/voxdesk-20261122-172309.dump into voxdesk_restore_drill@127.0.0.1\nRestore complete and verified: 362 tables in voxdesk_restore_drill"
+    },
+    {
+      "step": "graceful-drain",
+      "status": "PASS",
+      "detail": "api container exited 143 within the 30s grace period"
+    },
+    {
+      "step": "compose down",
+      "status": "PASS",
+      "detail": "exit=0",
+      "exit_code": 0,
+      "duration_seconds": 12.365,
+      "log": "evidence/staging/2026-11-22/raw/99-compose-down.log",
+      "log_sha256": "14911ab7045b68fc870cd377d78b2f10226b63a21045673ebf2cdbaab5c54c0d"
+    }
+  ],
+  "raw_logs": [
+    {
+      "file": "evidence/staging/2026-11-22/raw/01-compose-up.log",
+      "bytes": 13308,
+      "sha256": "eb3477b633dd7d27c23f7fa4c8e5e7fe26ffa000f92feca2ffbeb9d052878452"
+    },
+    {
+      "file": "evidence/staging/2026-11-22/raw/02-alembic-upgrade.log",
+      "bytes": 517,
+      "sha256": "bb67332c847f24ee07708981c215edfbb57aa06ec8dccf60e635c1ad9d3c32cb"
+    },
+    {
+      "file": "evidence/staging/2026-11-22/raw/02b-api-readiness.log",
+      "bytes": 844,
+      "sha256": "1463d24fad673bb3d46156098ff4795b13f1dc62805bfd99e44151c11bfb66f4"
+    },
+    {
+      "file": "evidence/staging/2026-11-22/raw/03-create-owner.log",
+      "bytes": 309,
+      "sha256": "ade2fcbbd2927e5a2ec9b83f563d75f2d1c8d15b3952725fc404f6bebaad5e5b"
+    },
+    {
+      "file": "evidence/staging/2026-11-22/raw/04-http-smoke.log",
+      "bytes": 5255,
+      "sha256": "b16ecca98c36786cae6fce927e16a3eb758ed07a79c730734f9a9a99e6addc48"
+    },
+    {
+      "file": "evidence/staging/2026-11-22/raw/05-twilio-webhook-smoke.log",
+      "bytes": 1325,
+      "sha256": "011e424dfd7cdd30b0a02347e1ca1e13da80100596dcb5e7ccb48bb27112a1d1"
+    },
+    {
+      "file": "evidence/staging/2026-11-22/raw/06-call-ws-smoke.log",
+      "bytes": 2358,
+      "sha256": "3515d7b88837ba65b449033454a983621649e6fdd55877ddce44d8c23e8d0e60"
+    },
+    {
+      "file": "evidence/staging/2026-11-22/raw/07-web-call-token-smoke.log",
+      "bytes": 2653,
+      "sha256": "146a15866dffbed1a84298146abf8428ad3b984185abb5b77c85ad24c244afa1"
+    },
+    {
+      "file": "evidence/staging/2026-11-22/raw/08-db-verify.log",
+      "bytes": 400,
+      "sha256": "35db2b6aec9fe2463aa3ebe9d6427653bd80419f8205eb03c7b78fad6f6fc397"
+    },
+    {
+      "file": "evidence/staging/2026-11-22/raw/99-compose-down.log",
+      "bytes": 1652,
+      "sha256": "14911ab7045b68fc870cd377d78b2f10226b63a21045673ebf2cdbaab5c54c0d"
+    },
+    {
+      "file": "evidence/staging/2026-11-22/raw/drain-inspect.log",
+      "bytes": 156,
+      "sha256": "422364df68d4c1f980fa975115d4561453194420f22958a25bf69539dc19f48e"
+    },
+    {
+      "file": "evidence/staging/2026-11-22/raw/drain-stop.log",
+      "bytes": 161,
+      "sha256": "c7ac4f8245267d70263a813d72fe0d40fb9cc3a920f9814091dd1bead55ecc5d"
+    }
+  ],
+  "overall": "PASS"
+}

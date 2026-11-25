@@ -22,7 +22,7 @@ flowchart TB
         SIP[SIP gateway / Go]
     end
     subgraph App["FastAPI application"]
-        API["REST API (1662 routes)"]
+        API["REST API (1838 routes)"]
         WS["Web call / media WebSocket"]
         Wh[Webhook signature verification]
     end
@@ -38,7 +38,6 @@ flowchart TB
         KMS[["KMS envelope encryption"]]
     end
     subgraph Front
-        Dash["React console (Vite)"]
         Next["Next.js console"]
         Widget["Web-call widget / SDK"]
     end
@@ -48,7 +47,6 @@ flowchart TB
     Vonage -->|signed webhook| Wh
     SIP -->|RTP| RT
     Caddy --> API
-    Caddy --> Dash
     Caddy --> Next
     Widget --> WS
     WS --> Pipe
@@ -60,7 +58,6 @@ flowchart TB
     Pipe --> RT
     RT --> Twilio
     RT --> Telnyx
-    Dash --> API
     Next --> API
 ```
 
@@ -72,10 +69,10 @@ collected tests are not passed tests.
 
 ```json
 {
-  "source_files": 1959,
-  "source_physical_lines": 449484,
-  "registered_routes": 1662,
-  "collected_pytest_nodes": 8142,
+  "source_files": 1969,
+  "source_physical_lines": 459613,
+  "registered_routes": 1838,
+  "collected_pytest_nodes": 8504,
   "passed_tests": "not measured by collection"
 }
 ```
@@ -103,8 +100,8 @@ make up                       # full local stack; the API applies migrations
 docker compose exec -T api python -m scripts.create_owner --help
 ```
 
-Open `http://localhost:8080`; the same Nginx origin serves the dashboard,
-API, and API documentation. The application refuses to boot with a default or short JWT secret, and in
+The local Nginx entry point at `http://localhost:8080` proxies the API;
+run the Next console separately for development (see `docs/DEPLOYMENT.md`). The application refuses to boot with a default or short JWT secret, and in
 production it also requires an https `PUBLIC_BASE_URL`, a webhook signature
 secret, and E2E mode off. Those checks are enforced by
 `tests/security/test_boot_secret_policy.py`.
@@ -116,7 +113,7 @@ secret, and E2E mode off. Those checks are enforced by
 | `bash scripts/run_full_tests.sh` | checks Postgres and Redis, migrates to head, runs every chunk with JUnit and a summary table (`docs/TESTING.md`) |
 | `python scripts/pytest_chunks.py` | runs the whole population in chunks, JUnit per chunk |
 | `python scripts/reconcile_validation_results.py --strict` | fails when collected != recorded; writes `reports/TEST_EVIDENCE_SUMMARY.json` |
-| `make staging-proof` | `evidence/staging/` — writes `<date>/staging_proof.json` from a real `docker compose up --build` |
+| `make staging-proof` | writes `evidence/staging/<date>/staging_proof.json` from a real `docker compose up --build` |
 | `python scripts/live_evidence_run.py --list` | opt-in, cost-guarded live-provider checks -> one JSON per provider under `evidence/live/` |
 | `make polyglot-evidence` | `reports/POLYGLOT_EVIDENCE_SUMMARY.json` for Go, Rust and C++ services |
 | `make security-evidence` | `reports/SECURITY_EVIDENCE_SUMMARY.json` |
@@ -148,17 +145,17 @@ The deterministic allowlisted document bundle is built with
   container, and Caddy routes every non-API path to it. Validated in CI
   (`vitest run`, `tsc --noEmit`, `next build`, and the Playwright
   `dashboard-next/e2e/shipped_image.spec.ts` journey).
-* The Vite dashboard tree it replaced was **deleted in PART 17A** once
-  `docs/UI_PARITY.md` reported `PORT 0`. Its route inventory survives as
-  `docs/ui_parity_routes.json`; every route it had is either served by
-  `dashboard-next` or recorded as `DEAD` with a reason.
+* The former Vite console is retired. Its complete source is recoverable
+  offline (see `docs/history/PRESERVATION.md`); it is not a build input. Edit
+  the shipped pages or `dashboard-next/vite-port/` as appropriate. The frozen
+  route inventory is `docs/ui_parity_routes.json`.
 
 ## Deployment
 
 * Single host: `docker compose -f docker-compose.prod.yml up --build`
   (Caddy terminates TLS; Postgres and Redis publish no host port).
-* Kubernetes: `infra/helm/voxdesk` with `values-prod.yaml` or
-  `values-staging.yaml`; validated by `helm lint`, `helm template` and
+* Kubernetes: `infra/helm/voxdesk` with `infra/helm/voxdesk/values-prod.yaml` or
+  `infra/helm/voxdesk/values-staging.yaml`; validated by `helm lint`, `helm template` and
   `kubeconform`.
 * Cloud: `infra/terraform` modules, validated with `fmt -check`, `validate`
   and `tflint`.
@@ -178,5 +175,5 @@ of them come back.
 
 Commercial source-available licence; see `THIRD_PARTY_LICENSES.md` for bundled
 dependencies. On handover the buyer receives this repository, the runbooks under
-`docs/`, and the evidence generation scripts -- every claim in the sales material
-can be regenerated from a clean clone.
+`docs/`, and the evidence generation scripts. Reproducing real-provider claims
+requires credentials; the measured gates and evidence tiers distinguish what ran.

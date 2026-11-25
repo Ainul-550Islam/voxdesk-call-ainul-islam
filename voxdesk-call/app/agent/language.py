@@ -8,6 +8,7 @@ and `ElevenLabs eleven_multilingual_v2`).
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
 from typing import Any
 
 from app.core.i18n import (
@@ -32,6 +33,14 @@ class LanguageRuntimeProfile:
     llm_instruction: str
 
 
+#: ``resolve_language_config`` is called at least twice per call (once for the LLM
+#: instruction, once by ``requires_runtime_stt``) and is a pure function of the
+#: language code: it only reads the static locale tables in ``app/core/i18n.py``.
+#: It returns a frozen dataclass, so sharing one instance between calls cannot be
+#: mutated by a caller. Profiling the per-call preamble of
+#: ``app/agent/pipeline.py`` put this at the top of the tree after the tool filter
+#: (measured: PART 17B, docs/PERF_TUNING.md §6).
+@lru_cache(maxsize=256)
 def resolve_language_config(language: str | None = None) -> LanguageRuntimeProfile:
     """Resolve STT, TTS, and LLM language settings, including `multi`/`auto` detection."""
     raw = (language or DEFAULT_LANGUAGE).strip()
@@ -229,6 +238,50 @@ def _is_known_language(code: str | None) -> bool:
     return any(known.split("-")[0].lower() == base for known in LANGUAGES)
 
 
+@lru_cache(maxsize=512)
+def _resolved_policy_fields(
+    codes: tuple[str, ...],
+    language: str | None,
+    reply_policy: str,
+    fallback_phrase: str | None,
+) -> tuple[str, tuple[str, ...], str, str, bool, tuple[str, ...]]:
+    """The expensive half of :func:`build_language_policy`, memoized.
+
+    Everything here is a pure function of the four arguments: locale-table
+    lookups and the allowlist validation. The public builder still constructs a
+    *fresh* ``LanguagePolicy`` per call, so caching cannot hand two callers the
+    same mutable object.
+    """
+    detect = any(code.lower() in MULTILINGUAL_CODES for code in codes)
+    known = [code for code in codes if code.lower() not in MULTILINGUAL_CODES]
+
+    primary = (language or (known[0] if known else DEFAULT_LANGUAGE)).strip()
+    if not known:
+        known = [primary]
+    if primary not in known:
+        known = [primary, *known]
+
+    if fallback_phrase is None:
+        label = get_profile(primary).name if _is_known_language(primary) else primary
+        fallback_phrase = f"Sorry, I can only help in {label}."
+
+    policy = LanguagePolicy(
+        primary=primary,
+        allowlist=tuple(dict.fromkeys(known)),
+        reply_policy=reply_policy if reply_policy in REPLY_POLICIES else "follow_caller",
+        fallback_phrase=fallback_phrase,
+        detect_multilingual=detect,
+    )
+    return (
+        policy.primary,
+        policy.allowlist,
+        policy.reply_policy,
+        policy.fallback_phrase,
+        policy.detect_multilingual,
+        tuple(policy.validate()),
+    )
+
+
 def build_language_policy(
     *,
     languages: Any = None,
@@ -251,29 +304,16 @@ def build_language_policy(
             # agent that can speak no language would otherwise silently speak the default one.
             raise ValueError("languages.allowlist must contain at least one language")
 
-    detect = any(code.lower() in MULTILINGUAL_CODES for code in raw_codes)
-    codes = [code for code in raw_codes if code.lower() not in MULTILINGUAL_CODES]
-
-    primary = (language or (codes[0] if codes else DEFAULT_LANGUAGE)).strip()
-    if not codes:
-        codes = [primary]
-    if primary not in codes:
-        codes = [primary, *codes]
-
-    if fallback_phrase is None:
-        label = get_profile(primary).name if _is_known_language(primary) else primary
-        fallback_phrase = f"Sorry, I can only help in {label}."
-
+    fields = _resolved_policy_fields(tuple(raw_codes), language, reply_policy, fallback_phrase)
     policy = LanguagePolicy(
-        primary=primary,
-        allowlist=tuple(dict.fromkeys(codes)),
-        reply_policy=reply_policy if reply_policy in REPLY_POLICIES else "follow_caller",
-        fallback_phrase=fallback_phrase,
-        detect_multilingual=detect,
+        primary=fields[0],
+        allowlist=fields[1],
+        reply_policy=fields[2],
+        fallback_phrase=fields[3],
+        detect_multilingual=fields[4],
     )
-    problems = policy.validate()
-    if problems:
-        raise ValueError("; ".join(problems))
+    if fields[5]:
+        raise ValueError("; ".join(fields[5]))
     return policy
 
 

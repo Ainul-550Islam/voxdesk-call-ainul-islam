@@ -19,7 +19,7 @@ Error messages are intentionally generic: they never echo the caller's number,
 the dialed number, or any configured value, so nothing secret or personally
 identifiable leaks into responses or logs.
 
-The operator-run flow (see docs/runbooks/REAL-E2E-RUNBOOK.md) is:
+The operator-run flow (see docs/RUNBOOKS/REAL-E2E-RUNBOOK.md) is:
 
 1. Provision a dedicated test tenant and mark it `is_test_tenant=True`.
 2. Point that tenant's `twilio_number` at the dedicated test number.
